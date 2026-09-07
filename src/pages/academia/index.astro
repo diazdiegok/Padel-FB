@@ -9,6 +9,7 @@ const staff = [
     image: "images/fabian-borini.jpg",
     bio: "Academia de pádel profesional y de niños. La misma exigencia que la liga.",
     bullets: [] as string[],
+    slots: [] as { venue: string; when: string; detail?: string }[],
   },
   {
     name: "Barrionuevo Sebastián",
@@ -25,44 +26,43 @@ const staff = [
       { venue: "Open Padel", when: "Martes, miércoles, viernes y sábados · 12 a 19 h" },
     ],
   },
-];
-
-const schedules = [
   {
-    venue: "Terrazas Pádel",
-    place: "Ex Hipódromo · Paraná, Entre Ríos",
-    note: "Cupos disponibles · sumate a entrenar",
-    rows: [
-      { day: "Lunes", detail: "Cupos libres · 12:00 a 13:00 · 14:00" },
-      { day: "Miércoles", detail: "8va categoría · cupos libres · 11:00 · 12:00 · 13:00" },
-      { day: "Viernes", detail: "6ta categoría · 1 cupo libre · 11:00" },
-      { day: "Sábados", detail: "09:00 cupos libres · 11:00 1 cupo 7ma dama · 12:00 1 cupo 7ma/6ta" },
+    name: "Gonzalo Labanca",
+    role: "Profe",
+    image: "images/gonzalo-labanca.png",
+    bio: "Entrená en la academia. Entrenamiento personalizado con nuestra metodología.",
+    bullets: [] as string[],
+    slots: [
+      { venue: "Club Ciclista", when: "Lunes, miércoles, viernes y sábados · 14 a 18 h" },
+      { venue: "Club Talleres", when: "Martes y jueves · 14 a 18 h" },
     ],
-    highlights: [
+  },
+  {
+    name: "Thomas Putallaz",
+    role: "Profe · Terrazas Pádel",
+    image: "images/thomas-putallaz.png",
+    bio: "Entrená en Terrazas Pádel. Cupos disponibles · Ex Hipódromo, Paraná.",
+    bullets: [
       "Canchas profesionales · césped y blindex",
       "Profesores certificados APA con Nito Brea",
       "Experiencia en Argentina y México",
     ],
-  },
-  {
-    venue: "Club Ciclista",
-    place: "Paraná",
-    note: "Entrená en la academia",
-    rows: [{ day: "Lun · Mié · Vie · Sáb", detail: "14 a 18 h" }],
-    highlights: ["Entrenamiento personalizado con nuestra metodología"],
-  },
-  {
-    venue: "Club Talleres",
-    place: "Paraná",
-    note: "Entrená en la academia",
-    rows: [{ day: "Martes y jueves", detail: "14 a 18 h" }],
-    highlights: ["Entrenamiento personalizado con nuestra metodología"],
+    slots: [
+      { venue: "Lunes", when: "Cupos libres", detail: "12:00 a 13:00 · 14:00" },
+      { venue: "Miércoles", when: "8va categoría · cupos libres", detail: "11:00 · 12:00 · 13:00" },
+      { venue: "Viernes", when: "6ta categoría · 1 cupo libre", detail: "11:00" },
+      {
+        venue: "Sábados",
+        when: "Cupos por horario",
+        detail: "09:00 libres · 11:00 1 cupo 7ma dama · 12:00 1 cupo 7ma/6ta",
+      },
+    ],
   },
 ];
 ---
 <Layout
   title="Academia | Padel FB"
-  description="Clases de pádel de la Academia FB en Paraná. Fabián Borini, Barrionuevo Sebastián y horarios en Terrazas, Ciclista, Talleres, Palermo y Open."
+  description="Clases de pádel de la Academia FB en Paraná. Fabián Borini, Barrionuevo Sebastián, Gonzalo Labanca y Thomas Putallaz."
 >
   <div class="wrap">
     <header class="page-hero">
@@ -83,6 +83,7 @@ const schedules = [
           <p class="kicker">Equipo</p>
           <h2>Con quién entrenás</h2>
         </div>
+        <p>Horarios y sedes de cada profe. Reservá por WhatsApp.</p>
       </div>
       <div class="staff-list">
         {staff.map((p) => (
@@ -97,12 +98,13 @@ const schedules = [
                   {p.bullets.map((b) => <li>{b}</li>)}
                 </ul>
               )}
-              {p.slots && (
+              {p.slots.length > 0 && (
                 <div class="slot-list">
                   {p.slots.map((s) => (
                     <div class="slot-row">
                       <strong>{s.venue}</strong>
                       <span>{s.when}</span>
+                      {s.detail && <span class="slot-detail">{s.detail}</span>}
                     </div>
                   ))}
                 </div>
@@ -110,6 +112,9 @@ const schedules = [
             </div>
           </article>
         ))}
+      </div>
+      <div class="actions" style="margin-top:28px">
+        <a class="btn btn-lime" href={page("inscripcion/")}>Reservar por WhatsApp</a>
       </div>
     </div>
   </section>
@@ -138,43 +143,6 @@ const schedules = [
           <h3>Personalizado</h3>
           <p>Entrenamiento a medida con la metodología FB.</p>
         </article>
-      </div>
-    </div>
-  </section>
-
-  <section style="padding-top:0">
-    <div class="wrap">
-      <div class="section-head">
-        <div>
-          <p class="kicker">Grilla</p>
-          <h2>Horarios y sedes</h2>
-        </div>
-        <p>Reservá tu lugar por WhatsApp. Los cupos cambian semana a semana.</p>
-      </div>
-      <div class="class-grid">
-        {schedules.map((s) => (
-          <article class="class-card">
-            <p class="kicker" style="margin:0">{s.note}</p>
-            <h3>{s.venue}</h3>
-            <p class="class-place">{s.place}</p>
-            <div class="class-rows">
-              {s.rows.map((r) => (
-                <div class="class-row">
-                  <strong>{r.day}</strong>
-                  <span>{r.detail}</span>
-                </div>
-              ))}
-            </div>
-            {s.highlights.length > 0 && (
-              <ul class="class-notes">
-                {s.highlights.map((h) => <li>{h}</li>)}
-              </ul>
-            )}
-          </article>
-        ))}
-      </div>
-      <div class="actions" style="margin-top:28px">
-        <a class="btn btn-lime" href={page("inscripcion/")}>Reservar por WhatsApp</a>
       </div>
     </div>
   </section>

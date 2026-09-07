@@ -728,6 +728,7 @@ footer strong { color: var(--cream); }
 }
 .slot-row strong { font-size: 14px; letter-spacing: 0.04em; text-transform: uppercase; }
 .slot-row span { color: var(--muted); font-size: 14px; }
+.slot-detail { color: var(--cream) !important; font-size: 13px !important; }
 .class-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
