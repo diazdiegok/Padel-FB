@@ -5,11 +5,17 @@ import { asset, page } from "../../lib/paths";
 const staff = [
   {
     name: "Fabián Borini",
-    role: "Dueño",
-    image: "images/fabian-borini.jpg",
-    bio: "Academia de pádel profesional y de niños. La misma exigencia que la liga.",
-    bullets: [] as string[],
-    slots: [] as { venue: string; when: string; detail?: string }[],
+    role: "Dueño y profe",
+    image: "images/fabian-borini-clases.png",
+    bio: "Fundador de Academia FB. También da clases: entrenamiento personalizado con la metodología FB.",
+    bullets: [
+      "Jugador segunda categoría",
+      "Profesor certificado APA",
+      "Fundador de Academia FB",
+    ],
+    slots: [
+      { venue: "Open Pádel FB", when: "Miércoles, jueves y viernes · 13:00 a 19:00 h" },
+    ],
   },
   {
     name: "Barrionuevo Sebastián",
@@ -88,7 +94,7 @@ const staff = [
       <div class="staff-list">
         {staff.map((p) => (
           <article class="staff-card">
-            <img class="portrait staff-photo" src={asset(p.image)} alt={p.name} />
+            <img class="staff-photo" src={asset(p.image)} alt={p.name} />
             <div>
               <p class="kicker" style="margin:0">{p.role}</p>
               <h2>{p.name}</h2>
