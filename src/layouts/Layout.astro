@@ -116,6 +116,7 @@ const inTorneos = path.includes("/torneos");
         </ul>
         <div class="nav-actions">
           <a class="nav-cta nav-cta-ghost" href={page("admin/")}>Admin</a>
+          <button class="nav-cta nav-cta-ghost" type="button" id="nav-logout" hidden>Salir</button>
           <a class="nav-cta" href={page("inscripcion/")}>Sumate</a>
         </div>
         <button class="menu-btn" type="button" data-menu>Menu</button>
@@ -170,6 +171,27 @@ const inTorneos = path.includes("/torneos");
           el.querySelector("[data-nav-drop]")?.setAttribute("aria-expanded", "false");
         });
       });
+      const AUTH_KEY = "liga-fb-admin-ok";
+      const logoutBtn = document.getElementById("nav-logout");
+      function adminLoggedIn() {
+        try {
+          const raw = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
+          if (!raw) return false;
+          if (raw === "1") return true;
+          const data = JSON.parse(raw);
+          return !!(data?.ok && data.exp && Date.now() <= data.exp);
+        } catch {
+          return false;
+        }
+      }
+      if (logoutBtn) {
+        logoutBtn.hidden = !adminLoggedIn();
+        logoutBtn.addEventListener("click", () => {
+          localStorage.removeItem(AUTH_KEY);
+          sessionStorage.removeItem(AUTH_KEY);
+          location.reload();
+        });
+      }
       const splash = document.getElementById("splash");
       if (splash && !sessionStorage.getItem("liga-fb-splash-v2")) {
         splash.hidden = false;

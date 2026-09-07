@@ -35,10 +35,6 @@ import Layout from "../layouts/Layout.astro";
   <div class="wrap admin-app" id="app" hidden>
     <p class="kicker">Panel interno</p>
     <h1>Cargar y editar</h1>
-    <div class="admin-toolbar">
-      <button class="btn btn-ghost" type="button" id="logout">Salir</button>
-    </div>
-
     <div class="admin-tabs">
       <button class="pill on" type="button" data-tab="ranking">Ranking</button>
       <button class="pill" type="button" data-tab="fixture">Fixture</button>
@@ -985,6 +981,8 @@ import Layout from "../layouts/Layout.astro";
       gate.hidden = true;
       app.hidden = false;
       keepLogin();
+      const navLogout = document.getElementById("nav-logout");
+      if (navLogout) navLogout.hidden = false;
       sessionStorage.removeItem("liga-fb-gh-token");
       token = getPublishToken();
       fillFilters();
@@ -1076,11 +1074,6 @@ import Layout from "../layouts/Layout.astro";
         clearLogin();
         msg($("login-msg"), err.message, "err");
       }
-    });
-
-    $("logout").addEventListener("click", () => {
-      clearLogin();
-      location.reload();
     });
 
     document.querySelectorAll("[data-tab]").forEach((btn) => {
