@@ -1,4 +1,4 @@
-# Liga FB — sitio estático (Astro)
+# Padel FB - sitio estático (Astro)
 
 Sitio nuevo de academiapadelfb.com. Sin WordPress. Ranking, fotos y textos extraídos del WP actual.
 

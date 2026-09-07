@@ -17,7 +17,7 @@ import { page } from "../lib/paths";
 
     <div class="admin-card" id="box" hidden>
       <p class="kicker">Escaneá una sola vez</p>
-      <h1>Liga FB · Admin</h1>
+      <h1>Padel FB · Admin</h1>
       <p class="admin-help">Google Authenticator, Authy o el de Windows. Si no toma el QR, cargá la clave manual.</p>
       <img id="qr" class="admin-qr-img" alt="QR autenticador" width="320" height="320" />
       <p class="admin-help" id="manual"></p>
@@ -60,7 +60,7 @@ import { page } from "../lib/paths";
         return;
       }
       const secret = String(auth.totpSecret || "").replace(/=+$/g, "");
-      const uri = "otpauth://totp/LigaFB:Admin?secret=" + secret + "&issuer=LigaFB&period=30&digits=6";
+      const uri = "otpauth://totp/PadelFB:Admin?secret=" + secret + "&issuer=PadelFB&period=30&digits=6";
       qr.setAttribute("src", await QRCode.toDataURL(uri, {
         width: 320,
         margin: 4,

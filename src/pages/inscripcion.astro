@@ -3,8 +3,8 @@ import Layout from "../layouts/Layout.astro";
 import { site } from "../data/site";
 ---
 <Layout
-  title="Inscripción | Liga FB"
-  description="Anotate a la Liga FB o a las clases de la academia en Paraná. Te confirmamos por WhatsApp."
+  title="Inscripción | Padel FB"
+  description="Anotate a Padel FB o a las clases de la academia en Paraná. Te confirmamos por WhatsApp."
 >
   <div class="wrap">
     <header class="page-hero">
@@ -54,7 +54,7 @@ import { site } from "../data/site";
       e.preventDefault();
       const data = Object.fromEntries(new FormData(e.target));
       const text = [
-        "Hola, quiero sumarme a Liga FB.",
+        "Hola, quiero sumarme a Padel FB.",
         `Nombre: ${data.nombre}`,
         `Tel: ${data.tel}`,
         `Quiero: ${data.tipo}`,

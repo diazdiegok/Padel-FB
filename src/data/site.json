@@ -1,5 +1,5 @@
 {
-  "name": "Liga FB",
+  "name": "Padel FB",
   "city": "Paraná",
   "province": "Entre Ríos",
   "instagram": "https://www.instagram.com/ligapadelfb/",
@@ -9,7 +9,7 @@
   "githubOwner": "diazdiegok",
   "githubRepo": "liga-fb",
   "submitToken": "",
-  "ligaIntro": "¡Bienvenidos a la Liga FB! Una competencia apasionante que se juega de lunes a sábado en los mejores complejos de la ciudad: Americas Padel, Talleres Padel, Ciclista Padel, Berduc Padel y La Farola Padel. La liga está organizada en tres categorías: A, B y C, tanto para damas como caballeros, donde todos los jugadores compiten entre sí sumando puntos individualmente. Cada jugador participa en un partido semanal.",
+  "ligaIntro": "¡Bienvenidos a Padel FB! Liga, academia y torneos en Paraná. La liga se juega de lunes a sábado en los mejores complejos de la ciudad: Americas Padel, Talleres Padel, Ciclista Padel, Berduc Padel y La Farola Padel. Está organizada en categorías A, B y C, damas y caballeros, con un partido semanal.",
   "venues": [
     {
       "id": "palermo",
