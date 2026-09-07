@@ -12,8 +12,8 @@ const { title, description, noindex = false } = Astro.props;
 const path = Astro.url.pathname;
 const wa = `https://wa.me/${site.whatsapp}`;
 const logo = asset("images/Logo-FB-blanco-sin-fondo-02.png");
-const ogImage = "https://diazdiegok.github.io/liga-fb/images/og-share.jpg";
-const ogUrl = "https://diazdiegok.github.io/liga-fb/";
+const ogImage = "https://diazdiegok.github.io/Padel-FB/images/og-share.jpg";
+const ogUrl = "https://diazdiegok.github.io/Padel-FB/";
 const inLiga =
   path.includes("/ranking") ||
   path.includes("/fixture") ||
@@ -89,7 +89,7 @@ const inTorneos = path.includes("/torneos");
           PADEL FB
         </a>
         <ul class="nav-links">
-          <li><a href={page("")} aria-current={path.endsWith("/liga-fb/") || path.endsWith("/liga-fb") ? "page" : undefined}>Inicio</a></li>
+          <li><a href={page("")} aria-current={path.endsWith("/Padel-FB/") || path.endsWith("/Padel-FB") ? "page" : undefined}>Inicio</a></li>
           <li class:list={["nav-item", { open: false }]}>
             <button class:list={["nav-trigger", { on: inLiga }]} type="button" data-nav-drop aria-expanded="false">Liga</button>
             <div class="nav-drop">
