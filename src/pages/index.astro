@@ -27,8 +27,8 @@ const totalPlayers = rows.length;
           <h1>Sin esfuerzo<br />no hay gloria</h1>
           <p class="lead">{site.ligaIntro}</p>
           <div class="actions">
-            <a class="btn btn-lime" href={page("inscripcion/")}>Sumate a la liga</a>
-            <a class="btn btn-ghost" href={page("ranking/")}>Ver ranking</a>
+            <a class="btn btn-lime" href={page("liga/")}>Entrar a la liga</a>
+            <a class="btn btn-ghost" href={page("academia/")}>Ver academia</a>
           </div>
         </div>
         <aside class="scoreboard">
@@ -88,18 +88,44 @@ const totalPlayers = rows.length;
     </div>
   </section>
 
+  <div class="wrap" style="padding:64px 0 24px">
+    <div class="section-head">
+      <div>
+        <p class="kicker">Tres caminos</p>
+        <h2>Elegí dónde vas</h2>
+      </div>
+    </div>
+    <div class="hub-grid">
+      <a class="hub-card" href={page("liga/")}>
+        <p class="kicker" style="margin:0">Competí</p>
+        <h2>Liga</h2>
+        <p>Ranking, fixture, resultados, fecha y sedes de la competencia.</p>
+      </a>
+      <a class="hub-card" href={page("academia/")}>
+        <p class="kicker" style="margin:0">Entrená</p>
+        <h2>Academia</h2>
+        <p>Clases de adultos y niños, más las sedes donde se entrena.</p>
+      </a>
+      <a class="hub-card" href={page("torneos/")}>
+        <p class="kicker" style="margin:0">Próximamente</p>
+        <h2>Torneos</h2>
+        <p>Espacio listo para futuros torneos abiertos y brackets.</p>
+      </a>
+    </div>
+  </div>
+
   <div class="split">
     <div class="split-block">
       <p class="kicker">Liga FB</p>
       <h2>Competí</h2>
-      <p class="lead">Liga y academia de pádel. Ranking público de T1 a T4.</p>
+      <p class="lead">Liga de pádel con ranking público de T1 a T4.</p>
       <ul>
         <li>Categorías A / B / C — damas y caballeros</li>
         <li>Sedes en {site.city}</li>
-        <li>Ranking con buscador</li>
+        <li>Ranking, fixture y resultados</li>
       </ul>
       <div class="actions">
-        <a class="btn btn-lime" href={page("inscripcion/")}>Inscribirme a la liga</a>
+        <a class="btn btn-lime" href={page("liga/")}>Ir a la liga</a>
       </div>
     </div>
     <div class="split-block">
@@ -121,7 +147,7 @@ const totalPlayers = rows.length;
     <div class="wrap">
       <div class="section-head">
         <div>
-          <p class="kicker">Dónde</p>
+          <p class="kicker">Liga</p>
           <h2>Sedes oficiales</h2>
         </div>
         <a class="btn btn-ghost" href={page("sedes/")}>Todas las sedes</a>

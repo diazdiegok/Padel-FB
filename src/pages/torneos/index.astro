@@ -1,0 +1,25 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { page } from "../../lib/paths";
+---
+<Layout
+  title="Torneos | Liga FB"
+  description="Próximos torneos de Liga FB en Paraná. Sección en construcción."
+>
+  <div class="wrap">
+    <header class="page-hero">
+      <p class="kicker">Próximamente</p>
+      <h1>Torneos</h1>
+      <p>Acá van a vivir los torneos abiertos, brackets y resultados especiales. Todavía no hay fechas publicadas.</p>
+    </header>
+    <div class="coming">
+      <p class="kicker" style="margin:0 0 12px">En preparación</p>
+      <h2 style="margin-bottom:12px">Sin torneos por ahora</h2>
+      <p style="margin:0 0 24px">Cuando se confirmen, vas a poder ver inscripción, cuadro y resultados desde acá.</p>
+      <div class="actions" style="margin:0">
+        <a class="btn btn-ghost" href={page("liga/")}>Ir a la liga</a>
+        <a class="btn btn-lime" href={page("inscripcion/")}>Consultar por WhatsApp</a>
+      </div>
+    </div>
+  </div>
+</Layout>

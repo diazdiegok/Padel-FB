@@ -14,6 +14,15 @@ const wa = `https://wa.me/${site.whatsapp}`;
 const logo = asset("images/Logo-FB-blanco-sin-fondo-02.png");
 const ogImage = "https://diazdiegok.github.io/liga-fb/images/og-share.jpg";
 const ogUrl = "https://diazdiegok.github.io/liga-fb/";
+const inLiga =
+  path.includes("/ranking") ||
+  path.includes("/fixture") ||
+  path.includes("/resultados") ||
+  path.includes("/fecha") ||
+  (path.includes("/sedes") && !path.includes("/academia")) ||
+  path.includes("/liga/");
+const inAcademia = path.includes("/academia");
+const inTorneos = path.includes("/torneos");
 ---
 <!DOCTYPE html>
 <html lang="es">
@@ -81,12 +90,25 @@ const ogUrl = "https://diazdiegok.github.io/liga-fb/";
         </a>
         <ul class="nav-links">
           <li><a href={page("")} aria-current={path.endsWith("/liga-fb/") || path.endsWith("/liga-fb") ? "page" : undefined}>Inicio</a></li>
-          <li><a href={page("ranking/")} aria-current={path.includes("/ranking") ? "page" : undefined}>Ranking</a></li>
-          <li><a href={page("fixture/")} aria-current={path.includes("/fixture") ? "page" : undefined}>Fixture</a></li>
-          <li><a href={page("resultados/")} aria-current={path.includes("/resultados") ? "page" : undefined}>Resultados</a></li>
-          <li><a href={page("fecha/")} aria-current={path.includes("/fecha") ? "page" : undefined}>Fecha</a></li>
-          <li><a href={page("academia/")} aria-current={path.includes("/academia") ? "page" : undefined}>Academia</a></li>
-          <li><a href={page("sedes/")} aria-current={path.includes("/sedes") ? "page" : undefined}>Sedes</a></li>
+          <li class:list={["nav-item", { open: false }]}>
+            <button class:list={["nav-trigger", { on: inLiga }]} type="button" data-nav-drop aria-expanded="false">Liga</button>
+            <div class="nav-drop">
+              <a href={page("liga/")} aria-current={path.includes("/liga/") ? "page" : undefined}>Resumen</a>
+              <a href={page("ranking/")} aria-current={path.includes("/ranking") ? "page" : undefined}>Ranking</a>
+              <a href={page("fixture/")} aria-current={path.includes("/fixture") ? "page" : undefined}>Fixture</a>
+              <a href={page("resultados/")} aria-current={path.includes("/resultados") ? "page" : undefined}>Resultados</a>
+              <a href={page("fecha/")} aria-current={path.includes("/fecha") ? "page" : undefined}>Fecha</a>
+              <a href={page("sedes/")} aria-current={path.includes("/sedes") && !path.includes("/academia") ? "page" : undefined}>Sedes</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <button class:list={["nav-trigger", { on: inAcademia }]} type="button" data-nav-drop aria-expanded="false">Academia</button>
+            <div class="nav-drop">
+              <a href={page("academia/")} aria-current={path.endsWith("/academia/") || path.endsWith("/academia") ? "page" : undefined}>Clases</a>
+              <a href={page("academia/sedes/")} aria-current={path.includes("/academia/sedes") ? "page" : undefined}>Sedes</a>
+            </div>
+          </li>
+          <li><a href={page("torneos/")} class:list={[{ on: inTorneos }]} aria-current={inTorneos ? "page" : undefined}>Torneos</a></li>
         </ul>
         <div class="nav-actions">
           <a class="nav-cta nav-cta-ghost" href={page("admin/")}>Admin</a>
@@ -117,6 +139,27 @@ const ogUrl = "https://diazdiegok.github.io/liga-fb/";
     <script>
       document.querySelector("[data-menu]")?.addEventListener("click", () => {
         document.querySelector("nav")?.classList.toggle("open");
+      });
+      document.querySelectorAll("[data-nav-drop]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const item = btn.closest(".nav-item");
+          const open = item?.classList.contains("open");
+          document.querySelectorAll(".nav-item.open").forEach((el) => {
+            el.classList.remove("open");
+            el.querySelector("[data-nav-drop]")?.setAttribute("aria-expanded", "false");
+          });
+          if (!open && item) {
+            item.classList.add("open");
+            btn.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+      document.addEventListener("click", () => {
+        document.querySelectorAll(".nav-item.open").forEach((el) => {
+          el.classList.remove("open");
+          el.querySelector("[data-nav-drop]")?.setAttribute("aria-expanded", "false");
+        });
       });
       const splash = document.getElementById("splash");
       if (splash && !sessionStorage.getItem("liga-fb-splash-v2")) {

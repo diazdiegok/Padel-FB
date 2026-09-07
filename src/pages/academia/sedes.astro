@@ -1,0 +1,43 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { site } from "../../data/site";
+import { asset, page } from "../../lib/paths";
+import VenueLinks from "../../components/VenueLinks.astro";
+
+const venues = site.venues.filter((v) => /academia|clases/i.test(v.type || ""));
+const list = venues.length ? venues : site.venues;
+---
+<Layout
+  title="Sedes de academia | Liga FB"
+  description="Sedes donde se dictan clases de la Academia FB en Paraná."
+>
+  <div class="wrap">
+    <header class="page-hero">
+      <p class="kicker">Academia FB</p>
+      <h1>Sedes</h1>
+      <p>Complejos donde se entrenan adultos y niños. Para las canchas de la competencia, mirá las sedes de la liga.</p>
+      <div class="actions">
+        <a class="btn btn-lime" href={page("inscripcion/")}>Quiero clases</a>
+        <a class="btn btn-ghost" href={page("academia/")}>Volver a academia</a>
+      </div>
+    </header>
+
+    {list.map((v) => (
+      <section id={v.id} style="padding:16px 0 28px">
+        <article class="venue sede-grid">
+          <div class="venue-photo">
+            <img class="photo" src={asset(v.image)} alt={v.name} />
+            <span>{v.name}</span>
+          </div>
+          <div class="venue-body">
+            <h2>{v.name}</h2>
+            <p>{v.address}</p>
+            <p>{v.city}</p>
+            <p>{v.type}</p>
+            <VenueLinks maps={v.maps} instagram={v.instagram} whatsapp={v.whatsapp} />
+          </div>
+        </article>
+      </section>
+    ))}
+  </div>
+</Layout>

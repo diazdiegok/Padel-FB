@@ -1,0 +1,39 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { page } from "../../lib/paths";
+import { site } from "../../data/site";
+
+const links = [
+  { href: "ranking/", title: "Ranking", text: "Tabla por categoría y temporada." },
+  { href: "fixture/", title: "Fixture", text: "Partidos semanales de la temporada." },
+  { href: "resultados/", title: "Resultados", text: "Resultados cargados de cada fecha." },
+  { href: "fecha/", title: "Fecha", text: "Disponibilidad y carga de la semana." },
+  { href: "sedes/", title: "Sedes", text: "Canchas oficiales de la liga." },
+];
+---
+<Layout
+  title={`Liga FB | Competí en ${site.city}`}
+  description="Ranking, fixture, resultados, fecha y sedes de Liga FB en Paraná."
+>
+  <div class="wrap">
+    <header class="page-hero">
+      <p class="kicker">Liga FB · temporada {site.currentSeason}</p>
+      <h1>Liga</h1>
+      <p>Todo lo de la competencia: ranking, partidos, resultados, fecha y sedes.</p>
+      <div class="actions">
+        <a class="btn btn-lime" href={page("inscripcion/")}>Sumate a la liga</a>
+        <a class="btn btn-ghost" href={page("ranking/")}>Ver ranking</a>
+      </div>
+    </header>
+
+    <div class="hub-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+      {links.map((l) => (
+        <a class="hub-card" href={page(l.href)}>
+          <p class="kicker" style="margin:0">{l.title}</p>
+          <h2>{l.title}</h2>
+          <p>{l.text}</p>
+        </a>
+      ))}
+    </div>
+  </div>
+</Layout>
