@@ -115,7 +115,7 @@ nav .wrap {
   left: 50%;
   transform: translateX(-50%);
   min-width: 180px;
-  padding: 12px 0 0;
+  padding-top: 12px;
   z-index: 60;
 }
 .nav-drop-inner {
@@ -126,6 +126,8 @@ nav .wrap {
   display: grid;
   gap: 4px;
 }
+.nav-item:hover .nav-drop,
+.nav-item:focus-within .nav-drop,
 .nav-item.open .nav-drop { display: block; }
 .nav-drop a {
   display: block;
@@ -631,7 +633,9 @@ footer a:hover { color: var(--lime); }
     min-width: 0;
   }
   .nav-drop-inner { box-shadow: none; }
-  .nav-item.open .nav-drop { display: block; }
+  .nav-item:hover .nav-drop { display: none; }
+  .nav-item.open .nav-drop,
+  .nav-item:focus-within .nav-drop { display: block; }
   .hub-grid { grid-template-columns: 1fr; }
   .hero, .split, .steps, .venues, .stats, .sede-grid { grid-template-columns: 1fr; }
   .stat { border-right: none; border-bottom: 1px solid var(--line); padding: 20px 0; }
