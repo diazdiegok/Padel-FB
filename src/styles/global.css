@@ -697,9 +697,9 @@ footer strong { color: var(--cream); }
 .staff-list { display: grid; gap: 28px; }
 .staff-card {
   display: grid;
-  grid-template-columns: minmax(240px, 380px) 1fr;
+  grid-template-columns: minmax(200px, 280px) 1fr;
   gap: 28px;
-  align-items: start;
+  align-items: center;
   border: 1px solid var(--line);
   background: var(--bg-2);
   padding: 20px;
@@ -707,10 +707,11 @@ footer strong { color: var(--cream); }
 .staff-photo {
   width: 100%;
   max-width: none;
-  aspect-ratio: auto;
+  aspect-ratio: 3 / 4;
   height: auto;
-  object-fit: contain;
-  background: #0a1a2f;
+  object-fit: cover;
+  object-position: center 12%;
+  background: #0c100e;
 }
 .staff-bullets {
   margin: 16px 0 0;
