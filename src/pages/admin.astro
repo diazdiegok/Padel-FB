@@ -36,10 +36,6 @@ import Layout from "../layouts/Layout.astro";
     <p class="kicker">Panel interno</p>
     <h1>Cargar y editar</h1>
     <div class="admin-toolbar">
-      <details class="admin-pub">
-        <summary>Publicar</summary>
-        <input id="gh-token" type="password" placeholder="Token de publicación" autocomplete="off" />
-      </details>
       <button class="btn btn-ghost" type="button" id="logout">Salir</button>
     </div>
 
@@ -250,11 +246,6 @@ import Layout from "../layouts/Layout.astro";
         <label>Texto de inicio
           <textarea name="ligaIntro" rows="6"></textarea>
         </label>
-        <label>Token para cargar la fecha
-          <input name="submitToken" type="password" autocomplete="off" placeholder="Mismo token de Publicar" />
-        </label>
-        <p class="admin-help">Con este token las parejas pueden cargar disponibilidad en /fecha/. Puede ser el mismo de Publicar. Después de guardarlo, esperá ~1 minuto.</p>
-        <button class="btn btn-ghost" type="button" id="copy-submit-token">Usar el token de esta sesión</button>
         <button class="btn btn-lime" type="submit">Guardar sitio</button>
       </form>
       <p class="admin-msg" id="site-msg"></p>
@@ -274,8 +265,8 @@ import Layout from "../layouts/Layout.astro";
     const initialRows = rankingJson.filter((p) => !HIDDEN_CATS.has(p.cat));
     const initialSite = siteJson;
     const initialFixture = fixtureJson;
-    const KEY = "liga-fb-gh-token";
     const AUTH_KEY = "liga-fb-admin-ok";
+    const BUILTIN_TOKEN = import.meta.env.PUBLIC_SUBMIT_TOKEN || "";
     const PASS_SALT = "liga-fb-admin-v1";
     const owner = initialSite.githubOwner;
     const repo = initialSite.githubRepo;
@@ -306,7 +297,7 @@ import Layout from "../layouts/Layout.astro";
     let siteData = structuredClone(initialSite);
     let fixture = structuredClone(initialFixture || []);
     const BASE = import.meta.env.BASE_URL || "/";
-    let token = sessionStorage.getItem(KEY) || "";
+    let token = String(BUILTIN_TOKEN || siteData.submitToken || "").trim();
     let filterTemp = siteData.currentSeason || "T4";
     let filterCat = "TODAS";
 
@@ -321,12 +312,14 @@ import Layout from "../layouts/Layout.astro";
       return decodeURIComponent(escape(atob(b64)));
     }
     function headers() {
-      return {
+      token = getPublishToken();
+      const h = {
         Accept: "application/vnd.github+json",
-        Authorization: "Bearer " + token,
         "Content-Type": "application/json",
         "X-GitHub-Api-Version": "2022-11-28",
       };
+      if (token) h.Authorization = "Bearer " + token;
+      return h;
     }
     function msg(el, text, kind) {
       el.textContent = text;
@@ -355,7 +348,7 @@ import Layout from "../layouts/Layout.astro";
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.message || "Error GitHub " + res.status);
+        throw new Error(publishError({ message: data.message || "Error GitHub " + res.status }));
       }
       return data;
     }
@@ -482,7 +475,6 @@ import Layout from "../layouts/Layout.astro";
       form.city.value = siteData.city || "";
       form.province.value = siteData.province || "";
       form.ligaIntro.value = siteData.ligaIntro || "";
-      form.submitToken.value = siteData.submitToken || "";
     }
 
     function ensureCms() {
@@ -744,15 +736,23 @@ import Layout from "../layouts/Layout.astro";
       }
     }
 
-    function requireToken(el) {
-      token = $("gh-token").value.trim();
+    function getPublishToken() {
+      return String(BUILTIN_TOKEN || siteData.submitToken || "").trim();
+    }
+    function usePublishToken(el) {
+      token = getPublishToken();
       if (!token) {
-        msg(el, "Para guardar pegá el token de Publicar arriba.", "err");
-        $("gh-token").focus();
+        msg(el, "Todavía no está el permiso de publicación del sitio. Se carga una sola vez en GitHub, no acá.", "err");
         return false;
       }
-      sessionStorage.setItem(KEY, token);
       return true;
+    }
+    function publishError(err) {
+      const m = String(err?.message || err);
+      if (/bad credentials/i.test(m) || /\b401\b/.test(m)) {
+        return "No se pudo guardar. El permiso de publicación del sitio está vencido.";
+      }
+      return m;
     }
     function fillDisp() {
       $("disp-week").value = disp.week || "Fecha 6";
@@ -952,7 +952,8 @@ import Layout from "../layouts/Layout.astro";
     function showApp() {
       gate.hidden = true;
       app.hidden = false;
-      $("gh-token").value = token;
+      sessionStorage.removeItem("liga-fb-gh-token");
+      token = getPublishToken();
       fillFilters();
       renderTable();
       renderFixture();
@@ -1042,12 +1043,6 @@ import Layout from "../layouts/Layout.astro";
         sessionStorage.removeItem(AUTH_KEY);
         msg($("login-msg"), err.message, "err");
       }
-    });
-
-    $("gh-token").addEventListener("change", () => {
-      token = $("gh-token").value.trim();
-      if (token) sessionStorage.setItem(KEY, token);
-      else sessionStorage.removeItem(KEY);
     });
 
     $("logout").addEventListener("click", () => {
@@ -1211,13 +1206,7 @@ import Layout from "../layouts/Layout.astro";
     });
 
     $("publish").addEventListener("click", async () => {
-      token = $("gh-token").value.trim();
-      if (!token) {
-        msg($("rank-msg"), "Para publicar en el sitio pegá un token de GitHub (Contents: write).", "err");
-        $("gh-token").focus();
-        return;
-      }
-      sessionStorage.setItem(KEY, token);
+      if (!usePublishToken($("rank-msg"))) return;
       rows = rows.map(cleanRow).filter((r) => r.name && r.cat.toLowerCase() !== "s masculina");
       msg($("rank-msg"), "Publicando ranking…");
       try {
@@ -1230,7 +1219,7 @@ import Layout from "../layouts/Layout.astro";
         fillFilters();
         renderTable();
       } catch (err) {
-        msg($("rank-msg"), err.message, "err");
+        msg($("rank-msg"), publishError(err), "err");
       }
     });
 
@@ -1327,13 +1316,7 @@ import Layout from "../layouts/Layout.astro";
       }
     });
     $("fx-publish").addEventListener("click", async () => {
-      token = $("gh-token").value.trim();
-      if (!token) {
-        msg($("fx-msg"), "Para publicar pegá un token de GitHub arriba (Contents: write).", "err");
-        $("gh-token").focus();
-        return;
-      }
-      sessionStorage.setItem(KEY, token);
+      if (!usePublishToken($("fx-msg"))) return;
       const nextFixture = fixture.map(cleanMatch).filter((m) => m.home || m.away);
       const nextRanking = structuredClone(rows).map(cleanRow).filter((r) => r.name && r.cat.toLowerCase() !== "s masculina");
       const report = applyFixtureResults(nextRanking, nextFixture);
@@ -1363,15 +1346,10 @@ import Layout from "../layouts/Layout.astro";
           report.unmatched.length ? "err" : "ok"
         );
       } catch (err) {
-        msg($("fx-msg"), err.message, "err");
+        msg($("fx-msg"), publishError(err), "err");
       }
     });
 
-    $("copy-submit-token").addEventListener("click", () => {
-      const value = $("gh-token").value.trim() || token;
-      $("site-form").submitToken.value = value;
-      msg($("site-msg"), value ? "Copié el token de esta sesión. Publicá los datos del sitio." : "Primero pegá el token arriba en Publicar.", value ? "ok" : "err");
-    });
     $("disp-reload").addEventListener("click", reloadDisp);
     $("disp-list").addEventListener("click", (e) => {
       const btn = e.target.closest("[data-disp-del]");
@@ -1380,13 +1358,7 @@ import Layout from "../layouts/Layout.astro";
       fillDisp();
     });
     $("disp-publish").addEventListener("click", async () => {
-      token = $("gh-token").value.trim();
-      if (!token) {
-        msg($("disp-msg"), "Para guardar pegá un token de GitHub arriba.", "err");
-        $("gh-token").focus();
-        return;
-      }
-      sessionStorage.setItem(KEY, token);
+      if (!usePublishToken($("disp-msg"))) return;
       disp.week = $("disp-week").value.trim() || "Fecha 6";
       disp.open = $("disp-open").checked;
       disp.temp = siteData.currentSeason || "T4";
@@ -1521,7 +1493,7 @@ import Layout from "../layouts/Layout.astro";
     });
 
     $("ac-save").addEventListener("click", async () => {
-      if (!requireToken($("ac-msg"))) return;
+      if (!usePublishToken($("ac-msg"))) return;
       readAcademiaFromDom();
       msg($("ac-msg"), "Guardando academia…");
       try {
@@ -1534,12 +1506,12 @@ import Layout from "../layouts/Layout.astro";
         fillAcademiaForm();
         msg($("ac-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
       } catch (err) {
-        msg($("ac-msg"), err.message, "err");
+        msg($("ac-msg"), publishError(err), "err");
       }
     });
 
     $("venue-save").addEventListener("click", async () => {
-      if (!requireToken($("venue-msg"))) return;
+      if (!usePublishToken($("venue-msg"))) return;
       readVenuesFromDom();
       msg($("venue-msg"), "Guardando sedes…");
       try {
@@ -1553,12 +1525,12 @@ import Layout from "../layouts/Layout.astro";
         fillVenueForm();
         msg($("venue-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
       } catch (err) {
-        msg($("venue-msg"), err.message, "err");
+        msg($("venue-msg"), publishError(err), "err");
       }
     });
 
     $("tn-save").addEventListener("click", async () => {
-      if (!requireToken($("tn-msg"))) return;
+      if (!usePublishToken($("tn-msg"))) return;
       readTorneosFromDom();
       siteData.torneos.items = (siteData.torneos.items || []).filter((item) => item.title || item.text || item.when);
       msg($("tn-msg"), "Guardando torneos…");
@@ -1571,19 +1543,13 @@ import Layout from "../layouts/Layout.astro";
         fillTorneosForm();
         msg($("tn-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
       } catch (err) {
-        msg($("tn-msg"), err.message, "err");
+        msg($("tn-msg"), publishError(err), "err");
       }
     });
 
     $("site-form").addEventListener("submit", async (e) => {
       e.preventDefault();
-      token = $("gh-token").value.trim();
-      if (!token) {
-        msg($("site-msg"), "Para publicar pegá un token de GitHub arriba (Contents: write).", "err");
-        $("gh-token").focus();
-        return;
-      }
-      sessionStorage.setItem(KEY, token);
+      if (!usePublishToken($("site-msg"))) return;
       const form = e.target;
       siteData = {
         ...siteData,
@@ -1593,7 +1559,6 @@ import Layout from "../layouts/Layout.astro";
         city: form.city.value.trim(),
         province: form.province.value.trim(),
         ligaIntro: form.ligaIntro.value.trim(),
-        submitToken: form.submitToken.value.trim(),
       };
       msg($("site-msg"), "Guardando sitio…");
       try {
@@ -1604,7 +1569,7 @@ import Layout from "../layouts/Layout.astro";
         );
         msg($("site-msg"), "Datos publicados. El sitio se actualiza en ~1 minuto.", "ok");
       } catch (err) {
-        msg($("site-msg"), err.message, "err");
+        msg($("site-msg"), publishError(err), "err");
       }
     });
 
