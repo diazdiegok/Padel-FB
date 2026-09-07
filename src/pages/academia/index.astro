@@ -1,16 +1,74 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { asset, page } from "../../lib/paths";
+
+const staff = [
+  {
+    name: "Fabián Borini",
+    role: "Dueño",
+    image: "images/fabian-borini.jpg",
+    bio: "Academia de pádel profesional y de niños. La misma exigencia que la liga.",
+    bullets: [] as string[],
+  },
+  {
+    name: "Barrionuevo Sebastián",
+    role: "Profe · preparador físico",
+    image: "images/barrionuevo-sebastian.png",
+    bio: "Entrenamiento personalizado con la metodología FB.",
+    bullets: [
+      "Preparador físico y profesor APA certificado",
+      "Profesor y coordinador general Academia Infantil FB",
+      "Jugador 5ta categoría",
+    ],
+    slots: [
+      { venue: "Club Palermo Pádel", when: "Lunes y jueves · 12 a 17 h" },
+      { venue: "Open Padel", when: "Martes, miércoles, viernes y sábados · 12 a 19 h" },
+    ],
+  },
+];
+
+const schedules = [
+  {
+    venue: "Terrazas Pádel",
+    place: "Ex Hipódromo · Paraná, Entre Ríos",
+    note: "Cupos disponibles · sumate a entrenar",
+    rows: [
+      { day: "Lunes", detail: "Cupos libres · 12:00 a 13:00 · 14:00" },
+      { day: "Miércoles", detail: "8va categoría · cupos libres · 11:00 · 12:00 · 13:00" },
+      { day: "Viernes", detail: "6ta categoría · 1 cupo libre · 11:00" },
+      { day: "Sábados", detail: "09:00 cupos libres · 11:00 1 cupo 7ma dama · 12:00 1 cupo 7ma/6ta" },
+    ],
+    highlights: [
+      "Canchas profesionales · césped y blindex",
+      "Profesores certificados APA con Nito Brea",
+      "Experiencia en Argentina y México",
+    ],
+  },
+  {
+    venue: "Club Ciclista",
+    place: "Paraná",
+    note: "Entrená en la academia",
+    rows: [{ day: "Lun · Mié · Vie · Sáb", detail: "14 a 18 h" }],
+    highlights: ["Entrenamiento personalizado con nuestra metodología"],
+  },
+  {
+    venue: "Club Talleres",
+    place: "Paraná",
+    note: "Entrená en la academia",
+    rows: [{ day: "Martes y jueves", detail: "14 a 18 h" }],
+    highlights: ["Entrenamiento personalizado con nuestra metodología"],
+  },
+];
 ---
 <Layout
-  title="Academia FB | Clases de pádel en Paraná"
-  description="Academia de pádel profesional y de niños de Fabián Borini. Clases de lunes a viernes en Paraná."
+  title="Academia | Padel FB"
+  description="Clases de pádel de la Academia FB en Paraná. Fabián Borini, Barrionuevo Sebastián y horarios en Terrazas, Ciclista, Talleres, Palermo y Open."
 >
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker">Academia de Fabián Borini</p>
+      <p class="kicker">Academia FB</p>
       <h1>Entrená<br />como se juega</h1>
-      <p>Clases de adultos y niños, lunes a viernes, de 10 a 17. Técnica, partido y competencia. La liga es el examen; la academia, el entrenamiento.</p>
+      <p>Clases de adultos y niños. Técnica, partido y competencia. La liga es el examen; la academia, el entrenamiento.</p>
       <div class="actions">
         <a class="btn btn-lime" href={page("inscripcion/")}>Quiero clases</a>
         <a class="btn btn-ghost" href={page("academia/sedes/")}>Ver sedes</a>
@@ -19,12 +77,39 @@ import { asset, page } from "../../lib/paths";
   </div>
 
   <section>
-    <div class="wrap sede-grid" style="gap:32px;align-items:center">
-      <img class="portrait" src={asset("images/fabian-borini.jpg")} alt="Fabián Borini" />
-      <div>
-        <p class="kicker">Dueño</p>
-        <h2>Fabián Borini</h2>
-        <p class="lead">Academia de pádel profesional y de niños. La misma exigencia que la liga nocturna.</p>
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="kicker">Equipo</p>
+          <h2>Con quién entrenás</h2>
+        </div>
+      </div>
+      <div class="staff-list">
+        {staff.map((p) => (
+          <article class="staff-card">
+            <img class="portrait staff-photo" src={asset(p.image)} alt={p.name} />
+            <div>
+              <p class="kicker" style="margin:0">{p.role}</p>
+              <h2>{p.name}</h2>
+              <p class="lead">{p.bio}</p>
+              {p.bullets.length > 0 && (
+                <ul class="staff-bullets">
+                  {p.bullets.map((b) => <li>{b}</li>)}
+                </ul>
+              )}
+              {p.slots && (
+                <div class="slot-list">
+                  {p.slots.map((s) => (
+                    <div class="slot-row">
+                      <strong>{s.venue}</strong>
+                      <span>{s.when}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </article>
+        ))}
       </div>
     </div>
   </section>
@@ -41,36 +126,17 @@ import { asset, page } from "../../lib/paths";
         <article class="step">
           <div class="n">01</div>
           <h3>Adultos</h3>
-          <p>Técnica, táctica y partido. Grupos por nivel.</p>
+          <p>Técnica, táctica y partido. Grupos por nivel y categoría.</p>
         </article>
         <article class="step">
           <div class="n">02</div>
           <h3>Niños</h3>
-          <p>Iniciación y competencia. Que quieran volver el martes.</p>
+          <p>Academia infantil FB. Iniciación y competencia.</p>
         </article>
         <article class="step">
           <div class="n">03</div>
-          <h3>Complemento</h3>
-          <p>Nutricionista y gym para rendir en la liga.</p>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section style="padding-top:0">
-    <div class="wrap">
-      <div class="venues">
-        <article class="venue">
-          <div class="venue-photo"><img class="photo" src={asset("images/gym-1.jpg")} alt="Gym" /><span>Gym</span></div>
-          <div class="venue-body"><h3>Gimnasio</h3><p>Complemento físico para la liga.</p></div>
-        </article>
-        <article class="venue">
-          <div class="venue-photo"><img class="photo" src={asset("images/nutri-1.jpg")} alt="Nutrición" /><span>Nutri</span></div>
-          <div class="venue-body"><h3>Nutricionista</h3><p>Acompañamiento para rendir en cancha.</p></div>
-        </article>
-        <article class="venue">
-          <div class="venue-photo"><img class="photo" src={asset("images/DSC0348-scaled.jpg")} alt="Clase de pádel" /><span>Cancha</span></div>
-          <div class="venue-body"><h3>En cancha</h3><p>Foto real de la academia en Complejo Capitán.</p></div>
+          <h3>Personalizado</h3>
+          <p>Entrenamiento a medida con la metodología FB.</p>
         </article>
       </div>
     </div>
@@ -81,23 +147,35 @@ import { asset, page } from "../../lib/paths";
       <div class="section-head">
         <div>
           <p class="kicker">Grilla</p>
-          <h2>Horarios</h2>
+          <h2>Horarios y sedes</h2>
         </div>
-        <p>Turnos de 10 a 17, lunes a viernes. Confirmá cupo por WhatsApp.</p>
+        <p>Reservá tu lugar por WhatsApp. Los cupos cambian semana a semana.</p>
       </div>
-      <table class="schedule">
-        <thead>
-          <tr><th></th><th>Lun</th><th>Mar</th><th>Mié</th><th>Jue</th><th>Vie</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>10–11</td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td></tr>
-          <tr><td>11–12</td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td></tr>
-          <tr><td>12–13</td><td><span class="dot"></span></td><td><span class="dot off"></span></td><td><span class="dot"></span></td><td><span class="dot off"></span></td><td><span class="dot"></span></td></tr>
-          <tr><td>14–15</td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td></tr>
-          <tr><td>15–16</td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td></tr>
-          <tr><td>16–17</td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot off"></span></td></tr>
-        </tbody>
-      </table>
+      <div class="class-grid">
+        {schedules.map((s) => (
+          <article class="class-card">
+            <p class="kicker" style="margin:0">{s.note}</p>
+            <h3>{s.venue}</h3>
+            <p class="class-place">{s.place}</p>
+            <div class="class-rows">
+              {s.rows.map((r) => (
+                <div class="class-row">
+                  <strong>{r.day}</strong>
+                  <span>{r.detail}</span>
+                </div>
+              ))}
+            </div>
+            {s.highlights.length > 0 && (
+              <ul class="class-notes">
+                {s.highlights.map((h) => <li>{h}</li>)}
+              </ul>
+            )}
+          </article>
+        ))}
+      </div>
+      <div class="actions" style="margin-top:28px">
+        <a class="btn btn-lime" href={page("inscripcion/")}>Reservar por WhatsApp</a>
+      </div>
     </div>
   </section>
 </Layout>

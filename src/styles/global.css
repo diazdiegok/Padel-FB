@@ -693,6 +693,81 @@ footer strong { color: var(--cream); }
   flex-wrap: wrap;
 }
 .sponsors img { height: 48px; width: auto; object-fit: contain; filter: grayscale(1) brightness(1.4); }
+
+.staff-list { display: grid; gap: 28px; }
+.staff-card {
+  display: grid;
+  grid-template-columns: minmax(180px, 280px) 1fr;
+  gap: 28px;
+  align-items: center;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 20px;
+}
+.staff-photo {
+  width: 100%;
+  max-width: none;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: top center;
+}
+.staff-bullets {
+  margin: 16px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  display: grid;
+  gap: 6px;
+}
+.slot-list { display: grid; gap: 10px; margin-top: 18px; }
+.slot-row {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+.slot-row strong { font-size: 14px; letter-spacing: 0.04em; text-transform: uppercase; }
+.slot-row span { color: var(--muted); font-size: 14px; }
+.class-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+.class-card {
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 22px 20px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+.class-card h3 { margin: 0; font-size: 28px; }
+.class-place { color: var(--muted); margin: 0; font-size: 13px; }
+.class-rows { display: grid; gap: 10px; }
+.class-row {
+  display: grid;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.class-row strong {
+  color: var(--lime);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.class-row span { color: var(--cream); font-size: 14px; line-height: 1.45; }
+.class-notes {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 13px;
+  display: grid;
+  gap: 4px;
+}
+@media (max-width: 860px) {
+  .staff-card { grid-template-columns: 1fr; }
+}
 @media (max-width: 860px) {
   .team { grid-template-columns: repeat(2, 1fr); }
   .hero-media::before { background-position: 70% center; }
