@@ -1066,7 +1066,47 @@ footer strong { color: var(--cream); }
 .admin-msg { font-size: 13px; color: var(--muted); min-height: 1.2em; }
 .admin-msg.ok { color: var(--lime); }
 .admin-msg.err { color: #ff8a8a; }
-.admin-tabs { display: flex; gap: 8px; margin: 12px 0 8px; }
+.admin-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 16px; }
+.cms-form { max-width: 720px; margin: 16px 0 8px; }
+.cms-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 12px;
+}
+.cms-head h3 { margin: 0; font-size: 22px; }
+.cms-list { display: grid; gap: 14px; margin-bottom: 20px; }
+.cms-card {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: 16px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 16px;
+}
+.cms-card-plain { grid-template-columns: 1fr; }
+.cms-photo {
+  width: 132px;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  background: #0c100e;
+}
+.cms-photo-empty {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+.cms-fields { display: grid; gap: 10px; }
+.cms-fields label { margin: 0; }
+.cms-card-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cms-checks { display: flex; flex-wrap: wrap; gap: 16px; }
+@media (max-width: 720px) {
+  .cms-card { grid-template-columns: 1fr; }
+  .cms-photo, .cms-photo-empty { width: min(100%, 220px); }
+}
 .btn-danger { background: transparent; border: 1px solid #ff8a8a; color: #ff8a8a; padding: 6px 10px; cursor: pointer; }
 .admin-help { color: var(--muted); font-size: 13px; max-width: 720px; line-height: 1.5; margin: 0; }
 .admin-help a { color: var(--lime); }

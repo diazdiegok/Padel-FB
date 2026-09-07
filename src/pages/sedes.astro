@@ -3,52 +3,58 @@ import Layout from "../layouts/Layout.astro";
 import { site } from "../data/site";
 import { asset } from "../lib/paths";
 import VenueLinks from "../components/VenueLinks.astro";
+
+const venues = (site.venues || []).filter((v) => v.liga !== false);
 ---
 <Layout
-  title="Sedes de la liga | Padel FB Paraná"
-  description="Canchas oficiales de Padel FB en Paraná: Palermo Padel, Open Padel, Americas Padel, Terrazas Padel y Bengurion Padel."
+  title={`Sedes de la liga | Padel FB ${site.city}`}
+  description={`Canchas oficiales de Padel FB en ${site.city}.`}
 >
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker">Padel FB · Paraná, Entre Ríos</p>
+      <p class="kicker">Padel FB · {site.city}, {site.province}</p>
       <h1>Sedes</h1>
       <p>Canchas oficiales de la liga. Direcciones, Instagram y WhatsApp de cada complejo.</p>
     </header>
 
-    {site.venues.map((v) => (
+    {venues.map((v) => (
       <section id={v.id} style="padding:16px 0 28px">
         <article class="venue sede-grid">
           <div class="venue-photo">
-            <img class="photo" src={asset(v.image)} alt={v.name} />
+            {v.image && <img class="photo" src={asset(v.image)} alt={v.name} />}
             <span>{v.name}</span>
           </div>
           <div class="venue-body">
             <h2>{v.name}</h2>
-            <p>{v.address}</p>
-            <p>{v.city}</p>
-            <p>{v.type}</p>
+            {v.address && <p>{v.address}</p>}
+            {v.city && <p>{v.city}</p>}
+            {v.type && <p>{v.type}</p>}
             <VenueLinks maps={v.maps} instagram={v.instagram} whatsapp={v.whatsapp} />
           </div>
         </article>
       </section>
     ))}
 
-    <section>
-      <div class="section-head">
-        <div>
-          <p class="kicker">También jugamos</p>
-          <h2>Otros complejos</h2>
+    {(site.moreVenues || []).length > 0 && (
+      <section>
+        <div class="section-head">
+          <div>
+            <p class="kicker">También jugamos</p>
+            <h2>Otros complejos</h2>
+          </div>
+          <p>La liga también pasa por otros complejos de la ciudad.</p>
         </div>
-        <p>La liga también pasa por Ciclista, Farola, Capitán y más — como dice el texto original de la liga.</p>
-      </div>
-      <div class="venues">
-        {site.moreVenues.map((v) => (
-          <article class="venue">
-            <div class="venue-photo"><img class="photo" src={asset(v.image)} alt={v.name} /></div>
-            <div class="venue-body"><h3>{v.name}</h3></div>
-          </article>
-        ))}
-      </div>
-    </section>
+        <div class="venues">
+          {site.moreVenues.map((v) => (
+            <article class="venue">
+              <div class="venue-photo">
+                {v.image && <img class="photo" src={asset(v.image)} alt={v.name} />}
+              </div>
+              <div class="venue-body"><h3>{v.name}</h3></div>
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
   </div>
 </Layout>

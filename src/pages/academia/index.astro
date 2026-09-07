@@ -1,58 +1,27 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import { site } from "../../data/site";
 import { asset, page } from "../../lib/paths";
 
-const staff = [
-  {
-    name: "Fabián Borini",
-    role: "Dueño y profe",
-    image: "images/staff-fabian-borini.png",
-    bio: "Fundador de Academia FB. También da clases: entrenamiento personalizado con la metodología FB.",
-    bullets: [
-      "Jugador segunda categoría",
-      "Profesor certificado APA",
-      "Fundador de Academia FB",
-    ],
-  },
-  {
-    name: "Barrionuevo Sebastián",
-    role: "Profe",
-    image: "images/staff-barrionuevo-sebastian.png",
-    bio: "Entrenamiento personalizado con la metodología FB.",
-    bullets: [
-      "Profesor APA certificado",
-      "Profesor y coordinador general Academia Infantil FB",
-      "Jugador 5ta categoría",
-    ],
-  },
-  {
-    name: "Gonzalo Labanca",
-    role: "Profe",
-    image: "images/staff-gonzalo-labanca.png",
-    bio: "Entrená en la academia. Entrenamiento personalizado con nuestra metodología.",
-    bullets: [] as string[],
-  },
-  {
-    name: "Thomas Putallaz",
-    role: "Profe",
-    image: "images/staff-thomas-putallaz.png",
-    bio: "Entrenamiento personalizado con la metodología FB.",
-    bullets: [
-      "Profesor certificado APA con Nito Brea",
-      "Experiencia en Argentina y México",
-    ],
-  },
-];
+const ac = site.academia || {};
+const staff = site.staff || [];
+const titleLines = String(ac.title || "Entrená como se juega").split("\n");
+const programs = ac.programs || [];
+const names = staff.map((p) => p.name).filter(Boolean).join(", ");
 ---
 <Layout
   title="Academia | Padel FB"
-  description="Clases de pádel de la Academia FB en Paraná. Fabián Borini, Barrionuevo Sebastián, Gonzalo Labanca y Thomas Putallaz."
+  description={`Clases de pádel de la Academia FB en ${site.city}.${names ? " " + names + "." : ""}`}
 >
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker">Academia FB</p>
-      <h1>Entrená<br />como se juega</h1>
-      <p>Clases de adultos y niños. Técnica, partido y competencia. La liga es el examen; la academia, el entrenamiento.</p>
+      <p class="kicker">{ac.kicker || "Academia FB"}</p>
+      <h1>
+        {titleLines.map((line, i) => (
+          <>{i > 0 && <br />}{line}</>
+        ))}
+      </h1>
+      <p>{ac.intro}</p>
       <div class="actions">
         <a class="btn btn-lime" href={page("inscripcion/")}>Quiero clases</a>
         <a class="btn btn-ghost" href={page("academia/sedes/")}>Ver sedes</a>
@@ -64,20 +33,20 @@ const staff = [
     <div class="wrap">
       <div class="section-head">
         <div>
-          <p class="kicker">Equipo</p>
-          <h2>Con quién entrenás</h2>
+          <p class="kicker">{ac.teamKicker || "Equipo"}</p>
+          <h2>{ac.teamTitle || "Con quién entrenás"}</h2>
         </div>
-        <p>El equipo de la academia. Reservá por WhatsApp.</p>
+        <p>{ac.teamNote}</p>
       </div>
       <div class="staff-list">
         {staff.map((p) => (
           <article class="staff-card">
-            <img class="staff-photo" src={asset(p.image)} alt={p.name} />
+            {p.image && <img class="staff-photo" src={asset(p.image)} alt={p.name} />}
             <div>
               <p class="staff-role">{p.role}</p>
               <h2>{p.name}</h2>
-              <p class="lead">{p.bio}</p>
-              {p.bullets.length > 0 && (
+              {p.bio && <p class="lead">{p.bio}</p>}
+              {p.bullets?.length > 0 && (
                 <ul class="staff-bullets">
                   {p.bullets.map((b) => <li>{b}</li>)}
                 </ul>
@@ -92,31 +61,25 @@ const staff = [
     </div>
   </section>
 
-  <section style="padding-top:0">
-    <div class="wrap">
-      <div class="section-head">
-        <div>
-          <p class="kicker">Programas</p>
-          <h2>Qué entrenás</h2>
+  {programs.length > 0 && (
+    <section style="padding-top:0">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="kicker">{ac.programsKicker || "Programas"}</p>
+            <h2>{ac.programsTitle || "Qué entrenás"}</h2>
+          </div>
+        </div>
+        <div class="steps">
+          {programs.map((pr) => (
+            <article class="step">
+              <div class="n">{pr.n}</div>
+              <h3>{pr.title}</h3>
+              <p>{pr.text}</p>
+            </article>
+          ))}
         </div>
       </div>
-      <div class="steps">
-        <article class="step">
-          <div class="n">01</div>
-          <h3>Adultos</h3>
-          <p>Técnica, táctica y partido. Grupos por nivel y categoría.</p>
-        </article>
-        <article class="step">
-          <div class="n">02</div>
-          <h3>Niños</h3>
-          <p>Academia infantil FB. Iniciación y competencia.</p>
-        </article>
-        <article class="step">
-          <div class="n">03</div>
-          <h3>Personalizado</h3>
-          <p>Entrenamiento a medida con la metodología FB.</p>
-        </article>
-      </div>
-    </div>
-  </section>
+    </section>
+  )}
 </Layout>

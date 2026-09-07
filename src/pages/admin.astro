@@ -47,7 +47,10 @@ import Layout from "../layouts/Layout.astro";
       <button class="pill on" type="button" data-tab="ranking">Ranking</button>
       <button class="pill" type="button" data-tab="fixture">Fixture</button>
       <button class="pill" type="button" data-tab="fecha">Fecha</button>
-      <button class="pill" type="button" data-tab="sitio">Datos del sitio</button>
+      <button class="pill" type="button" data-tab="academia">Academia</button>
+      <button class="pill" type="button" data-tab="sedes">Sedes</button>
+      <button class="pill" type="button" data-tab="torneos">Torneos</button>
+      <button class="pill" type="button" data-tab="sitio">Sitio</button>
     </div>
 
     <section id="tab-ranking">
@@ -156,6 +159,77 @@ import Layout from "../layouts/Layout.astro";
       <div id="disp-list" class="disp-list"></div>
     </section>
 
+    <section id="tab-academia" hidden>
+      <p class="admin-help">Cambiá profes y textos de la academia. Un renglón por viñeta. Elegí la foto desde la computadora.</p>
+      <form class="form cms-form" id="ac-copy">
+        <label>Título (un renglón = un corte)
+          <textarea name="title" rows="2"></textarea>
+        </label>
+        <label>Texto de arriba
+          <textarea name="intro" rows="3"></textarea>
+        </label>
+        <label>Texto del equipo
+          <input name="teamNote" />
+        </label>
+      </form>
+      <div class="cms-head">
+        <h3>Profes</h3>
+        <button class="btn btn-ghost" type="button" id="staff-add">+ Agregar profe</button>
+      </div>
+      <div class="cms-list" id="staff-list"></div>
+      <h3>Programas</h3>
+      <div class="cms-list" id="prog-list"></div>
+      <div class="admin-actions">
+        <button class="btn btn-lime" type="button" id="ac-save">Guardar academia</button>
+      </div>
+      <p class="admin-msg" id="ac-msg"></p>
+    </section>
+
+    <section id="tab-sedes" hidden>
+      <p class="admin-help">Complejos de la liga y la academia. Marcá dónde se ve cada uno.</p>
+      <div class="cms-head">
+        <h3>Sedes</h3>
+        <button class="btn btn-ghost" type="button" id="venue-add">+ Agregar sede</button>
+      </div>
+      <div class="cms-list" id="venue-list"></div>
+      <div class="cms-head">
+        <h3>Otros complejos</h3>
+        <button class="btn btn-ghost" type="button" id="more-add">+ Agregar</button>
+      </div>
+      <div class="cms-list" id="more-list"></div>
+      <div class="admin-actions">
+        <button class="btn btn-lime" type="button" id="venue-save">Guardar sedes</button>
+      </div>
+      <p class="admin-msg" id="venue-msg"></p>
+    </section>
+
+    <section id="tab-torneos" hidden>
+      <p class="admin-help">Si no hay torneos, la web muestra el aviso de “sin torneos”. Si agregás uno, se publica en la página.</p>
+      <form class="form cms-form" id="tn-copy">
+        <label>Título
+          <input name="title" />
+        </label>
+        <label>Texto de arriba
+          <textarea name="intro" rows="3"></textarea>
+        </label>
+        <label>Aviso si no hay torneos
+          <input name="emptyTitle" />
+        </label>
+        <label>Texto del aviso
+          <textarea name="emptyText" rows="3"></textarea>
+        </label>
+      </form>
+      <div class="cms-head">
+        <h3>Torneos</h3>
+        <button class="btn btn-ghost" type="button" id="tn-add">+ Agregar torneo</button>
+      </div>
+      <div class="cms-list" id="tn-list"></div>
+      <div class="admin-actions">
+        <button class="btn btn-lime" type="button" id="tn-save">Guardar torneos</button>
+      </div>
+      <p class="admin-msg" id="tn-msg"></p>
+    </section>
+
     <section id="tab-sitio" hidden>
       <form class="form" id="site-form" style="max-width:640px">
         <label>Temporada en juego
@@ -173,15 +247,15 @@ import Layout from "../layouts/Layout.astro";
         <label>Provincia
           <input name="province" />
         </label>
-        <label>Texto de la liga
+        <label>Texto de inicio
           <textarea name="ligaIntro" rows="6"></textarea>
         </label>
         <label>Token para cargar la fecha
-          <input name="submitToken" type="password" autocomplete="off" placeholder="Token Contents: write de este repo" />
+          <input name="submitToken" type="password" autocomplete="off" placeholder="Mismo token de Publicar" />
         </label>
         <p class="admin-help">Con este token las parejas pueden cargar disponibilidad en /fecha/. Puede ser el mismo de Publicar. Después de guardarlo, esperá ~1 minuto.</p>
         <button class="btn btn-ghost" type="button" id="copy-submit-token">Usar el token de esta sesión</button>
-        <button class="btn btn-lime" type="submit">Publicar datos del sitio</button>
+        <button class="btn btn-lime" type="submit">Guardar sitio</button>
       </form>
       <p class="admin-msg" id="site-msg"></p>
     </section>
@@ -231,6 +305,7 @@ import Layout from "../layouts/Layout.astro";
     let rows = structuredClone(initialRows);
     let siteData = structuredClone(initialSite);
     let fixture = structuredClone(initialFixture || []);
+    const BASE = import.meta.env.BASE_URL || "/";
     let token = sessionStorage.getItem(KEY) || "";
     let filterTemp = siteData.currentSeason || "T4";
     let filterCat = "TODAS";
@@ -285,16 +360,27 @@ import Layout from "../layouts/Layout.astro";
       return data;
     }
 
-    async function publishFile(filePath, content, message) {
-      const file = await api(`/repos/${owner}/${repo}/contents/${filePath}`);
+    async function getFileSha(filePath) {
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`, {
+        headers: headers(),
+      });
+      if (res.status === 404) return null;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Error GitHub " + res.status);
+      return data.sha || null;
+    }
+
+    async function publishFile(filePath, content, message, alreadyB64 = false) {
+      const sha = await getFileSha(filePath);
+      const body = {
+        message,
+        content: alreadyB64 ? content : toB64(content),
+        branch: "main",
+      };
+      if (sha) body.sha = sha;
       await api(`/repos/${owner}/${repo}/contents/${filePath}`, {
         method: "PUT",
-        body: JSON.stringify({
-          message,
-          content: toB64(content),
-          sha: file.sha,
-          branch: "main",
-        }),
+        body: JSON.stringify(body),
       });
     }
     async function publishFiles(files, message) {
@@ -398,6 +484,276 @@ import Layout from "../layouts/Layout.astro";
       form.ligaIntro.value = siteData.ligaIntro || "";
       form.submitToken.value = siteData.submitToken || "";
     }
+
+    function ensureCms() {
+      if (!siteData.academia) siteData.academia = {};
+      if (!Array.isArray(siteData.academia.programs)) {
+        siteData.academia.programs = [
+          { n: "01", title: "Adultos", text: "" },
+          { n: "02", title: "Niños", text: "" },
+          { n: "03", title: "Personalizado", text: "" },
+        ];
+      }
+      if (!Array.isArray(siteData.staff)) siteData.staff = [];
+      if (!siteData.torneos) siteData.torneos = {};
+      if (!Array.isArray(siteData.torneos.items)) siteData.torneos.items = [];
+      if (!Array.isArray(siteData.venues)) siteData.venues = [];
+      if (!Array.isArray(siteData.moreVenues)) siteData.moreVenues = [];
+    }
+
+    function escAttr(s) {
+      return String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;");
+    }
+
+    function assetUrl(path) {
+      if (!path) return "";
+      if (String(path).startsWith("data:")) return path;
+      return BASE + String(path).replace(/^\//, "");
+    }
+
+    function slugify(s) {
+      return String(s || "foto")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "") || "foto";
+    }
+
+    function fileExt(file) {
+      const n = String(file?.name || "").split(".").pop().toLowerCase();
+      if (["png", "jpg", "jpeg", "webp", "gif"].includes(n)) return n === "jpeg" ? "jpg" : n;
+      return "png";
+    }
+
+    function fileToB64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(",")[1] || "");
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function photoBox(src, alt) {
+      if (src) return `<img class="cms-photo" src="${escAttr(assetUrl(src))}" alt="${escAttr(alt)}" />`;
+      return `<div class="cms-photo cms-photo-empty">Sin foto</div>`;
+    }
+
+    function fillAcademiaForm() {
+      ensureCms();
+      const ac = siteData.academia;
+      const form = $("ac-copy");
+      form.title.value = ac.title || "";
+      form.intro.value = ac.intro || "";
+      form.teamNote.value = ac.teamNote || "";
+      $("staff-list").innerHTML = siteData.staff
+        .map((p, i) => `<article class="cms-card" data-staff="${i}">
+          ${photoBox(p._preview || p.image, p.name)}
+          <div class="cms-fields">
+            <label>Nombre <input data-k="name" value="${escAttr(p.name)}" /></label>
+            <label>Rol <input data-k="role" value="${escAttr(p.role)}" placeholder="Profe" /></label>
+            <label>Texto <textarea data-k="bio" rows="3">${escAttr(p.bio)}</textarea></label>
+            <label>Viñetas (un renglón cada una)
+              <textarea data-k="bullets" rows="4">${escAttr((p.bullets || []).join("\n"))}</textarea>
+            </label>
+            <div class="cms-card-actions">
+              <label class="btn btn-ghost" style="cursor:pointer">Elegir foto
+                <input data-photo="staff" type="file" accept="image/*" hidden />
+              </label>
+              <button class="btn btn-ghost" type="button" data-staff-del="${i}">Quitar</button>
+            </div>
+          </div>
+        </article>`)
+        .join("");
+      $("prog-list").innerHTML = siteData.academia.programs
+        .map((pr, i) => `<article class="cms-card cms-card-plain" data-prog="${i}">
+          <div class="cms-fields">
+            <label>Programa <input data-k="title" value="${escAttr(pr.title)}" /></label>
+            <label>Texto <textarea data-k="text" rows="2">${escAttr(pr.text)}</textarea></label>
+          </div>
+        </article>`)
+        .join("");
+    }
+
+    function fillVenueForm() {
+      ensureCms();
+      $("venue-list").innerHTML = siteData.venues
+        .map((v, i) => `<article class="cms-card" data-venue="${i}">
+          ${photoBox(v._preview || v.image, v.name)}
+          <div class="cms-fields">
+            <label>Nombre <input data-k="name" value="${escAttr(v.name)}" /></label>
+            <label>Dirección <input data-k="address" value="${escAttr(v.address)}" /></label>
+            <label>Ciudad <input data-k="city" value="${escAttr(v.city)}" /></label>
+            <label>Qué es <input data-k="type" value="${escAttr(v.type)}" placeholder="Cancha abierta · Liga y academia" /></label>
+            <label>WhatsApp <input data-k="whatsapp" value="${escAttr(v.whatsapp)}" placeholder="549..." /></label>
+            <label>Instagram <input data-k="instagram" value="${escAttr(v.instagram)}" /></label>
+            <label>Maps <input data-k="maps" value="${escAttr(v.maps)}" /></label>
+            <div class="cms-checks">
+              <label class="chk"><input data-k="liga" type="checkbox" ${v.liga !== false ? "checked" : ""} /> Liga</label>
+              <label class="chk"><input data-k="academia" type="checkbox" ${v.academia ? "checked" : ""} /> Academia</label>
+            </div>
+            <div class="cms-card-actions">
+              <label class="btn btn-ghost" style="cursor:pointer">Elegir foto
+                <input data-photo="venue" type="file" accept="image/*" hidden />
+              </label>
+              <button class="btn btn-ghost" type="button" data-venue-del="${i}">Quitar</button>
+            </div>
+          </div>
+        </article>`)
+        .join("");
+      $("more-list").innerHTML = siteData.moreVenues
+        .map((v, i) => `<article class="cms-card" data-more="${i}">
+          ${photoBox(v._preview || v.image, v.name)}
+          <div class="cms-fields">
+            <label>Nombre <input data-k="name" value="${escAttr(v.name)}" /></label>
+            <div class="cms-card-actions">
+              <label class="btn btn-ghost" style="cursor:pointer">Elegir foto
+                <input data-photo="more" type="file" accept="image/*" hidden />
+              </label>
+              <button class="btn btn-ghost" type="button" data-more-del="${i}">Quitar</button>
+            </div>
+          </div>
+        </article>`)
+        .join("");
+    }
+
+    function fillTorneosForm() {
+      ensureCms();
+      const t = siteData.torneos;
+      const form = $("tn-copy");
+      form.title.value = t.title || "";
+      form.intro.value = t.intro || "";
+      form.emptyTitle.value = t.emptyTitle || "";
+      form.emptyText.value = t.emptyText || "";
+      $("tn-list").innerHTML = (t.items || [])
+        .map((item, i) => `<article class="cms-card cms-card-plain" data-tn="${i}">
+          <div class="cms-fields">
+            <label>Nombre <input data-k="title" value="${escAttr(item.title)}" /></label>
+            <label>Cuándo <input data-k="when" value="${escAttr(item.when)}" placeholder="Ej. 20 de septiembre" /></label>
+            <label>Texto <textarea data-k="text" rows="3">${escAttr(item.text)}</textarea></label>
+            <div class="cms-card-actions">
+              <button class="btn btn-ghost" type="button" data-tn-del="${i}">Quitar</button>
+            </div>
+          </div>
+        </article>`)
+        .join("");
+    }
+
+    function readAcademiaFromDom() {
+      ensureCms();
+      const form = $("ac-copy");
+      siteData.academia = {
+        ...siteData.academia,
+        title: form.title.value.trim(),
+        intro: form.intro.value.trim(),
+        teamNote: form.teamNote.value.trim(),
+      };
+      $("staff-list").querySelectorAll("[data-staff]").forEach((card) => {
+        const i = Number(card.dataset.staff);
+        const p = siteData.staff[i];
+        if (!p) return;
+        p.name = card.querySelector("[data-k='name']")?.value.trim() || "";
+        p.role = card.querySelector("[data-k='role']")?.value.trim() || "Profe";
+        p.bio = card.querySelector("[data-k='bio']")?.value.trim() || "";
+        p.bullets = (card.querySelector("[data-k='bullets']")?.value || "")
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      });
+      $("prog-list").querySelectorAll("[data-prog]").forEach((card) => {
+        const i = Number(card.dataset.prog);
+        const pr = siteData.academia.programs[i];
+        if (!pr) return;
+        pr.title = card.querySelector("[data-k='title']")?.value.trim() || "";
+        pr.text = card.querySelector("[data-k='text']")?.value.trim() || "";
+      });
+    }
+
+    function readVenuesFromDom() {
+      ensureCms();
+      $("venue-list").querySelectorAll("[data-venue]").forEach((card) => {
+        const i = Number(card.dataset.venue);
+        const v = siteData.venues[i];
+        if (!v) return;
+        v.name = card.querySelector("[data-k='name']")?.value.trim() || "";
+        v.address = card.querySelector("[data-k='address']")?.value.trim() || "";
+        v.city = card.querySelector("[data-k='city']")?.value.trim() || "";
+        v.type = card.querySelector("[data-k='type']")?.value.trim() || "";
+        v.whatsapp = card.querySelector("[data-k='whatsapp']")?.value.trim() || "";
+        v.instagram = card.querySelector("[data-k='instagram']")?.value.trim() || "";
+        v.maps = card.querySelector("[data-k='maps']")?.value.trim() || "";
+        v.liga = !!card.querySelector("[data-k='liga']")?.checked;
+        v.academia = !!card.querySelector("[data-k='academia']")?.checked;
+        if (!v.id) v.id = slugify(v.name);
+      });
+      $("more-list").querySelectorAll("[data-more]").forEach((card) => {
+        const i = Number(card.dataset.more);
+        const v = siteData.moreVenues[i];
+        if (!v) return;
+        v.name = card.querySelector("[data-k='name']")?.value.trim() || "";
+      });
+    }
+
+    function readTorneosFromDom() {
+      ensureCms();
+      const form = $("tn-copy");
+      siteData.torneos = {
+        ...siteData.torneos,
+        title: form.title.value.trim() || "Torneos",
+        intro: form.intro.value.trim(),
+        emptyTitle: form.emptyTitle.value.trim(),
+        emptyText: form.emptyText.value.trim(),
+      };
+      $("tn-list").querySelectorAll("[data-tn]").forEach((card) => {
+        const i = Number(card.dataset.tn);
+        const item = siteData.torneos.items[i];
+        if (!item) return;
+        item.title = card.querySelector("[data-k='title']")?.value.trim() || "";
+        item.when = card.querySelector("[data-k='when']")?.value.trim() || "";
+        item.text = card.querySelector("[data-k='text']")?.value.trim() || "";
+      });
+    }
+
+    function cleanSiteForSave() {
+      const copy = structuredClone(siteData);
+      const strip = (obj) => {
+        if (!obj) return;
+        delete obj._file;
+        delete obj._preview;
+      };
+      (copy.staff || []).forEach(strip);
+      (copy.venues || []).forEach(strip);
+      (copy.moreVenues || []).forEach(strip);
+      return copy;
+    }
+
+    async function uploadPending(list, kind) {
+      for (const item of list) {
+        if (!item?._file) continue;
+        const name = slugify(item.name || kind) + "-" + Date.now() + "." + fileExt(item._file);
+        const path = "public/images/" + name;
+        await publishFile(path, await fileToB64(item._file), "Sube foto de " + (item.name || kind) + ".", true);
+        item.image = "images/" + name;
+        if (kind === "venue" || kind === "more") item.image = "/images/" + name;
+        delete item._file;
+        delete item._preview;
+      }
+    }
+
+    function requireToken(el) {
+      token = $("gh-token").value.trim();
+      if (!token) {
+        msg(el, "Para guardar pegá el token de Publicar arriba.", "err");
+        $("gh-token").focus();
+        return false;
+      }
+      sessionStorage.setItem(KEY, token);
+      return true;
+    }
     function fillDisp() {
       $("disp-week").value = disp.week || "Fecha 6";
       $("disp-open").checked = disp.open !== false;
@@ -455,9 +811,6 @@ import Layout from "../layouts/Layout.astro";
       a.href = URL.createObjectURL(new Blob(["\uFEFF" + body + "\n"], { type: "text/csv;charset=utf-8" }));
       a.download = filename;
       a.click();
-    }
-    function escAttr(v) {
-      return String(v || "").replace(/"/g, "&quot;");
     }
     function normCat(c) {
       const s = String(c || "").trim().toUpperCase().replace(/\s+/g, " ");
@@ -604,6 +957,9 @@ import Layout from "../layouts/Layout.astro";
       renderTable();
       renderFixture();
       fillSiteForm();
+      fillAcademiaForm();
+      fillVenueForm();
+      fillTorneosForm();
       fillDisp();
       reloadDisp();
     }
@@ -701,13 +1057,13 @@ import Layout from "../layouts/Layout.astro";
 
     document.querySelectorAll("[data-tab]").forEach((btn) => {
       btn.addEventListener("click", () => {
+        const tab = btn.dataset.tab;
         document.querySelectorAll("[data-tab]").forEach((b) => b.classList.remove("on"));
         btn.classList.add("on");
-        $("tab-ranking").hidden = btn.dataset.tab !== "ranking";
-        $("tab-fixture").hidden = btn.dataset.tab !== "fixture";
-        $("tab-fecha").hidden = btn.dataset.tab !== "fecha";
-        $("tab-sitio").hidden = btn.dataset.tab !== "sitio";
-        if (btn.dataset.tab === "fecha") reloadDisp();
+        document.querySelectorAll("section[id^='tab-']").forEach((sec) => {
+          sec.hidden = sec.id !== "tab-" + tab;
+        });
+        if (tab === "fecha") reloadDisp();
       });
     });
 
@@ -1059,6 +1415,166 @@ import Layout from "../layouts/Layout.astro";
       }
     });
 
+    function attachPhoto(item, file) {
+      item._file = file;
+      const reader = new FileReader();
+      reader.onload = () => {
+        item._preview = String(reader.result);
+        if (siteData.staff?.includes(item)) fillAcademiaForm();
+        else fillVenueForm();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    $("staff-add").addEventListener("click", () => {
+      readAcademiaFromDom();
+      siteData.staff.push({
+        id: "profe-" + Date.now(),
+        name: "",
+        role: "Profe",
+        image: "",
+        bio: "",
+        bullets: [],
+      });
+      fillAcademiaForm();
+    });
+    $("staff-list").addEventListener("click", (e) => {
+      const del = e.target.closest("[data-staff-del]");
+      if (!del) return;
+      readAcademiaFromDom();
+      siteData.staff.splice(Number(del.dataset.staffDel), 1);
+      fillAcademiaForm();
+    });
+    $("staff-list").addEventListener("change", (e) => {
+      const input = e.target.closest("[data-photo='staff']");
+      const file = input?.files?.[0];
+      if (!file) return;
+      const i = Number(input.closest("[data-staff]").dataset.staff);
+      readAcademiaFromDom();
+      attachPhoto(siteData.staff[i], file);
+    });
+
+    $("venue-add").addEventListener("click", () => {
+      readVenuesFromDom();
+      siteData.venues.push({
+        id: "sede-" + Date.now(),
+        name: "",
+        address: "",
+        city: siteData.city || "Paraná, Entre Ríos",
+        type: "",
+        image: "",
+        maps: "",
+        instagram: "",
+        whatsapp: "",
+        liga: true,
+        academia: false,
+      });
+      fillVenueForm();
+    });
+    $("venue-list").addEventListener("click", (e) => {
+      const del = e.target.closest("[data-venue-del]");
+      if (!del) return;
+      readVenuesFromDom();
+      siteData.venues.splice(Number(del.dataset.venueDel), 1);
+      fillVenueForm();
+    });
+    $("venue-list").addEventListener("change", (e) => {
+      const input = e.target.closest("[data-photo='venue']");
+      const file = input?.files?.[0];
+      if (!file) return;
+      const i = Number(input.closest("[data-venue]").dataset.venue);
+      readVenuesFromDom();
+      attachPhoto(siteData.venues[i], file);
+    });
+    $("more-add").addEventListener("click", () => {
+      readVenuesFromDom();
+      siteData.moreVenues.push({ name: "", image: "" });
+      fillVenueForm();
+    });
+    $("more-list").addEventListener("click", (e) => {
+      const del = e.target.closest("[data-more-del]");
+      if (!del) return;
+      readVenuesFromDom();
+      siteData.moreVenues.splice(Number(del.dataset.moreDel), 1);
+      fillVenueForm();
+    });
+    $("more-list").addEventListener("change", (e) => {
+      const input = e.target.closest("[data-photo='more']");
+      const file = input?.files?.[0];
+      if (!file) return;
+      const i = Number(input.closest("[data-more]").dataset.more);
+      readVenuesFromDom();
+      attachPhoto(siteData.moreVenues[i], file);
+    });
+
+    $("tn-add").addEventListener("click", () => {
+      readTorneosFromDom();
+      siteData.torneos.items.push({ title: "", when: "", text: "" });
+      fillTorneosForm();
+    });
+    $("tn-list").addEventListener("click", (e) => {
+      const del = e.target.closest("[data-tn-del]");
+      if (!del) return;
+      readTorneosFromDom();
+      siteData.torneos.items.splice(Number(del.dataset.tnDel), 1);
+      fillTorneosForm();
+    });
+
+    $("ac-save").addEventListener("click", async () => {
+      if (!requireToken($("ac-msg"))) return;
+      readAcademiaFromDom();
+      msg($("ac-msg"), "Guardando academia…");
+      try {
+        await uploadPending(siteData.staff, "staff");
+        await publishFile(
+          SITE_PATH,
+          JSON.stringify(cleanSiteForSave(), null, 2) + "\n",
+          "Actualiza academia desde el admin."
+        );
+        fillAcademiaForm();
+        msg($("ac-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
+      } catch (err) {
+        msg($("ac-msg"), err.message, "err");
+      }
+    });
+
+    $("venue-save").addEventListener("click", async () => {
+      if (!requireToken($("venue-msg"))) return;
+      readVenuesFromDom();
+      msg($("venue-msg"), "Guardando sedes…");
+      try {
+        await uploadPending(siteData.venues, "venue");
+        await uploadPending(siteData.moreVenues, "more");
+        await publishFile(
+          SITE_PATH,
+          JSON.stringify(cleanSiteForSave(), null, 2) + "\n",
+          "Actualiza sedes desde el admin."
+        );
+        fillVenueForm();
+        msg($("venue-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
+      } catch (err) {
+        msg($("venue-msg"), err.message, "err");
+      }
+    });
+
+    $("tn-save").addEventListener("click", async () => {
+      if (!requireToken($("tn-msg"))) return;
+      readTorneosFromDom();
+      siteData.torneos.items = (siteData.torneos.items || []).filter((item) => item.title || item.text || item.when);
+      msg($("tn-msg"), "Guardando torneos…");
+      try {
+        await publishFile(
+          SITE_PATH,
+          JSON.stringify(cleanSiteForSave(), null, 2) + "\n",
+          "Actualiza torneos desde el admin."
+        );
+        fillTorneosForm();
+        msg($("tn-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
+      } catch (err) {
+        msg($("tn-msg"), err.message, "err");
+      }
+    });
+
     $("site-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       token = $("gh-token").value.trim();
@@ -1079,11 +1595,11 @@ import Layout from "../layouts/Layout.astro";
         ligaIntro: form.ligaIntro.value.trim(),
         submitToken: form.submitToken.value.trim(),
       };
-      msg($("site-msg"), "Publicando datos…");
+      msg($("site-msg"), "Guardando sitio…");
       try {
         await publishFile(
           SITE_PATH,
-          JSON.stringify(siteData, null, 2) + "\n",
+          JSON.stringify(cleanSiteForSave(), null, 2) + "\n",
           "Actualiza datos del sitio desde el admin."
         );
         msg($("site-msg"), "Datos publicados. El sitio se actualiza en ~1 minuto.", "ok");

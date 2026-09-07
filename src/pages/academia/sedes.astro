@@ -4,12 +4,14 @@ import { site } from "../../data/site";
 import { asset, page } from "../../lib/paths";
 import VenueLinks from "../../components/VenueLinks.astro";
 
-const venues = site.venues.filter((v) => /academia|clases/i.test(v.type || ""));
-const list = venues.length ? venues : site.venues;
+const venues = (site.venues || []).filter((v) =>
+  v.academia === true || (v.academia == null && /academia|clases/i.test(v.type || ""))
+);
+const list = venues.length ? venues : site.venues || [];
 ---
 <Layout
   title="Sedes de academia | Padel FB"
-  description="Sedes donde se dictan clases de la Academia FB en Paraná."
+  description={`Sedes donde se dictan clases de la Academia FB en ${site.city}.`}
 >
   <div class="wrap">
     <header class="page-hero">
@@ -26,14 +28,14 @@ const list = venues.length ? venues : site.venues;
       <section id={v.id} style="padding:16px 0 28px">
         <article class="venue sede-grid">
           <div class="venue-photo">
-            <img class="photo" src={asset(v.image)} alt={v.name} />
+            {v.image && <img class="photo" src={asset(v.image)} alt={v.name} />}
             <span>{v.name}</span>
           </div>
           <div class="venue-body">
             <h2>{v.name}</h2>
-            <p>{v.address}</p>
-            <p>{v.city}</p>
-            <p>{v.type}</p>
+            {v.address && <p>{v.address}</p>}
+            {v.city && <p>{v.city}</p>}
+            {v.type && <p>{v.type}</p>}
             <VenueLinks maps={v.maps} instagram={v.instagram} whatsapp={v.whatsapp} />
           </div>
         </article>

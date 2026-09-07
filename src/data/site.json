@@ -10,6 +10,87 @@
   "githubRepo": "Padel-FB",
   "submitToken": "",
   "ligaIntro": "¡Bienvenidos a Padel FB! Liga, academia y torneos en Paraná. La liga se juega de lunes a sábado en los mejores complejos de la ciudad: Americas Padel, Talleres Padel, Ciclista Padel, Berduc Padel y La Farola Padel. Está organizada en categorías A, B y C, damas y caballeros, con un partido semanal.",
+  "academia": {
+    "kicker": "Academia FB",
+    "title": "Entrená\ncomo se juega",
+    "intro": "Clases de adultos y niños. Técnica, partido y competencia. La liga es el examen; la academia, el entrenamiento.",
+    "teamKicker": "Equipo",
+    "teamTitle": "Con quién entrenás",
+    "teamNote": "El equipo de la academia. Reservá por WhatsApp.",
+    "programsKicker": "Programas",
+    "programsTitle": "Qué entrenás",
+    "programs": [
+      {
+        "n": "01",
+        "title": "Adultos",
+        "text": "Técnica, táctica y partido. Grupos por nivel y categoría."
+      },
+      {
+        "n": "02",
+        "title": "Niños",
+        "text": "Academia infantil FB. Iniciación y competencia."
+      },
+      {
+        "n": "03",
+        "title": "Personalizado",
+        "text": "Entrenamiento a medida con la metodología FB."
+      }
+    ]
+  },
+  "staff": [
+    {
+      "id": "fabian-borini",
+      "name": "Fabián Borini",
+      "role": "Dueño y profe",
+      "image": "images/staff-fabian-borini.png",
+      "bio": "Fundador de Academia FB. También da clases: entrenamiento personalizado con la metodología FB.",
+      "bullets": [
+        "Jugador segunda categoría",
+        "Profesor certificado APA",
+        "Fundador de Academia FB"
+      ]
+    },
+    {
+      "id": "barrionuevo-sebastian",
+      "name": "Barrionuevo Sebastián",
+      "role": "Profe",
+      "image": "images/staff-barrionuevo-sebastian.png",
+      "bio": "Entrenamiento personalizado con la metodología FB.",
+      "bullets": [
+        "Profesor APA certificado",
+        "Profesor y coordinador general Academia Infantil FB",
+        "Jugador 5ta categoría"
+      ]
+    },
+    {
+      "id": "gonzalo-labanca",
+      "name": "Gonzalo Labanca",
+      "role": "Profe",
+      "image": "images/staff-gonzalo-labanca.png",
+      "bio": "Entrená en la academia. Entrenamiento personalizado con nuestra metodología.",
+      "bullets": []
+    },
+    {
+      "id": "thomas-putallaz",
+      "name": "Thomas Putallaz",
+      "role": "Profe",
+      "image": "images/staff-thomas-putallaz.png",
+      "bio": "Entrenamiento personalizado con la metodología FB.",
+      "bullets": [
+        "Profesor certificado APA con Nito Brea",
+        "Experiencia en Argentina y México"
+      ]
+    }
+  ],
+  "torneos": {
+    "kicker": "Próximamente",
+    "title": "Torneos",
+    "intro": "Acá van a vivir los torneos abiertos, brackets y resultados especiales. Todavía no hay fechas publicadas.",
+    "emptyKicker": "En preparación",
+    "emptyTitle": "Sin torneos por ahora",
+    "emptyText": "Cuando se confirmen, vas a poder ver inscripción, cuadro y resultados desde acá.",
+    "items": []
+  },
   "venues": [
     {
       "id": "palermo",
@@ -20,7 +101,9 @@
       "image": "/images/DJI_0239-scaled.jpg",
       "maps": "https://www.google.com/maps/search/?api=1&query=Santos+Dominguez+100+Parana",
       "instagram": "https://www.instagram.com/palermo_padel/",
-      "whatsapp": "5493435075537"
+      "whatsapp": "5493435075537",
+      "liga": true,
+      "academia": true
     },
     {
       "id": "open",
@@ -31,7 +114,9 @@
       "image": "/images/Talleres-cancha.jpg",
       "maps": "https://www.google.com/maps/search/?api=1&query=Augusto+Bravard+276+Parana",
       "instagram": "https://www.instagram.com/openpadelfb/",
-      "whatsapp": "5493434638322"
+      "whatsapp": "5493434638322",
+      "liga": true,
+      "academia": true
     },
     {
       "id": "americas",
@@ -42,7 +127,9 @@
       "image": "/images/americas-padel.jpg",
       "maps": "https://www.google.com/maps/place/Americas+Padel+Club/data=!4m2!3m1!1s0x0:0x848a22092083eac9",
       "instagram": "https://www.instagram.com/americaspadel/",
-      "whatsapp": "5493434630623"
+      "whatsapp": "5493434630623",
+      "liga": true,
+      "academia": true
     },
     {
       "id": "terrazas",
@@ -53,7 +140,9 @@
       "image": "/images/terrazas-padel.jpg",
       "maps": "https://www.google.com/maps/place/Terrazas+Padel/data=!4m2!3m1!1s0x0:0x52969520820609e2",
       "instagram": "https://www.instagram.com/terrazaspadelclub/",
-      "whatsapp": "5493435056072"
+      "whatsapp": "5493435056072",
+      "liga": true,
+      "academia": false
     },
     {
       "id": "bengurion",
@@ -64,7 +153,9 @@
       "image": "/images/bengurion-padel.jpg",
       "maps": "https://www.google.com/maps/place/Camping+David+Ben+Gurion/@-31.784139,-60.5199135,17z/data=!3m1!4b1!4m6!3m5!1s0x95b44c48b85fabb5:0x55085892176b3757!8m2!3d-31.7841436!4d-60.5173386",
       "instagram": "https://www.instagram.com/bengurionpadelclub/",
-      "whatsapp": "5493434767996"
+      "whatsapp": "5493434767996",
+      "liga": true,
+      "academia": false
     }
   ],
   "moreVenues": [
