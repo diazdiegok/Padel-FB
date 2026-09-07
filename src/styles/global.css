@@ -713,6 +713,14 @@ footer strong { color: var(--cream); }
   object-position: center 12%;
   background: #0c100e;
 }
+.staff-role {
+  color: var(--lime);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 10px;
+}
 .staff-bullets {
   margin: 16px 0 0;
   padding-left: 18px;

@@ -13,23 +13,16 @@ const staff = [
       "Profesor certificado APA",
       "Fundador de Academia FB",
     ],
-    slots: [
-      { venue: "Open Pádel FB", when: "Miércoles, jueves y viernes · 13:00 a 19:00 h" },
-    ],
   },
   {
     name: "Barrionuevo Sebastián",
-    role: "Profe · preparador físico",
+    role: "Profe",
     image: "images/staff-barrionuevo-sebastian.png",
     bio: "Entrenamiento personalizado con la metodología FB.",
     bullets: [
-      "Preparador físico y profesor APA certificado",
+      "Profesor APA certificado",
       "Profesor y coordinador general Academia Infantil FB",
       "Jugador 5ta categoría",
-    ],
-    slots: [
-      { venue: "Club Palermo Pádel", when: "Lunes y jueves · 12 a 17 h" },
-      { venue: "Open Padel", when: "Martes, miércoles, viernes y sábados · 12 a 19 h" },
     ],
   },
   {
@@ -38,30 +31,15 @@ const staff = [
     image: "images/staff-gonzalo-labanca.png",
     bio: "Entrená en la academia. Entrenamiento personalizado con nuestra metodología.",
     bullets: [] as string[],
-    slots: [
-      { venue: "Club Ciclista", when: "Lunes, miércoles, viernes y sábados · 14 a 18 h" },
-      { venue: "Club Talleres", when: "Martes y jueves · 14 a 18 h" },
-    ],
   },
   {
     name: "Thomas Putallaz",
-    role: "Profe · Terrazas Pádel",
+    role: "Profe",
     image: "images/staff-thomas-putallaz.png",
-    bio: "Entrená en Terrazas Pádel. Cupos disponibles · Ex Hipódromo, Paraná.",
+    bio: "Entrenamiento personalizado con la metodología FB.",
     bullets: [
-      "Canchas profesionales · césped y blindex",
-      "Profesores certificados APA con Nito Brea",
+      "Profesor certificado APA con Nito Brea",
       "Experiencia en Argentina y México",
-    ],
-    slots: [
-      { venue: "Lunes", when: "Cupos libres", detail: "12:00 a 13:00 · 14:00" },
-      { venue: "Miércoles", when: "8va categoría · cupos libres", detail: "11:00 · 12:00 · 13:00" },
-      { venue: "Viernes", when: "6ta categoría · 1 cupo libre", detail: "11:00" },
-      {
-        venue: "Sábados",
-        when: "Cupos por horario",
-        detail: "09:00 libres · 11:00 1 cupo 7ma dama · 12:00 1 cupo 7ma/6ta",
-      },
     ],
   },
 ];
@@ -89,31 +67,20 @@ const staff = [
           <p class="kicker">Equipo</p>
           <h2>Con quién entrenás</h2>
         </div>
-        <p>Horarios y sedes de cada profe. Reservá por WhatsApp.</p>
+        <p>El equipo de la academia. Reservá por WhatsApp.</p>
       </div>
       <div class="staff-list">
         {staff.map((p) => (
           <article class="staff-card">
             <img class="staff-photo" src={asset(p.image)} alt={p.name} />
             <div>
-              <p class="kicker" style="margin:0">{p.role}</p>
+              <p class="staff-role">{p.role}</p>
               <h2>{p.name}</h2>
               <p class="lead">{p.bio}</p>
               {p.bullets.length > 0 && (
                 <ul class="staff-bullets">
                   {p.bullets.map((b) => <li>{b}</li>)}
                 </ul>
-              )}
-              {p.slots.length > 0 && (
-                <div class="slot-list">
-                  {p.slots.map((s) => (
-                    <div class="slot-row">
-                      <strong>{s.venue}</strong>
-                      <span>{s.when}</span>
-                      {s.detail && <span class="slot-detail">{s.detail}</span>}
-                    </div>
-                  ))}
-                </div>
               )}
             </div>
           </article>
