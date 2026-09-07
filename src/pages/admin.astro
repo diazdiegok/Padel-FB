@@ -542,6 +542,9 @@ import Layout from "../layouts/Layout.astro";
       if (src) return `<img class="cms-photo" src="${escAttr(assetUrl(src))}" alt="${escAttr(alt)}" />`;
       return `<div class="cms-photo cms-photo-empty">Sin foto</div>`;
     }
+    function cmsMedia(src, alt, actions) {
+      return `<div class="cms-media">${photoBox(src, alt)}<div class="cms-card-actions">${actions}</div></div>`;
+    }
 
     function fillAcademiaForm() {
       ensureCms();
@@ -552,20 +555,19 @@ import Layout from "../layouts/Layout.astro";
       form.teamNote.value = ac.teamNote || "";
       $("staff-list").innerHTML = siteData.staff
         .map((p, i) => `<article class="cms-card" data-staff="${i}">
-          ${photoBox(p._preview || p.image, p.name)}
+          ${cmsMedia(p._preview || p.image, p.name, `
+            <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
+              <input data-photo="staff" type="file" accept="image/*" hidden />
+            </label>
+            <button class="btn cms-btn cms-btn-del" type="button" data-staff-del="${i}">Quitar</button>
+          `)}
           <div class="cms-fields">
             <label>Nombre <input data-k="name" value="${escAttr(p.name)}" /></label>
             <label>Rol <input data-k="role" value="${escAttr(p.role)}" placeholder="Profe" /></label>
-            <label>Texto <textarea data-k="bio" rows="3">${escAttr(p.bio)}</textarea></label>
-            <label>Viñetas (un renglón cada una)
-              <textarea data-k="bullets" rows="4">${escAttr((p.bullets || []).join("\n"))}</textarea>
+            <label class="cms-span">Texto <textarea data-k="bio" rows="3">${escAttr(p.bio)}</textarea></label>
+            <label class="cms-span">Viñetas (un renglón cada una)
+              <textarea data-k="bullets" rows="3">${escAttr((p.bullets || []).join("\n"))}</textarea>
             </label>
-            <div class="cms-card-actions">
-              <label class="btn btn-ghost" style="cursor:pointer">Elegir foto
-                <input data-photo="staff" type="file" accept="image/*" hidden />
-              </label>
-              <button class="btn btn-ghost" type="button" data-staff-del="${i}">Quitar</button>
-            </div>
           </div>
         </article>`)
         .join("");
@@ -573,7 +575,7 @@ import Layout from "../layouts/Layout.astro";
         .map((pr, i) => `<article class="cms-card cms-card-plain" data-prog="${i}">
           <div class="cms-fields">
             <label>Programa <input data-k="title" value="${escAttr(pr.title)}" /></label>
-            <label>Texto <textarea data-k="text" rows="2">${escAttr(pr.text)}</textarea></label>
+            <label class="cms-span">Texto <textarea data-k="text" rows="2">${escAttr(pr.text)}</textarea></label>
           </div>
         </article>`)
         .join("");
@@ -583,39 +585,37 @@ import Layout from "../layouts/Layout.astro";
       ensureCms();
       $("venue-list").innerHTML = siteData.venues
         .map((v, i) => `<article class="cms-card" data-venue="${i}">
-          ${photoBox(v._preview || v.image, v.name)}
+          ${cmsMedia(v._preview || v.image, v.name, `
+            <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
+              <input data-photo="venue" type="file" accept="image/*" hidden />
+            </label>
+            <button class="btn cms-btn cms-btn-del" type="button" data-venue-del="${i}">Quitar</button>
+          `)}
           <div class="cms-fields">
             <label>Nombre <input data-k="name" value="${escAttr(v.name)}" /></label>
-            <label>Dirección <input data-k="address" value="${escAttr(v.address)}" /></label>
             <label>Ciudad <input data-k="city" value="${escAttr(v.city)}" /></label>
-            <label>Qué es <input data-k="type" value="${escAttr(v.type)}" placeholder="Cancha abierta · Liga y academia" /></label>
+            <label class="cms-span">Dirección <input data-k="address" value="${escAttr(v.address)}" /></label>
+            <label class="cms-span">Qué es <input data-k="type" value="${escAttr(v.type)}" placeholder="Cancha abierta · Liga y academia" /></label>
             <label>WhatsApp <input data-k="whatsapp" value="${escAttr(v.whatsapp)}" placeholder="549..." /></label>
             <label>Instagram <input data-k="instagram" value="${escAttr(v.instagram)}" /></label>
-            <label>Maps <input data-k="maps" value="${escAttr(v.maps)}" /></label>
-            <div class="cms-checks">
-              <label class="chk"><input data-k="liga" type="checkbox" ${v.liga !== false ? "checked" : ""} /> Liga</label>
-              <label class="chk"><input data-k="academia" type="checkbox" ${v.academia ? "checked" : ""} /> Academia</label>
-            </div>
-            <div class="cms-card-actions">
-              <label class="btn btn-ghost" style="cursor:pointer">Elegir foto
-                <input data-photo="venue" type="file" accept="image/*" hidden />
-              </label>
-              <button class="btn btn-ghost" type="button" data-venue-del="${i}">Quitar</button>
+            <label class="cms-span">Maps <input data-k="maps" value="${escAttr(v.maps)}" /></label>
+            <div class="cms-checks cms-span">
+              <label class="cms-chip"><input data-k="liga" type="checkbox" ${v.liga !== false ? "checked" : ""} /> Liga</label>
+              <label class="cms-chip"><input data-k="academia" type="checkbox" ${v.academia ? "checked" : ""} /> Academia</label>
             </div>
           </div>
         </article>`)
         .join("");
       $("more-list").innerHTML = siteData.moreVenues
         .map((v, i) => `<article class="cms-card" data-more="${i}">
-          ${photoBox(v._preview || v.image, v.name)}
+          ${cmsMedia(v._preview || v.image, v.name, `
+            <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
+              <input data-photo="more" type="file" accept="image/*" hidden />
+            </label>
+            <button class="btn cms-btn cms-btn-del" type="button" data-more-del="${i}">Quitar</button>
+          `)}
           <div class="cms-fields">
-            <label>Nombre <input data-k="name" value="${escAttr(v.name)}" /></label>
-            <div class="cms-card-actions">
-              <label class="btn btn-ghost" style="cursor:pointer">Elegir foto
-                <input data-photo="more" type="file" accept="image/*" hidden />
-              </label>
-              <button class="btn btn-ghost" type="button" data-more-del="${i}">Quitar</button>
-            </div>
+            <label class="cms-span">Nombre <input data-k="name" value="${escAttr(v.name)}" /></label>
           </div>
         </article>`)
         .join("");
@@ -634,9 +634,9 @@ import Layout from "../layouts/Layout.astro";
           <div class="cms-fields">
             <label>Nombre <input data-k="title" value="${escAttr(item.title)}" /></label>
             <label>Cuándo <input data-k="when" value="${escAttr(item.when)}" placeholder="Ej. 20 de septiembre" /></label>
-            <label>Texto <textarea data-k="text" rows="3">${escAttr(item.text)}</textarea></label>
-            <div class="cms-card-actions">
-              <button class="btn btn-ghost" type="button" data-tn-del="${i}">Quitar</button>
+            <label class="cms-span">Texto <textarea data-k="text" rows="3">${escAttr(item.text)}</textarea></label>
+            <div class="cms-card-actions cms-span">
+              <button class="btn cms-btn cms-btn-del" type="button" data-tn-del="${i}">Quitar</button>
             </div>
           </div>
         </article>`)
