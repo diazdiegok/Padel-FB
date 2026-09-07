@@ -266,6 +266,7 @@ import Layout from "../layouts/Layout.astro";
     const initialSite = siteJson;
     const initialFixture = fixtureJson;
     const AUTH_KEY = "liga-fb-admin-ok";
+    const AUTH_DAYS = 14;
     const BUILTIN_TOKEN = import.meta.env.PUBLIC_SUBMIT_TOKEN || "";
     const PASS_SALT = "liga-fb-admin-v1";
     const owner = initialSite.githubOwner;
@@ -324,6 +325,7 @@ import Layout from "../layouts/Layout.astro";
     function msg(el, text, kind) {
       el.textContent = text;
       el.className = "admin-msg" + (kind ? " " + kind : "");
+      if (kind === "ok") keepLogin();
     }
     function num(v) {
       const n = Number(v);
@@ -949,9 +951,40 @@ import Layout from "../layouts/Layout.astro";
         })
         .join("");
     }
+    function isLoggedIn() {
+      try {
+        const raw = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
+        if (!raw) return false;
+        if (raw === "1") {
+          keepLogin();
+          return true;
+        }
+        const data = JSON.parse(raw);
+        if (!data?.ok || !data.exp || Date.now() > data.exp) {
+          clearLogin();
+          return false;
+        }
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    function keepLogin() {
+      localStorage.setItem(AUTH_KEY, JSON.stringify({
+        ok: 1,
+        exp: Date.now() + AUTH_DAYS * 24 * 60 * 60 * 1000,
+      }));
+      sessionStorage.removeItem(AUTH_KEY);
+    }
+    function clearLogin() {
+      localStorage.removeItem(AUTH_KEY);
+      sessionStorage.removeItem(AUTH_KEY);
+    }
+
     function showApp() {
       gate.hidden = true;
       app.hidden = false;
+      keepLogin();
       sessionStorage.removeItem("liga-fb-gh-token");
       token = getPublishToken();
       fillFilters();
@@ -1037,16 +1070,16 @@ import Layout from "../layouts/Layout.astro";
         }
         const otpOk = await totpOk(auth.totpSecret, $("otp").value);
         if (!otpOk) throw new Error("Código del autenticador incorrecto.");
-        sessionStorage.setItem(AUTH_KEY, "1");
+        keepLogin();
         showApp();
       } catch (err) {
-        sessionStorage.removeItem(AUTH_KEY);
+        clearLogin();
         msg($("login-msg"), err.message, "err");
       }
     });
 
     $("logout").addEventListener("click", () => {
-      sessionStorage.removeItem(AUTH_KEY);
+      clearLogin();
       location.reload();
     });
 
@@ -1573,6 +1606,6 @@ import Layout from "../layouts/Layout.astro";
       }
     });
 
-    if (sessionStorage.getItem(AUTH_KEY) === "1") showApp();
+    if (isLoggedIn()) showApp();
   </script>
 </Layout>
