@@ -45,9 +45,8 @@
       "image": "images/staff-fabian-borini.png",
       "bio": "Fundador de Academia FB. También da clases: entrenamiento personalizado con la metodología FB.",
       "bullets": [
-        "Jugador segunda categoría",
-        "Profesor certificado APA",
-        "Fundador de Academia FB"
+        "Jugador 2da categoría.",
+        "Profesor certificado APA."
       ]
     },
     {
@@ -55,11 +54,11 @@
       "name": "Barrionuevo Sebastián",
       "role": "Profe",
       "image": "images/staff-barrionuevo-sebastian.png",
-      "bio": "Entrenamiento personalizado con la metodología FB.",
+      "bio": "Entrenamiento personalizado.",
       "bullets": [
-        "Profesor APA certificado",
-        "Profesor y coordinador general Academia Infantil FB",
-        "Jugador 5ta categoría"
+        "Profesor APA certificado.",
+        "Profesor y coordinador general Academia Infantil FB.",
+        "Jugador 5ta categoría."
       ]
     },
     {
@@ -67,18 +66,20 @@
       "name": "Gonzalo Labanca",
       "role": "Profe",
       "image": "images/staff-gonzalo-labanca.png",
-      "bio": "Entrená en la academia. Entrenamiento personalizado con nuestra metodología.",
-      "bullets": []
+      "bio": "Entrenamiento personalizado.",
+      "bullets": [
+        "Jugador 3ra categoría."
+      ]
     },
     {
       "id": "thomas-putallaz",
       "name": "Thomas Putallaz",
       "role": "Profe",
       "image": "images/staff-thomas-putallaz.png",
-      "bio": "Entrenamiento personalizado con la metodología FB.",
+      "bio": "Entrenamiento personalizado.",
       "bullets": [
-        "Profesor certificado APA con Nito Brea",
-        "Experiencia en Argentina y México"
+        "Profesor certificado APA con Nito Brea.",
+        "Experiencia en Argentina y México."
       ]
     }
   ],
@@ -159,11 +160,26 @@
     }
   ],
   "moreVenues": [
-    { "name": "Complejo Capitán", "image": "/images/capitan-cancha.jpeg" },
-    { "name": "Ciclista", "image": "/images/ciclistac.jpg" },
-    { "name": "La Farola", "image": "/images/farola-c.jpg" },
-    { "name": "Recreativo", "image": "/images/recre-cancha.jpg" },
-    { "name": "Paraná Soccer", "image": "/images/pna-soccer-c.jpg" }
+    {
+      "name": "Complejo Capitán",
+      "image": "/images/capitan-cancha.jpeg"
+    },
+    {
+      "name": "Ciclista",
+      "image": "/images/ciclistac.jpg"
+    },
+    {
+      "name": "La Farola",
+      "image": "/images/farola-c.jpg"
+    },
+    {
+      "name": "Recreativo",
+      "image": "/images/recre-cancha.jpg"
+    },
+    {
+      "name": "Paraná Soccer",
+      "image": "/images/pna-soccer-c.jpg"
+    }
   ],
   "sponsors": [
     "/images/MM-LOGO.png",
