@@ -45,8 +45,8 @@
       "image": "images/staff-fabian-borini.png",
       "bio": "Fundador de Academia FB. También da clases: entrenamiento personalizado con la metodología FB.",
       "bullets": [
-        "Jugador 2da categoría.",
-        "Profesor certificado APA."
+        "Profesor certificado APA.",
+        "Jugador 2da categoría."
       ]
     },
     {
@@ -56,7 +56,7 @@
       "image": "images/staff-barrionuevo-sebastian.png",
       "bio": "Entrenamiento personalizado.",
       "bullets": [
-        "Profesor APA certificado.",
+        "Profesor certificado APA.",
         "Profesor y coordinador general Academia Infantil FB.",
         "Jugador 5ta categoría."
       ]
@@ -68,6 +68,7 @@
       "image": "images/staff-gonzalo-labanca.png",
       "bio": "Entrenamiento personalizado.",
       "bullets": [
+        "Profesor certificado.",
         "Jugador 3ra categoría."
       ]
     },
@@ -79,7 +80,8 @@
       "bio": "Entrenamiento personalizado.",
       "bullets": [
         "Profesor certificado APA con Nito Brea.",
-        "Experiencia en Argentina y México."
+        "Experiencia en Argentina y México.",
+        "Jugador 3ra categoría."
       ]
     }
   ],
@@ -94,50 +96,11 @@
   },
   "venues": [
     {
-      "id": "terrazas",
-      "name": "Terrazas Padel",
-      "address": "División Los Andes y Salvador Maciá",
-      "city": "Paraná, Entre Ríos",
-      "type": "Canchas abiertas - Alfombra y cemento",
-      "image": "/images/terrazas-padel.jpg",
-      "maps": "https://www.google.com/maps/place/Terrazas+Padel/data=!4m2!3m1!1s0x0:0x52969520820609e2",
-      "instagram": "https://www.instagram.com/terrazaspadelclub/",
-      "whatsapp": "5493435056072",
-      "liga": true,
-      "academia": true
-    },
-    {
-      "id": "sede-1788865630499",
-      "name": "Talleres Padel",
-      "address": "Toribio Ortiz 1712",
-      "city": "Paraná",
-      "type": "Canchas abiertas · Cemento",
-      "image": "/images/talleres-padel-1788866132154.png",
-      "maps": "https://www.google.com/maps/@-31.7481022,-60.5236016,73a,75y,113.68h,90t/data=!3m7!1e1!3m5!1skY7vvOWkuBKS4p2ZZJkCng!2e0!6shttps:%2F%2Fstreetviewpixels-pa.googleapis.com%2Fv1%2Fthumbnail%3Fcb_client%3Dmaps_sv.tactile%26w%3D900%26h%3D600%26pitch%3D0%26panoid%3DkY7vvOWkuBKS4p2ZZJkCng%26yaw%3D113.68!7i16384!8i8192?entry=ttu&g_ep=EgoyMDI2MDkwMi4wIKXMDSoASAFQAw%3D%3D",
-      "instagram": "https://www.instagram.com/clubtalleresparana",
-      "whatsapp": "5493434535029",
-      "liga": true,
-      "academia": true
-    },
-    {
-      "id": "open",
-      "name": "Open Padel",
-      "address": "Augusto Bravard 276",
-      "city": "E3100 Paraná, Entre Ríos",
-      "type": "Canchas abiertas - Cemento",
-      "image": "/images/Talleres-cancha.jpg",
-      "maps": "https://www.google.com/maps/search/?api=1&query=Augusto+Bravard+276+Parana",
-      "instagram": "https://www.instagram.com/openpadelfb/",
-      "whatsapp": "5493434638322",
-      "liga": true,
-      "academia": true
-    },
-    {
       "id": "palermo",
       "name": "Palermo Padel",
       "address": "Santos Domínguez 100",
       "city": "Paraná, Entre Ríos",
-      "type": "Canchas abiertas - Alfombra y cemento",
+      "type": "Cancha abierta · Liga nocturna y clases",
       "image": "/images/DJI_0239-scaled.jpg",
       "maps": "https://www.google.com/maps/search/?api=1&query=Santos+Dominguez+100+Parana",
       "instagram": "https://www.instagram.com/palermo_padel/",
@@ -146,41 +109,15 @@
       "academia": true
     },
     {
-      "id": "sede-1788866297203",
-      "name": "Ciclista Padel",
-      "address": "Santiago del Estero 360,",
-      "city": "Paraná",
-      "type": "Cancha abierta - Cemento",
-      "image": "/images/ciclista-padel-1788866382371.jpg",
-      "maps": "https://www.google.com/maps/place/Ciclista+Padel/@-31.7258262,-60.5346031,17z/data=!3m1!4b1!4m6!3m5!1s0x95b452629b1255b7:0x35f6703d24b05ce!8m2!3d-31.7258262!4d-60.5346031!16s%2Fg%2F11cn6dqxqt?entry=ttu&g_ep=EgoyMDI2MDkwMi4wIKXMDSoASAFQAw%3D%3D",
-      "instagram": "https://www.instagram.com/ciclista_toro_padel",
-      "whatsapp": "5493436212530",
-      "liga": true,
-      "academia": true
-    },
-    {
-      "id": "sede-1788866854805",
-      "name": "Recreativo Padel",
-      "address": "Italia 255",
-      "city": "Paraná",
-      "type": "Canchas abiertas - Cemento",
-      "image": "/images/recreativo-padel-1788867409211.png",
-      "maps": "https://www.google.com/maps?vet=10CAAQoqAOahcKEwjg08a48N6WAxUAAAAAHQAAAAAQCw..i&client=firefox-b-d&pvq=CgsvZy8xdGoyZDViNSIWChByZWNyZWF0aXZvIHBhZGVsEAIYAw&lqi=ChByZWNyZWF0aXZvIHBhZGVsSMWqmIHmgICACFoYEAAQARgAIhByZWNyZWF0aXZvIHBhZGVskgEEY2x1YpoBI0NoWkRTVWhOTUc5blMwVkpRMEZuU1VOc2NtOTJjMkYzRUFF-gEECAAQMQ&fvr=1&cs=1&um=1&ie=UTF-8&fb=1&gl=ar&sa=X&ftid=0x95b4527e40c313dd:0x554f3ae9c36bd8ea",
-      "instagram": "https://www.instagram.com/recreativo.parana",
-      "whatsapp": "5493435083224",
-      "liga": true,
-      "academia": true
-    },
-    {
-      "id": "bengurion",
-      "name": "Bengurion Padel",
-      "address": "Camping David Ben Gurion",
-      "city": "Paraná, Entre Ríos",
-      "type": "Canchas abiertas · Cemento",
-      "image": "/images/bengurion-padel.jpg",
-      "maps": "https://www.google.com/maps/place/Camping+David+Ben+Gurion/@-31.784139,-60.5199135,17z/data=!3m1!4b1!4m6!3m5!1s0x95b44c48b85fabb5:0x55085892176b3757!8m2!3d-31.7841436!4d-60.5173386",
-      "instagram": "https://www.instagram.com/bengurionpadelclub/",
-      "whatsapp": "5493434767996",
+      "id": "open",
+      "name": "Open Padel",
+      "address": "Augusto Bravard 276",
+      "city": "E3100 Paraná, Entre Ríos",
+      "type": "Cancha abierta · Liga y academia",
+      "image": "/images/Talleres-cancha.jpg",
+      "maps": "https://www.google.com/maps/search/?api=1&query=Augusto+Bravard+276+Parana",
+      "instagram": "https://www.instagram.com/openpadelfb/",
+      "whatsapp": "5493434638322",
       "liga": true,
       "academia": true
     },
@@ -189,13 +126,39 @@
       "name": "Americas Padel",
       "address": "Av. de las Américas 2904",
       "city": "Paraná, Entre Ríos",
-      "type": "Canchas abiertas - Cemento",
+      "type": "Cancha abierta · Liga y academia",
       "image": "/images/americas-padel.jpg",
       "maps": "https://www.google.com/maps/place/Americas+Padel+Club/data=!4m2!3m1!1s0x0:0x848a22092083eac9",
       "instagram": "https://www.instagram.com/americaspadel/",
       "whatsapp": "5493434630623",
       "liga": true,
       "academia": true
+    },
+    {
+      "id": "terrazas",
+      "name": "Terrazas Padel",
+      "address": "División Los Andes y Salvador Maciá",
+      "city": "Paraná, Entre Ríos",
+      "type": "Cancha abierta · Liga",
+      "image": "/images/terrazas-padel.jpg",
+      "maps": "https://www.google.com/maps/place/Terrazas+Padel/data=!4m2!3m1!1s0x0:0x52969520820609e2",
+      "instagram": "https://www.instagram.com/terrazaspadelclub/",
+      "whatsapp": "5493435056072",
+      "liga": true,
+      "academia": false
+    },
+    {
+      "id": "bengurion",
+      "name": "Bengurion Padel",
+      "address": "Camping David Ben Gurion",
+      "city": "Paraná, Entre Ríos",
+      "type": "Cancha abierta · Liga",
+      "image": "/images/bengurion-padel.jpg",
+      "maps": "https://www.google.com/maps/place/Camping+David+Ben+Gurion/@-31.784139,-60.5199135,17z/data=!3m1!4b1!4m6!3m5!1s0x95b44c48b85fabb5:0x55085892176b3757!8m2!3d-31.7841436!4d-60.5173386",
+      "instagram": "https://www.instagram.com/bengurionpadelclub/",
+      "whatsapp": "5493434767996",
+      "liga": true,
+      "academia": false
     }
   ],
   "moreVenues": [
@@ -204,8 +167,16 @@
       "image": "/images/capitan-cancha.jpeg"
     },
     {
+      "name": "Ciclista",
+      "image": "/images/ciclistac.jpg"
+    },
+    {
       "name": "La Farola",
       "image": "/images/farola-c.jpg"
+    },
+    {
+      "name": "Recreativo",
+      "image": "/images/recre-cancha.jpg"
     },
     {
       "name": "Paraná Soccer",
