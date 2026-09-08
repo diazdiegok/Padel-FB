@@ -127,7 +127,7 @@
       "maps": "https://www.google.com/maps/@-31.7481022,-60.5236016,73a,75y,113.68h,90t/data=!3m7!1e1!3m5!1skY7vvOWkuBKS4p2ZZJkCng!2e0!6shttps:%2F%2Fstreetviewpixels-pa.googleapis.com%2Fv1%2Fthumbnail%3Fcb_client%3Dmaps_sv.tactile%26w%3D900%26h%3D600%26pitch%3D0%26panoid%3DkY7vvOWkuBKS4p2ZZJkCng%26yaw%3D113.68!7i16384!8i8192?entry=ttu&g_ep=EgoyMDI2MDkwMi4wIKXMDSoASAFQAw%3D%3D",
       "instagram": "https://www.instagram.com/clubtalleresparana",
       "whatsapp": "5493434535029",
-      "liga": true,
+      "liga": false,
       "academia": true
     },
     {
@@ -166,7 +166,7 @@
       "maps": "https://www.google.com/maps/place/Ciclista+Padel/@-31.7258262,-60.5346031,17z/data=!3m1!4b1!4m6!3m5!1s0x95b452629b1255b7:0x35f6703d24b05ce!8m2!3d-31.7258262!4d-60.5346031!16s%2Fg%2F11cn6dqxqt?entry=ttu&g_ep=EgoyMDI2MDkwMi4wIKXMDSoASAFQAw%3D%3D",
       "instagram": "https://www.instagram.com/ciclista_toro_padel",
       "whatsapp": "5493436212530",
-      "liga": true,
+      "liga": false,
       "academia": true
     },
     {
@@ -179,7 +179,7 @@
       "maps": "https://www.google.com/maps?vet=10CAAQoqAOahcKEwjg08a48N6WAxUAAAAAHQAAAAAQCw..i&client=firefox-b-d&pvq=CgsvZy8xdGoyZDViNSIWChByZWNyZWF0aXZvIHBhZGVsEAIYAw&lqi=ChByZWNyZWF0aXZvIHBhZGVsSMWqmIHmgICACFoYEAAQARgAIhByZWNyZWF0aXZvIHBhZGVskgEEY2x1YpoBI0NoWkRTVWhOTUc5blMwVkpRMEZuU1VOc2NtOTJjMkYzRUFF-gEECAAQMQ&fvr=1&cs=1&um=1&ie=UTF-8&fb=1&gl=ar&sa=X&ftid=0x95b4527e40c313dd:0x554f3ae9c36bd8ea",
       "instagram": "https://www.instagram.com/recreativo.parana",
       "whatsapp": "5493435083224",
-      "liga": true,
+      "liga": false,
       "academia": true
     },
     {
@@ -205,24 +205,11 @@
       "maps": "https://www.google.com/maps/place/Americas+Padel+Club/data=!4m2!3m1!1s0x0:0x848a22092083eac9",
       "instagram": "https://www.instagram.com/americaspadel/",
       "whatsapp": "5493434630623",
-      "liga": false,
-      "academia": true
+      "liga": true,
+      "academia": false
     }
   ],
-  "moreVenues": [
-    {
-      "name": "Complejo Capitán",
-      "image": "/images/capitan-cancha.jpeg"
-    },
-    {
-      "name": "La Farola",
-      "image": "/images/farola-c.jpg"
-    },
-    {
-      "name": "Paraná Soccer",
-      "image": "/images/pna-soccer-c.jpg"
-    }
-  ],
+  "moreVenues": [],
   "sponsors": [
     "/images/MM-LOGO.png",
     "/images/Logo-redondo-FB-blanco.png",
