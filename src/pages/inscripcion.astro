@@ -36,12 +36,6 @@ import { site } from "../data/site";
           <option>No sé — me orientan</option>
         </select>
       </label>
-      <label>Sede preferida
-        <select name="sede">
-          {site.venues.map((v) => <option>{v.name}</option>)}
-          <option>Indistinto</option>
-        </select>
-      </label>
       <label>Comentario
         <textarea name="nota" rows="3" placeholder="Días, horario, si ya jugaste en la liga…"></textarea>
       </label>
@@ -59,7 +53,6 @@ import { site } from "../data/site";
         `Tel: ${data.tel}`,
         `Quiero: ${data.tipo}`,
         `Nivel: ${data.cat}`,
-        `Sede: ${data.sede}`,
         data.nota ? `Nota: ${data.nota}` : null,
       ]
         .filter(Boolean)
