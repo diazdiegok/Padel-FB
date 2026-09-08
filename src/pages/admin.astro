@@ -362,17 +362,24 @@ import Layout from "../layouts/Layout.astro";
     }
 
     async function publishFile(filePath, content, message, alreadyB64 = false) {
-      const sha = await getFileSha(filePath);
-      const body = {
-        message,
-        content: alreadyB64 ? content : toB64(content),
-        branch: "main",
-      };
-      if (sha) body.sha = sha;
-      await api(`/repos/${owner}/${repo}/contents/${filePath}`, {
-        method: "PUT",
-        body: JSON.stringify(body),
-      });
+      const payload = alreadyB64 ? content : toB64(content);
+      let lastErr;
+      for (let i = 0; i < 2; i++) {
+        try {
+          const sha = await getFileSha(filePath);
+          const body = { message, content: payload, branch: "main" };
+          if (sha) body.sha = sha;
+          await api(`/repos/${owner}/${repo}/contents/${filePath}`, {
+            method: "PUT",
+            body: JSON.stringify(body),
+          });
+          return;
+        } catch (err) {
+          lastErr = err;
+          if (!/does not match/i.test(String(err?.message || err)) || i === 1) throw err;
+        }
+      }
+      throw lastErr;
     }
     async function publishFiles(files, message) {
       const ref = await api(`/repos/${owner}/${repo}/git/refs/heads/main`);
@@ -777,6 +784,9 @@ import Layout from "../layouts/Layout.astro";
     }
     function publishError(err) {
       const m = String(err?.message || err);
+      if (/does not match/i.test(m)) {
+        return "El sitio se actualizó en otro lado. Tocá Guardar de nuevo.";
+      }
       if (/bad credentials/i.test(m) || /\b401\b/.test(m)) {
         return "No se pudo guardar. El permiso de publicación del sitio está vencido.";
       }
