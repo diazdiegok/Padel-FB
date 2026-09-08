@@ -4,8 +4,6 @@ RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 Redirect 301 /elementor-1025/ /ranking/
 Redirect 301 /elementor-1025 /ranking/
-Redirect 301 /liga/ /ranking/
-Redirect 301 /liga /ranking/
 Redirect 301 /elementor-1025/liga/ /ranking/
 Redirect 301 /elementor-1025/liga-t2/ /ranking/
 Redirect 301 /elementor-1025/liga-t3/ /ranking/

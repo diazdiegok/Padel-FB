@@ -14,10 +14,12 @@ const leaders = cats
   .map((cat) => live.filter((p) => p.cat === cat).sort((a, b) => a.pos - b.pos || b.pts - a.pts)[0])
   .filter(Boolean);
 const totalPlayers = rows.length;
+const leagueVenues = (site.venues || []).filter((v) => v.liga !== false);
+const featuredVenues = leagueVenues.slice(0, 4);
 ---
 <Layout
   title={`Padel FB | Liga y academia de pádel en ${site.city}`}
-  description="Liga y academia de pádel de Fabián Borini en Paraná. Ranking, fixture, clases de adultos y niños, tres sedes."
+  description={`Liga y academia de pádel de Fabián Borini en ${site.city}. Ranking, fixture y clases de adultos y niños.`}
 >
   <div class="hero-media" style={`--hero-img: url('${asset("images/DJI_0239-scaled.jpg")}')`}>
     <div class="wrap">
@@ -54,7 +56,7 @@ const totalPlayers = rows.length;
   <div class="wrap">
     <div class="stats">
       <div class="stat"><b>{totalPlayers}</b><span>Jugadores totales (todas las temporadas)</span></div>
-      <div class="stat"><b>3</b><span>Sedes oficiales</span></div>
+      <div class="stat"><b>{leagueVenues.length}</b><span>Sedes de la liga</span></div>
       <div class="stat"><b>1</b><span>Partido por semana</span></div>
     </div>
   </div>
@@ -77,7 +79,7 @@ const totalPlayers = rows.length;
         <article class="step">
           <div class="n">02</div>
           <h3>Jugás de noche</h3>
-          <p>En Palermo Padel, Open Padel, Americas Padel, Terrazas Padel o Bengurion Padel — y también en Ciclista, Farola y otros complejos de la ciudad.</p>
+          <p>En distintos complejos de la ciudad, según el fixture de cada semana.</p>
         </article>
         <article class="step">
           <div class="n">03</div>
@@ -114,35 +116,6 @@ const totalPlayers = rows.length;
     </div>
   </div>
 
-  <div class="split">
-    <div class="split-block">
-      <p class="kicker">Liga</p>
-      <h2>Competí</h2>
-      <p class="lead">Liga de pádel con ranking público de T1 a T4.</p>
-      <ul>
-        <li>Categorías A / B / C — damas y caballeros</li>
-        <li>Sedes en {site.city}</li>
-        <li>Ranking, fixture y resultados</li>
-      </ul>
-      <div class="actions">
-        <a class="btn btn-lime" href={page("liga/")}>Ir a la liga</a>
-      </div>
-    </div>
-    <div class="split-block">
-      <p class="kicker">Academia FB</p>
-      <h2>Entrená</h2>
-      <p class="lead">Academia de pádel profesional y de niños de Fabián Borini. Clases de lunes a viernes, de 10 a 17.</p>
-      <ul>
-        <li>Clases adultos — técnica y partido</li>
-        <li>Clases niños — iniciación y competencia</li>
-        <li>Nutricionista y gym</li>
-      </ul>
-      <div class="actions">
-        <a class="btn btn-ghost" href={page("academia/")}>Ver academia</a>
-      </div>
-    </div>
-  </div>
-
   <section>
     <div class="wrap">
       <div class="section-head">
@@ -153,10 +126,10 @@ const totalPlayers = rows.length;
         <a class="btn btn-ghost" href={page("sedes/")}>Todas las sedes</a>
       </div>
       <div class="venues">
-        {site.venues.map((v) => (
+        {featuredVenues.map((v) => (
           <article class="venue">
             <div class="venue-photo">
-              <img class="photo" src={asset(v.image)} alt={v.name} />
+              <img class="photo" src={asset(v.image)} alt={`${v.name}, cancha de pádel en ${v.address}`} loading="lazy" />
               <span>Abierta</span>
             </div>
             <div class="venue-body">

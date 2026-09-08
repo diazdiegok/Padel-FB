@@ -5,6 +5,7 @@ import { page } from "../../lib/paths";
 
 const t = site.torneos || {};
 const items = t.items || [];
+const tournamentWa = `https://wa.me/${site.whatsapp}?text=${encodeURIComponent("Hola, quiero que me avisen cuando haya nuevos torneos de Padel FB.")}`;
 ---
 <Layout
   title="Torneos | Padel FB"
@@ -37,7 +38,7 @@ const items = t.items || [];
         <p style="margin:0 0 24px">{t.emptyText}</p>
         <div class="actions" style="margin:0">
           <a class="btn btn-ghost" href={page("liga/")}>Ir a la liga</a>
-          <a class="btn btn-lime" href={page("inscripcion/")}>Consultar por WhatsApp</a>
+          <a class="btn btn-lime" href={tournamentWa} target="_blank" rel="noreferrer">Avisarme por WhatsApp</a>
         </div>
       </div>
     )}

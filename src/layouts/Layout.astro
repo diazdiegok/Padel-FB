@@ -12,8 +12,11 @@ const { title, description, noindex = false } = Astro.props;
 const path = Astro.url.pathname;
 const wa = `https://wa.me/${site.whatsapp}`;
 const logo = asset("images/Logo-FB-blanco-sin-fondo-02.png");
-const ogImage = "https://diazdiegok.github.io/Padel-FB/images/og-share.jpg";
-const ogUrl = "https://diazdiegok.github.io/Padel-FB/";
+const publicOrigin = Astro.site || new URL("https://diazdiegok.github.io");
+const canonicalUrl = new URL(path, publicOrigin).href;
+const ogImage = new URL(asset("images/og-share.jpg"), publicOrigin).href;
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+const isHome = path === basePath || path === `${basePath}/`;
 const inLiga =
   path.includes("/ranking") ||
   path.includes("/fixture") ||
@@ -35,7 +38,8 @@ const inTorneos = path.includes("/torneos");
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content={ogUrl} />
+    <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:url" content={canonicalUrl} />
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:secure_url" content={ogImage} />
     <meta property="og:image:type" content="image/jpeg" />
@@ -55,6 +59,7 @@ const inTorneos = path.includes("/torneos");
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Oswald:wght@500;600&display=swap" rel="stylesheet" />
   </head>
   <body class:list={["court", { "is-admin": noindex }]}>
+    <a class="skip-link" href="#main-content">Saltar al contenido</a>
     {!noindex && (
       <div class="splash" id="splash" hidden>
         <div class="splash-scene" aria-hidden="true">
@@ -82,14 +87,14 @@ const inTorneos = path.includes("/torneos");
         </div>
       </div>
     )}
-    <nav>
+    <nav aria-label="Navegación principal">
       <div class="wrap">
         <a class="brand" href={page("")}>
           <img src={logo} alt={site.name} />
           PADEL FB
         </a>
-        <ul class="nav-links">
-          <li><a href={page("")} aria-current={path.endsWith("/Padel-FB/") || path.endsWith("/Padel-FB") ? "page" : undefined}>Inicio</a></li>
+        <ul class="nav-links" id="site-menu">
+          <li><a href={page("")} aria-current={isHome ? "page" : undefined}>Inicio</a></li>
           <li class:list={["nav-item", { open: false }]}>
             <button class:list={["nav-trigger", { on: inLiga }]} type="button" data-nav-drop aria-expanded="false">Liga</button>
             <div class="nav-drop">
@@ -116,14 +121,15 @@ const inTorneos = path.includes("/torneos");
           <li><a href={page("torneos/")} class:list={[{ on: inTorneos }]} aria-current={inTorneos ? "page" : undefined}>Torneos</a></li>
         </ul>
         <div class="nav-actions">
-          <a class="nav-cta nav-cta-ghost" href={page("admin/")}>Admin</a>
           <button class="nav-cta nav-cta-ghost" type="button" id="nav-logout" hidden>Salir</button>
           <a class="nav-cta" href={page("inscripcion/")}>Sumate</a>
         </div>
-        <button class="menu-btn" type="button" data-menu>Menu</button>
+        <button class="menu-btn" type="button" data-menu aria-expanded="false" aria-controls="site-menu">Menu</button>
       </div>
     </nav>
-    <slot />
+    <main id="main-content" tabindex="-1">
+      <slot />
+    </main>
     <footer>
       <div class="wrap">
         <div>
@@ -131,9 +137,11 @@ const inTorneos = path.includes("/torneos");
           <p>Liga, academia y torneos de pádel · {site.city}, {site.province}</p>
         </div>
         <div>
+          <a href={page("admin/")}>Admin</a>
+          ·
           <a href={site.instagram} target="_blank" rel="noreferrer">Instagram</a>
           ·
-          <a href={page("inscripcion/")}>WhatsApp</a>
+          <a href={wa} target="_blank" rel="noreferrer">WhatsApp</a>
         </div>
       </div>
     </footer>
@@ -143,8 +151,10 @@ const inTorneos = path.includes("/torneos");
       </svg>
     </a>
     <script>
-      document.querySelector("[data-menu]")?.addEventListener("click", () => {
-        document.querySelector("nav")?.classList.toggle("open");
+      const menuBtn = document.querySelector("[data-menu]");
+      menuBtn?.addEventListener("click", () => {
+        const open = document.querySelector("nav")?.classList.toggle("open") || false;
+        menuBtn.setAttribute("aria-expanded", String(open));
       });
       document.querySelectorAll("[data-nav-drop]").forEach((btn) => {
         btn.addEventListener("click", (e) => {
@@ -162,6 +172,13 @@ const inTorneos = path.includes("/torneos");
             btn.setAttribute("aria-expanded", open ? "false" : "true");
           }
         });
+        btn.addEventListener("keydown", (e) => {
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            if (btn.getAttribute("aria-expanded") !== "true") btn.click();
+            btn.closest(".nav-item")?.querySelector(".nav-drop a")?.focus();
+          }
+        });
       });
       document.querySelectorAll(".nav-item").forEach((item) => {
         item.addEventListener("click", (e) => e.stopPropagation());
@@ -172,15 +189,25 @@ const inTorneos = path.includes("/torneos");
           el.querySelector("[data-nav-drop]")?.setAttribute("aria-expanded", "false");
         });
       });
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        document.querySelectorAll(".nav-item.open").forEach((el) => {
+          el.classList.remove("open");
+          const btn = el.querySelector("[data-nav-drop]");
+          btn?.setAttribute("aria-expanded", "false");
+          btn?.focus();
+        });
+        document.querySelector("nav")?.classList.remove("open");
+        menuBtn?.setAttribute("aria-expanded", "false");
+      });
       const AUTH_KEY = "liga-fb-admin-ok";
       const logoutBtn = document.getElementById("nav-logout");
       function adminLoggedIn() {
         try {
           const raw = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
           if (!raw) return false;
-          if (raw === "1") return true;
           const data = JSON.parse(raw);
-          return !!(data?.ok && data.exp && Date.now() <= data.exp);
+          return !!(data?.token && data.exp && Date.now() <= data.exp);
         } catch {
           return false;
         }

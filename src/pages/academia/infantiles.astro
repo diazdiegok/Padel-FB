@@ -98,7 +98,7 @@ for (const g of kids.groups || []) {
         {kidsVenues.map((v) => (
           <article class="venue sede-grid" id={v.id} style="margin-bottom:28px">
             <div class="venue-photo">
-              {v.image && <img class="photo" src={asset(v.image)} alt={v.name} />}
+              {v.image && <img class="photo" src={asset(v.image)} alt={`${v.name}, cancha de pádel en ${v.address}`} loading="lazy" />}
               <span>{v.name}</span>
             </div>
             <div class="venue-body">

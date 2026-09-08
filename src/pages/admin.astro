@@ -163,6 +163,9 @@ import Layout from "../layouts/Layout.astro";
           <label class="admin-week">Fecha
             <input id="disp-week" placeholder="Fecha 6" />
           </label>
+          <label class="admin-week">Fecha límite
+            <input id="disp-deadline" placeholder="Viernes 11/9 a las 18:00" />
+          </label>
           <label class="chk"><input id="disp-open" type="checkbox" checked /> Carga abierta</label>
           <button class="btn btn-ghost" type="button" id="disp-reload">Actualizar</button>
           <button class="btn btn-lime" type="button" id="disp-publish">Guardar fecha</button>
@@ -316,21 +319,18 @@ import Layout from "../layouts/Layout.astro";
     import rankingJson from "../data/ranking.json";
     import fixtureJson from "../data/fixture.json";
     import siteJson from "../data/site.json";
-    import auth from "../data/admin-auth.json";
     import dispJson from "../data/disponibilidad.json";
     import { applyFixtureResults, describeResult } from "../lib/scoring.js";
-    import { pairLabel, loadDisponibilidad, saveDisponibilidad } from "../lib/disponibilidad.js";
+    import { DISP_PATH, pairLabel } from "../lib/disponibilidad.js";
 
     const HIDDEN_CATS = new Set(["S Masculina"]);
     const initialRows = rankingJson.filter((p) => !HIDDEN_CATS.has(p.cat));
     const initialSite = siteJson;
     const initialFixture = fixtureJson;
     const AUTH_KEY = "liga-fb-admin-ok";
-    const AUTH_DAYS = 14;
-    const BUILTIN_TOKEN = import.meta.env.PUBLIC_SUBMIT_TOKEN || "";
-    const PASS_SALT = "liga-fb-admin-v1";
     const owner = initialSite.githubOwner;
     const repo = initialSite.githubRepo;
+    const API_URL = String(initialSite.apiUrl || "").replace(/\/$/, "");
     const RANK_PATH = "src/data/ranking.json";
     const SITE_PATH = "src/data/site.json";
     let disp = structuredClone(dispJson);
@@ -358,7 +358,7 @@ import Layout from "../layouts/Layout.astro";
     let siteData = structuredClone(initialSite);
     let fixture = structuredClone(initialFixture || []);
     const BASE = import.meta.env.BASE_URL || "/";
-    let token = String(BUILTIN_TOKEN || siteData.submitToken || "").trim();
+    let token = "";
     let filterTemp = siteData.currentSeason || "T4";
     let filterCat = "TODAS";
 
@@ -371,16 +371,6 @@ import Layout from "../layouts/Layout.astro";
     }
     function fromB64(b64) {
       return decodeURIComponent(escape(atob(b64)));
-    }
-    function headers() {
-      token = getPublishToken();
-      const h = {
-        Accept: "application/vnd.github+json",
-        "Content-Type": "application/json",
-        "X-GitHub-Api-Version": "2022-11-28",
-      };
-      if (token) h.Authorization = "Bearer " + token;
-      return h;
     }
     function msg(el, text, kind) {
       el.textContent = text;
@@ -404,9 +394,19 @@ import Layout from "../layouts/Layout.astro";
     }
 
     async function api(path, opts = {}) {
-      const res = await fetch("https://api.github.com" + path, {
-        ...opts,
-        headers: { ...headers(), ...(opts.headers || {}) },
+      if (!API_URL) throw new Error("Falta configurar la API segura del sitio.");
+      token = getPublishToken();
+      const res = await fetch(`${API_URL}/github`, {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          path,
+          method: opts.method || "GET",
+          body: opts.body,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -416,13 +416,13 @@ import Layout from "../layouts/Layout.astro";
     }
 
     async function getFileSha(filePath) {
-      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`, {
-        headers: headers(),
-      });
-      if (res.status === 404) return null;
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.message || "Error GitHub " + res.status);
-      return data.sha || null;
+      try {
+        const data = await api(`/repos/${owner}/${repo}/contents/${filePath}`);
+        return data.sha || null;
+      } catch (error) {
+        if (/\b404\b|not found|no encontrado/i.test(String(error?.message || error))) return null;
+        throw error;
+      }
     }
 
     async function publishFile(filePath, content, message, alreadyB64 = false) {
@@ -924,12 +924,17 @@ import Layout from "../layouts/Layout.astro";
     }
 
     function getPublishToken() {
-      return String(BUILTIN_TOKEN || siteData.submitToken || "").trim();
+      try {
+        const data = JSON.parse(localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY) || "{}");
+        return String(data.token || "").trim();
+      } catch {
+        return "";
+      }
     }
     function usePublishToken(el) {
       token = getPublishToken();
-      if (!token) {
-        msg(el, "Todavía no está el permiso de publicación del sitio. Se carga una sola vez en GitHub, no acá.", "err");
+      if (!API_URL || !token) {
+        msg(el, "La sesión segura venció. Volvé a ingresar al admin.", "err");
         return false;
       }
       return true;
@@ -946,6 +951,7 @@ import Layout from "../layouts/Layout.astro";
     }
     function fillDisp() {
       $("disp-week").value = disp.week || "Fecha 6";
+      $("disp-deadline").value = disp.deadline || "";
       $("disp-open").checked = disp.open !== false;
       const list = disp.entries || [];
       $("disp-count").textContent = list.length + (list.length === 1 ? " pareja" : " parejas");
@@ -981,8 +987,8 @@ import Layout from "../layouts/Layout.astro";
         return;
       }
       try {
-        const file = await loadDisponibilidad({ owner, repo, token });
-        disp = file.json;
+        const file = await api(`/repos/${owner}/${repo}/contents/${DISP_PATH}?ref=main`);
+        disp = JSON.parse(fromB64(String(file.content || "").replace(/\n/g, "")));
         fillDisp();
         msg($("disp-msg"), "Disponibilidades actualizadas.", "ok");
       } catch (err) {
@@ -1143,28 +1149,31 @@ import Layout from "../layouts/Layout.astro";
       try {
         const raw = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
         if (!raw) return false;
-        if (raw === "1") {
-          keepLogin();
-          return true;
-        }
         const data = JSON.parse(raw);
-        if (!data?.ok || !data.exp || Date.now() > data.exp) {
+        if (!data?.token || !data.exp || Date.now() > data.exp) {
           clearLogin();
           return false;
         }
+        token = data.token;
         return true;
       } catch {
         return false;
       }
     }
-    function keepLogin() {
+    function keepLogin(nextToken = token, nextExp) {
+      if (!nextToken) return;
+      let current = {};
+      try {
+        current = JSON.parse(localStorage.getItem(AUTH_KEY) || "{}");
+      } catch {}
       localStorage.setItem(AUTH_KEY, JSON.stringify({
-        ok: 1,
-        exp: Date.now() + AUTH_DAYS * 24 * 60 * 60 * 1000,
+        token: nextToken,
+        exp: nextExp || current.exp,
       }));
       sessionStorage.removeItem(AUTH_KEY);
     }
     function clearLogin() {
+      token = "";
       localStorage.removeItem(AUTH_KEY);
       sessionStorage.removeItem(AUTH_KEY);
     }
@@ -1189,50 +1198,16 @@ import Layout from "../layouts/Layout.astro";
       reloadDisp();
     }
 
-    function timingEqual(a, b) {
-      if (a.length !== b.length) return false;
-      let out = 0;
-      for (let i = 0; i < a.length; i++) out |= a.charCodeAt(i) ^ b.charCodeAt(i);
-      return out === 0;
-    }
-
-    async function sha256hex(str) {
-      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
-      return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
-    }
-
-    function base32Decode(input) {
-      const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-      const clean = String(input).toUpperCase().replace(/=+$/g, "").replace(/[^A-Z2-7]/g, "");
-      let bits = "";
-      for (const ch of clean) bits += alphabet.indexOf(ch).toString(2).padStart(5, "0");
-      const bytes = [];
-      for (let i = 0; i + 8 <= bits.length; i += 8) bytes.push(parseInt(bits.slice(i, i + 8), 2));
-      return new Uint8Array(bytes);
-    }
-
-    async function hotp(secretBytes, counter) {
-      const key = await crypto.subtle.importKey("raw", secretBytes, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
-      const buf = new ArrayBuffer(8);
-      const view = new DataView(buf);
-      view.setUint32(0, Math.floor(counter / 0x100000000));
-      view.setUint32(4, counter >>> 0);
-      const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, buf));
-      const offset = sig[sig.length - 1] & 0xf;
-      const code =
-        ((sig[offset] & 0x7f) << 24) | (sig[offset + 1] << 16) | (sig[offset + 2] << 8) | sig[offset + 3];
-      return String(code % 1_000_000).padStart(6, "0");
-    }
-
-    async function totpOk(secret, code) {
-      const want = String(code || "").replace(/\s/g, "");
-      if (!/^\d{6}$/.test(want)) return false;
-      const secretBytes = base32Decode(secret);
-      const now = Math.floor(Date.now() / 1000 / 30);
-      for (const delta of [-1, 0, 1]) {
-        if (timingEqual(await hotp(secretBytes, now + delta), want)) return true;
-      }
-      return false;
+    async function authRequest(path, body) {
+      if (!API_URL) throw new Error("Falta configurar la API segura del sitio.");
+      const res = await fetch(`${API_URL}${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "No se pudo validar el acceso.");
+      return data;
     }
 
     let passReady = false;
@@ -1247,11 +1222,12 @@ import Layout from "../layouts/Layout.astro";
       e.preventDefault();
       msg($("login-msg"), "Validando…");
       try {
+        const credentials = {
+          user: $("user").value,
+          password: $("pass").value,
+        };
         if (!passReady) {
-          const userOk = ($("user").value || "").trim().toLowerCase() === String(auth.user).toLowerCase();
-          const hash = await sha256hex(PASS_SALT + ($("pass").value || ""));
-          const passOk = timingEqual(hash, auth.passwordHash);
-          if (!userOk || !passOk) throw new Error("Usuario o clave incorrectos.");
+          await authRequest("/auth/password", credentials);
           passReady = true;
           $("step-pass").hidden = true;
           $("step-otp").hidden = false;
@@ -1259,9 +1235,9 @@ import Layout from "../layouts/Layout.astro";
           msg($("login-msg"), "");
           return;
         }
-        const otpOk = await totpOk(auth.totpSecret, $("otp").value);
-        if (!otpOk) throw new Error("Código del autenticador incorrecto.");
-        keepLogin();
+        const session = await authRequest("/auth/login", { ...credentials, otp: $("otp").value });
+        token = session.token;
+        keepLogin(session.token, session.exp);
         showApp();
       } catch (err) {
         clearLogin();
@@ -1581,25 +1557,24 @@ import Layout from "../layouts/Layout.astro";
     $("disp-publish").addEventListener("click", async () => {
       if (!usePublishToken($("disp-msg"))) return;
       disp.week = $("disp-week").value.trim() || "Fecha 6";
+      disp.deadline = $("disp-deadline").value.trim();
       disp.open = $("disp-open").checked;
       disp.temp = siteData.currentSeason || "T4";
       msg($("disp-msg"), "Guardando fecha…");
       try {
-        const file = await loadDisponibilidad({ owner, repo, token });
-        const latest = file.json;
+        const file = await api(`/repos/${owner}/${repo}/contents/${DISP_PATH}?ref=main`);
+        const latest = JSON.parse(fromB64(String(file.content || "").replace(/\n/g, "")));
         const keepIds = new Set((disp.entries || []).map((e) => e.id));
         latest.week = disp.week;
+        latest.deadline = disp.deadline;
         latest.open = disp.open;
         latest.temp = disp.temp;
         latest.entries = (latest.entries || []).filter((e) => keepIds.has(e.id));
-        await saveDisponibilidad({
-          owner,
-          repo,
-          token,
-          json: latest,
-          sha: file.sha,
-          message: latest.open ? `Abre carga de ${latest.week}.` : `Cierra carga de ${latest.week}.`,
-        });
+        await publishFile(
+          DISP_PATH,
+          JSON.stringify(latest, null, 2) + "\n",
+          latest.open ? `Abre carga de ${latest.week}.` : `Cierra carga de ${latest.week}.`
+        );
         disp = latest;
         fillDisp();
         msg($("disp-msg"), "Fecha guardada. El sitio se actualiza en ~1 minuto.", "ok");

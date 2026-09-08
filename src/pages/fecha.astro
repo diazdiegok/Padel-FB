@@ -16,6 +16,9 @@ import { CATS, DAYS } from "../lib/disponibilidad.js";
         Anotá los días y horarios en los que su pareja puede jugar. Con eso se arman los partidos
         de la fecha.
       </p>
+      {disp.deadline && (
+        <p class="deadline"><strong>Fecha límite:</strong> {disp.deadline}</p>
+      )}
     </header>
 
     {disp.open ? (
@@ -61,7 +64,7 @@ import { CATS, DAYS } from "../lib/disponibilidad.js";
         </label>
         <input class="hp" name="website" tabindex="-1" autocomplete="off" />
         <button class="btn btn-lime" type="submit" id="fecha-send">Enviar disponibilidad</button>
-        <p class="admin-msg" id="fecha-msg"></p>
+        <p class="admin-msg" id="fecha-msg" aria-live="polite"></p>
       </form>
     ) : (
       <p class="empty" style="display:block;padding:48px 0">
@@ -72,9 +75,9 @@ import { CATS, DAYS } from "../lib/disponibilidad.js";
 
   <script>
     import site from "../data/site.json";
-    import { DAYS, cleanEntry, validateEntry, appendDisponibilidad } from "../lib/disponibilidad.js";
+    import { DAYS, cleanEntry, validateEntry } from "../lib/disponibilidad.js";
 
-    const token = import.meta.env.PUBLIC_SUBMIT_TOKEN || site.submitToken || "";
+    const apiUrl = String(site.apiUrl || "").replace(/\/$/, "");
     const form = document.querySelector("#fecha-form");
     const msg = document.querySelector("#fecha-msg");
     const bye = form?.querySelector("[name=bye]");
@@ -134,20 +137,21 @@ import { CATS, DAYS } from "../lib/disponibilidad.js";
         setMsg(err, "err");
         return;
       }
-      if (!token) {
-        setMsg("Falta configurar el token en Admin → Datos del sitio.", "err");
+      if (!apiUrl) {
+        setMsg("La carga segura todavía no está configurada.", "err");
         return;
       }
       const btn = document.querySelector("#fecha-send");
       btn.disabled = true;
       setMsg("Enviando…");
       try {
-        await appendDisponibilidad({
-          owner: site.githubOwner,
-          repo: site.githubRepo,
-          token,
-          entry,
+        const res = await fetch(`${apiUrl}/availability`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...entry, website: form.website.value }),
         });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || "No se pudo enviar.");
         form.hidden = true;
         const ok = document.createElement("div");
         ok.className = "empty";

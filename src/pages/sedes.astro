@@ -21,7 +21,7 @@ const venues = (site.venues || []).filter((v) => v.liga !== false);
       <section id={v.id} style="padding:16px 0 28px">
         <article class="venue sede-grid">
           <div class="venue-photo">
-            {v.image && <img class="photo" src={asset(v.image)} alt={v.name} />}
+            {v.image && <img class="photo" src={asset(v.image)} alt={`${v.name}, cancha de pádel en ${v.address}`} loading="lazy" />}
             <span>{v.name}</span>
           </div>
           <div class="venue-body">

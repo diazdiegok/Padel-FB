@@ -1,0 +1,11 @@
+name = "padel-fb-api"
+main = "src/index.js"
+compatibility_date = "2026-09-08"
+workers_dev = true
+preview_urls = false
+
+[vars]
+ADMIN_USER = "Admin"
+GITHUB_OWNER = "diazdiegok"
+GITHUB_REPO = "Padel-FB"
+SITE_ORIGIN = "https://diazdiegok.github.io"

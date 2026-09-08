@@ -44,22 +44,25 @@ const seasonCounts = Object.fromEntries(temps.map((t) => [t, rows.filter((p) => 
           ))}
         </div>
       </div>
-      <span class="tag" id="count"></span>
+      <span class="tag" id="count" aria-live="polite"></span>
     </div>
 
-    <table class="board">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Jugador / pareja</th>
-          <th>Categoría</th>
-          <th>PJ</th>
-          <th>Dif. sets</th>
-          <th>Pts</th>
-        </tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
+    <p class="table-hint">Deslizá horizontalmente para ver toda la tabla.</p>
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Tabla de posiciones">
+      <table class="board">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Jugador / pareja</th>
+            <th>Categoría</th>
+            <th>PJ</th>
+            <th>Dif. sets</th>
+            <th>Pts</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
     <p class="empty" id="empty" hidden>No hay jugadores con ese filtro.</p>
   </div>
 

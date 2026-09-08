@@ -8,7 +8,7 @@
   "currentSeason": "T4",
   "githubOwner": "diazdiegok",
   "githubRepo": "Padel-FB",
-  "submitToken": "",
+  "apiUrl": "https://padel-fb-api.diazdiegonicok.workers.dev",
   "ligaIntro": "¡Bienvenidos a Padel FB! Liga, academia y torneos en Paraná. La liga se juega de lunes a sábado en diferentes complejos de la ciudad: Terrazas, Open, Palermo, Bengurion, Américas son algunos de los que la integran. Está organizada en categorías A, B y C, damas y caballeros, con un partido semanal.",
   "academia": {
     "kicker": "Academia FB",

@@ -4,72 +4,11 @@ import { page } from "../lib/paths";
 ---
 <Layout title="Acceso" description="" noindex>
   <div class="wrap admin-gate">
-    <form class="admin-card form" id="gate">
-      <p class="kicker">Configuración</p>
-      <h1>Autenticador</h1>
-      <p class="admin-help">Esta página no está en el menú. Ingresá la clave de Admin para ver el QR.</p>
-      <label>Clave
-        <input id="pass" type="password" autocomplete="current-password" />
-      </label>
-      <button class="btn btn-lime" type="submit">Mostrar QR</button>
-      <p class="admin-msg" id="msg"></p>
-    </form>
-
-    <div class="admin-card" id="box" hidden>
-      <p class="kicker">Escaneá una sola vez</p>
-      <h1>Padel FB · Admin</h1>
-      <p class="admin-help">Google Authenticator, Authy o el de Windows. Si no toma el QR, cargá la clave manual.</p>
-      <img id="qr" class="admin-qr-img" alt="QR autenticador" width="320" height="320" />
-      <p class="admin-help" id="manual"></p>
+    <div class="admin-card">
+      <p class="kicker">Acceso seguro</p>
+      <h1>Autenticador configurado</h1>
+      <p class="admin-help">La configuración del segundo factor ahora se administra fuera del sitio público.</p>
       <a class="btn btn-ghost" href={page("admin/")}>Ir al login</a>
     </div>
   </div>
-
-  <script>
-    import QRCode from "qrcode";
-    import auth from "../data/admin-auth.json";
-
-    const PASS_SALT = "liga-fb-admin-v1";
-    const gate = document.getElementById("gate");
-    const box = document.getElementById("box");
-    const msg = document.getElementById("msg");
-    const qr = document.getElementById("qr");
-    const manual = document.getElementById("manual");
-    const pass = document.getElementById("pass");
-
-    function timingEqual(a, b) {
-      if (a.length !== b.length) return false;
-      let out = 0;
-      for (let i = 0; i < a.length; i++) out |= a.charCodeAt(i) ^ b.charCodeAt(i);
-      return out === 0;
-    }
-    async function sha256hex(str) {
-      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
-      return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
-    }
-
-    gate?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (!msg || !qr || !manual || !box || !gate || !pass) return;
-      msg.textContent = "Validando…";
-      msg.className = "admin-msg";
-      const hash = await sha256hex(PASS_SALT + (pass instanceof HTMLInputElement ? pass.value : ""));
-      if (!timingEqual(hash, auth.passwordHash)) {
-        msg.textContent = "Clave incorrecta.";
-        msg.className = "admin-msg err";
-        return;
-      }
-      const secret = String(auth.totpSecret || "").replace(/=+$/g, "");
-      const uri = "otpauth://totp/PadelFB:Admin?secret=" + secret + "&issuer=PadelFB&period=30&digits=6";
-      qr.setAttribute("src", await QRCode.toDataURL(uri, {
-        width: 320,
-        margin: 4,
-        errorCorrectionLevel: "M",
-        color: { dark: "#000000", light: "#ffffff" },
-      }));
-      manual.textContent = "Clave manual: " + (secret.match(/.{1,4}/g)?.join(" ") || secret);
-      gate.hidden = true;
-      box.hidden = false;
-    });
-  </script>
 </Layout>
