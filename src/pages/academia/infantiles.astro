@@ -6,7 +6,6 @@ import { asset, page } from "../../lib/paths";
 const kids = site.kids || {};
 const titleLines = String(kids.title || "Clases infantiles").split("\n");
 const staff = (site.staff || []).find((p) => p.id === kids.profeId) || (site.staff || []).find((p) => /barrionuevo/i.test(p.name || ""));
-const groups = kids.groups || [];
 const prices = kids.prices || [];
 const features = kids.features || [];
 ---
@@ -30,8 +29,7 @@ const features = kids.features || [];
         </ul>
       )}
       <div class="actions">
-        <a class="btn btn-lime" href={page("inscripcion/")}>{kids.cta || "Quiero clases"}</a>
-        <a class="btn btn-ghost" href={page("academia/")}>Clases adultos</a>
+        <a class="btn btn-lime" href={page("inscripcion/")}>Inscripción</a>
       </div>
     </header>
   </div>
@@ -64,37 +62,6 @@ const features = kids.features || [];
     </section>
   )}
 
-  {groups.length > 0 && (
-    <section style="padding-top:0">
-      <div class="wrap">
-        <div class="section-head">
-          <div>
-            <p class="kicker">Horarios</p>
-            <h2>Dónde y cuándo</h2>
-          </div>
-        </div>
-        <div class="class-grid">
-          {groups.map((g) => (
-            <article class="class-card">
-              <h3>{g.venue}</h3>
-              {g.when && <p class="class-place">{g.when}</p>}
-              {(g.rows || []).length > 0 && (
-                <div class="class-rows">
-                  {g.rows.map((row) => (
-                    <div class="class-row">
-                      <strong>{row.time}</strong>
-                      <span>{row.level}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  )}
-
   {prices.length > 0 && (
     <section style="padding-top:0">
       <div class="wrap">
@@ -111,9 +78,6 @@ const features = kids.features || [];
               <p class="class-place">{p.text}</p>
             </article>
           ))}
-        </div>
-        <div class="actions" style="margin-top:28px">
-          <a class="btn btn-lime" href={page("inscripcion/")}>Reservar por WhatsApp</a>
         </div>
       </div>
     </section>
