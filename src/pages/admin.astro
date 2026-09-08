@@ -47,6 +47,7 @@ import Layout from "../layouts/Layout.astro";
         <div class="admin-tabs">
           <button class="pill on" type="button" data-tab="ranking">Ranking</button>
           <button class="pill" type="button" data-tab="fixture">Fixture</button>
+          <button class="pill" type="button" data-tab="resultados">Resultados</button>
           <button class="pill" type="button" data-tab="fecha">Fecha</button>
           <button class="pill" type="button" data-tab="sedes">Sedes</button>
         </div>
@@ -1271,13 +1272,14 @@ import Layout from "../layouts/Layout.astro";
     document.querySelectorAll("[data-tab]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const tab = btn.dataset.tab;
+        const section = tab === "resultados" ? "fixture" : tab;
         document.querySelectorAll("[data-tab]").forEach((b) => {
           b.classList.toggle("on", b.dataset.tab === tab);
         });
         document.querySelectorAll("section[id^='tab-']").forEach((sec) => {
-          sec.hidden = sec.id !== "tab-" + tab;
+          sec.hidden = sec.id !== "tab-" + section;
         });
-        if (tab === "fecha") reloadDisp();
+        if (section === "fecha") reloadDisp();
       });
     });
 
