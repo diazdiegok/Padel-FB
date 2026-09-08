@@ -170,6 +170,19 @@
       "whatsapp": "5493434535029",
       "liga": true,
       "academia": true
+    },
+    {
+      "id": "sede-1788866297203",
+      "name": "Ciclista Padel",
+      "address": "Santiago del Estero 360,",
+      "city": "Paraná",
+      "type": "Cancha abierta - Cemento",
+      "image": "/images/ciclista-padel-1788866382371.jpg",
+      "maps": "https://www.google.com/maps/place/Ciclista+Padel/@-31.7258262,-60.5346031,17z/data=!3m1!4b1!4m6!3m5!1s0x95b452629b1255b7:0x35f6703d24b05ce!8m2!3d-31.7258262!4d-60.5346031!16s%2Fg%2F11cn6dqxqt?entry=ttu&g_ep=EgoyMDI2MDkwMi4wIKXMDSoASAFQAw%3D%3D",
+      "instagram": "https://www.instagram.com/ciclista_toro_padel",
+      "whatsapp": "5493436212530",
+      "liga": true,
+      "academia": true
     }
   ],
   "moreVenues": [
