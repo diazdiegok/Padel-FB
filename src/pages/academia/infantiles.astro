@@ -2,12 +2,36 @@
 import Layout from "../../layouts/Layout.astro";
 import { site } from "../../data/site";
 import { asset, page } from "../../lib/paths";
+import VenueLinks from "../../components/VenueLinks.astro";
 
 const kids = site.kids || {};
 const titleLines = String(kids.title || "Clases infantiles").split("\n");
 const staff = (site.staff || []).find((p) => p.id === kids.profeId) || (site.staff || []).find((p) => /barrionuevo/i.test(p.name || ""));
-const prices = kids.prices || [];
 const features = kids.features || [];
+
+function venueKey(s) {
+  return String(s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/club|padel/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+const seen = new Set();
+const kidsVenues = [];
+for (const g of kids.groups || []) {
+  const name = String(g.venue || "").trim();
+  if (!name) continue;
+  const key = venueKey(name);
+  if (!key || seen.has(key)) continue;
+  seen.add(key);
+  const match = (site.venues || []).find((v) => {
+    const vk = venueKey(v.name);
+    return vk && (vk === key || vk.includes(key) || key.includes(vk));
+  });
+  kidsVenues.push(match || { name, id: key });
+}
 ---
 <Layout
   title="Clases infantiles | Padel FB"
@@ -62,23 +86,30 @@ const features = kids.features || [];
     </section>
   )}
 
-  {prices.length > 0 && (
+  {kidsVenues.length > 0 && (
     <section style="padding-top:0">
       <div class="wrap">
         <div class="section-head">
           <div>
-            <p class="kicker">Clases mensuales</p>
-            <h2>Valores</h2>
+            <p class="kicker">Sedes</p>
+            <h2>Dónde pueden entrenar</h2>
           </div>
         </div>
-        <div class="class-grid">
-          {prices.map((p) => (
-            <article class="class-card">
-              <h3>{p.amount}</h3>
-              <p class="class-place">{p.text}</p>
-            </article>
-          ))}
-        </div>
+        {kidsVenues.map((v) => (
+          <article class="venue sede-grid" id={v.id} style="margin-bottom:28px">
+            <div class="venue-photo">
+              {v.image && <img class="photo" src={asset(v.image)} alt={v.name} />}
+              <span>{v.name}</span>
+            </div>
+            <div class="venue-body">
+              <h2>{v.name}</h2>
+              {v.address && <p>{v.address}</p>}
+              {v.city && <p>{v.city}</p>}
+              {v.type && <p>{v.type}</p>}
+              {v.maps && <VenueLinks maps={v.maps} instagram={v.instagram} whatsapp={v.whatsapp} />}
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   )}

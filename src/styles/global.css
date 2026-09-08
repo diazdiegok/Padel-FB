@@ -1071,7 +1071,31 @@ footer strong { color: var(--cream); }
 .admin-msg { font-size: 13px; color: var(--muted); min-height: 1.2em; }
 .admin-msg.ok { color: var(--lime); }
 .admin-msg.err { color: #ff8a8a; }
-.admin-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 16px; }
+.admin-nav {
+  display: grid;
+  gap: 16px;
+  margin: 18px 0 28px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  position: static;
+  height: auto;
+  background: transparent;
+  backdrop-filter: none;
+  z-index: auto;
+}
+.admin-nav-row {
+  display: grid;
+  gap: 8px;
+}
+.admin-nav-row > span {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.admin-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
 .cms-form { max-width: 920px; margin: 16px 0 8px; }
 .cms-form input, .cms-form textarea {
   background: #0c100e;

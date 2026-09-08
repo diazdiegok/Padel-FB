@@ -68,10 +68,7 @@
         ]
       }
     ],
-    "prices": [
-      { "amount": "$70.000", "text": "Dos veces por semana" },
-      { "amount": "$50.000", "text": "Una vez por semana" }
-    ]
+    "prices": []
   },
   "staff": [
     {

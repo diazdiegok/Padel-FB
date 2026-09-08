@@ -35,15 +35,36 @@ import Layout from "../layouts/Layout.astro";
   <div class="wrap admin-app" id="app" hidden>
     <p class="kicker">Panel interno</p>
     <h1>Cargar y editar</h1>
-    <div class="admin-tabs">
-      <button class="pill on" type="button" data-tab="ranking">Ranking</button>
-      <button class="pill" type="button" data-tab="fixture">Fixture</button>
-      <button class="pill" type="button" data-tab="fecha">Fecha</button>
-      <button class="pill" type="button" data-tab="academia">Academia</button>
-      <button class="pill" type="button" data-tab="infantiles">Infantiles</button>
-      <button class="pill" type="button" data-tab="sedes">Sedes</button>
-      <button class="pill" type="button" data-tab="torneos">Torneos</button>
-      <button class="pill" type="button" data-tab="sitio">Sitio</button>
+    <div class="admin-nav">
+      <div class="admin-nav-row">
+        <span>Sitio</span>
+        <div class="admin-tabs">
+          <button class="pill" type="button" data-tab="sitio">Datos</button>
+        </div>
+      </div>
+      <div class="admin-nav-row">
+        <span>Liga</span>
+        <div class="admin-tabs">
+          <button class="pill on" type="button" data-tab="ranking">Ranking</button>
+          <button class="pill" type="button" data-tab="fixture">Fixture</button>
+          <button class="pill" type="button" data-tab="fecha">Fecha</button>
+          <button class="pill" type="button" data-tab="sedes">Sedes</button>
+        </div>
+      </div>
+      <div class="admin-nav-row">
+        <span>Academia</span>
+        <div class="admin-tabs">
+          <button class="pill" type="button" data-tab="academia">Adultos</button>
+          <button class="pill" type="button" data-tab="infantiles">Infantiles</button>
+          <button class="pill" type="button" data-tab="sedes">Sedes</button>
+        </div>
+      </div>
+      <div class="admin-nav-row">
+        <span>Torneos</span>
+        <div class="admin-tabs">
+          <button class="pill" type="button" data-tab="torneos">Torneos</button>
+        </div>
+      </div>
     </div>
 
     <section id="tab-ranking">
@@ -153,7 +174,7 @@ import Layout from "../layouts/Layout.astro";
     </section>
 
     <section id="tab-academia" hidden>
-      <p class="admin-help">Cambiá profes y textos de la academia. Un renglón por viñeta. Con Subir / Bajar ordenás cómo se ven en la web.</p>
+      <p class="admin-help">Cambiá profes y textos de las clases de adultos. Un renglón por viñeta. Con Subir / Bajar ordenás cómo se ven en la web.</p>
       <form class="form cms-form" id="ac-copy">
         <label>Título (un renglón = un corte)
           <textarea name="title" rows="2"></textarea>
@@ -179,7 +200,7 @@ import Layout from "../layouts/Layout.astro";
     </section>
 
     <section id="tab-infantiles" hidden>
-      <p class="admin-help">Textos, horarios y valores de las clases infantiles. El profe se elige de la lista de Academia. Con Subir / Bajar ordenás las sedes.</p>
+      <p class="admin-help">Textos y complejos de las clases infantiles. El profe se elige de la lista de Adultos. Con Subir / Bajar ordenás las sedes.</p>
       <form class="form cms-form" id="kids-copy">
         <label>Título (un renglón = un corte)
           <textarea name="title" rows="2"></textarea>
@@ -208,11 +229,11 @@ import Layout from "../layouts/Layout.astro";
         <button class="btn btn-ghost" type="button" id="kids-group-add">+ Agregar sede</button>
       </div>
       <div class="cms-list" id="kids-group-list"></div>
-      <div class="cms-head">
+      <div class="cms-head" hidden>
         <h3>Valores mensuales</h3>
         <button class="btn btn-ghost" type="button" id="kids-price-add">+ Agregar valor</button>
       </div>
-      <div class="cms-list" id="kids-price-list"></div>
+      <div class="cms-list" id="kids-price-list" hidden></div>
       <div class="admin-actions">
         <button class="btn btn-lime" type="button" id="kids-save">Guardar infantiles</button>
       </div>
@@ -1250,8 +1271,9 @@ import Layout from "../layouts/Layout.astro";
     document.querySelectorAll("[data-tab]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const tab = btn.dataset.tab;
-        document.querySelectorAll("[data-tab]").forEach((b) => b.classList.remove("on"));
-        btn.classList.add("on");
+        document.querySelectorAll("[data-tab]").forEach((b) => {
+          b.classList.toggle("on", b.dataset.tab === tab);
+        });
         document.querySelectorAll("section[id^='tab-']").forEach((sec) => {
           sec.hidden = sec.id !== "tab-" + tab;
         });
