@@ -419,6 +419,7 @@ footer {
   font-size: 14px;
 }
 footer .wrap { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.footer-links { display: flex; gap: 28px; align-items: center; }
 footer a:hover { color: var(--lime); }
 
 .page-hero { padding: 56px 0 32px; border-bottom: 1px solid var(--line); }
