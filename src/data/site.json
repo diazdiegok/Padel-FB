@@ -159,6 +159,19 @@
       "academia": true
     },
     {
+      "id": "sede-1788866854805",
+      "name": "Recreativo Padel",
+      "address": "Italia 255",
+      "city": "Paraná",
+      "type": "Canchas abiertas - Cemento",
+      "image": "/images/recreativo-padel-1788867409211.png",
+      "maps": "https://www.google.com/maps?vet=10CAAQoqAOahcKEwjg08a48N6WAxUAAAAAHQAAAAAQCw..i&client=firefox-b-d&pvq=CgsvZy8xdGoyZDViNSIWChByZWNyZWF0aXZvIHBhZGVsEAIYAw&lqi=ChByZWNyZWF0aXZvIHBhZGVsSMWqmIHmgICACFoYEAAQARgAIhByZWNyZWF0aXZvIHBhZGVskgEEY2x1YpoBI0NoWkRTVWhOTUc5blMwVkpRMEZuU1VOc2NtOTJjMkYzRUFF-gEECAAQMQ&fvr=1&cs=1&um=1&ie=UTF-8&fb=1&gl=ar&sa=X&ftid=0x95b4527e40c313dd:0x554f3ae9c36bd8ea",
+      "instagram": "https://www.instagram.com/recreativo.parana",
+      "whatsapp": "5493435083224",
+      "liga": true,
+      "academia": true
+    },
+    {
       "id": "bengurion",
       "name": "Bengurion Padel",
       "address": "Camping David Ben Gurion",
