@@ -152,7 +152,7 @@ import Layout from "../layouts/Layout.astro";
     </section>
 
     <section id="tab-academia" hidden>
-      <p class="admin-help">Cambiá profes y textos de la academia. Un renglón por viñeta. Con las flechas ↑ ↓ ordenás cómo se ven en la web.</p>
+      <p class="admin-help">Cambiá profes y textos de la academia. Un renglón por viñeta. Con Subir / Bajar ordenás cómo se ven en la web.</p>
       <form class="form cms-form" id="ac-copy">
         <label>Título (un renglón = un corte)
           <textarea name="title" rows="2"></textarea>
@@ -178,7 +178,7 @@ import Layout from "../layouts/Layout.astro";
     </section>
 
     <section id="tab-sedes" hidden>
-      <p class="admin-help">Complejos de la liga y la academia. Marcá dónde se ve cada uno. Con las flechas ↑ ↓ ordenás el lugar en la web.</p>
+      <p class="admin-help">Complejos de la liga y la academia. Marcá dónde se ve cada uno. Con Subir / Bajar ordenás el lugar en la web.</p>
       <div class="cms-head">
         <h3>Sedes</h3>
         <button class="btn btn-ghost" type="button" id="venue-add">+ Agregar sede</button>
@@ -545,8 +545,8 @@ import Layout from "../layouts/Layout.astro";
     }
     function cmsMoveBtns(kind, i, n) {
       return `<div class="cms-order">
-        <button class="btn cms-btn cms-btn-move" type="button" data-move="${kind}" data-i="${i}" data-dir="-1" aria-label="Subir" ${i === 0 ? "disabled" : ""}>↑</button>
-        <button class="btn cms-btn cms-btn-move" type="button" data-move="${kind}" data-i="${i}" data-dir="1" aria-label="Bajar" ${i >= n - 1 ? "disabled" : ""}>↓</button>
+        <button class="btn cms-btn cms-btn-move" type="button" data-move="${kind}" data-i="${i}" data-dir="-1" aria-label="Subir" ${i === 0 ? "disabled" : ""}>↑ Subir</button>
+        <button class="btn cms-btn cms-btn-move" type="button" data-move="${kind}" data-i="${i}" data-dir="1" aria-label="Bajar" ${i >= n - 1 ? "disabled" : ""}>↓ Bajar</button>
       </div>`;
     }
 

@@ -1153,13 +1153,21 @@ footer strong { color: var(--cream); }
 }
 .cms-btn-move {
   flex: 0 0 auto !important;
-  min-width: 42px;
-  font-size: 16px !important;
+  min-width: 0;
+  background: var(--cream);
+  border-color: var(--cream);
+  color: #111;
+  font-size: 12px !important;
+  letter-spacing: 0.04em;
   line-height: 1;
+}
+.cms-btn-move:hover {
+  filter: brightness(0.92);
 }
 .cms-btn-move:disabled {
   opacity: 0.28;
   pointer-events: none;
+  filter: none;
 }
 .cms-btn-del {
   background: transparent;
