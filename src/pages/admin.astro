@@ -40,6 +40,7 @@ import Layout from "../layouts/Layout.astro";
       <button class="pill" type="button" data-tab="fixture">Fixture</button>
       <button class="pill" type="button" data-tab="fecha">Fecha</button>
       <button class="pill" type="button" data-tab="academia">Academia</button>
+      <button class="pill" type="button" data-tab="infantiles">Infantiles</button>
       <button class="pill" type="button" data-tab="sedes">Sedes</button>
       <button class="pill" type="button" data-tab="torneos">Torneos</button>
       <button class="pill" type="button" data-tab="sitio">Sitio</button>
@@ -175,6 +176,47 @@ import Layout from "../layouts/Layout.astro";
         <button class="btn btn-lime" type="button" id="ac-save">Guardar academia</button>
       </div>
       <p class="admin-msg" id="ac-msg"></p>
+    </section>
+
+    <section id="tab-infantiles" hidden>
+      <p class="admin-help">Textos, horarios y valores de las clases infantiles. El profe se elige de la lista de Academia. Con Subir / Bajar ordenás las sedes.</p>
+      <form class="form cms-form" id="kids-copy">
+        <label>Título (un renglón = un corte)
+          <textarea name="title" rows="2"></textarea>
+        </label>
+        <label>Edades
+          <input name="age" placeholder="De 7 a 13 años" />
+        </label>
+        <label>Texto de arriba
+          <textarea name="intro" rows="2"></textarea>
+        </label>
+        <label>Viñetas (un renglón cada una)
+          <textarea name="features" rows="4"></textarea>
+        </label>
+        <label>Profe
+          <select name="profeId"></select>
+        </label>
+        <label>Rol en esta página
+          <input name="profeRole" placeholder="Profe · Academia infantil" />
+        </label>
+        <label>Texto del botón
+          <input name="cta" />
+        </label>
+      </form>
+      <div class="cms-head">
+        <h3>Sedes y horarios</h3>
+        <button class="btn btn-ghost" type="button" id="kids-group-add">+ Agregar sede</button>
+      </div>
+      <div class="cms-list" id="kids-group-list"></div>
+      <div class="cms-head">
+        <h3>Valores mensuales</h3>
+        <button class="btn btn-ghost" type="button" id="kids-price-add">+ Agregar valor</button>
+      </div>
+      <div class="cms-list" id="kids-price-list"></div>
+      <div class="admin-actions">
+        <button class="btn btn-lime" type="button" id="kids-save">Guardar infantiles</button>
+      </div>
+      <p class="admin-msg" id="kids-msg"></p>
     </section>
 
     <section id="tab-sedes" hidden>
@@ -496,6 +538,11 @@ import Layout from "../layouts/Layout.astro";
       if (!Array.isArray(siteData.torneos.items)) siteData.torneos.items = [];
       if (!Array.isArray(siteData.venues)) siteData.venues = [];
       if (!Array.isArray(siteData.moreVenues)) siteData.moreVenues = [];
+      if (!siteData.kids) siteData.kids = {};
+      if (!Array.isArray(siteData.kids.features)) siteData.kids.features = [];
+      if (!Array.isArray(siteData.kids.groups)) siteData.kids.groups = [];
+      if (!Array.isArray(siteData.kids.prices)) siteData.kids.prices = [];
+      if (!siteData.kids.profeId) siteData.kids.profeId = "barrionuevo-sebastian";
     }
 
     function escAttr(s) {
@@ -659,6 +706,48 @@ import Layout from "../layouts/Layout.astro";
         .join("");
     }
 
+    function fillKidsForm() {
+      ensureCms();
+      const k = siteData.kids;
+      const form = $("kids-copy");
+      form.title.value = k.title || "";
+      form.age.value = k.age || "";
+      form.intro.value = k.intro || "";
+      form.features.value = (k.features || []).join("\n");
+      form.profeRole.value = k.profeRole || "";
+      form.cta.value = k.cta || "";
+      form.profeId.innerHTML = (siteData.staff || [])
+        .map((p) => `<option value="${escAttr(p.id)}" ${p.id === k.profeId ? "selected" : ""}>${escAttr(p.name || p.id)}</option>`)
+        .join("");
+      $("kids-group-list").innerHTML = (k.groups || [])
+        .map((g, i) => `<article class="cms-card cms-card-plain" data-kids-group="${i}">
+          <div class="cms-fields">
+            <div class="cms-card-actions cms-span">
+              ${cmsMoveBtns("kids-group", i, (k.groups || []).length)}
+              <button class="btn cms-btn cms-btn-del" type="button" data-kids-group-del="${i}">Quitar</button>
+            </div>
+            <label>Sede <input data-k="venue" value="${escAttr(g.venue)}" /></label>
+            <label>Días <input data-k="when" value="${escAttr(g.when)}" placeholder="Lunes y jueves" /></label>
+            <label class="cms-span">Horarios (un renglón: 17:00 hs | Avanzados)
+              <textarea data-k="rows" rows="3">${escAttr((g.rows || []).map((r) => [r.time, r.level].filter(Boolean).join(" | ")).join("\n"))}</textarea>
+            </label>
+          </div>
+        </article>`)
+        .join("");
+      $("kids-price-list").innerHTML = (k.prices || [])
+        .map((p, i) => `<article class="cms-card cms-card-plain" data-kids-price="${i}">
+          <div class="cms-fields">
+            <div class="cms-card-actions cms-span">
+              ${cmsMoveBtns("kids-price", i, (k.prices || []).length)}
+              <button class="btn cms-btn cms-btn-del" type="button" data-kids-price-del="${i}">Quitar</button>
+            </div>
+            <label>Valor <input data-k="amount" value="${escAttr(p.amount)}" placeholder="$70.000" /></label>
+            <label>Texto <input data-k="text" value="${escAttr(p.text)}" placeholder="Dos veces por semana" /></label>
+          </div>
+        </article>`)
+        .join("");
+    }
+
     function readAcademiaFromDom() {
       ensureCms();
       const form = $("ac-copy");
@@ -731,6 +820,47 @@ import Layout from "../layouts/Layout.astro";
         item.title = card.querySelector("[data-k='title']")?.value.trim() || "";
         item.when = card.querySelector("[data-k='when']")?.value.trim() || "";
         item.text = card.querySelector("[data-k='text']")?.value.trim() || "";
+      });
+    }
+
+    function parseKidsRows(text) {
+      return String(text || "")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const parts = line.split("|").map((s) => s.trim());
+          return { time: parts[0] || "", level: parts.slice(1).join(" | ") };
+        });
+    }
+
+    function readKidsFromDom() {
+      ensureCms();
+      const form = $("kids-copy");
+      siteData.kids = {
+        ...siteData.kids,
+        title: form.title.value.trim(),
+        age: form.age.value.trim(),
+        intro: form.intro.value.trim(),
+        features: form.features.value.split("\n").map((s) => s.trim()).filter(Boolean),
+        profeId: form.profeId.value,
+        profeRole: form.profeRole.value.trim(),
+        cta: form.cta.value.trim(),
+      };
+      $("kids-group-list").querySelectorAll("[data-kids-group]").forEach((card) => {
+        const i = Number(card.dataset.kidsGroup);
+        const g = siteData.kids.groups[i];
+        if (!g) return;
+        g.venue = card.querySelector("[data-k='venue']")?.value.trim() || "";
+        g.when = card.querySelector("[data-k='when']")?.value.trim() || "";
+        g.rows = parseKidsRows(card.querySelector("[data-k='rows']")?.value);
+      });
+      $("kids-price-list").querySelectorAll("[data-kids-price]").forEach((card) => {
+        const i = Number(card.dataset.kidsPrice);
+        const p = siteData.kids.prices[i];
+        if (!p) return;
+        p.amount = card.querySelector("[data-k='amount']")?.value.trim() || "";
+        p.text = card.querySelector("[data-k='text']")?.value.trim() || "";
       });
     }
 
@@ -1030,6 +1160,7 @@ import Layout from "../layouts/Layout.astro";
       renderFixture();
       fillSiteForm();
       fillAcademiaForm();
+      fillKidsForm();
       fillVenueForm();
       fillTorneosForm();
       fillDisp();
@@ -1591,6 +1722,58 @@ import Layout from "../layouts/Layout.astro";
       readTorneosFromDom();
       siteData.torneos.items.splice(Number(del.dataset.tnDel), 1);
       fillTorneosForm();
+    });
+
+    $("kids-group-add").addEventListener("click", () => {
+      readKidsFromDom();
+      siteData.kids.groups.push({ venue: "", when: "", rows: [] });
+      fillKidsForm();
+    });
+    $("kids-group-list").addEventListener("click", (e) => {
+      const move = e.target.closest("[data-move]");
+      if (move) {
+        readKidsFromDom();
+        moveInList(siteData.kids.groups, move.dataset.i, move.dataset.dir);
+        fillKidsForm();
+        return;
+      }
+      const del = e.target.closest("[data-kids-group-del]");
+      if (!del) return;
+      readKidsFromDom();
+      siteData.kids.groups.splice(Number(del.dataset.kidsGroupDel), 1);
+      fillKidsForm();
+    });
+    $("kids-price-add").addEventListener("click", () => {
+      readKidsFromDom();
+      siteData.kids.prices.push({ amount: "", text: "" });
+      fillKidsForm();
+    });
+    $("kids-price-list").addEventListener("click", (e) => {
+      const move = e.target.closest("[data-move]");
+      if (move) {
+        readKidsFromDom();
+        moveInList(siteData.kids.prices, move.dataset.i, move.dataset.dir);
+        fillKidsForm();
+        return;
+      }
+      const del = e.target.closest("[data-kids-price-del]");
+      if (!del) return;
+      readKidsFromDom();
+      siteData.kids.prices.splice(Number(del.dataset.kidsPriceDel), 1);
+      fillKidsForm();
+    });
+    $("kids-save").addEventListener("click", async () => {
+      if (!usePublishToken($("kids-msg"))) return;
+      readKidsFromDom();
+      msg($("kids-msg"), "Guardando infantiles…");
+      try {
+        const local = cleanSiteForSave();
+        await publishSiteFields({ kids: local.kids }, "Actualiza clases infantiles desde el admin.");
+        fillKidsForm();
+        msg($("kids-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
+      } catch (err) {
+        msg($("kids-msg"), publishError(err), "err");
+      }
     });
 
     $("ac-save").addEventListener("click", async () => {

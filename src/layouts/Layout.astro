@@ -107,8 +107,9 @@ const inTorneos = path.includes("/torneos");
             <button class:list={["nav-trigger", { on: inAcademia }]} type="button" data-nav-drop aria-expanded="false">Academia</button>
             <div class="nav-drop">
               <div class="nav-drop-inner">
-                <a href={page("academia/")}>Clases</a>
-                <a href={page("academia/sedes/")}>Sedes</a>
+                <a href={page("academia/")} aria-current={inAcademia && !path.includes("/sedes") && !path.includes("/infantiles") ? "page" : undefined}>Clases Adultos</a>
+                <a href={page("academia/infantiles/")} aria-current={path.includes("/infantiles") ? "page" : undefined}>Clases Infantiles</a>
+                <a href={page("academia/sedes/")} aria-current={path.includes("/academia") && path.includes("/sedes") ? "page" : undefined}>Sedes</a>
               </div>
             </div>
           </li>
