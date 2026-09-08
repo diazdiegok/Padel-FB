@@ -152,7 +152,7 @@ import Layout from "../layouts/Layout.astro";
     </section>
 
     <section id="tab-academia" hidden>
-      <p class="admin-help">Cambiá profes y textos de la academia. Un renglón por viñeta. Elegí la foto desde la computadora.</p>
+      <p class="admin-help">Cambiá profes y textos de la academia. Un renglón por viñeta. Con las flechas ↑ ↓ ordenás cómo se ven en la web.</p>
       <form class="form cms-form" id="ac-copy">
         <label>Título (un renglón = un corte)
           <textarea name="title" rows="2"></textarea>
@@ -178,7 +178,7 @@ import Layout from "../layouts/Layout.astro";
     </section>
 
     <section id="tab-sedes" hidden>
-      <p class="admin-help">Complejos de la liga y la academia. Marcá dónde se ve cada uno.</p>
+      <p class="admin-help">Complejos de la liga y la academia. Marcá dónde se ve cada uno. Con las flechas ↑ ↓ ordenás el lugar en la web.</p>
       <div class="cms-head">
         <h3>Sedes</h3>
         <button class="btn btn-ghost" type="button" id="venue-add">+ Agregar sede</button>
@@ -196,7 +196,7 @@ import Layout from "../layouts/Layout.astro";
     </section>
 
     <section id="tab-torneos" hidden>
-      <p class="admin-help">Si no hay torneos, la web muestra el aviso de “sin torneos”. Si agregás uno, se publica en la página.</p>
+      <p class="admin-help">Si no hay torneos, la web muestra el aviso de “sin torneos”. Con las flechas ↑ ↓ ordenás cómo se listan.</p>
       <form class="form cms-form" id="tn-copy">
         <label>Título
           <input name="title" />
@@ -535,6 +535,20 @@ import Layout from "../layouts/Layout.astro";
     function cmsMedia(src, alt, actions) {
       return `<div class="cms-media">${photoBox(src, alt)}<div class="cms-card-actions">${actions}</div></div>`;
     }
+    function moveInList(list, index, dir) {
+      const from = Number(index);
+      const to = from + Number(dir);
+      if (!Array.isArray(list) || from < 0 || to < 0 || to >= list.length) return false;
+      const [item] = list.splice(from, 1);
+      list.splice(to, 0, item);
+      return true;
+    }
+    function cmsMoveBtns(kind, i, n) {
+      return `<div class="cms-order">
+        <button class="btn cms-btn cms-btn-move" type="button" data-move="${kind}" data-i="${i}" data-dir="-1" aria-label="Subir" ${i === 0 ? "disabled" : ""}>↑</button>
+        <button class="btn cms-btn cms-btn-move" type="button" data-move="${kind}" data-i="${i}" data-dir="1" aria-label="Bajar" ${i >= n - 1 ? "disabled" : ""}>↓</button>
+      </div>`;
+    }
 
     function fillAcademiaForm() {
       ensureCms();
@@ -546,6 +560,7 @@ import Layout from "../layouts/Layout.astro";
       $("staff-list").innerHTML = siteData.staff
         .map((p, i) => `<article class="cms-card" data-staff="${i}">
           ${cmsMedia(p._preview || p.image, p.name, `
+            ${cmsMoveBtns("staff", i, siteData.staff.length)}
             <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
               <input data-photo="staff" type="file" accept="image/*" hidden />
             </label>
@@ -564,6 +579,7 @@ import Layout from "../layouts/Layout.astro";
       $("prog-list").innerHTML = siteData.academia.programs
         .map((pr, i) => `<article class="cms-card cms-card-plain" data-prog="${i}">
           <div class="cms-fields">
+            <div class="cms-card-actions cms-span">${cmsMoveBtns("prog", i, siteData.academia.programs.length)}</div>
             <label>Programa <input data-k="title" value="${escAttr(pr.title)}" /></label>
             <label class="cms-span">Texto <textarea data-k="text" rows="2">${escAttr(pr.text)}</textarea></label>
           </div>
@@ -576,6 +592,7 @@ import Layout from "../layouts/Layout.astro";
       $("venue-list").innerHTML = siteData.venues
         .map((v, i) => `<article class="cms-card" data-venue="${i}">
           ${cmsMedia(v._preview || v.image, v.name, `
+            ${cmsMoveBtns("venue", i, siteData.venues.length)}
             <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
               <input data-photo="venue" type="file" accept="image/*" hidden />
             </label>
@@ -599,6 +616,7 @@ import Layout from "../layouts/Layout.astro";
       $("more-list").innerHTML = siteData.moreVenues
         .map((v, i) => `<article class="cms-card" data-more="${i}">
           ${cmsMedia(v._preview || v.image, v.name, `
+            ${cmsMoveBtns("more", i, siteData.moreVenues.length)}
             <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
               <input data-photo="more" type="file" accept="image/*" hidden />
             </label>
@@ -622,12 +640,13 @@ import Layout from "../layouts/Layout.astro";
       $("tn-list").innerHTML = (t.items || [])
         .map((item, i) => `<article class="cms-card cms-card-plain" data-tn="${i}">
           <div class="cms-fields">
+            <div class="cms-card-actions cms-span">
+              ${cmsMoveBtns("tn", i, (t.items || []).length)}
+              <button class="btn cms-btn cms-btn-del" type="button" data-tn-del="${i}">Quitar</button>
+            </div>
             <label>Nombre <input data-k="title" value="${escAttr(item.title)}" /></label>
             <label>Cuándo <input data-k="when" value="${escAttr(item.when)}" placeholder="Ej. 20 de septiembre" /></label>
             <label class="cms-span">Texto <textarea data-k="text" rows="3">${escAttr(item.text)}</textarea></label>
-            <div class="cms-card-actions cms-span">
-              <button class="btn cms-btn cms-btn-del" type="button" data-tn-del="${i}">Quitar</button>
-            </div>
           </div>
         </article>`)
         .join("");
@@ -1437,10 +1456,24 @@ import Layout from "../layouts/Layout.astro";
       fillAcademiaForm();
     });
     $("staff-list").addEventListener("click", (e) => {
+      const move = e.target.closest("[data-move]");
+      if (move) {
+        readAcademiaFromDom();
+        moveInList(siteData.staff, move.dataset.i, move.dataset.dir);
+        fillAcademiaForm();
+        return;
+      }
       const del = e.target.closest("[data-staff-del]");
       if (!del) return;
       readAcademiaFromDom();
       siteData.staff.splice(Number(del.dataset.staffDel), 1);
+      fillAcademiaForm();
+    });
+    $("prog-list").addEventListener("click", (e) => {
+      const move = e.target.closest("[data-move]");
+      if (!move) return;
+      readAcademiaFromDom();
+      moveInList(siteData.academia.programs, move.dataset.i, move.dataset.dir);
       fillAcademiaForm();
     });
     $("staff-list").addEventListener("change", (e) => {
@@ -1470,6 +1503,13 @@ import Layout from "../layouts/Layout.astro";
       fillVenueForm();
     });
     $("venue-list").addEventListener("click", (e) => {
+      const move = e.target.closest("[data-move]");
+      if (move) {
+        readVenuesFromDom();
+        moveInList(siteData.venues, move.dataset.i, move.dataset.dir);
+        fillVenueForm();
+        return;
+      }
       const del = e.target.closest("[data-venue-del]");
       if (!del) return;
       readVenuesFromDom();
@@ -1490,6 +1530,13 @@ import Layout from "../layouts/Layout.astro";
       fillVenueForm();
     });
     $("more-list").addEventListener("click", (e) => {
+      const move = e.target.closest("[data-move]");
+      if (move) {
+        readVenuesFromDom();
+        moveInList(siteData.moreVenues, move.dataset.i, move.dataset.dir);
+        fillVenueForm();
+        return;
+      }
       const del = e.target.closest("[data-more-del]");
       if (!del) return;
       readVenuesFromDom();
@@ -1511,6 +1558,13 @@ import Layout from "../layouts/Layout.astro";
       fillTorneosForm();
     });
     $("tn-list").addEventListener("click", (e) => {
+      const move = e.target.closest("[data-move]");
+      if (move) {
+        readTorneosFromDom();
+        moveInList(siteData.torneos.items, move.dataset.i, move.dataset.dir);
+        fillTorneosForm();
+        return;
+      }
       const del = e.target.closest("[data-tn-del]");
       if (!del) return;
       readTorneosFromDom();

@@ -1143,12 +1143,23 @@ footer strong { color: var(--cream); }
 }
 .cms-card input:focus, .cms-card textarea:focus { border-color: var(--lime); }
 .cms-card-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cms-order { display: flex; gap: 6px; flex: 1 1 100%; }
 .cms-btn {
   border-radius: 999px !important;
   padding: 8px 14px !important;
   font-size: 12px !important;
   justify-content: center;
   flex: 1;
+}
+.cms-btn-move {
+  flex: 0 0 auto !important;
+  min-width: 42px;
+  font-size: 16px !important;
+  line-height: 1;
+}
+.cms-btn-move:disabled {
+  opacity: 0.28;
+  pointer-events: none;
 }
 .cms-btn-del {
   background: transparent;
