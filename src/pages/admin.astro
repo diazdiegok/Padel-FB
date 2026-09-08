@@ -739,6 +739,17 @@ import Layout from "../layouts/Layout.astro";
       (copy.moreVenues || []).forEach(strip);
       return copy;
     }
+    async function readRemoteSite() {
+      const file = await api(`/repos/${owner}/${repo}/contents/${SITE_PATH}?ref=main`);
+      const raw = String(file.content || "").replace(/\n/g, "");
+      return JSON.parse(fromB64(raw));
+    }
+    async function publishSiteFields(fields, message) {
+      const remote = await readRemoteSite();
+      const next = { ...remote, ...fields };
+      await publishFile(SITE_PATH, JSON.stringify(next, null, 2) + "\n", message);
+      Object.assign(siteData, next);
+    }
 
     async function uploadPending(list, kind) {
       for (const item of list) {
@@ -1578,9 +1589,9 @@ import Layout from "../layouts/Layout.astro";
       msg($("ac-msg"), "Guardando academia…");
       try {
         await uploadPending(siteData.staff, "staff");
-        await publishFile(
-          SITE_PATH,
-          JSON.stringify(cleanSiteForSave(), null, 2) + "\n",
+        const local = cleanSiteForSave();
+        await publishSiteFields(
+          { academia: local.academia, staff: local.staff },
           "Actualiza academia desde el admin."
         );
         fillAcademiaForm();
@@ -1597,9 +1608,9 @@ import Layout from "../layouts/Layout.astro";
       try {
         await uploadPending(siteData.venues, "venue");
         await uploadPending(siteData.moreVenues, "more");
-        await publishFile(
-          SITE_PATH,
-          JSON.stringify(cleanSiteForSave(), null, 2) + "\n",
+        const local = cleanSiteForSave();
+        await publishSiteFields(
+          { venues: local.venues, moreVenues: local.moreVenues },
           "Actualiza sedes desde el admin."
         );
         fillVenueForm();
@@ -1615,9 +1626,9 @@ import Layout from "../layouts/Layout.astro";
       siteData.torneos.items = (siteData.torneos.items || []).filter((item) => item.title || item.text || item.when);
       msg($("tn-msg"), "Guardando torneos…");
       try {
-        await publishFile(
-          SITE_PATH,
-          JSON.stringify(cleanSiteForSave(), null, 2) + "\n",
+        const local = cleanSiteForSave();
+        await publishSiteFields(
+          { torneos: local.torneos },
           "Actualiza torneos desde el admin."
         );
         fillTorneosForm();
@@ -1642,9 +1653,16 @@ import Layout from "../layouts/Layout.astro";
       };
       msg($("site-msg"), "Guardando sitio…");
       try {
-        await publishFile(
-          SITE_PATH,
-          JSON.stringify(cleanSiteForSave(), null, 2) + "\n",
+        const local = cleanSiteForSave();
+        await publishSiteFields(
+          {
+            currentSeason: local.currentSeason,
+            whatsapp: local.whatsapp,
+            instagram: local.instagram,
+            city: local.city,
+            province: local.province,
+            ligaIntro: local.ligaIntro,
+          },
           "Actualiza datos del sitio desde el admin."
         );
         msg($("site-msg"), "Datos publicados. El sitio se actualiza en ~1 minuto.", "ok");
