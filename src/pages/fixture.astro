@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import fixture from "../data/fixture.json";
 import { site } from "../data/site";
+import { latestWeek, liveFixture, seasonLabel } from "../lib/liga.js";
 
 const DAY_ORDER = ["lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado", "domingo"];
 const dayIdx = (d: string) => {
@@ -9,15 +10,14 @@ const dayIdx = (d: string) => {
   const i = DAY_ORDER.indexOf(key);
   return i < 0 ? 99 : i;
 };
-const matches = [...fixture].sort((a, b) => {
-  const wa = String(a.week || "");
-  const wb = String(b.week || "");
-  if (wa !== wb) return wa.localeCompare(wb, "es");
+const currentWeek = latestWeek(fixture);
+const matches = liveFixture(fixture).sort((a, b) => {
   const da = dayIdx(a.day);
   const db = dayIdx(b.day);
   if (da !== db) return da - db;
   return String(a.time || "").localeCompare(String(b.time || ""), "es");
 });
+const season = seasonLabel(matches[0]?.temp || site.currentSeason);
 const days = [...new Set(matches.map((m) => m.day).filter(Boolean))].sort((a, b) => dayIdx(a) - dayIdx(b));
 const cats = [...new Set(matches.map((m) => m.cat).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
 const courts = [...new Set(matches.map((m) => m.venue).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
@@ -28,9 +28,9 @@ const courts = [...new Set(matches.map((m) => m.venue).filter(Boolean))].sort((a
 >
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker">Temporada {site.currentSeason} · lunes a sábado</p>
+      <p class="kicker">{currentWeek ? `${currentWeek} · ${season}` : season} · lunes a sábado</p>
       <h1>Fixture</h1>
-      <p>Filtrá por día, categoría o cancha. Escribí un apellido para encontrar tu pareja.</p>
+      <p>Filtrá por día, categoría o cancha. Solo se muestra la fecha en juego; la anterior queda en Resultados.</p>
     </header>
 
     {matches.length === 0 ? (

@@ -116,7 +116,7 @@ import Layout from "../layouts/Layout.astro";
       <div class="admin-panel">
         <div class="admin-toolbar">
           <label class="admin-week">Fecha
-            <input id="fx-week" value="Fecha 5" placeholder="Fecha 5" />
+            <input id="fx-week" value="Fecha 5" placeholder="Fecha 6" />
           </label>
           <button class="btn btn-ghost" type="button" id="fx-add">+ Partido</button>
           <button class="btn btn-ghost" type="button" id="fx-model">Modelo CSV</button>
@@ -134,7 +134,7 @@ import Layout from "../layouts/Layout.astro";
           <button class="btn btn-lime" type="button" id="fx-publish">Publicar fixture</button>
         </div>
       </div>
-      <p class="admin-help">Resultado desde Pareja 1: <b>6-4 6-2</b> (2-0 = 3 pts) o <b>6-4 3-6 6-2</b> (2-1 = 2 pts y 1 la otra). Al publicar, se ven en Resultados y se suman al ranking.</p>
+      <p class="admin-help">Resultado desde Pareja 1: <b>6-4 6-2</b> (2-0 = 3 pts) o <b>6-4 3-6 6-2</b> (2-1 = 2 pts y 1 la otra). Al publicar una fecha nueva, la anterior pasa a Resultados y el fixture queda solo con la fecha en juego.</p>
       <p class="admin-msg" id="fx-msg"></p>
       <div class="admin-scroll">
         <table class="admin-table">
@@ -322,6 +322,7 @@ import Layout from "../layouts/Layout.astro";
     import dispJson from "../data/disponibilidad.json";
     import { applyFixtureResults, describeResult } from "../lib/scoring.js";
     import { DISP_PATH, pairLabel } from "../lib/disponibilidad.js";
+    import { mergeArchivedMatches, weekKey } from "../lib/liga.js";
 
     const HIDDEN_CATS = new Set(["S Masculina"]);
     const initialRows = rankingJson.filter((p) => !HIDDEN_CATS.has(p.cat));
@@ -335,6 +336,7 @@ import Layout from "../layouts/Layout.astro";
     const SITE_PATH = "src/data/site.json";
     let disp = structuredClone(dispJson);
     const FIXTURE_PATH = "src/data/fixture.json";
+    const RESULTS_PATH = "src/data/results.json";
     const RANK_COLS = ["name", "cat", "pts", "pj", "dif", "pos", "temp"];
     const FX_COLS = ["categoria", "partido", "complejo", "cancha", "dia", "horario"];
     const CATS = ["A Masculina", "B Masculina", "C Masculina", "A Femenino", "B Femenino", "C Femenino"];
@@ -415,6 +417,20 @@ import Layout from "../layouts/Layout.astro";
       return data;
     }
 
+    async function readRemoteJson(filePath, fallback) {
+      try {
+        const file = await api(`/repos/${owner}/${repo}/contents/${filePath}?ref=main`);
+        const raw = String(file.content || "").replace(/\n/g, "");
+        if (!raw) return fallback;
+        return JSON.parse(fromB64(raw));
+      } catch (error) {
+        if (/\b404\b|not found|no encontrado/i.test(String(error?.message || error))) return fallback;
+        throw error;
+      }
+    }
+    function fallbackWeek() {
+      return $("fx-week")?.value.trim() || fixture[0]?.week || "Fecha 5";
+    }
     async function getFileSha(filePath) {
       try {
         const data = await api(`/repos/${owner}/${repo}/contents/${filePath}`);
@@ -1188,6 +1204,7 @@ import Layout from "../layouts/Layout.astro";
       token = getPublishToken();
       fillFilters();
       renderTable();
+      $("fx-week").value = fixture[0]?.week || $("fx-week").value || "Fecha 5";
       renderFixture();
       fillSiteForm();
       fillAcademiaForm();
@@ -1422,7 +1439,7 @@ import Layout from "../layouts/Layout.astro";
 
     $("fx-add").addEventListener("click", () => {
       fixture.push(cleanMatch({
-        week: $("fx-week").value.trim() || "Fecha 5",
+        week: fallbackWeek(),
         day: "Jueves",
         temp: siteData.currentSeason || "T4",
         cat: "A Masculina",
@@ -1479,7 +1496,7 @@ import Layout from "../layouts/Layout.astro";
     });
     function loadFixtureText(text) {
       const parsed = parseFixtureText(text, {
-        week: $("fx-week").value.trim() || "Fecha 5",
+        week: fallbackWeek(),
         temp: siteData.currentSeason || "T4",
       });
       const prev = new Map(fixture.map((m) => [matchKey(m), m]));
@@ -1493,7 +1510,7 @@ import Layout from "../layouts/Layout.astro";
         };
       });
       renderFixture();
-      msg($("fx-msg"), `Cargué ${parsed.length} partidos de ${$("fx-week").value.trim() || "Fecha 5"}. Revisá y publicá.`, "ok");
+      msg($("fx-msg"), `Cargué ${parsed.length} partidos de ${fallbackWeek()}. Revisá y publicá.`, "ok");
     }
     $("fx-csv").addEventListener("change", async (e) => {
       const file = e.target.files?.[0];
@@ -1516,30 +1533,53 @@ import Layout from "../layouts/Layout.astro";
       if (!usePublishToken($("fx-msg"))) return;
       const nextFixture = fixture.map(cleanMatch).filter((m) => m.home || m.away);
       const nextRanking = structuredClone(rows).map(cleanRow).filter((r) => r.name && r.cat.toLowerCase() !== "s masculina");
-      const report = applyFixtureResults(nextRanking, nextFixture);
       msg($("fx-msg"), "Publicando fixture y ranking…");
       try {
+        const remoteFixture = await readRemoteJson(FIXTURE_PATH, []);
+        const remoteResults = await readRemoteJson(RESULTS_PATH, []);
+        const newWeeks = new Set(nextFixture.map(weekKey));
+        const toArchive = (Array.isArray(remoteFixture) ? remoteFixture : [])
+          .map((m) => cleanMatch(m))
+          .filter((m) => (m.home || m.away) && !newWeeks.has(weekKey(m)));
+        const nextResults = mergeArchivedMatches(
+          (Array.isArray(remoteResults) ? remoteResults : []).map((m) => cleanMatch(m)),
+          toArchive
+        );
+        const reportOld = applyFixtureResults(nextRanking, toArchive);
+        const report = applyFixtureResults(nextRanking, nextFixture);
+        report.applied += reportOld.applied;
+        report.unmatched.push(...reportOld.unmatched);
+        report.created.push(...reportOld.created);
+        const archivedWeeks = [...new Set(toArchive.map((m) => m.week).filter(Boolean))];
+        const liveWeek = [...new Set(nextFixture.map((m) => m.week).filter(Boolean))].join(", ") || fallbackWeek();
         await publishFiles(
           [
             { path: FIXTURE_PATH, content: JSON.stringify(nextFixture, null, 2) + "\n" },
+            { path: RESULTS_PATH, content: JSON.stringify(nextResults, null, 2) + "\n" },
             { path: RANK_PATH, content: JSON.stringify(nextRanking, null, 2) + "\n" },
           ],
-          report.applied
-            ? `Carga resultados del fixture y actualiza el ranking (${report.applied}).`
-            : "Actualiza fixture desde el admin."
+          archivedWeeks.length
+            ? `Pasa ${archivedWeeks.join(", ")} a resultados y publica ${liveWeek}.`
+            : report.applied
+              ? `Carga resultados del fixture y actualiza el ranking (${report.applied}).`
+              : "Actualiza fixture desde el admin."
         );
         fixture = nextFixture;
         rows = nextRanking;
+        $("fx-week").value = nextFixture[0]?.week || $("fx-week").value;
         fillFilters();
         renderTable();
         renderFixture();
         const extra = report.created.length ? ` Altas: ${[...new Set(report.created)].join(" · ")}.` : "";
         const warn = report.unmatched.length ? ` ${report.unmatched[0]}` : "";
+        const archived = archivedWeeks.length
+          ? ` ${archivedWeeks.join(", ")} quedó en Resultados.`
+          : "";
         msg(
           $("fx-msg"),
           (report.applied
             ? `Fixture y ranking publicados. ${report.applied} resultado${report.applied === 1 ? "" : "s"} sumados.${extra}`
-            : "Fixture publicado. El sitio se actualiza en ~1 minuto.") + warn,
+            : "Fixture publicado. El sitio se actualiza en ~1 minuto.") + archived + warn,
           report.unmatched.length ? "err" : "ok"
         );
       } catch (err) {

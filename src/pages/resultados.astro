@@ -1,7 +1,9 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import fixture from "../data/fixture.json";
+import results from "../data/results.json";
 import { site } from "../data/site";
+import { combineResults, seasonLabel, seasonNumber, weekNumber } from "../lib/liga.js";
 
 const DAY_ORDER = ["lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado", "domingo"];
 const dayIdx = (d: string) => {
@@ -9,18 +11,26 @@ const dayIdx = (d: string) => {
   const i = DAY_ORDER.indexOf(key);
   return i < 0 ? 99 : i;
 };
-const matches = [...fixture].sort((a, b) => {
+const matches = combineResults(results, fixture).sort((a, b) => {
   const da = dayIdx(a.day);
   const db = dayIdx(b.day);
   if (da !== db) return da - db;
   return String(a.time || "").localeCompare(String(b.time || ""), "es");
 });
-const weeks = [...new Set(matches.map((m) => m.week || "Sin fecha"))];
-const cards = weeks.map((week) => {
-  const list = matches.filter((m) => (m.week || "Sin fecha") === week);
-  const played = list.filter((m) => String(m.result || "").trim()).length;
-  return { week, total: list.length, played };
+const seasons = [...new Set(matches.map((m) => m.temp || site.currentSeason || "T4"))]
+  .sort((a, b) => seasonNumber(b) - seasonNumber(a));
+const seasonBlocks = seasons.map((temp) => {
+  const list = matches.filter((m) => (m.temp || site.currentSeason || "T4") === temp);
+  const weeks = [...new Set(list.map((m) => m.week || "Sin fecha"))]
+    .sort((a, b) => weekNumber(b) - weekNumber(a) || String(a).localeCompare(String(b), "es"));
+  const cards = weeks.map((week) => {
+    const weekList = list.filter((m) => (m.week || "Sin fecha") === week);
+    const played = weekList.filter((m) => String(m.result || "").trim()).length;
+    return { week, temp, total: weekList.length, played };
+  });
+  return { temp, title: seasonLabel(temp), cards };
 });
+const cards = seasonBlocks.flatMap((block) => block.cards);
 ---
 <Layout
   title="Resultados | Padel FB"
@@ -28,24 +38,34 @@ const cards = weeks.map((week) => {
 >
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker">Temporada {site.currentSeason}</p>
+      <p class="kicker">Liga</p>
       <h1>Resultados</h1>
-      <p>Los marcadores salen del fixture. 2-0 suma 3 puntos; 2-1 suma 2 a la ganadora y 1 a la otra.</p>
+      <p>Las fechas quedan agrupadas por temporada. 2-0 suma 3 puntos; 2-1 suma 2 a la ganadora y 1 a la otra.</p>
     </header>
 
     {cards.length === 0 ? (
       <p class="empty" style="display:block;padding:48px 0">Todavía no hay fechas. Cuando se publique el fixture van a aparecer acá.</p>
     ) : (
       <>
-        <div class="result-grid">
-          {cards.map((c, i) => (
-            <button class:list={["result-card", { open: i === 0 }]} type="button" data-week={c.week}>
-              <p class="kicker">Fecha</p>
-              <h2>{c.week}</h2>
-              <p>{c.played} / {c.total} resultados</p>
-            </button>
-          ))}
-        </div>
+        {seasonBlocks.map((block, s) => (
+          <div class="result-season">
+            <h2>{block.title}</h2>
+            <div class="result-grid">
+              {block.cards.map((c, i) => (
+                <button
+                  class:list={["result-card", { open: s === 0 && i === 0 }]}
+                  type="button"
+                  data-week={c.week}
+                  data-temp={c.temp}
+                >
+                  <p class="kicker">Fecha</p>
+                  <h2>{c.week}</h2>
+                  <p>{c.played} / {c.total} resultados</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
         <div id="result-root" class="result-panel"></div>
       </>
     )}
@@ -59,6 +79,7 @@ const cards = weeks.map((week) => {
     const root = document.querySelector("#result-root");
     if (!root) throw new Error("resultados");
     let week = cards[0]?.week || "";
+    let temp = cards[0]?.temp || "";
 
     const describeResult = (raw) => window.__ligaScoring?.describeResult?.(raw) || null;
     function esc(s) {
@@ -68,7 +89,9 @@ const cards = weeks.map((week) => {
     }
 
     function render() {
-      const list = matches.filter((m) => (m.week || "Sin fecha") === week);
+      const list = matches.filter((m) =>
+        (m.week || "Sin fecha") === week && (m.temp || "") === temp
+      );
       const groups = [...new Set(list.map((m) => m.cat || "Sin categoría"))];
       root.innerHTML = `<section class="fixture-week">
         <h2>${esc(week)}</h2>
@@ -120,6 +143,7 @@ const cards = weeks.map((week) => {
         document.querySelectorAll("[data-week]").forEach((b) => b.classList.remove("open"));
         btn.classList.add("open");
         week = btn.dataset.week;
+        temp = btn.dataset.temp || "";
         render();
         root.scrollIntoView({ behavior: "smooth", block: "start" });
       });
