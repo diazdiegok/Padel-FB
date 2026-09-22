@@ -9,25 +9,42 @@ npm install
 npm run dev
 ```
 
-## Publicar en Hostinger
+## Publicar
+
+Push a `main` → GitHub Pages. Build local:
 
 ```bash
 npm run build
 ```
 
-Subí el contenido de `dist/` a `public_html`. Hacé backup de WordPress antes. El `.htaccess` ya redirige las URLs viejas de Elementor.
-
 ## Admin
 
-Panel en `/admin/` (botón al lado de Sumate). Login: usuario `Admin`, la clave del cliente y el código de 6 dígitos del autenticador. Para publicar cambios en el sitio hace falta además un Personal Access Token de GitHub (Contents: Read and write).
+Panel en `/admin/` (acceso vía `/acceso-fb/`).
 
-CSV sugerido: `name,cat,pts,pj,dif,pos,temp`
+**Login:** usuario + clave del cliente + código TOTP de 6 dígitos. La sesión se guarda en el navegador (~14 días). La publicación va por el Worker `padel-fb-api` (no hace falta pegar un PAT de GitHub en la UI).
+
+### Secciones
+
+| Área | Qué hace |
+|------|----------|
+| **Ranking** | Editar tabla, CSV (modelo / exportar / importar), publicar `ranking.json` |
+| **Fixture** | Cargar Drive/CSV → revisar partidos → publicar (archiva fechas viejas en Resultados y actualiza ranking con scores) |
+| **Resultados** | Archivo de fechas jugadas + partidos live con resultado |
+| **Fecha** | Abrir/cerrar carga de disponibilidad (`/fecha/`) |
+| **Sedes** | Complejos (flags Liga / Academia) |
+| **Academia / Infantiles** | Textos, profes, horarios |
+| **Sitio** | Temporada, WhatsApp, Instagram, copy de inicio |
+| **Torneos** | Listado o aviso vacío |
+
+CSV ranking: `name,cat,pts,pj,dif,pos,temp`
+
+Fixture Drive: `categoria, partido, complejo, cancha, dia, horario`
 
 ## Configurar
 
-- WhatsApp: `src/data/site.json` → `whatsapp` (hoy placeholder `5493430000000`; el sitio original no tenía número público).
-- Temporada en juego: `currentSeason` (hoy `T4`).
-- Ranking: `src/data/ranking.json` (T1–T4, sin S Masculina).
+- WhatsApp / temporada / copy: desde Admin → Sitio, o `src/data/site.json`
+- Ranking: `src/data/ranking.json`
+- API: `site.json` → `apiUrl` (Worker)
 
 ## Extraído del sitio viejo
 

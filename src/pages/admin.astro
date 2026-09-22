@@ -1,13 +1,14 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import "../styles/admin.css";
 ---
-<Layout title="Admin | Padel FB" description="Panel para cargar ranking y datos de Padel FB." noindex>
-  <div class="wrap admin-gate" id="gate">
+<Layout title="Admin | Padel FB" description="Panel interno para cargar y editar datos de Padel FB." noindex>
+  <div class="admin-gate" id="gate">
     <form class="admin-card form" id="login-form" autocomplete="off">
       <p class="kicker">Panel interno</p>
       <h1>Admin Padel FB</h1>
       <div class="admin-step" id="step-pass">
-        <p class="admin-help">Ingresá usuario y clave.</p>
+        <p class="admin-help">Ingresá usuario y clave para continuar.</p>
         <label>Usuario
           <input id="user" name="liga-user" autocomplete="off" autocapitalize="off" spellcheck="false" />
         </label>
@@ -32,287 +33,445 @@ import Layout from "../layouts/Layout.astro";
     </form>
   </div>
 
-  <div class="wrap admin-app" id="app" hidden>
-    <p class="kicker">Panel interno</p>
-    <h1>Cargar y editar</h1>
-    <div class="admin-nav">
-      <div class="admin-nav-row">
-        <span>Sitio</span>
-        <div class="admin-tabs">
-          <button class="pill" type="button" data-tab="sitio">Datos</button>
+  <div class="admin-shell" id="app" hidden>
+    <div class="admin-nav-backdrop" id="admin-nav-backdrop"></div>
+    <aside class="admin-sidebar" id="admin-sidebar">
+      <div class="admin-brand">
+        <div class="admin-brand-mark">FB</div>
+        <div>
+          <strong>PADEL FB</strong>
+          <span>Consola</span>
         </div>
       </div>
-      <div class="admin-nav-row">
-        <span>Liga</span>
-        <div class="admin-tabs">
-          <button class="pill on" type="button" data-tab="ranking">Ranking</button>
-          <button class="pill" type="button" data-tab="fixture">Fixture</button>
-          <button class="pill" type="button" data-tab="resultados">Resultados</button>
-          <button class="pill" type="button" data-tab="fecha">Fecha</button>
-          <button class="pill" type="button" data-tab="sedes">Sedes</button>
-        </div>
+
+      <div class="admin-nav-group">
+        <div class="admin-nav-label">Liga</div>
+        <button class="admin-nav-btn on" type="button" data-nav="ranking">Ranking</button>
+        <button class="admin-nav-btn" type="button" data-nav="fixture">Fixture</button>
+        <button class="admin-nav-btn" type="button" data-nav="resultados">Resultados</button>
+        <button class="admin-nav-btn" type="button" data-nav="fecha">Fecha</button>
+        <button class="admin-nav-btn" type="button" data-nav="sedes">Sedes</button>
       </div>
-      <div class="admin-nav-row">
-        <span>Academia</span>
-        <div class="admin-tabs">
-          <button class="pill" type="button" data-tab="academia">Adultos</button>
-          <button class="pill" type="button" data-tab="infantiles">Infantiles</button>
-          <button class="pill" type="button" data-tab="sedes">Sedes</button>
-        </div>
+      <div class="admin-nav-group">
+        <div class="admin-nav-label">Academia</div>
+        <button class="admin-nav-btn" type="button" data-nav="academia">Adultos</button>
+        <button class="admin-nav-btn" type="button" data-nav="infantiles">Infantiles</button>
       </div>
-      <div class="admin-nav-row">
-        <span>Torneos</span>
-        <div class="admin-tabs">
-          <button class="pill" type="button" data-tab="torneos">Torneos</button>
+      <div class="admin-nav-group">
+        <div class="admin-nav-label">Sitio</div>
+        <button class="admin-nav-btn" type="button" data-nav="sitio">Datos</button>
+      </div>
+      <div class="admin-nav-group">
+        <div class="admin-nav-label">Torneos</div>
+        <button class="admin-nav-btn" type="button" data-nav="torneos">Torneos</button>
+      </div>
+
+      <div class="admin-sidebar-foot">
+        <button class="btn btn-ghost" type="button" id="admin-logout">Salir</button>
+      </div>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-left">
+          <button class="admin-menu-btn" type="button" id="admin-menu-btn" aria-label="Menú">☰</button>
+          <div>
+            <h1 id="admin-page-title">Ranking</h1>
+            <p class="admin-page-help" id="admin-page-help">Editá posiciones, importá CSV y publicá la tabla.</p>
+          </div>
         </div>
+        <div class="admin-topbar-right">
+          <span class="admin-dirty" id="admin-dirty" hidden>Cambios sin guardar</span>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <!-- Ranking -->
+        <section data-section="ranking">
+          <div class="admin-section-tools">
+            <button class="btn btn-ghost" type="button" id="add">+ Pareja</button>
+            <button class="btn btn-ghost" type="button" id="rank-csv-toggle" aria-expanded="false">CSV</button>
+            <span class="tag" id="rank-count"></span>
+          </div>
+          <div class="admin-dropdown-panel" id="rank-csv-panel" hidden>
+            <div class="admin-toolbar">
+              <button class="btn btn-ghost" type="button" id="csv-model">Modelo</button>
+              <button class="btn btn-ghost" type="button" id="csv-export">Exportar</button>
+              <label class="btn btn-ghost" style="cursor:pointer">
+                Importar
+                <input id="csv" type="file" accept=".csv,.txt,.tsv" hidden />
+              </label>
+              <label class="chk"><input id="replace-temp" type="checkbox" checked /> Reemplazar temporada</label>
+            </div>
+            <p class="admin-help">Columnas: name, cat, pts, pj, dif, pos, temp</p>
+          </div>
+          <div class="season-bar">
+            <span class="filter-kicker">Temporada</span>
+            <div class="seg" id="f-temps"></div>
+          </div>
+          <div class="filters">
+            <input class="search" id="f-q" type="search" placeholder="Buscar pareja…" autocomplete="off" />
+            <div class="filter-group" style="flex:1;min-width:220px">
+              <span>Categoría</span>
+              <div class="pills" id="f-cats"></div>
+            </div>
+          </div>
+          <p class="admin-msg" id="rank-msg"></p>
+          <div class="admin-empty" id="rank-empty" hidden>
+            <p>No hay filas con estos filtros. Agregá una pareja o importá un CSV.</p>
+          </div>
+          <div class="admin-scroll">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th class="col-pos">#</th>
+                  <th>Nombre / pareja</th>
+                  <th class="col-cat">Categoría</th>
+                  <th class="col-num">PJ</th>
+                  <th class="col-num">Dif</th>
+                  <th class="col-num">Pts</th>
+                  <th class="col-temp">Temp</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+          <div class="admin-sticky-bar">
+            <p class="admin-sticky-note">Publicá cuando la tabla esté lista. El sitio se actualiza en ~1 minuto.</p>
+            <div class="admin-sticky-actions">
+              <button class="btn btn-lime" type="button" id="publish">Publicar ranking</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Fixture -->
+        <section data-section="fixture" hidden>
+          <div class="admin-stepper">
+            <div class="admin-step-card">
+              <span>1 · Cargar</span>
+              <p>Pegá la tabla de Drive, importá CSV o sumá un partido a mano.</p>
+            </div>
+            <div class="admin-step-card">
+              <span>2 · Revisar</span>
+              <p>Editá horarios, canchas y resultados en la tabla.</p>
+            </div>
+            <div class="admin-step-card">
+              <span>3 · Publicar</span>
+              <p>Las fechas viejas pasan a Resultados y el ranking suma los scores.</p>
+            </div>
+          </div>
+
+          <div class="admin-panel">
+            <div class="admin-toolbar">
+              <label class="admin-week">Fecha en juego
+                <input id="fx-week" value="Fecha 5" placeholder="Fecha 6" />
+              </label>
+              <button class="btn btn-ghost" type="button" id="fx-add">+ Partido</button>
+              <button class="btn btn-ghost" type="button" id="fx-import-toggle" aria-expanded="false">Importar</button>
+              <span class="admin-summary" id="fx-summary">Sin partidos cargados</span>
+            </div>
+            <div class="admin-dropdown-panel" id="fx-import-panel" hidden>
+              <p class="admin-help">Formato Drive: categoria, partido, complejo, cancha, dia, horario</p>
+              <div class="admin-toolbar">
+                <button class="btn btn-ghost" type="button" id="fx-model">Modelo CSV</button>
+                <button class="btn btn-ghost" type="button" id="fx-export">Exportar CSV</button>
+                <label class="btn btn-ghost" style="cursor:pointer">
+                  Importar CSV
+                  <input id="fx-csv" type="file" accept=".csv,.txt,.tsv" hidden />
+                </label>
+              </div>
+              <label class="admin-help" style="display:block">Pegá la tabla de Drive
+                <textarea id="fx-paste" rows="6" placeholder="categoria	partido	complejo	cancha	dia	horario"></textarea>
+              </label>
+              <button class="btn btn-ghost" type="button" id="fx-paste-btn">Cargar tabla</button>
+            </div>
+          </div>
+
+          <div class="admin-callout">
+            <strong>Resultados</strong>
+            Desde Pareja 1: <b>6-4 6-2</b> (2-0 = 3 pts) o <b>6-4 3-6 6-2</b> (2-1 = 2 pts y 1 la otra).
+          </div>
+
+          <p class="admin-msg" id="fx-msg"></p>
+          <div class="admin-empty" id="fx-empty" hidden>
+            <p>Todavía no hay partidos. Usá Importar o + Partido.</p>
+          </div>
+          <div class="admin-scroll">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Semana</th>
+                  <th>Día</th>
+                  <th>Horario</th>
+                  <th>Cat</th>
+                  <th>Complejo</th>
+                  <th>Cancha</th>
+                  <th>Pareja 1</th>
+                  <th>Pareja 2</th>
+                  <th class="col-result">Resultado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="fx-body"></tbody>
+            </table>
+          </div>
+          <div class="admin-sticky-bar">
+            <p class="admin-sticky-note">Al publicar, fechas anteriores van a Resultados y se actualiza el ranking según scores.</p>
+            <div class="admin-sticky-actions">
+              <button class="btn btn-lime" type="button" id="fx-publish">Publicar fixture</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Resultados -->
+        <section data-section="resultados" hidden>
+          <div class="admin-callout">
+            <strong>Archivo</strong>
+            Acá ves fechas archivadas y partidos del fixture en juego que ya tienen resultado. Para editar un live, usá Fixture.
+          </div>
+          <div class="admin-section-tools">
+            <button class="btn btn-ghost" type="button" id="res-reload">Actualizar</button>
+            <span class="tag" id="res-count"></span>
+          </div>
+          <div class="filters" style="margin-bottom:16px">
+            <div class="filter-group" style="flex:1;min-width:200px">
+              <span>Fecha</span>
+              <div class="pills" id="res-weeks"></div>
+            </div>
+            <div class="filter-group" style="flex:1;min-width:200px">
+              <span>Categoría</span>
+              <div class="pills" id="res-cats"></div>
+            </div>
+          </div>
+          <div class="admin-empty" id="res-empty" hidden>
+            <p>Todavía no hay resultados cargados.</p>
+          </div>
+          <div id="res-list"></div>
+        </section>
+
+        <!-- Fecha -->
+        <section data-section="fecha" hidden>
+          <div class="admin-panel">
+            <div class="admin-toolbar">
+              <label class="admin-week">Fecha
+                <input id="disp-week" placeholder="Fecha 6" />
+              </label>
+              <label class="admin-week">Fecha límite
+                <input id="disp-deadline" placeholder="Viernes 11/9 a las 18:00" />
+              </label>
+              <label class="chk"><input id="disp-open" type="checkbox" checked /> Carga abierta</label>
+              <span class="admin-status-pill open" id="disp-status">Carga abierta</span>
+            </div>
+          </div>
+          <div class="admin-section-tools">
+            <button class="btn btn-ghost" type="button" id="disp-reload">Actualizar lista</button>
+            <span class="tag" id="disp-count"></span>
+          </div>
+          <p class="admin-help">Las parejas cargan disponibilidad en /fecha/. Acá ves lo anotado y podés abrir o cerrar la fecha.</p>
+          <p class="admin-msg" id="disp-msg"></p>
+          <div id="disp-list"></div>
+          <div class="admin-sticky-bar">
+            <p class="admin-sticky-note">Guardá para publicar semana, deadline y estado abierta/cerrada.</p>
+            <div class="admin-sticky-actions">
+              <button class="btn btn-lime" type="button" id="disp-publish">Guardar fecha</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Academia -->
+        <section data-section="academia" hidden>
+          <form class="form cms-form" id="ac-copy">
+            <label>Título (un renglón = un corte)
+              <textarea name="title" rows="2"></textarea>
+            </label>
+            <label>Texto de arriba
+              <textarea name="intro" rows="3"></textarea>
+            </label>
+            <label>Texto del equipo
+              <input name="teamNote" />
+            </label>
+          </form>
+          <div class="cms-head">
+            <h3>Profes</h3>
+            <button class="btn btn-ghost" type="button" id="staff-add">+ Agregar profe</button>
+          </div>
+          <div class="admin-empty" id="staff-empty" hidden>
+            <p>Todavía no hay profes. Agregá el primero.</p>
+          </div>
+          <div class="cms-list" id="staff-list"></div>
+          <div class="cms-head">
+            <h3>Programas</h3>
+          </div>
+          <div class="cms-list" id="prog-list"></div>
+          <p class="admin-msg" id="ac-msg"></p>
+          <div class="admin-sticky-bar">
+            <p class="admin-sticky-note">Se guardan textos, orden y fotos pendientes.</p>
+            <div class="admin-sticky-actions">
+              <button class="btn btn-lime" type="button" id="ac-save">Guardar academia</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Infantiles -->
+        <section data-section="infantiles" hidden>
+          <form class="form cms-form" id="kids-copy">
+            <label>Título (un renglón = un corte)
+              <textarea name="title" rows="2"></textarea>
+            </label>
+            <label>Edades
+              <input name="age" placeholder="De 7 a 13 años" />
+            </label>
+            <label>Texto de arriba
+              <textarea name="intro" rows="2"></textarea>
+            </label>
+            <label>Viñetas (un renglón cada una)
+              <textarea name="features" rows="4"></textarea>
+            </label>
+            <label>Profe
+              <select name="profeId"></select>
+            </label>
+            <label>Rol en esta página
+              <input name="profeRole" placeholder="Profe · Academia infantil" />
+            </label>
+            <label>Texto del botón
+              <input name="cta" />
+            </label>
+          </form>
+          <div class="cms-head">
+            <h3>Sedes y horarios</h3>
+            <button class="btn btn-ghost" type="button" id="kids-group-add">+ Agregar sede</button>
+          </div>
+          <div class="cms-list" id="kids-group-list"></div>
+          <div class="cms-head" hidden>
+            <h3>Valores mensuales</h3>
+            <button class="btn btn-ghost" type="button" id="kids-price-add">+ Agregar valor</button>
+          </div>
+          <div class="cms-list" id="kids-price-list" hidden></div>
+          <p class="admin-msg" id="kids-msg"></p>
+          <div class="admin-sticky-bar">
+            <p class="admin-sticky-note">El profe se elige de la lista de Adultos.</p>
+            <div class="admin-sticky-actions">
+              <button class="btn btn-lime" type="button" id="kids-save">Guardar infantiles</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Sedes -->
+        <section data-section="sedes" hidden>
+          <div class="cms-head">
+            <h3>Sedes</h3>
+            <button class="btn btn-ghost" type="button" id="venue-add">+ Agregar sede</button>
+          </div>
+          <div class="admin-empty" id="venue-empty" hidden>
+            <p>Todavía no hay sedes. Agregá la primera.</p>
+          </div>
+          <div class="cms-list" id="venue-list"></div>
+          <div class="cms-head">
+            <h3>Otros complejos</h3>
+            <button class="btn btn-ghost" type="button" id="more-add">+ Agregar</button>
+          </div>
+          <div class="cms-list" id="more-list"></div>
+          <p class="admin-msg" id="venue-msg"></p>
+          <div class="admin-sticky-bar">
+            <p class="admin-sticky-note">Marcá Liga / Academia en cada sede para controlar dónde se muestra.</p>
+            <div class="admin-sticky-actions">
+              <button class="btn btn-lime" type="button" id="venue-save">Guardar sedes</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Torneos -->
+        <section data-section="torneos" hidden>
+          <form class="form cms-form" id="tn-copy">
+            <label>Título
+              <input name="title" />
+            </label>
+            <label>Texto de arriba
+              <textarea name="intro" rows="3"></textarea>
+            </label>
+            <label>Aviso si no hay torneos
+              <input name="emptyTitle" />
+            </label>
+            <label>Texto del aviso
+              <textarea name="emptyText" rows="3"></textarea>
+            </label>
+          </form>
+          <div class="cms-head">
+            <h3>Torneos</h3>
+            <button class="btn btn-ghost" type="button" id="tn-add">+ Agregar torneo</button>
+          </div>
+          <div class="admin-empty" id="tn-empty" hidden>
+            <p>Todavía no hay torneos. La web mostrará el aviso vacío.</p>
+          </div>
+          <div class="cms-list" id="tn-list"></div>
+          <p class="admin-msg" id="tn-msg"></p>
+          <div class="admin-sticky-bar">
+            <p class="admin-sticky-note">Con Subir / Bajar ordenás cómo se listan en la web.</p>
+            <div class="admin-sticky-actions">
+              <button class="btn btn-lime" type="button" id="tn-save">Guardar torneos</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Sitio -->
+        <section data-section="sitio" hidden>
+          <form class="form" id="site-form">
+            <div class="admin-site-grid">
+              <div class="admin-site-block">
+                <h3>Temporada</h3>
+                <label>Temporada en juego
+                  <input name="currentSeason" />
+                </label>
+              </div>
+              <div class="admin-site-block">
+                <h3>Contacto</h3>
+                <label>WhatsApp (549…)
+                  <input name="whatsapp" />
+                </label>
+                <label>Instagram
+                  <input name="instagram" />
+                </label>
+              </div>
+              <div class="admin-site-block">
+                <h3>Ubicación</h3>
+                <label>Ciudad
+                  <input name="city" />
+                </label>
+                <label>Provincia
+                  <input name="province" />
+                </label>
+              </div>
+              <div class="admin-site-block span-2">
+                <h3>Inicio</h3>
+                <label>Texto de inicio
+                  <textarea name="ligaIntro" rows="6"></textarea>
+                </label>
+              </div>
+            </div>
+            <p class="admin-msg" id="site-msg"></p>
+            <div class="admin-sticky-bar">
+              <p class="admin-sticky-note">Estos datos alimentan el sitio público.</p>
+              <div class="admin-sticky-actions">
+                <button class="btn btn-lime" type="submit" id="site-save">Guardar sitio</button>
+              </div>
+            </div>
+          </form>
+        </section>
       </div>
     </div>
 
-    <section id="tab-ranking">
-      <div class="season-bar">
-        <span class="filter-kicker">Temporada</span>
-        <div class="seg" id="f-temps"></div>
-      </div>
-      <div class="filters">
-        <input class="search" id="f-q" type="search" placeholder="Buscar pareja…" autocomplete="off" />
-        <div class="filter-group" style="flex:1;min-width:220px">
-          <span>Categoría</span>
-          <div class="pills" id="f-cats"></div>
-        </div>
-        <span class="tag" id="rank-count"></span>
-      </div>
-      <div class="admin-actions">
-        <button class="btn btn-ghost" type="button" id="add">+ Jugador</button>
-        <button class="btn btn-ghost" type="button" id="csv-model">Modelo CSV</button>
-        <button class="btn btn-ghost" type="button" id="csv-export">Exportar</button>
-        <label class="btn btn-ghost" style="cursor:pointer">
-          Importar
-          <input id="csv" type="file" accept=".csv,.txt,.tsv" hidden />
-        </label>
-        <label class="chk"><input id="replace-temp" type="checkbox" checked /> Reemplazar temporada</label>
-        <button class="btn btn-lime" type="button" id="publish">Publicar ranking</button>
-      </div>
-      <p class="admin-msg" id="rank-msg"></p>
-      <div class="admin-scroll">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th class="col-pos">#</th>
-              <th>Nombre / pareja</th>
-              <th class="col-cat">Categoría</th>
-              <th class="col-num">PJ</th>
-              <th class="col-num">Dif</th>
-              <th class="col-num">Pts</th>
-              <th class="col-temp">Temp</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="tab-fixture" hidden>
-      <div class="admin-panel">
-        <div class="admin-toolbar">
-          <label class="admin-week">Fecha
-            <input id="fx-week" value="Fecha 5" placeholder="Fecha 6" />
-          </label>
-          <button class="btn btn-ghost" type="button" id="fx-add">+ Partido</button>
-          <button class="btn btn-ghost" type="button" id="fx-model">Modelo CSV</button>
-          <button class="btn btn-ghost" type="button" id="fx-export">Exportar CSV</button>
-          <label class="btn btn-ghost" style="cursor:pointer">
-            Importar CSV
-            <input id="fx-csv" type="file" accept=".csv,.txt,.tsv" hidden />
-          </label>
-        </div>
-        <label class="admin-help" style="display:block;margin-top:12px">Pegá la tabla de Drive (categoria, partido, complejo, cancha, dia, horario)
-          <textarea id="fx-paste" rows="6" placeholder="categoria	partido	complejo	cancha	dia	horario"></textarea>
-        </label>
-        <div class="admin-toolbar">
-          <button class="btn btn-ghost" type="button" id="fx-paste-btn">Cargar tabla</button>
-          <button class="btn btn-lime" type="button" id="fx-publish">Publicar fixture</button>
+    <div class="admin-toasts" id="admin-toasts"></div>
+    <dialog class="admin-modal" id="admin-modal">
+      <div class="admin-modal-inner">
+        <h2 id="admin-modal-title">Confirmar</h2>
+        <p id="admin-modal-body"></p>
+        <div class="admin-modal-actions">
+          <button class="btn btn-ghost" type="button" id="admin-modal-cancel">Cancelar</button>
+          <button class="btn btn-lime" type="button" id="admin-modal-ok">Confirmar</button>
         </div>
       </div>
-      <p class="admin-help">Resultado desde Pareja 1: <b>6-4 6-2</b> (2-0 = 3 pts) o <b>6-4 3-6 6-2</b> (2-1 = 2 pts y 1 la otra). Al publicar una fecha nueva, la anterior pasa a Resultados y el fixture queda solo con la fecha en juego.</p>
-      <p class="admin-msg" id="fx-msg"></p>
-      <div class="admin-scroll">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Semana</th>
-              <th>Día</th>
-              <th>Horario</th>
-              <th>Cat</th>
-              <th>Complejo</th>
-              <th>Cancha</th>
-              <th>Pareja 1</th>
-              <th>Pareja 2</th>
-              <th class="col-result">Resultado</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="fx-body"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="tab-fecha" hidden>
-      <div class="admin-panel">
-        <div class="admin-toolbar">
-          <label class="admin-week">Fecha
-            <input id="disp-week" placeholder="Fecha 6" />
-          </label>
-          <label class="admin-week">Fecha límite
-            <input id="disp-deadline" placeholder="Viernes 11/9 a las 18:00" />
-          </label>
-          <label class="chk"><input id="disp-open" type="checkbox" checked /> Carga abierta</label>
-          <button class="btn btn-ghost" type="button" id="disp-reload">Actualizar</button>
-          <button class="btn btn-lime" type="button" id="disp-publish">Guardar fecha</button>
-        </div>
-      </div>
-      <p class="admin-help">Las parejas cargan disponibilidad en /fecha/. Acá ves lo anotado y podés abrir o cerrar la fecha.</p>
-      <p class="admin-msg" id="disp-msg"></p>
-      <p class="tag" id="disp-count"></p>
-      <div id="disp-list" class="disp-list"></div>
-    </section>
-
-    <section id="tab-academia" hidden>
-      <p class="admin-help">Cambiá profes y textos de las clases de adultos. Un renglón por viñeta. Con Subir / Bajar ordenás cómo se ven en la web.</p>
-      <form class="form cms-form" id="ac-copy">
-        <label>Título (un renglón = un corte)
-          <textarea name="title" rows="2"></textarea>
-        </label>
-        <label>Texto de arriba
-          <textarea name="intro" rows="3"></textarea>
-        </label>
-        <label>Texto del equipo
-          <input name="teamNote" />
-        </label>
-      </form>
-      <div class="cms-head">
-        <h3>Profes</h3>
-        <button class="btn btn-ghost" type="button" id="staff-add">+ Agregar profe</button>
-      </div>
-      <div class="cms-list" id="staff-list"></div>
-      <h3>Programas</h3>
-      <div class="cms-list" id="prog-list"></div>
-      <div class="admin-actions">
-        <button class="btn btn-lime" type="button" id="ac-save">Guardar academia</button>
-      </div>
-      <p class="admin-msg" id="ac-msg"></p>
-    </section>
-
-    <section id="tab-infantiles" hidden>
-      <p class="admin-help">Textos y complejos de las clases infantiles. El profe se elige de la lista de Adultos. Con Subir / Bajar ordenás las sedes.</p>
-      <form class="form cms-form" id="kids-copy">
-        <label>Título (un renglón = un corte)
-          <textarea name="title" rows="2"></textarea>
-        </label>
-        <label>Edades
-          <input name="age" placeholder="De 7 a 13 años" />
-        </label>
-        <label>Texto de arriba
-          <textarea name="intro" rows="2"></textarea>
-        </label>
-        <label>Viñetas (un renglón cada una)
-          <textarea name="features" rows="4"></textarea>
-        </label>
-        <label>Profe
-          <select name="profeId"></select>
-        </label>
-        <label>Rol en esta página
-          <input name="profeRole" placeholder="Profe · Academia infantil" />
-        </label>
-        <label>Texto del botón
-          <input name="cta" />
-        </label>
-      </form>
-      <div class="cms-head">
-        <h3>Sedes y horarios</h3>
-        <button class="btn btn-ghost" type="button" id="kids-group-add">+ Agregar sede</button>
-      </div>
-      <div class="cms-list" id="kids-group-list"></div>
-      <div class="cms-head" hidden>
-        <h3>Valores mensuales</h3>
-        <button class="btn btn-ghost" type="button" id="kids-price-add">+ Agregar valor</button>
-      </div>
-      <div class="cms-list" id="kids-price-list" hidden></div>
-      <div class="admin-actions">
-        <button class="btn btn-lime" type="button" id="kids-save">Guardar infantiles</button>
-      </div>
-      <p class="admin-msg" id="kids-msg"></p>
-    </section>
-
-    <section id="tab-sedes" hidden>
-      <p class="admin-help">Complejos de la liga y la academia. Marcá dónde se ve cada uno. Con Subir / Bajar ordenás el lugar en la web.</p>
-      <div class="cms-head">
-        <h3>Sedes</h3>
-        <button class="btn btn-ghost" type="button" id="venue-add">+ Agregar sede</button>
-      </div>
-      <div class="cms-list" id="venue-list"></div>
-      <div class="cms-head">
-        <h3>Otros complejos</h3>
-        <button class="btn btn-ghost" type="button" id="more-add">+ Agregar</button>
-      </div>
-      <div class="cms-list" id="more-list"></div>
-      <div class="admin-actions">
-        <button class="btn btn-lime" type="button" id="venue-save">Guardar sedes</button>
-      </div>
-      <p class="admin-msg" id="venue-msg"></p>
-    </section>
-
-    <section id="tab-torneos" hidden>
-      <p class="admin-help">Si no hay torneos, la web muestra el aviso de “sin torneos”. Con Subir / Bajar ordenás cómo se listan.</p>
-      <form class="form cms-form" id="tn-copy">
-        <label>Título
-          <input name="title" />
-        </label>
-        <label>Texto de arriba
-          <textarea name="intro" rows="3"></textarea>
-        </label>
-        <label>Aviso si no hay torneos
-          <input name="emptyTitle" />
-        </label>
-        <label>Texto del aviso
-          <textarea name="emptyText" rows="3"></textarea>
-        </label>
-      </form>
-      <div class="cms-head">
-        <h3>Torneos</h3>
-        <button class="btn btn-ghost" type="button" id="tn-add">+ Agregar torneo</button>
-      </div>
-      <div class="cms-list" id="tn-list"></div>
-      <div class="admin-actions">
-        <button class="btn btn-lime" type="button" id="tn-save">Guardar torneos</button>
-      </div>
-      <p class="admin-msg" id="tn-msg"></p>
-    </section>
-
-    <section id="tab-sitio" hidden>
-      <form class="form" id="site-form" style="max-width:640px">
-        <label>Temporada en juego
-          <input name="currentSeason" />
-        </label>
-        <label>WhatsApp (549…)
-          <input name="whatsapp" />
-        </label>
-        <label>Instagram
-          <input name="instagram" />
-        </label>
-        <label>Ciudad
-          <input name="city" />
-        </label>
-        <label>Provincia
-          <input name="province" />
-        </label>
-        <label>Texto de inicio
-          <textarea name="ligaIntro" rows="6"></textarea>
-        </label>
-        <button class="btn btn-lime" type="submit">Guardar sitio</button>
-      </form>
-      <p class="admin-msg" id="site-msg"></p>
-    </section>
+    </dialog>
   </div>
 
   <script>
@@ -320,1589 +479,9 @@ import Layout from "../layouts/Layout.astro";
     import fixtureJson from "../data/fixture.json";
     import siteJson from "../data/site.json";
     import dispJson from "../data/disponibilidad.json";
-    import { applyFixtureResults, describeResult } from "../lib/scoring.js";
-    import { DISP_PATH, pairLabel } from "../lib/disponibilidad.js";
-    import { mergeArchivedMatches, weekKey } from "../lib/liga.js";
+    import resultsJson from "../data/results.json";
+    import { bootAdmin } from "../admin/main.js";
 
-    const HIDDEN_CATS = new Set(["S Masculina"]);
-    const initialRows = rankingJson.filter((p) => !HIDDEN_CATS.has(p.cat));
-    const initialSite = siteJson;
-    const initialFixture = fixtureJson;
-    const AUTH_KEY = "liga-fb-admin-ok";
-    const owner = initialSite.githubOwner;
-    const repo = initialSite.githubRepo;
-    const API_URL = String(initialSite.apiUrl || "").replace(/\/$/, "");
-    const RANK_PATH = "src/data/ranking.json";
-    const SITE_PATH = "src/data/site.json";
-    let disp = structuredClone(dispJson);
-    const FIXTURE_PATH = "src/data/fixture.json";
-    const RESULTS_PATH = "src/data/results.json";
-    const RANK_COLS = ["name", "cat", "pts", "pj", "dif", "pos", "temp"];
-    const FX_COLS = ["categoria", "partido", "complejo", "cancha", "dia", "horario"];
-    const CATS = ["A Masculina", "B Masculina", "C Masculina", "A Femenino", "B Femenino", "C Femenino"];
-    const CAT_MAP = {
-      "A MASC": "A Masculina", "A MASCULINA": "A Masculina",
-      "B MASC": "B Masculina", "B MASCULINA": "B Masculina",
-      "C MASC": "C Masculina", "C MASCULINA": "C Masculina",
-      "A FEM": "A Femenino", "A FEMENINO": "A Femenino",
-      "B FEM": "B Femenino", "B FEMENINO": "B Femenino",
-      "C FEM": "C Femenino", "C FEMENINO": "C Femenino",
-    };
-    const VENUE_MAP = {
-      OPEN: "Open Padel", "OPEN PADEL": "Open Padel",
-      AMERICAS: "Americas Padel", "AMÉRICAS": "Americas Padel", "AMERICAS PADEL": "Americas Padel",
-      PALERMO: "Palermo Padel", "PALERMO PÁDEL": "Palermo Padel", "PALERMO PADEL": "Palermo Padel",
-      TERRAZAS: "Terrazas Padel", "TERRAZAS PADEL": "Terrazas Padel",
-      BENGURION: "Bengurion Padel", "BEN GURION": "Bengurion Padel",
-    };
-
-    let rows = structuredClone(initialRows);
-    let siteData = structuredClone(initialSite);
-    let fixture = structuredClone(initialFixture || []);
-    const BASE = import.meta.env.BASE_URL || "/";
-    let token = "";
-    let filterTemp = siteData.currentSeason || "T4";
-    let filterCat = "TODAS";
-
-    const $ = (id) => document.getElementById(id);
-    const gate = $("gate");
-    const app = $("app");
-
-    function toB64(str) {
-      return btoa(unescape(encodeURIComponent(str)));
-    }
-    function fromB64(b64) {
-      return decodeURIComponent(escape(atob(b64)));
-    }
-    function msg(el, text, kind) {
-      el.textContent = text;
-      el.className = "admin-msg" + (kind ? " " + kind : "");
-      if (kind === "ok") keepLogin();
-    }
-    function num(v) {
-      const n = Number(v);
-      return Number.isFinite(n) ? n : 0;
-    }
-    function cleanRow(r) {
-      return {
-        name: String(r.name || "").trim(),
-        cat: String(r.cat || "").trim(),
-        pts: num(r.pts),
-        pj: num(r.pj),
-        dif: num(r.dif),
-        pos: num(r.pos),
-        temp: String(r.temp || siteData.currentSeason || "T4").trim().toUpperCase(),
-      };
-    }
-
-    async function api(path, opts = {}) {
-      if (!API_URL) throw new Error("Falta configurar la API segura del sitio.");
-      token = getPublishToken();
-      const res = await fetch(`${API_URL}/github`, {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + token,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          path,
-          method: opts.method || "GET",
-          body: opts.body,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(publishError({ message: data.message || "Error GitHub " + res.status }));
-      }
-      return data;
-    }
-
-    async function readRemoteJson(filePath, fallback) {
-      try {
-        const file = await api(`/repos/${owner}/${repo}/contents/${filePath}?ref=main`);
-        const raw = String(file.content || "").replace(/\n/g, "");
-        if (!raw) return fallback;
-        return JSON.parse(fromB64(raw));
-      } catch (error) {
-        if (/\b404\b|not found|no encontrado/i.test(String(error?.message || error))) return fallback;
-        throw error;
-      }
-    }
-    function fallbackWeek() {
-      return $("fx-week")?.value.trim() || fixture[0]?.week || "Fecha 5";
-    }
-    async function getFileSha(filePath) {
-      try {
-        const data = await api(`/repos/${owner}/${repo}/contents/${filePath}`);
-        return data.sha || null;
-      } catch (error) {
-        if (/\b404\b|not found|no encontrado/i.test(String(error?.message || error))) return null;
-        throw error;
-      }
-    }
-
-    async function publishFile(filePath, content, message, alreadyB64 = false) {
-      const payload = alreadyB64 ? content : toB64(content);
-      let lastErr;
-      for (let i = 0; i < 2; i++) {
-        try {
-          const sha = await getFileSha(filePath);
-          const body = { message, content: payload, branch: "main" };
-          if (sha) body.sha = sha;
-          await api(`/repos/${owner}/${repo}/contents/${filePath}`, {
-            method: "PUT",
-            body: JSON.stringify(body),
-          });
-          return;
-        } catch (err) {
-          lastErr = err;
-          if (!/does not match/i.test(String(err?.message || err)) || i === 1) throw err;
-        }
-      }
-      throw lastErr;
-    }
-    async function publishFiles(files, message) {
-      const ref = await api(`/repos/${owner}/${repo}/git/refs/heads/main`);
-      const baseSha = ref.object.sha;
-      const baseCommit = await api(`/repos/${owner}/${repo}/git/commits/${baseSha}`);
-      const tree = await api(`/repos/${owner}/${repo}/git/trees`, {
-        method: "POST",
-        body: JSON.stringify({
-          base_tree: baseCommit.tree.sha,
-          tree: files.map((f) => ({
-            path: f.path,
-            mode: "100644",
-            type: "blob",
-            content: f.content,
-          })),
-        }),
-      });
-      const commit = await api(`/repos/${owner}/${repo}/git/commits`, {
-        method: "POST",
-        body: JSON.stringify({
-          message,
-          tree: tree.sha,
-          parents: [baseSha],
-        }),
-      });
-      await api(`/repos/${owner}/${repo}/git/refs/heads/main`, {
-        method: "PATCH",
-        body: JSON.stringify({ sha: commit.sha }),
-      });
-    }
-
-    function temps() {
-      return [...new Set(rows.map((r) => r.temp))].sort();
-    }
-    function catsInView() {
-      const list = filterTemp === "TODAS" ? rows : rows.filter((r) => r.temp === filterTemp);
-      return [...new Set(list.map((r) => r.cat))].sort();
-    }
-
-    function fillFilters() {
-      const tlist = temps();
-      if (filterTemp !== "TODAS" && tlist.length && !tlist.includes(filterTemp)) {
-        filterTemp = tlist.includes(siteData.currentSeason) ? siteData.currentSeason : tlist[0];
-      }
-      const counts = Object.fromEntries(tlist.map((t) => [t, rows.filter((r) => r.temp === t).length]));
-      $("f-temps").innerHTML = tlist
-        .map((t) => `<button class="seg-item${t === filterTemp ? " on" : ""}" type="button" data-temp="${t}"><strong>${t}</strong><span>${counts[t] || 0}</span></button>`)
-        .join("");
-      const catList = catsInView();
-      if (filterCat !== "TODAS" && !catList.includes(filterCat)) filterCat = "TODAS";
-      $("f-cats").innerHTML =
-        `<button class="pill${filterCat === "TODAS" ? " on" : ""}" type="button" data-cat="TODAS">Todas</button>` +
-        catList.map((c) => `<button class="pill${c === filterCat ? " on" : ""}" type="button" data-cat="${c}">${c}</button>`).join("");
-    }
-
-    function visible() {
-      const q = ($("f-q").value || "").trim().toLowerCase();
-      return rows
-        .map((r, i) => ({ r, i }))
-        .filter(({ r }) => {
-          if (filterTemp !== "TODAS" && r.temp !== filterTemp) return false;
-          if (filterCat !== "TODAS" && r.cat !== filterCat) return false;
-          if (q && !(r.name || "").toLowerCase().includes(q)) return false;
-          return true;
-        });
-    }
-
-    function renderTable() {
-      const list = visible();
-      $("rank-count").textContent = list.length + " visibles · " + rows.length + " total";
-      $("tbody").innerHTML = list
-        .map(({ r, i }) => {
-          const catOpts = [...new Set([...CATS, r.cat].filter(Boolean))]
-            .map((c) => `<option ${c === r.cat ? "selected" : ""}>${c}</option>`)
-            .join("");
-          const tempOpts = [...new Set([...(temps().length ? temps() : ["T4"]), r.temp])]
-            .map((t) => `<option ${t === r.temp ? "selected" : ""}>${t}</option>`)
-            .join("");
-          return `<tr data-i="${i}">
-            <td class="col-pos"><input data-k="pos" type="number" inputmode="numeric" value="${r.pos}" /></td>
-            <td><input class="admin-name" data-k="name" value="${String(r.name).replace(/"/g, "&quot;")}" /></td>
-            <td class="col-cat"><select data-k="cat">${catOpts}</select></td>
-            <td class="col-num"><input data-k="pj" type="number" inputmode="numeric" value="${r.pj}" /></td>
-            <td class="col-num"><input data-k="dif" type="number" inputmode="numeric" value="${r.dif}" /></td>
-            <td class="col-num"><input data-k="pts" type="number" inputmode="numeric" value="${r.pts}" /></td>
-            <td class="col-temp"><select data-k="temp">${tempOpts}</select></td>
-            <td class="col-del"><button class="admin-del" type="button" data-del="${i}" aria-label="Eliminar">×</button></td>
-          </tr>`;
-        })
-        .join("");
-    }
-
-    function fillSiteForm() {
-      const form = $("site-form");
-      form.currentSeason.value = siteData.currentSeason || "T4";
-      form.whatsapp.value = siteData.whatsapp || "";
-      form.instagram.value = siteData.instagram || "";
-      form.city.value = siteData.city || "";
-      form.province.value = siteData.province || "";
-      form.ligaIntro.value = siteData.ligaIntro || "";
-    }
-
-    function ensureCms() {
-      if (!siteData.academia) siteData.academia = {};
-      if (!Array.isArray(siteData.academia.programs)) {
-        siteData.academia.programs = [
-          { n: "01", title: "Adultos", text: "" },
-          { n: "02", title: "Niños", text: "" },
-          { n: "03", title: "Personalizado", text: "" },
-        ];
-      }
-      if (!Array.isArray(siteData.staff)) siteData.staff = [];
-      if (!siteData.torneos) siteData.torneos = {};
-      if (!Array.isArray(siteData.torneos.items)) siteData.torneos.items = [];
-      if (!Array.isArray(siteData.venues)) siteData.venues = [];
-      if (!Array.isArray(siteData.moreVenues)) siteData.moreVenues = [];
-      if (!siteData.kids) siteData.kids = {};
-      if (!Array.isArray(siteData.kids.features)) siteData.kids.features = [];
-      if (!Array.isArray(siteData.kids.groups)) siteData.kids.groups = [];
-      if (!Array.isArray(siteData.kids.prices)) siteData.kids.prices = [];
-      if (!siteData.kids.profeId) siteData.kids.profeId = "barrionuevo-sebastian";
-    }
-
-    function escAttr(s) {
-      return String(s ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/"/g, "&quot;")
-        .replace(/</g, "&lt;");
-    }
-
-    function assetUrl(path) {
-      if (!path) return "";
-      if (String(path).startsWith("data:")) return path;
-      return BASE + String(path).replace(/^\//, "");
-    }
-
-    function slugify(s) {
-      return String(s || "foto")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "") || "foto";
-    }
-
-    function fileExt(file) {
-      const n = String(file?.name || "").split(".").pop().toLowerCase();
-      if (["png", "jpg", "jpeg", "webp", "gif"].includes(n)) return n === "jpeg" ? "jpg" : n;
-      return "png";
-    }
-
-    function fileToB64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result).split(",")[1] || "");
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    function photoBox(src, alt) {
-      if (src) return `<img class="cms-photo" src="${escAttr(assetUrl(src))}" alt="${escAttr(alt)}" />`;
-      return `<div class="cms-photo cms-photo-empty">Sin foto</div>`;
-    }
-    function cmsMedia(src, alt, actions) {
-      return `<div class="cms-media">${photoBox(src, alt)}<div class="cms-card-actions">${actions}</div></div>`;
-    }
-    function moveInList(list, index, dir) {
-      const from = Number(index);
-      const to = from + Number(dir);
-      if (!Array.isArray(list) || from < 0 || to < 0 || to >= list.length) return false;
-      const [item] = list.splice(from, 1);
-      list.splice(to, 0, item);
-      return true;
-    }
-    function cmsMoveBtns(kind, i, n) {
-      return `<div class="cms-order">
-        <button class="btn cms-btn cms-btn-move" type="button" data-move="${kind}" data-i="${i}" data-dir="-1" aria-label="Subir" ${i === 0 ? "disabled" : ""}>↑ Subir</button>
-        <button class="btn cms-btn cms-btn-move" type="button" data-move="${kind}" data-i="${i}" data-dir="1" aria-label="Bajar" ${i >= n - 1 ? "disabled" : ""}>↓ Bajar</button>
-      </div>`;
-    }
-
-    function fillAcademiaForm() {
-      ensureCms();
-      const ac = siteData.academia;
-      const form = $("ac-copy");
-      form.title.value = ac.title || "";
-      form.intro.value = ac.intro || "";
-      form.teamNote.value = ac.teamNote || "";
-      $("staff-list").innerHTML = siteData.staff
-        .map((p, i) => `<article class="cms-card" data-staff="${i}">
-          ${cmsMedia(p._preview || p.image, p.name, `
-            ${cmsMoveBtns("staff", i, siteData.staff.length)}
-            <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
-              <input data-photo="staff" type="file" accept="image/*" hidden />
-            </label>
-            <button class="btn cms-btn cms-btn-del" type="button" data-staff-del="${i}">Quitar</button>
-          `)}
-          <div class="cms-fields">
-            <label>Nombre <input data-k="name" value="${escAttr(p.name)}" /></label>
-            <label>Rol <input data-k="role" value="${escAttr(p.role)}" placeholder="Profe" /></label>
-            <label class="cms-span">Texto <textarea data-k="bio" rows="3">${escAttr(p.bio)}</textarea></label>
-            <label class="cms-span">Viñetas (un renglón cada una)
-              <textarea data-k="bullets" rows="3">${escAttr((p.bullets || []).join("\n"))}</textarea>
-            </label>
-          </div>
-        </article>`)
-        .join("");
-      $("prog-list").innerHTML = siteData.academia.programs
-        .map((pr, i) => `<article class="cms-card cms-card-plain" data-prog="${i}">
-          <div class="cms-fields">
-            <div class="cms-card-actions cms-span">${cmsMoveBtns("prog", i, siteData.academia.programs.length)}</div>
-            <label>Programa <input data-k="title" value="${escAttr(pr.title)}" /></label>
-            <label class="cms-span">Texto <textarea data-k="text" rows="2">${escAttr(pr.text)}</textarea></label>
-          </div>
-        </article>`)
-        .join("");
-    }
-
-    function fillVenueForm() {
-      ensureCms();
-      $("venue-list").innerHTML = siteData.venues
-        .map((v, i) => `<article class="cms-card" data-venue="${i}">
-          ${cmsMedia(v._preview || v.image, v.name, `
-            ${cmsMoveBtns("venue", i, siteData.venues.length)}
-            <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
-              <input data-photo="venue" type="file" accept="image/*" hidden />
-            </label>
-            <button class="btn cms-btn cms-btn-del" type="button" data-venue-del="${i}">Quitar</button>
-          `)}
-          <div class="cms-fields">
-            <label>Nombre <input data-k="name" value="${escAttr(v.name)}" /></label>
-            <label>Ciudad <input data-k="city" value="${escAttr(v.city)}" /></label>
-            <label class="cms-span">Dirección <input data-k="address" value="${escAttr(v.address)}" /></label>
-            <label class="cms-span">Qué es <input data-k="type" value="${escAttr(v.type)}" placeholder="Cancha abierta · Liga y academia" /></label>
-            <label>WhatsApp <input data-k="whatsapp" value="${escAttr(v.whatsapp)}" placeholder="549..." /></label>
-            <label>Instagram <input data-k="instagram" value="${escAttr(v.instagram)}" /></label>
-            <label class="cms-span">Maps <input data-k="maps" value="${escAttr(v.maps)}" /></label>
-            <div class="cms-checks cms-span">
-              <label class="cms-chip"><input data-k="liga" type="checkbox" ${v.liga !== false ? "checked" : ""} /> Liga</label>
-              <label class="cms-chip"><input data-k="academia" type="checkbox" ${v.academia ? "checked" : ""} /> Academia</label>
-            </div>
-          </div>
-        </article>`)
-        .join("");
-      $("more-list").innerHTML = siteData.moreVenues
-        .map((v, i) => `<article class="cms-card" data-more="${i}">
-          ${cmsMedia(v._preview || v.image, v.name, `
-            ${cmsMoveBtns("more", i, siteData.moreVenues.length)}
-            <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
-              <input data-photo="more" type="file" accept="image/*" hidden />
-            </label>
-            <button class="btn cms-btn cms-btn-del" type="button" data-more-del="${i}">Quitar</button>
-          `)}
-          <div class="cms-fields">
-            <label class="cms-span">Nombre <input data-k="name" value="${escAttr(v.name)}" /></label>
-          </div>
-        </article>`)
-        .join("");
-    }
-
-    function fillTorneosForm() {
-      ensureCms();
-      const t = siteData.torneos;
-      const form = $("tn-copy");
-      form.title.value = t.title || "";
-      form.intro.value = t.intro || "";
-      form.emptyTitle.value = t.emptyTitle || "";
-      form.emptyText.value = t.emptyText || "";
-      $("tn-list").innerHTML = (t.items || [])
-        .map((item, i) => `<article class="cms-card cms-card-plain" data-tn="${i}">
-          <div class="cms-fields">
-            <div class="cms-card-actions cms-span">
-              ${cmsMoveBtns("tn", i, (t.items || []).length)}
-              <button class="btn cms-btn cms-btn-del" type="button" data-tn-del="${i}">Quitar</button>
-            </div>
-            <label>Nombre <input data-k="title" value="${escAttr(item.title)}" /></label>
-            <label>Cuándo <input data-k="when" value="${escAttr(item.when)}" placeholder="Ej. 20 de septiembre" /></label>
-            <label class="cms-span">Texto <textarea data-k="text" rows="3">${escAttr(item.text)}</textarea></label>
-          </div>
-        </article>`)
-        .join("");
-    }
-
-    function fillKidsForm() {
-      ensureCms();
-      const k = siteData.kids;
-      const form = $("kids-copy");
-      form.title.value = k.title || "";
-      form.age.value = k.age || "";
-      form.intro.value = k.intro || "";
-      form.features.value = (k.features || []).join("\n");
-      form.profeRole.value = k.profeRole || "";
-      form.cta.value = k.cta || "";
-      form.profeId.innerHTML = (siteData.staff || [])
-        .map((p) => `<option value="${escAttr(p.id)}" ${p.id === k.profeId ? "selected" : ""}>${escAttr(p.name || p.id)}</option>`)
-        .join("");
-      $("kids-group-list").innerHTML = (k.groups || [])
-        .map((g, i) => `<article class="cms-card cms-card-plain" data-kids-group="${i}">
-          <div class="cms-fields">
-            <div class="cms-card-actions cms-span">
-              ${cmsMoveBtns("kids-group", i, (k.groups || []).length)}
-              <button class="btn cms-btn cms-btn-del" type="button" data-kids-group-del="${i}">Quitar</button>
-            </div>
-            <label>Sede <input data-k="venue" value="${escAttr(g.venue)}" /></label>
-            <label>Días <input data-k="when" value="${escAttr(g.when)}" placeholder="Lunes y jueves" /></label>
-            <label class="cms-span">Horarios (un renglón: 17:00 hs | Avanzados)
-              <textarea data-k="rows" rows="3">${escAttr((g.rows || []).map((r) => [r.time, r.level].filter(Boolean).join(" | ")).join("\n"))}</textarea>
-            </label>
-          </div>
-        </article>`)
-        .join("");
-      $("kids-price-list").innerHTML = (k.prices || [])
-        .map((p, i) => `<article class="cms-card cms-card-plain" data-kids-price="${i}">
-          <div class="cms-fields">
-            <div class="cms-card-actions cms-span">
-              ${cmsMoveBtns("kids-price", i, (k.prices || []).length)}
-              <button class="btn cms-btn cms-btn-del" type="button" data-kids-price-del="${i}">Quitar</button>
-            </div>
-            <label>Valor <input data-k="amount" value="${escAttr(p.amount)}" placeholder="$70.000" /></label>
-            <label>Texto <input data-k="text" value="${escAttr(p.text)}" placeholder="Dos veces por semana" /></label>
-          </div>
-        </article>`)
-        .join("");
-    }
-
-    function readAcademiaFromDom() {
-      ensureCms();
-      const form = $("ac-copy");
-      siteData.academia = {
-        ...siteData.academia,
-        title: form.title.value.trim(),
-        intro: form.intro.value.trim(),
-        teamNote: form.teamNote.value.trim(),
-      };
-      $("staff-list").querySelectorAll("[data-staff]").forEach((card) => {
-        const i = Number(card.dataset.staff);
-        const p = siteData.staff[i];
-        if (!p) return;
-        p.name = card.querySelector("[data-k='name']")?.value.trim() || "";
-        p.role = card.querySelector("[data-k='role']")?.value.trim() || "Profe";
-        p.bio = card.querySelector("[data-k='bio']")?.value.trim() || "";
-        p.bullets = (card.querySelector("[data-k='bullets']")?.value || "")
-          .split("\n")
-          .map((s) => s.trim())
-          .filter(Boolean);
-      });
-      $("prog-list").querySelectorAll("[data-prog]").forEach((card) => {
-        const i = Number(card.dataset.prog);
-        const pr = siteData.academia.programs[i];
-        if (!pr) return;
-        pr.title = card.querySelector("[data-k='title']")?.value.trim() || "";
-        pr.text = card.querySelector("[data-k='text']")?.value.trim() || "";
-      });
-    }
-
-    function readVenuesFromDom() {
-      ensureCms();
-      $("venue-list").querySelectorAll("[data-venue]").forEach((card) => {
-        const i = Number(card.dataset.venue);
-        const v = siteData.venues[i];
-        if (!v) return;
-        v.name = card.querySelector("[data-k='name']")?.value.trim() || "";
-        v.address = card.querySelector("[data-k='address']")?.value.trim() || "";
-        v.city = card.querySelector("[data-k='city']")?.value.trim() || "";
-        v.type = card.querySelector("[data-k='type']")?.value.trim() || "";
-        v.whatsapp = card.querySelector("[data-k='whatsapp']")?.value.trim() || "";
-        v.instagram = card.querySelector("[data-k='instagram']")?.value.trim() || "";
-        v.maps = card.querySelector("[data-k='maps']")?.value.trim() || "";
-        v.liga = !!card.querySelector("[data-k='liga']")?.checked;
-        v.academia = !!card.querySelector("[data-k='academia']")?.checked;
-        if (!v.id) v.id = slugify(v.name);
-      });
-      $("more-list").querySelectorAll("[data-more]").forEach((card) => {
-        const i = Number(card.dataset.more);
-        const v = siteData.moreVenues[i];
-        if (!v) return;
-        v.name = card.querySelector("[data-k='name']")?.value.trim() || "";
-      });
-    }
-
-    function readTorneosFromDom() {
-      ensureCms();
-      const form = $("tn-copy");
-      siteData.torneos = {
-        ...siteData.torneos,
-        title: form.title.value.trim() || "Torneos",
-        intro: form.intro.value.trim(),
-        emptyTitle: form.emptyTitle.value.trim(),
-        emptyText: form.emptyText.value.trim(),
-      };
-      $("tn-list").querySelectorAll("[data-tn]").forEach((card) => {
-        const i = Number(card.dataset.tn);
-        const item = siteData.torneos.items[i];
-        if (!item) return;
-        item.title = card.querySelector("[data-k='title']")?.value.trim() || "";
-        item.when = card.querySelector("[data-k='when']")?.value.trim() || "";
-        item.text = card.querySelector("[data-k='text']")?.value.trim() || "";
-      });
-    }
-
-    function parseKidsRows(text) {
-      return String(text || "")
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .map((line) => {
-          const parts = line.split("|").map((s) => s.trim());
-          return { time: parts[0] || "", level: parts.slice(1).join(" | ") };
-        });
-    }
-
-    function readKidsFromDom() {
-      ensureCms();
-      const form = $("kids-copy");
-      siteData.kids = {
-        ...siteData.kids,
-        title: form.title.value.trim(),
-        age: form.age.value.trim(),
-        intro: form.intro.value.trim(),
-        features: form.features.value.split("\n").map((s) => s.trim()).filter(Boolean),
-        profeId: form.profeId.value,
-        profeRole: form.profeRole.value.trim(),
-        cta: form.cta.value.trim(),
-      };
-      $("kids-group-list").querySelectorAll("[data-kids-group]").forEach((card) => {
-        const i = Number(card.dataset.kidsGroup);
-        const g = siteData.kids.groups[i];
-        if (!g) return;
-        g.venue = card.querySelector("[data-k='venue']")?.value.trim() || "";
-        g.when = card.querySelector("[data-k='when']")?.value.trim() || "";
-        g.rows = parseKidsRows(card.querySelector("[data-k='rows']")?.value);
-      });
-      $("kids-price-list").querySelectorAll("[data-kids-price]").forEach((card) => {
-        const i = Number(card.dataset.kidsPrice);
-        const p = siteData.kids.prices[i];
-        if (!p) return;
-        p.amount = card.querySelector("[data-k='amount']")?.value.trim() || "";
-        p.text = card.querySelector("[data-k='text']")?.value.trim() || "";
-      });
-    }
-
-    function cleanSiteForSave() {
-      const copy = structuredClone(siteData);
-      const strip = (obj) => {
-        if (!obj) return;
-        delete obj._file;
-        delete obj._preview;
-      };
-      (copy.staff || []).forEach(strip);
-      (copy.venues || []).forEach(strip);
-      (copy.moreVenues || []).forEach(strip);
-      return copy;
-    }
-    async function readRemoteSite() {
-      const file = await api(`/repos/${owner}/${repo}/contents/${SITE_PATH}?ref=main`);
-      const raw = String(file.content || "").replace(/\n/g, "");
-      return JSON.parse(fromB64(raw));
-    }
-    async function publishSiteFields(fields, message) {
-      const remote = await readRemoteSite();
-      const next = { ...remote, ...fields };
-      await publishFile(SITE_PATH, JSON.stringify(next, null, 2) + "\n", message);
-      Object.assign(siteData, next);
-    }
-
-    async function uploadPending(list, kind) {
-      for (const item of list) {
-        if (!item?._file) continue;
-        const name = slugify(item.name || kind) + "-" + Date.now() + "." + fileExt(item._file);
-        const path = "public/images/" + name;
-        await publishFile(path, await fileToB64(item._file), "Sube foto de " + (item.name || kind) + ".", true);
-        item.image = "images/" + name;
-        if (kind === "venue" || kind === "more") item.image = "/images/" + name;
-        delete item._file;
-        delete item._preview;
-      }
-    }
-
-    function getPublishToken() {
-      try {
-        const data = JSON.parse(localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY) || "{}");
-        return String(data.token || "").trim();
-      } catch {
-        return "";
-      }
-    }
-    function usePublishToken(el) {
-      token = getPublishToken();
-      if (!API_URL || !token) {
-        msg(el, "La sesión segura venció. Volvé a ingresar al admin.", "err");
-        return false;
-      }
-      return true;
-    }
-    function publishError(err) {
-      const m = String(err?.message || err);
-      if (/does not match/i.test(m)) {
-        return "El sitio se actualizó en otro lado. Tocá Guardar de nuevo.";
-      }
-      if (/bad credentials/i.test(m) || /\b401\b/.test(m)) {
-        return "No se pudo guardar. El permiso de publicación del sitio está vencido.";
-      }
-      return m;
-    }
-    function fillDisp() {
-      $("disp-week").value = disp.week || "Fecha 6";
-      $("disp-deadline").value = disp.deadline || "";
-      $("disp-open").checked = disp.open !== false;
-      const list = disp.entries || [];
-      $("disp-count").textContent = list.length + (list.length === 1 ? " pareja" : " parejas");
-      const groups = [...new Set(list.map((e) => e.cat || "Sin categoría"))];
-      $("disp-list").innerHTML = groups.length
-        ? groups.map((cat) => {
-            const rows = list.filter((e) => (e.cat || "Sin categoría") === cat);
-            return `<section class="fixture-week">
-              <h3 class="kicker">${cat} · ${rows.length}</h3>
-              <div class="fixture-list">
-                ${rows.map((e) => {
-                  const when = e.bye
-                    ? "No juega esta semana"
-                    : Object.entries(e.days || {}).map(([d, h]) => `${d} ${h}`).join(" · ");
-                  return `<article class="fixture-row" data-disp="${e.id}">
-                    <div class="fixture-meta">
-                      <span>${e.recover ? "Recupera" : "Fecha"}</span>
-                      <span>${when || "Sin horario"}</span>
-                    </div>
-                    <strong>${pairLabel(e)}</strong>
-                    ${e.note ? `<p class="admin-help">${e.note}</p>` : ""}
-                    <button class="admin-del" type="button" data-disp-del="${e.id}" aria-label="Eliminar">×</button>
-                  </article>`;
-                }).join("")}
-              </div>
-            </section>`;
-          }).join("")
-        : `<p class="empty" style="display:block;padding:24px 0">Todavía no hay disponibilidades en ${disp.week || "esta fecha"}.</p>`;
-    }
-    async function reloadDisp() {
-      if (!token) {
-        fillDisp();
-        return;
-      }
-      try {
-        const file = await api(`/repos/${owner}/${repo}/contents/${DISP_PATH}?ref=main`);
-        disp = JSON.parse(fromB64(String(file.content || "").replace(/\n/g, "")));
-        fillDisp();
-        msg($("disp-msg"), "Disponibilidades actualizadas.", "ok");
-      } catch (err) {
-        fillDisp();
-        msg($("disp-msg"), err.message, "err");
-      }
-    }
-
-    function csvCell(v) {
-      const s = String(v ?? "");
-      return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-    }
-    function downloadCsv(filename, cols, data) {
-      const body = [cols.join(","), ...data.map((row) => cols.map((c) => csvCell(row[c])).join(","))].join("\n");
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob(["\uFEFF" + body + "\n"], { type: "text/csv;charset=utf-8" }));
-      a.download = filename;
-      a.click();
-    }
-    function normCat(c) {
-      const s = String(c || "").trim().toUpperCase().replace(/\s+/g, " ");
-      return CAT_MAP[s] || String(c || "").trim();
-    }
-    function normVenue(v) {
-      const s = String(v || "").trim().toUpperCase();
-      return VENUE_MAP[s] || String(v || "").trim();
-    }
-    function normTime(t) {
-      return String(t || "").replace(/(\d):\.(?=\d)/g, "$1:").replace(/\s+/g, " ").trim();
-    }
-    function splitPartido(partido) {
-      const raw = String(partido || "").trim();
-      const parts = raw.split(/\s+vs\.?\s+/i);
-      const pair = (s) => s.trim().replace(/\s*[–—-]\s*/g, " / ");
-      if (parts.length >= 2) return { home: pair(parts[0]), away: pair(parts.slice(1).join(" vs ")) };
-      return { home: pair(raw), away: "" };
-    }
-    function splitLine(line, sep) {
-      const out = [];
-      let cur = "";
-      let q = false;
-      for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-        if (ch === '"') q = !q;
-        else if (ch === sep && !q) {
-          out.push(cur.trim());
-          cur = "";
-        } else cur += ch;
-      }
-      out.push(cur.trim());
-      return out;
-    }
-    function cleanMatch(m, defaults = {}) {
-      const fromPartido = (!m.home && !m.away && (m.partido || ""))
-        ? splitPartido(m.partido)
-        : { home: m.home, away: m.away };
-      return {
-        week: String(m.week || defaults.week || "").trim(),
-        day: String(m.day || m.dia || "").trim(),
-        date: String(m.date || "").trim(),
-        temp: String(m.temp || defaults.temp || siteData.currentSeason || "T4").trim().toUpperCase(),
-        cat: normCat(m.cat || m.categoria || m.categoría || ""),
-        time: normTime(m.time || m.horario || m.hora || ""),
-        venue: normVenue(m.venue || m.complejo || m.sede || ""),
-        court: String(m.court || m.cancha || "").trim(),
-        home: String(fromPartido.home || "").trim(),
-        away: String(fromPartido.away || "").trim(),
-        result: String(m.result || m.resultado || "").trim(),
-        appliedResult: String(m.appliedResult || "").trim(),
-      };
-    }
-    function parseFixtureText(text, defaults = {}) {
-      const raw = String(text || "").replace(/^\uFEFF/, "").trim();
-      if (!raw) throw new Error("No hay datos para cargar.");
-      const first = raw.split(/\r?\n/, 1)[0] || "";
-      const sep = first.includes("\t") ? "\t" : first.includes(";") ? ";" : ",";
-      const lines = raw.split(/\r?\n/).filter((l) => l.trim());
-      const headerCells = splitLine(lines[0], sep).map((h) => h.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
-      const looksHeader = headerCells.some((h) => ["categoria", "partido", "complejo", "cancha", "dia", "horario", "home", "local", "week", "cat"].includes(h));
-      const header = looksHeader ? headerCells : [];
-      const dataLines = looksHeader ? lines.slice(1) : lines;
-      const idx = (names) => {
-        for (const name of names) {
-          const i = header.indexOf(name);
-          if (i >= 0) return i;
-        }
-        return -1;
-      };
-      const parsed = dataLines.map((line) => {
-        const cols = splitLine(line, sep);
-        const get = (...names) => {
-          const i = idx(names);
-          return i >= 0 ? cols[i] : "";
-        };
-        const row = looksHeader ? {
-          week: get("week", "semana"),
-          day: get("dia", "day"),
-          date: get("date"),
-          temp: get("temp", "temporada"),
-          cat: get("cat", "categoria"),
-          time: get("horario", "hora", "time"),
-          venue: get("complejo", "venue", "sede"),
-          court: get("cancha", "court"),
-          home: get("home", "local", "pareja 1", "pareja1"),
-          away: get("away", "visitante", "pareja 2", "pareja2"),
-          partido: get("partido"),
-          result: get("result", "resultado"),
-        } : {
-          cat: cols[0],
-          partido: cols[1],
-          venue: cols[2],
-          court: cols[3],
-          day: cols[4],
-          time: cols[5],
-        };
-        return cleanMatch(row, defaults);
-      }).filter((m) => m.home || m.away);
-      if (!parsed.length) throw new Error("No encontré partidos. Revisá que estén las columnas categoria, partido, complejo, cancha, dia, horario.");
-      return parsed;
-    }
-    function driveRow(m) {
-      return {
-        categoria: m.cat,
-        partido: [m.home, m.away].filter(Boolean).join(" vs "),
-        complejo: m.venue,
-        cancha: m.court,
-        dia: m.day,
-        horario: m.time,
-      };
-    }
-    function matchKey(m) {
-      return [m.week, m.temp, m.cat, m.home, m.away, m.day, m.time].map((v) => String(v || "").toLowerCase().trim()).join("|");
-    }
-    function renderFixture() {
-      $("fx-body").innerHTML = fixture
-        .map((m, i) => {
-          const parsed = describeResult(m.result);
-          const hint = parsed ? `${parsed.label} · ${parsed.homePts}-${parsed.awayPts} pts` : "";
-          return `<tr data-i="${i}">
-          <td><input data-k="week" value="${escAttr(m.week)}" /></td>
-          <td><input data-k="day" value="${escAttr(m.day)}" placeholder="Jueves" /></td>
-          <td><input data-k="time" value="${escAttr(m.time)}" placeholder="19:00 - 20:30" /></td>
-          <td><input data-k="cat" value="${escAttr(m.cat)}" /></td>
-          <td><input data-k="venue" value="${escAttr(m.venue)}" /></td>
-          <td><input data-k="court" value="${escAttr(m.court)}" placeholder="Cancha 1" /></td>
-          <td><input data-k="home" value="${escAttr(m.home)}" /></td>
-          <td><input data-k="away" value="${escAttr(m.away)}" /></td>
-          <td class="col-result">
-            <input data-k="result" value="${escAttr(m.result)}" placeholder="6-4 6-2" />
-            ${hint ? `<small class="admin-hint">${hint}</small>` : ""}
-          </td>
-          <td><button class="admin-del" type="button" data-fx-del="${i}" aria-label="Eliminar">×</button></td>
-        </tr>`;
-        })
-        .join("");
-    }
-    function isLoggedIn() {
-      try {
-        const raw = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
-        if (!raw) return false;
-        const data = JSON.parse(raw);
-        if (!data?.token || !data.exp || Date.now() > data.exp) {
-          clearLogin();
-          return false;
-        }
-        token = data.token;
-        return true;
-      } catch {
-        return false;
-      }
-    }
-    function keepLogin(nextToken = token, nextExp) {
-      if (!nextToken) return;
-      let current = {};
-      try {
-        current = JSON.parse(localStorage.getItem(AUTH_KEY) || "{}");
-      } catch {}
-      localStorage.setItem(AUTH_KEY, JSON.stringify({
-        token: nextToken,
-        exp: nextExp || current.exp,
-      }));
-      sessionStorage.removeItem(AUTH_KEY);
-    }
-    function clearLogin() {
-      token = "";
-      localStorage.removeItem(AUTH_KEY);
-      sessionStorage.removeItem(AUTH_KEY);
-    }
-
-    function showApp() {
-      gate.hidden = true;
-      app.hidden = false;
-      keepLogin();
-      const navLogout = document.getElementById("nav-logout");
-      if (navLogout) navLogout.hidden = false;
-      sessionStorage.removeItem("liga-fb-gh-token");
-      token = getPublishToken();
-      fillFilters();
-      renderTable();
-      $("fx-week").value = fixture[0]?.week || $("fx-week").value || "Fecha 5";
-      renderFixture();
-      fillSiteForm();
-      fillAcademiaForm();
-      fillKidsForm();
-      fillVenueForm();
-      fillTorneosForm();
-      fillDisp();
-      reloadDisp();
-    }
-
-    async function authRequest(path, body) {
-      if (!API_URL) throw new Error("Falta configurar la API segura del sitio.");
-      const res = await fetch(`${API_URL}${path}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.message || "No se pudo validar el acceso.");
-      return data;
-    }
-
-    let passReady = false;
-    $("login-back").addEventListener("click", () => {
-      passReady = false;
-      $("step-otp").hidden = true;
-      $("step-pass").hidden = false;
-      $("otp").value = "";
-      msg($("login-msg"), "");
-    });
-    $("login-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      msg($("login-msg"), "Validando…");
-      try {
-        const credentials = {
-          user: $("user").value,
-          password: $("pass").value,
-        };
-        if (!passReady) {
-          await authRequest("/auth/password", credentials);
-          passReady = true;
-          $("step-pass").hidden = true;
-          $("step-otp").hidden = false;
-          $("otp").focus();
-          msg($("login-msg"), "");
-          return;
-        }
-        const session = await authRequest("/auth/login", { ...credentials, otp: $("otp").value });
-        token = session.token;
-        keepLogin(session.token, session.exp);
-        showApp();
-      } catch (err) {
-        clearLogin();
-        msg($("login-msg"), err.message, "err");
-      }
-    });
-
-    document.querySelectorAll("[data-tab]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const tab = btn.dataset.tab;
-        const section = tab === "resultados" ? "fixture" : tab;
-        document.querySelectorAll("[data-tab]").forEach((b) => {
-          b.classList.toggle("on", b.dataset.tab === tab);
-        });
-        document.querySelectorAll("section[id^='tab-']").forEach((sec) => {
-          sec.hidden = sec.id !== "tab-" + section;
-        });
-        if (section === "fecha") reloadDisp();
-      });
-    });
-
-    $("f-temps").addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-temp]");
-      if (!btn) return;
-      filterTemp = btn.dataset.temp;
-      fillFilters();
-      renderTable();
-    });
-    $("f-cats").addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-cat]");
-      if (!btn) return;
-      filterCat = btn.dataset.cat;
-      fillFilters();
-      renderTable();
-    });
-    $("f-q").addEventListener("input", renderTable);
-
-    $("tbody").addEventListener("change", (e) => {
-      const tr = e.target.closest("tr");
-      if (!tr) return;
-      const i = Number(tr.dataset.i);
-      const k = e.target.dataset.k;
-      if (!k) return;
-      rows[i][k] = k === "name" || k === "cat" || k === "temp" ? e.target.value : num(e.target.value);
-    });
-    $("tbody").addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-del]");
-      if (!btn) return;
-      rows.splice(Number(btn.dataset.del), 1);
-      fillFilters();
-      renderTable();
-    });
-
-    $("add").addEventListener("click", () => {
-      const temp = filterTemp === "TODAS" ? siteData.currentSeason || "T4" : filterTemp;
-      const cat = filterCat === "TODAS" ? "A Masculina" : filterCat;
-      rows.push(cleanRow({ name: "", cat, pts: 0, pj: 0, dif: 0, pos: 1, temp }));
-      $("f-q").value = "";
-      renderTable();
-      const last = $("tbody").querySelector("tr:last-child input[data-k=name]");
-      last?.focus();
-    });
-
-    function parseCsv(text) {
-      const raw = text.replace(/^\uFEFF/, "").trim();
-      const first = raw.split(/\r?\n/, 1)[0] || "";
-      const sep = first.includes("\t") ? "\t" : first.includes(";") ? ";" : ",";
-      const lines = raw.split(/\r?\n/).filter((l) => l.trim());
-      const split = (line) => {
-        const out = [];
-        let cur = "";
-        let q = false;
-        for (let i = 0; i < line.length; i++) {
-          const ch = line[i];
-          if (ch === '"') {
-            q = !q;
-          } else if (ch === sep && !q) {
-            out.push(cur.trim());
-            cur = "";
-          } else cur += ch;
-        }
-        out.push(cur.trim());
-        return out;
-      };
-      const header = split(lines[0]).map((h) => h.toLowerCase());
-      const idx = (names) => names.map((n) => header.indexOf(n)).find((i) => i >= 0) ?? -1;
-      const map = {
-        name: idx(["name", "nombre", "jugador", "pareja", "player"]),
-        cat: idx(["cat", "categoria", "categoría"]),
-        pts: idx(["pts", "puntos", "points"]),
-        pj: idx(["pj", "jugados", "played"]),
-        dif: idx(["dif", "diferencia", "sets"]),
-        pos: idx(["pos", "posicion", "posición", "#"]),
-        temp: idx(["temp", "temporada", "season"]),
-      };
-      const hasHeader = map.name >= 0;
-      const fallbackTemp = filterTemp === "TODAS" ? siteData.currentSeason || "T4" : filterTemp;
-      return (hasHeader ? lines.slice(1) : lines)
-        .map((line) => {
-          const cols = split(line);
-          if (hasHeader) {
-            const get = (k) => (map[k] >= 0 ? cols[map[k]] : "");
-            return cleanRow({
-              name: get("name"),
-              cat: get("cat"),
-              pts: get("pts"),
-              pj: get("pj"),
-              dif: get("dif"),
-              pos: get("pos") || 0,
-              temp: get("temp") || fallbackTemp,
-            });
-          }
-          return cleanRow({
-            pos: cols[0],
-            name: cols[1],
-            cat: cols[2],
-            pj: cols[3],
-            dif: cols[4],
-            pts: cols[5],
-            temp: cols[6] || fallbackTemp,
-          });
-        })
-        .filter((r) => r.name && r.cat.toLowerCase() !== "s masculina");
-    }
-
-    $("csv-model").addEventListener("click", () => {
-      downloadCsv("modelo-ranking.csv", RANK_COLS, [{
-        name: "Apellido, Nombre / Apellido, Nombre",
-        cat: "A Masculina",
-        pts: 0,
-        pj: 0,
-        dif: 0,
-        pos: 1,
-        temp: siteData.currentSeason || "T4",
-      }]);
-      msg($("rank-msg"), "Descargué el modelo CSV de ranking. Completalo y usá Importar CSV.", "ok");
-    });
-    $("csv-export").addEventListener("click", () => {
-      downloadCsv("ranking-liga-fb.csv", RANK_COLS, rows.map(cleanRow));
-      msg($("rank-msg"), "Exporté el ranking actual.", "ok");
-    });
-
-    $("csv").addEventListener("change", async (e) => {
-      const file = e.target.files?.[0];
-      e.target.value = "";
-      if (!file) return;
-      try {
-        const parsed = parseCsv(await file.text());
-        if (!parsed.length) throw new Error("El CSV no tiene filas válidas.");
-        if ($("replace-temp").checked) {
-          const tempsIn = [...new Set(parsed.map((r) => r.temp))];
-          rows = rows.filter((r) => !tempsIn.includes(r.temp)).concat(parsed);
-          msg($("rank-msg"), `Reemplacé ${tempsIn.join(", ")} · ${parsed.length} filas.`, "ok");
-        } else {
-          rows = rows.concat(parsed);
-          msg($("rank-msg"), `Agregué ${parsed.length} filas.`, "ok");
-        }
-        fillFilters();
-        renderTable();
-      } catch (err) {
-        msg($("rank-msg"), err.message, "err");
-      }
-    });
-
-    $("publish").addEventListener("click", async () => {
-      if (!usePublishToken($("rank-msg"))) return;
-      rows = rows.map(cleanRow).filter((r) => r.name && r.cat.toLowerCase() !== "s masculina");
-      msg($("rank-msg"), "Publicando ranking…");
-      try {
-        await publishFile(
-          RANK_PATH,
-          JSON.stringify(rows, null, 2) + "\n",
-          "Actualiza ranking desde el admin."
-        );
-        msg($("rank-msg"), "Ranking publicado. El sitio se actualiza en ~1 minuto.", "ok");
-        fillFilters();
-        renderTable();
-      } catch (err) {
-        msg($("rank-msg"), publishError(err), "err");
-      }
-    });
-
-    $("fx-add").addEventListener("click", () => {
-      fixture.push(cleanMatch({
-        week: fallbackWeek(),
-        day: "Jueves",
-        temp: siteData.currentSeason || "T4",
-        cat: "A Masculina",
-        time: "19:00 - 20:30",
-        venue: "Open Padel",
-        court: "Cancha 1",
-        home: "",
-        away: "",
-        result: "",
-      }));
-      renderFixture();
-    });
-    $("fx-body").addEventListener("change", (e) => {
-      const tr = e.target.closest("tr");
-      if (!tr) return;
-      const i = Number(tr.dataset.i);
-      const k = e.target.dataset.k;
-      if (!k) return;
-      fixture[i][k] = e.target.value;
-      if (k === "result") {
-        const td = e.target.closest("td");
-        const parsed = describeResult(e.target.value);
-        let hint = td.querySelector(".admin-hint");
-        if (parsed) {
-          if (!hint) {
-            hint = document.createElement("small");
-            hint.className = "admin-hint";
-            td.appendChild(hint);
-          }
-          hint.textContent = `${parsed.label} · ${parsed.homePts}-${parsed.awayPts} pts`;
-        } else if (hint) hint.remove();
-      }
-    });
-    $("fx-body").addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-fx-del]");
-      if (!btn) return;
-      fixture.splice(Number(btn.dataset.fxDel), 1);
-      renderFixture();
-    });
-    $("fx-model").addEventListener("click", () => {
-      downloadCsv("modelo-fixture.csv", FX_COLS, [{
-        categoria: "A MASC",
-        partido: "Apellido Nombre - Apellido Nombre vs Apellido Nombre - Apellido Nombre",
-        complejo: "OPEN",
-        cancha: "Cancha 1",
-        dia: "Jueves",
-        horario: "19:00 - 20:30",
-      }]);
-      msg($("fx-msg"), "Descargué el modelo CSV igual al de Drive. Completalo y usá Importar CSV o Pegar tabla.", "ok");
-    });
-    $("fx-export").addEventListener("click", () => {
-      downloadCsv("fixture-liga-fb.csv", FX_COLS, fixture.map(cleanMatch).map(driveRow));
-      msg($("fx-msg"), "Exporté el fixture actual en el formato de Drive.", "ok");
-    });
-    function loadFixtureText(text) {
-      const parsed = parseFixtureText(text, {
-        week: fallbackWeek(),
-        temp: siteData.currentSeason || "T4",
-      });
-      const prev = new Map(fixture.map((m) => [matchKey(m), m]));
-      fixture = parsed.map((m) => {
-        const old = prev.get(matchKey(m));
-        if (!old) return m;
-        return {
-          ...m,
-          result: m.result || old.result,
-          appliedResult: old.appliedResult,
-        };
-      });
-      renderFixture();
-      msg($("fx-msg"), `Cargué ${parsed.length} partidos de ${fallbackWeek()}. Revisá y publicá.`, "ok");
-    }
-    $("fx-csv").addEventListener("change", async (e) => {
-      const file = e.target.files?.[0];
-      e.target.value = "";
-      if (!file) return;
-      try {
-        loadFixtureText(await file.text());
-      } catch (err) {
-        msg($("fx-msg"), err.message, "err");
-      }
-    });
-    $("fx-paste-btn").addEventListener("click", () => {
-      try {
-        loadFixtureText($("fx-paste").value);
-      } catch (err) {
-        msg($("fx-msg"), err.message, "err");
-      }
-    });
-    $("fx-publish").addEventListener("click", async () => {
-      if (!usePublishToken($("fx-msg"))) return;
-      const nextFixture = fixture.map(cleanMatch).filter((m) => m.home || m.away);
-      const nextRanking = structuredClone(rows).map(cleanRow).filter((r) => r.name && r.cat.toLowerCase() !== "s masculina");
-      msg($("fx-msg"), "Publicando fixture y ranking…");
-      try {
-        const remoteFixture = await readRemoteJson(FIXTURE_PATH, []);
-        const remoteResults = await readRemoteJson(RESULTS_PATH, []);
-        const newWeeks = new Set(nextFixture.map(weekKey));
-        const toArchive = (Array.isArray(remoteFixture) ? remoteFixture : [])
-          .map((m) => cleanMatch(m))
-          .filter((m) => (m.home || m.away) && !newWeeks.has(weekKey(m)));
-        const nextResults = mergeArchivedMatches(
-          (Array.isArray(remoteResults) ? remoteResults : []).map((m) => cleanMatch(m)),
-          toArchive
-        );
-        const reportOld = applyFixtureResults(nextRanking, toArchive);
-        const report = applyFixtureResults(nextRanking, nextFixture);
-        report.applied += reportOld.applied;
-        report.unmatched.push(...reportOld.unmatched);
-        report.created.push(...reportOld.created);
-        const archivedWeeks = [...new Set(toArchive.map((m) => m.week).filter(Boolean))];
-        const liveWeek = [...new Set(nextFixture.map((m) => m.week).filter(Boolean))].join(", ") || fallbackWeek();
-        await publishFiles(
-          [
-            { path: FIXTURE_PATH, content: JSON.stringify(nextFixture, null, 2) + "\n" },
-            { path: RESULTS_PATH, content: JSON.stringify(nextResults, null, 2) + "\n" },
-            { path: RANK_PATH, content: JSON.stringify(nextRanking, null, 2) + "\n" },
-          ],
-          archivedWeeks.length
-            ? `Pasa ${archivedWeeks.join(", ")} a resultados y publica ${liveWeek}.`
-            : report.applied
-              ? `Carga resultados del fixture y actualiza el ranking (${report.applied}).`
-              : "Actualiza fixture desde el admin."
-        );
-        fixture = nextFixture;
-        rows = nextRanking;
-        $("fx-week").value = nextFixture[0]?.week || $("fx-week").value;
-        fillFilters();
-        renderTable();
-        renderFixture();
-        const extra = report.created.length ? ` Altas: ${[...new Set(report.created)].join(" · ")}.` : "";
-        const warn = report.unmatched.length ? ` ${report.unmatched[0]}` : "";
-        const archived = archivedWeeks.length
-          ? ` ${archivedWeeks.join(", ")} quedó en Resultados.`
-          : "";
-        msg(
-          $("fx-msg"),
-          (report.applied
-            ? `Fixture y ranking publicados. ${report.applied} resultado${report.applied === 1 ? "" : "s"} sumados.${extra}`
-            : "Fixture publicado. El sitio se actualiza en ~1 minuto.") + archived + warn,
-          report.unmatched.length ? "err" : "ok"
-        );
-      } catch (err) {
-        msg($("fx-msg"), publishError(err), "err");
-      }
-    });
-
-    $("disp-reload").addEventListener("click", reloadDisp);
-    $("disp-list").addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-disp-del]");
-      if (!btn) return;
-      disp.entries = (disp.entries || []).filter((row) => row.id !== btn.dataset.dispDel);
-      fillDisp();
-    });
-    $("disp-publish").addEventListener("click", async () => {
-      if (!usePublishToken($("disp-msg"))) return;
-      disp.week = $("disp-week").value.trim() || "Fecha 6";
-      disp.deadline = $("disp-deadline").value.trim();
-      disp.open = $("disp-open").checked;
-      disp.temp = siteData.currentSeason || "T4";
-      msg($("disp-msg"), "Guardando fecha…");
-      try {
-        const file = await api(`/repos/${owner}/${repo}/contents/${DISP_PATH}?ref=main`);
-        const latest = JSON.parse(fromB64(String(file.content || "").replace(/\n/g, "")));
-        const keepIds = new Set((disp.entries || []).map((e) => e.id));
-        latest.week = disp.week;
-        latest.deadline = disp.deadline;
-        latest.open = disp.open;
-        latest.temp = disp.temp;
-        latest.entries = (latest.entries || []).filter((e) => keepIds.has(e.id));
-        await publishFile(
-          DISP_PATH,
-          JSON.stringify(latest, null, 2) + "\n",
-          latest.open ? `Abre carga de ${latest.week}.` : `Cierra carga de ${latest.week}.`
-        );
-        disp = latest;
-        fillDisp();
-        msg($("disp-msg"), "Fecha guardada. El sitio se actualiza en ~1 minuto.", "ok");
-      } catch (err) {
-        msg($("disp-msg"), err.message, "err");
-      }
-    });
-
-    function attachPhoto(item, file) {
-      item._file = file;
-      const reader = new FileReader();
-      reader.onload = () => {
-        item._preview = String(reader.result);
-        if (siteData.staff?.includes(item)) fillAcademiaForm();
-        else fillVenueForm();
-      };
-      reader.readAsDataURL(file);
-    }
-
-    $("staff-add").addEventListener("click", () => {
-      readAcademiaFromDom();
-      siteData.staff.push({
-        id: "profe-" + Date.now(),
-        name: "",
-        role: "Profe",
-        image: "",
-        bio: "",
-        bullets: [],
-      });
-      fillAcademiaForm();
-    });
-    $("staff-list").addEventListener("click", (e) => {
-      const move = e.target.closest("[data-move]");
-      if (move) {
-        readAcademiaFromDom();
-        moveInList(siteData.staff, move.dataset.i, move.dataset.dir);
-        fillAcademiaForm();
-        return;
-      }
-      const del = e.target.closest("[data-staff-del]");
-      if (!del) return;
-      readAcademiaFromDom();
-      siteData.staff.splice(Number(del.dataset.staffDel), 1);
-      fillAcademiaForm();
-    });
-    $("prog-list").addEventListener("click", (e) => {
-      const move = e.target.closest("[data-move]");
-      if (!move) return;
-      readAcademiaFromDom();
-      moveInList(siteData.academia.programs, move.dataset.i, move.dataset.dir);
-      fillAcademiaForm();
-    });
-    $("staff-list").addEventListener("change", (e) => {
-      const input = e.target.closest("[data-photo='staff']");
-      const file = input?.files?.[0];
-      if (!file) return;
-      const i = Number(input.closest("[data-staff]").dataset.staff);
-      readAcademiaFromDom();
-      attachPhoto(siteData.staff[i], file);
-    });
-
-    $("venue-add").addEventListener("click", () => {
-      readVenuesFromDom();
-      siteData.venues.push({
-        id: "sede-" + Date.now(),
-        name: "",
-        address: "",
-        city: siteData.city || "Paraná, Entre Ríos",
-        type: "",
-        image: "",
-        maps: "",
-        instagram: "",
-        whatsapp: "",
-        liga: true,
-        academia: false,
-      });
-      fillVenueForm();
-    });
-    $("venue-list").addEventListener("click", (e) => {
-      const move = e.target.closest("[data-move]");
-      if (move) {
-        readVenuesFromDom();
-        moveInList(siteData.venues, move.dataset.i, move.dataset.dir);
-        fillVenueForm();
-        return;
-      }
-      const del = e.target.closest("[data-venue-del]");
-      if (!del) return;
-      readVenuesFromDom();
-      siteData.venues.splice(Number(del.dataset.venueDel), 1);
-      fillVenueForm();
-    });
-    $("venue-list").addEventListener("change", (e) => {
-      const input = e.target.closest("[data-photo='venue']");
-      const file = input?.files?.[0];
-      if (!file) return;
-      const i = Number(input.closest("[data-venue]").dataset.venue);
-      readVenuesFromDom();
-      attachPhoto(siteData.venues[i], file);
-    });
-    $("more-add").addEventListener("click", () => {
-      readVenuesFromDom();
-      siteData.moreVenues.push({ name: "", image: "" });
-      fillVenueForm();
-    });
-    $("more-list").addEventListener("click", (e) => {
-      const move = e.target.closest("[data-move]");
-      if (move) {
-        readVenuesFromDom();
-        moveInList(siteData.moreVenues, move.dataset.i, move.dataset.dir);
-        fillVenueForm();
-        return;
-      }
-      const del = e.target.closest("[data-more-del]");
-      if (!del) return;
-      readVenuesFromDom();
-      siteData.moreVenues.splice(Number(del.dataset.moreDel), 1);
-      fillVenueForm();
-    });
-    $("more-list").addEventListener("change", (e) => {
-      const input = e.target.closest("[data-photo='more']");
-      const file = input?.files?.[0];
-      if (!file) return;
-      const i = Number(input.closest("[data-more]").dataset.more);
-      readVenuesFromDom();
-      attachPhoto(siteData.moreVenues[i], file);
-    });
-
-    $("tn-add").addEventListener("click", () => {
-      readTorneosFromDom();
-      siteData.torneos.items.push({ title: "", when: "", text: "" });
-      fillTorneosForm();
-    });
-    $("tn-list").addEventListener("click", (e) => {
-      const move = e.target.closest("[data-move]");
-      if (move) {
-        readTorneosFromDom();
-        moveInList(siteData.torneos.items, move.dataset.i, move.dataset.dir);
-        fillTorneosForm();
-        return;
-      }
-      const del = e.target.closest("[data-tn-del]");
-      if (!del) return;
-      readTorneosFromDom();
-      siteData.torneos.items.splice(Number(del.dataset.tnDel), 1);
-      fillTorneosForm();
-    });
-
-    $("kids-group-add").addEventListener("click", () => {
-      readKidsFromDom();
-      siteData.kids.groups.push({ venue: "", when: "", rows: [] });
-      fillKidsForm();
-    });
-    $("kids-group-list").addEventListener("click", (e) => {
-      const move = e.target.closest("[data-move]");
-      if (move) {
-        readKidsFromDom();
-        moveInList(siteData.kids.groups, move.dataset.i, move.dataset.dir);
-        fillKidsForm();
-        return;
-      }
-      const del = e.target.closest("[data-kids-group-del]");
-      if (!del) return;
-      readKidsFromDom();
-      siteData.kids.groups.splice(Number(del.dataset.kidsGroupDel), 1);
-      fillKidsForm();
-    });
-    $("kids-price-add").addEventListener("click", () => {
-      readKidsFromDom();
-      siteData.kids.prices.push({ amount: "", text: "" });
-      fillKidsForm();
-    });
-    $("kids-price-list").addEventListener("click", (e) => {
-      const move = e.target.closest("[data-move]");
-      if (move) {
-        readKidsFromDom();
-        moveInList(siteData.kids.prices, move.dataset.i, move.dataset.dir);
-        fillKidsForm();
-        return;
-      }
-      const del = e.target.closest("[data-kids-price-del]");
-      if (!del) return;
-      readKidsFromDom();
-      siteData.kids.prices.splice(Number(del.dataset.kidsPriceDel), 1);
-      fillKidsForm();
-    });
-    $("kids-save").addEventListener("click", async () => {
-      if (!usePublishToken($("kids-msg"))) return;
-      readKidsFromDom();
-      msg($("kids-msg"), "Guardando infantiles…");
-      try {
-        const local = cleanSiteForSave();
-        await publishSiteFields({ kids: local.kids }, "Actualiza clases infantiles desde el admin.");
-        fillKidsForm();
-        msg($("kids-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
-      } catch (err) {
-        msg($("kids-msg"), publishError(err), "err");
-      }
-    });
-
-    $("ac-save").addEventListener("click", async () => {
-      if (!usePublishToken($("ac-msg"))) return;
-      readAcademiaFromDom();
-      msg($("ac-msg"), "Guardando academia…");
-      try {
-        await uploadPending(siteData.staff, "staff");
-        const local = cleanSiteForSave();
-        await publishSiteFields(
-          { academia: local.academia, staff: local.staff },
-          "Actualiza academia desde el admin."
-        );
-        fillAcademiaForm();
-        msg($("ac-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
-      } catch (err) {
-        msg($("ac-msg"), publishError(err), "err");
-      }
-    });
-
-    $("venue-save").addEventListener("click", async () => {
-      if (!usePublishToken($("venue-msg"))) return;
-      readVenuesFromDom();
-      msg($("venue-msg"), "Guardando sedes…");
-      try {
-        await uploadPending(siteData.venues, "venue");
-        await uploadPending(siteData.moreVenues, "more");
-        const local = cleanSiteForSave();
-        await publishSiteFields(
-          { venues: local.venues, moreVenues: local.moreVenues },
-          "Actualiza sedes desde el admin."
-        );
-        fillVenueForm();
-        msg($("venue-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
-      } catch (err) {
-        msg($("venue-msg"), publishError(err), "err");
-      }
-    });
-
-    $("tn-save").addEventListener("click", async () => {
-      if (!usePublishToken($("tn-msg"))) return;
-      readTorneosFromDom();
-      siteData.torneos.items = (siteData.torneos.items || []).filter((item) => item.title || item.text || item.when);
-      msg($("tn-msg"), "Guardando torneos…");
-      try {
-        const local = cleanSiteForSave();
-        await publishSiteFields(
-          { torneos: local.torneos },
-          "Actualiza torneos desde el admin."
-        );
-        fillTorneosForm();
-        msg($("tn-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
-      } catch (err) {
-        msg($("tn-msg"), publishError(err), "err");
-      }
-    });
-
-    $("site-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (!usePublishToken($("site-msg"))) return;
-      const form = e.target;
-      siteData = {
-        ...siteData,
-        currentSeason: form.currentSeason.value.trim() || "T4",
-        whatsapp: form.whatsapp.value.trim(),
-        instagram: form.instagram.value.trim(),
-        city: form.city.value.trim(),
-        province: form.province.value.trim(),
-        ligaIntro: form.ligaIntro.value.trim(),
-      };
-      msg($("site-msg"), "Guardando sitio…");
-      try {
-        const local = cleanSiteForSave();
-        await publishSiteFields(
-          {
-            currentSeason: local.currentSeason,
-            whatsapp: local.whatsapp,
-            instagram: local.instagram,
-            city: local.city,
-            province: local.province,
-            ligaIntro: local.ligaIntro,
-          },
-          "Actualiza datos del sitio desde el admin."
-        );
-        msg($("site-msg"), "Datos publicados. El sitio se actualiza en ~1 minuto.", "ok");
-      } catch (err) {
-        msg($("site-msg"), publishError(err), "err");
-      }
-    });
-
-    if (isLoggedIn()) showApp();
+    bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson });
   </script>
 </Layout>
