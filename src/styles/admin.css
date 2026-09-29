@@ -44,6 +44,7 @@ body.is-admin main > .wrap {
   border-radius: 20px;
   padding: 36px 32px 40px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
 }
@@ -66,7 +67,14 @@ body.is-admin main > .wrap {
 
 .admin-step {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
+}
+
+.admin-card input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .admin-step[hidden],
