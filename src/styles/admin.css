@@ -78,6 +78,7 @@ body.is-admin main > .wrap {
 }
 
 .admin-step[hidden],
+.admin-empty[hidden],
 .admin-shell[hidden],
 .admin-gate[hidden] {
   display: none !important;
