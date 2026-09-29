@@ -3,6 +3,8 @@ import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
 export function createCms(ctx, api, shell) {
   const BASE = ctx.BASE;
+  // Pages tarda ~1 min en publicar las fotos subidas; hasta entonces se muestra la copia local.
+  const uploadedPreviews = new Map();
 
   function ensureCms() {
     if (!ctx.siteData.academia) ctx.siteData.academia = {};
@@ -58,7 +60,7 @@ export function createCms(ctx, api, shell) {
   }
 
   function photoBox(src, alt) {
-    if (src) return `<img class="cms-photo" src="${escAttr(assetUrl(src))}" alt="${escAttr(alt)}" />`;
+    if (src) return `<img class="cms-photo" src="${escAttr(uploadedPreviews.get(src) || assetUrl(src))}" alt="${escAttr(alt)}" />`;
     return `<div class="cms-photo cms-photo-empty">Sin foto</div>`;
   }
 
@@ -419,6 +421,7 @@ export function createCms(ctx, api, shell) {
       await api.publishFile(path, await fileToB64(item._file), "Sube foto de " + (item.name || kind) + ".", true);
       item.image = "images/" + name;
       if (kind === "venue" || kind === "more") item.image = "/images/" + name;
+      if (item._preview) uploadedPreviews.set(item.image, item._preview);
       delete item._file;
       delete item._preview;
     }
