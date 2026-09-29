@@ -56,15 +56,24 @@
         "venue": "Club Palermo",
         "when": "Lunes y jueves",
         "rows": [
-          { "time": "17:00 hs", "level": "Avanzados" },
-          { "time": "18:00 hs", "level": "Principiantes" }
+          {
+            "time": "17:00 hs",
+            "level": "Avanzados"
+          },
+          {
+            "time": "18:00 hs",
+            "level": "Principiantes"
+          }
         ]
       },
       {
         "venue": "Open Club",
         "when": "Martes y viernes",
         "rows": [
-          { "time": "17:00 hs", "level": "Principiantes" }
+          {
+            "time": "17:00 hs",
+            "level": "Principiantes"
+          }
         ]
       }
     ],
@@ -169,7 +178,7 @@
       "address": "Augusto Bravard 276",
       "city": "E3100 Paraná, Entre Ríos",
       "type": "Canchas abiertas - Cemento",
-      "image": "/images/Talleres-cancha.jpg",
+      "image": "/images/open-padel-1790685821023.jpg",
       "maps": "https://www.google.com/maps/search/?api=1&query=Augusto+Bravard+276+Parana",
       "instagram": "https://www.instagram.com/openpadelfb/",
       "whatsapp": "5493434638322",
