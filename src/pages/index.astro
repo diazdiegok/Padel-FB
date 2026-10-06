@@ -16,7 +16,13 @@ const leaders = cats
   .map((cat) => live.filter((p) => p.cat === cat).sort((a, b) => a.pos - b.pos || b.pts - a.pts)[0])
   .filter(Boolean);
 const countedVenues = (site.venues || []).filter((v) => v.liga !== false).length;
-const leagueVenueCount = Number.isFinite(Number(site.leagueVenueCount)) ? Number(site.leagueVenueCount) : countedVenues;
+const savedVenues = site.seasonVenues && typeof site.seasonVenues === "object" ? site.seasonVenues : {};
+const seasonVenues = Object.fromEntries(
+  seasons.map((t) => {
+    const n = Number(savedVenues[t]);
+    return [t, Number.isFinite(n) ? n : countedVenues];
+  })
+);
 ---
 <Layout
   title={`Padel FB | Liga y academia de pádel en ${site.city}`}
@@ -72,8 +78,8 @@ const leagueVenueCount = Number.isFinite(Number(site.leagueVenueCount)) ? Number
         <span id="home-players-label">Jugadores en {current}</span>
       </div>
       <div class="home-cell">
-        <b>{leagueVenueCount}</b>
-        <span>Sedes de la liga</span>
+        <b id="home-venues">{seasonVenues[current] ?? countedVenues}</b>
+        <span id="home-venues-label">Sedes en {current}</span>
       </div>
       <div class="home-cell">
         <b>1</b>
@@ -81,10 +87,13 @@ const leagueVenueCount = Number.isFinite(Number(site.leagueVenueCount)) ? Number
       </div>
     </div>
   </div>
-  <script define:vars={{ seasonCounts }}>
+  <script define:vars={{ seasonCounts, seasonVenues }}>
     const counts = seasonCounts;
+    const venues = seasonVenues;
     const num = document.querySelector("#home-players");
     const label = document.querySelector("#home-players-label");
+    const venueNum = document.querySelector("#home-venues");
+    const venueLabel = document.querySelector("#home-venues-label");
     document.querySelectorAll("#home-temps [data-temp]").forEach((btn) => {
       btn.addEventListener("click", () => {
         document.querySelectorAll("#home-temps [data-temp]").forEach((b) => b.classList.remove("on"));
@@ -92,6 +101,8 @@ const leagueVenueCount = Number.isFinite(Number(site.leagueVenueCount)) ? Number
         const temp = btn.dataset.temp;
         num.textContent = String(counts[temp] || 0);
         label.textContent = "Jugadores en " + temp;
+        venueNum.textContent = String(venues[temp] ?? 0);
+        venueLabel.textContent = "Sedes en " + temp;
       });
     });
   </script>
