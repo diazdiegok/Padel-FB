@@ -8,11 +8,21 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
     return listSeasons(ctx.siteData, ctx.rows.map((row) => row.temp));
   }
 
+  function venueCount() {
+    const saved = Number(ctx.siteData.leagueVenueCount);
+    if (Number.isFinite(saved) && ctx.siteData.leagueVenueCount !== "" && ctx.siteData.leagueVenueCount != null) return saved;
+    return (ctx.siteData.venues || []).filter((venue) => venue.liga !== false).length;
+  }
+
   function render() {
     const current = ctx.siteData.currentSeason || "";
     const list = seasons();
     const tag = $("season-current");
     if (tag) tag.textContent = current ? `${seasonLabel(current)} en juego` : "Sin temporada activa";
+    const venuesInput = $("season-venues");
+    if (venuesInput && document.activeElement !== venuesInput) {
+      venuesInput.value = String(venueCount());
+    }
     $("season-list").innerHTML = list
       .map((temp) => {
         const count = ctx.rows.filter((row) => row.temp === temp).length;
@@ -23,11 +33,11 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
             ${active ? `<span class="admin-chip-live">En juego</span>` : ""}
           </div>
           <strong>${escAttr(seasonLabel(temp))}</strong>
-          <p>${count} pareja${count === 1 ? "" : "s"} en el ranking${count ? "" : ". Todavía no tiene tabla"}.</p>
+          <p>${count} pareja${count === 1 ? "" : "s"} en el ranking de esta temporada${count ? ". Sale de la tabla de Ranking." : ". Todavía no hay tabla cargada."}</p>
           ${
             active
-              ? `<p class="admin-help">El inicio, el ranking, el fixture y la fecha usan esta temporada.</p>`
-              : `<button class="btn btn-ghost" type="button" data-season-activate="${escAttr(temp)}">Activar</button>`
+              ? `<p class="admin-help">Esta es la temporada que se ve en el inicio, el ranking, el fixture y la fecha.</p>`
+              : `<button class="btn btn-ghost" type="button" data-season-activate="${escAttr(temp)}">Usar en el sitio</button>`
           }
         </article>`;
       })
@@ -84,14 +94,39 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
       if (!ok) return;
       await activate(created, { created: true });
     });
+    $("season-venues-save")?.addEventListener("click", async () => {
+      const gate = api.usePublishToken();
+      if (!gate.ok) {
+        toast(gate.message, "err");
+        return;
+      }
+      const count = Math.max(0, Math.round(Number($("season-venues")?.value) || 0));
+      setBusy($("season-venues-save"), true, "Guardando…");
+      setMsg($("season-msg"), "Guardando sedes…");
+      try {
+        const remote = await api.readRemoteJson(SITE_PATH, ctx.siteData);
+        const nextSite = { ...remote, leagueVenueCount: count };
+        await api.publishFile(SITE_PATH, JSON.stringify(nextSite, null, 2) + "\n", `Actualiza las sedes de la liga a ${count}.`);
+        Object.assign(ctx.siteData, nextSite);
+        render();
+        setMsg($("season-msg"), `El inicio va a mostrar ${count} sedes. Se actualiza en ~1 minuto.`, "ok");
+        toast("Sedes guardadas", "ok");
+      } catch (err) {
+        const message = api.publishError(err);
+        setMsg($("season-msg"), message, "err");
+        toast(message, "err");
+      } finally {
+        setBusy($("season-venues-save"), false);
+      }
+    });
     $("season-list")?.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-season-activate]");
       if (!btn) return;
       const temp = btn.dataset.seasonActivate;
       const ok = await confirmModal({
-        title: `Activar ${seasonLabel(temp)}`,
-        body: `El sitio, el fixture y la fecha van a usar ${seasonLabel(temp)}.`,
-        confirmLabel: "Activar",
+        title: `Usar ${seasonLabel(temp)} en el sitio`,
+        body: `El inicio, el ranking, el fixture y la fecha van a mostrar ${seasonLabel(temp)}. El ranking de las otras temporadas sigue guardado.`,
+        confirmLabel: "Usar en el sitio",
       });
       if (!ok) return;
       await activate(temp);

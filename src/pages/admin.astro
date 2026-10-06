@@ -97,6 +97,15 @@ import "../styles/admin.css";
             <button class="btn btn-lime" type="button" id="season-create">Nueva temporada</button>
             <span class="tag" id="season-current"></span>
           </div>
+          <div class="admin-panel">
+            <div class="admin-toolbar">
+              <label class="admin-week">Sedes de la liga
+                <input id="season-venues" type="number" min="0" step="1" />
+              </label>
+              <button class="btn btn-ghost" type="button" id="season-venues-save">Guardar sedes</button>
+            </div>
+            <p class="admin-help">Este número es el del recuadro del inicio. No agrega ni saca sedes: eso se hace en Sedes.</p>
+          </div>
           <p class="admin-msg" id="season-msg"></p>
           <div id="season-list"></div>
         </section>

@@ -15,7 +15,8 @@ const cats = [...new Set(live.map((p) => p.cat))];
 const leaders = cats
   .map((cat) => live.filter((p) => p.cat === cat).sort((a, b) => a.pos - b.pos || b.pts - a.pts)[0])
   .filter(Boolean);
-const leagueVenues = (site.venues || []).filter((v) => v.liga !== false);
+const countedVenues = (site.venues || []).filter((v) => v.liga !== false).length;
+const leagueVenueCount = Number.isFinite(Number(site.leagueVenueCount)) ? Number(site.leagueVenueCount) : countedVenues;
 ---
 <Layout
   title={`Padel FB | Liga y academia de pádel en ${site.city}`}
@@ -71,7 +72,7 @@ const leagueVenues = (site.venues || []).filter((v) => v.liga !== false);
         <span id="home-players-label">Jugadores en {current}</span>
       </div>
       <div class="home-cell">
-        <b>{leagueVenues.length}</b>
+        <b>{leagueVenueCount}</b>
         <span>Sedes de la liga</span>
       </div>
       <div class="home-cell">
