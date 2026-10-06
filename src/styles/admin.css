@@ -737,6 +737,7 @@ body.is-admin main > .wrap {
   color: var(--cream);
 }
 .admin-season-venues .btn { width: auto; }
+.admin-result-card > .btn { justify-content: center; }
 
 .admin-result-meta {
   display: flex;
