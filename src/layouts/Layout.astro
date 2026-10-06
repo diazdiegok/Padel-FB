@@ -87,7 +87,7 @@ const inTorneos = path.includes("/torneos");
           </svg>
           <p class="splash-mark">PADEL <em>FB</em></p>
           <span class="splash-rule"></span>
-          <p class="splash-sub">Temporada {String(site.currentSeason || "").replace(/^T/i, "")} · {site.city}</p>
+          <p class="splash-sub">{site.city}, {site.province}</p>
         </div>
       </div>
     )}
@@ -140,7 +140,7 @@ const inTorneos = path.includes("/torneos");
       <footer>
         <div class="wrap">
           <div>
-            <strong>{site.name.toUpperCase()} ® {site.year}</strong>
+            <strong>{site.name.toUpperCase()} ® <span data-year>{new Date().getFullYear()}</span></strong>
             <p>Liga, academia y torneos de pádel · {site.city}, {site.province}</p>
           </div>
           <div class="footer-links">
@@ -228,9 +228,12 @@ const inTorneos = path.includes("/torneos");
         });
       }
       const splash = document.getElementById("splash");
-      if (splash && !sessionStorage.getItem("liga-fb-splash-v3")) {
+      document.querySelectorAll("[data-year]").forEach((el) => {
+        el.textContent = String(new Date().getFullYear());
+      });
+      if (splash && !sessionStorage.getItem("liga-fb-splash-v4")) {
         splash.hidden = false;
-        sessionStorage.setItem("liga-fb-splash-v3", "1");
+        sessionStorage.setItem("liga-fb-splash-v4", "1");
         setTimeout(() => {
           splash.classList.add("out");
           setTimeout(() => splash.remove(), 560);
