@@ -33,7 +33,7 @@ const featuredVenues = leagueVenues.slice(0, 4);
             <a class="btn btn-ghost" href={page("academia/")}>Ver academia</a>
           </div>
         </div>
-        <aside class="scoreboard">
+        <aside class:list={["scoreboard", { "is-empty": leaders.length === 0 }]}>
           <header>
             <span>Líderes {current}</span>
             <span class="live">En juego</span>

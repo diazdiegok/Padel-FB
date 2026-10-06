@@ -254,6 +254,7 @@ h3 { font-size: 22px; }
   border: 1px solid var(--line);
   padding: 20px;
 }
+.scoreboard.is-empty { align-self: start; }
 .scoreboard header {
   display: flex;
   justify-content: space-between;
