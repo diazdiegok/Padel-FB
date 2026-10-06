@@ -38,17 +38,18 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
         const count = ctx.rows.filter((row) => row.temp === temp).length;
         const active = temp === current;
         return `<article class="admin-result-card">
-          <div class="admin-result-meta">
-            <span>${escAttr(temp)}</span>
-            ${active ? `<span class="admin-chip-live">En juego</span>` : ""}
+          <div class="admin-season-head">
+            <div>
+              <div class="admin-result-meta"><span>${escAttr(temp)}</span></div>
+              <strong>${escAttr(seasonLabel(temp))}</strong>
+            </div>
+            ${
+              active
+                ? `<span class="admin-chip-live">En juego</span>`
+                : `<button class="btn btn-ghost admin-season-play" type="button" data-season-play="${escAttr(temp)}">Poner en juego</button>`
+            }
           </div>
-          <strong>${escAttr(seasonLabel(temp))}</strong>
           <p>${count} pareja${count === 1 ? "" : "s"} en el ranking.</p>
-          ${
-            active
-              ? ""
-              : `<button class="btn btn-lime" type="button" data-season-play="${escAttr(temp)}">Poner en juego</button>`
-          }
           <div class="admin-season-venues">
             <label>Sedes de la liga
               <input type="number" min="0" step="1" data-season-venues="${escAttr(temp)}" value="${venuesFor(temp)}" />

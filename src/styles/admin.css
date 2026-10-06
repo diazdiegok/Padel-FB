@@ -737,7 +737,19 @@ body.is-admin main > .wrap {
   color: var(--cream);
 }
 .admin-season-venues .btn { width: auto; }
-.admin-result-card > .btn { justify-content: center; }
+
+.admin-season-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.admin-season-play {
+  width: auto;
+  flex: none;
+  padding: 8px 12px;
+  font-size: 12px;
+}
 
 .admin-result-meta {
   display: flex;
@@ -1070,6 +1082,13 @@ body.is-admin main > .wrap {
 }
 
 .admin-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  height: fit-content;
+  max-height: calc(100dvh - 32px);
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 0;
