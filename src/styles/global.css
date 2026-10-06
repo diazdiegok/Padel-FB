@@ -988,31 +988,129 @@ footer strong { color: var(--cream); }
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: #070907;
   display: grid;
   place-items: center;
-  transition: opacity 0.45s ease;
+  background:
+    radial-gradient(ellipse 48% 36% at 50% 42%, rgba(214, 255, 47, 0.16), transparent 70%),
+    #070907;
+  transition: opacity 0.55s ease;
 }
 .splash[hidden] { display: none !important; }
 .splash.out { opacity: 0; pointer-events: none; }
-.splash-scene { text-align: center; }
-.splash-scene p {
-  margin-top: 12px;
+.splash-scene {
+  position: relative;
+  width: min(460px, 90vw);
+  text-align: center;
+}
+.splash-scene::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  width: 240px;
+  height: 240px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(214, 255, 47, 0.2), transparent 68%);
+  filter: blur(8px);
+  pointer-events: none;
+  animation: splash-glow 1.2s ease-out both;
+}
+.splash-art {
+  position: relative;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.splash-baseline {
+  fill: none;
+  stroke: var(--lime);
+  stroke-width: 1.25;
+  opacity: 0.75;
+  stroke-dasharray: 384;
+  stroke-dashoffset: 384;
+  animation: splash-draw 0.7s ease-out 0.08s forwards;
+}
+.splash-paddle {
+  transform-box: fill-box;
+  transform-origin: 50% 88%;
+  animation: splash-swing 0.95s cubic-bezier(0.16, 0.84, 0.32, 1) both;
+}
+.splash-ball { animation: splash-flight 0.78s cubic-bezier(0.55, 0.05, 0.2, 1) 0.18s both; }
+.splash-trail {
+  fill: var(--lime);
+  opacity: 0;
+  animation: splash-trail 0.78s ease 0.18s both;
+}
+.splash-hit {
+  fill: none;
+  stroke: var(--lime);
+  stroke-width: 1.75;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: splash-hit 0.6s ease-out 0.78s both;
+}
+.splash-mark {
+  position: relative;
+  margin: 2px 0 0;
   font-family: var(--display);
+  font-size: clamp(36px, 8vw, 54px);
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--lime);
+  color: var(--cream);
+  animation: splash-rise 0.7s cubic-bezier(0.16, 0.84, 0.32, 1) 0.42s both;
 }
-.splash-art { width: min(280px, 72vw); height: auto; }
-.splash-paddle { transform-origin: 70px 213px; animation: swing 0.7s ease-in-out infinite alternate; }
-.splash-ball { transform-origin: 210px 128px; animation: bounce 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) infinite alternate; }
-@keyframes bounce {
-  from { transform: translate(0, 0); }
-  to { transform: translate(-78px, -36px); }
+.splash-mark em { font-style: normal; color: var(--lime); }
+.splash-rule {
+  display: block;
+  width: 88px;
+  height: 2px;
+  margin: 12px auto 0;
+  background: var(--lime);
+  transform-origin: center;
+  animation: splash-rule 0.5s ease 0.72s both;
 }
-@keyframes swing {
-  from { transform: rotate(-12deg); }
-  to { transform: rotate(10deg); }
+.splash-sub {
+  margin-top: 12px;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--muted);
+  animation: splash-rise 0.6s ease 0.88s both;
+}
+@keyframes splash-glow {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.65); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes splash-draw { to { stroke-dashoffset: 0; } }
+@keyframes splash-swing {
+  0% { transform: rotate(-28deg); }
+  68% { transform: rotate(7deg); }
+  100% { transform: rotate(1deg); }
+}
+@keyframes splash-flight {
+  0% { transform: translate(84px, 26px); opacity: 0; }
+  16% { opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+@keyframes splash-trail {
+  0% { transform: translate(40px, 16px); opacity: 0; }
+  28% { opacity: 0.35; }
+  100% { transform: translate(12px, 5px); opacity: 0; }
+}
+@keyframes splash-hit {
+  0% { opacity: 0.9; transform: scale(0.35); }
+  100% { opacity: 0; transform: scale(2.8); }
+}
+@keyframes splash-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes splash-rule {
+  from { opacity: 0; transform: scaleX(0); }
+  to { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .splash { display: none; }

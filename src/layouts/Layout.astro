@@ -63,27 +63,31 @@ const inTorneos = path.includes("/torneos");
     {!noindex && (
       <div class="splash" id="splash" hidden>
         <div class="splash-scene" aria-hidden="true">
-          <svg class="splash-art" viewBox="0 0 280 230">
+          <svg class="splash-art" viewBox="0 0 440 248">
+            <path class="splash-baseline" d="M28 232 H412" />
             <g class="splash-paddle">
-              <path fill="#d6ff2f" d="M70 8c-28 0-52 24-52 72 0 42 18 68 52 80 34-12 52-38 52-80 0-48-24-72-52-72z"/>
-              <path fill="#f3f0e6" d="M70 18c-22 0-42 20-42 62 0 36 15 58 42 68 27-10 42-32 42-68 0-42-20-62-42-62z"/>
-              <g fill="#070907">
-                <circle cx="54" cy="42" r="4.2"/><circle cx="70" cy="42" r="4.2"/><circle cx="86" cy="42" r="4.2"/>
-                <circle cx="46" cy="58" r="4.2"/><circle cx="62" cy="58" r="4.2"/><circle cx="78" cy="58" r="4.2"/><circle cx="94" cy="58" r="4.2"/>
-                <circle cx="46" cy="74" r="4.2"/><circle cx="62" cy="74" r="4.2"/><circle cx="78" cy="74" r="4.2"/><circle cx="94" cy="74" r="4.2"/>
-                <circle cx="54" cy="90" r="4.2"/><circle cx="70" cy="90" r="4.2"/><circle cx="86" cy="90" r="4.2"/>
-                <circle cx="62" cy="106" r="4.2"/><circle cx="78" cy="106" r="4.2"/>
+              <path fill="#d6ff2f" d="M150 22c-44 0-74 34-74 74 0 34 20 60 52 70 9 3 15 11 22 20 7-9 13-17 22-20 32-10 52-36 52-70 0-40-30-74-74-74z"/>
+              <path fill="#f4f1e8" d="M150 34c-36 0-60 28-60 62 0 28 16 50 42 58 8 2 12 8 18 16 6-8 10-14 18-16 26-8 42-30 42-58 0-34-24-62-60-62z"/>
+              <g fill="#141814">
+                <circle cx="128" cy="68" r="3.1"/><circle cx="150" cy="68" r="3.1"/><circle cx="172" cy="68" r="3.1"/>
+                <circle cx="117" cy="88" r="3.1"/><circle cx="139" cy="88" r="3.1"/><circle cx="161" cy="88" r="3.1"/><circle cx="183" cy="88" r="3.1"/>
+                <circle cx="128" cy="108" r="3.1"/><circle cx="150" cy="108" r="3.1"/><circle cx="172" cy="108" r="3.1"/>
+                <circle cx="139" cy="128" r="3.1"/><circle cx="161" cy="128" r="3.1"/>
               </g>
-              <rect x="62" y="148" width="16" height="42" rx="4" fill="#b8b4a8"/>
-              <rect x="59" y="182" width="22" height="28" rx="5" fill="#d6ff2f"/>
-              <rect x="58" y="206" width="24" height="7" rx="2" fill="#f3f0e6"/>
+              <rect x="142" y="176" width="16" height="34" rx="3" fill="#a39e92"/>
+              <rect x="137" y="204" width="26" height="18" rx="5" fill="#d6ff2f"/>
+              <rect x="141" y="218" width="18" height="4" rx="1" fill="#f4f1e8"/>
             </g>
             <g class="splash-ball">
-              <circle cx="210" cy="128" r="16" fill="#d6ff2f"/>
-              <path d="M198 122c8 2 16 8 20 18" stroke="#111" stroke-width="2" fill="none"/>
+              <circle class="splash-trail" cx="268" cy="96" r="13"/>
+              <circle cx="268" cy="96" r="13" fill="#d6ff2f"/>
+              <path d="M259 90c6 2 11 7 14 13" stroke="#141814" stroke-width="1.6" fill="none" stroke-linecap="round"/>
             </g>
+            <circle class="splash-hit" cx="230" cy="96" r="8"/>
           </svg>
-          <p>{site.name}</p>
+          <p class="splash-mark">PADEL <em>FB</em></p>
+          <span class="splash-rule"></span>
+          <p class="splash-sub">Temporada {String(site.currentSeason || "").replace(/^T/i, "")} · {site.city}</p>
         </div>
       </div>
     )}
@@ -224,13 +228,13 @@ const inTorneos = path.includes("/torneos");
         });
       }
       const splash = document.getElementById("splash");
-      if (splash && !sessionStorage.getItem("liga-fb-splash-v2")) {
+      if (splash && !sessionStorage.getItem("liga-fb-splash-v3")) {
         splash.hidden = false;
-        sessionStorage.setItem("liga-fb-splash-v2", "1");
+        sessionStorage.setItem("liga-fb-splash-v3", "1");
         setTimeout(() => {
           splash.classList.add("out");
-          setTimeout(() => splash.remove(), 500);
-        }, 1700);
+          setTimeout(() => splash.remove(), 560);
+        }, 2500);
       } else {
         splash?.remove();
       }
