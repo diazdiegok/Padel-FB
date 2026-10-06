@@ -293,6 +293,14 @@ h3 { font-size: 22px; }
 .cat { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
 .pts { font-family: var(--display); font-size: 28px; }
 
+.home-stats {
+  margin: 28px 0 8px;
+  padding: 6px 28px 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+}
+.home-stats .season-bar { padding: 18px 0 6px; }
+.home-stats .stats { border-bottom: none; }
 .stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
