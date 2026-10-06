@@ -46,6 +46,7 @@ import "../styles/admin.css";
 
       <div class="admin-nav-group">
         <div class="admin-nav-label">Liga</div>
+        <button class="admin-nav-btn" type="button" data-nav="temporadas">Temporadas</button>
         <button class="admin-nav-btn on" type="button" data-nav="ranking">Ranking</button>
         <button class="admin-nav-btn" type="button" data-nav="fixture">Fixture</button>
         <button class="admin-nav-btn" type="button" data-nav="resultados">Resultados</button>
@@ -86,6 +87,20 @@ import "../styles/admin.css";
       </header>
 
       <div class="admin-content">
+        <!-- Temporadas -->
+        <section data-section="temporadas" hidden>
+          <div class="admin-callout">
+            <strong>En juego</strong>
+            La temporada activa es la que usan el inicio, el ranking, el fixture y la fecha.
+          </div>
+          <div class="admin-section-tools">
+            <button class="btn btn-lime" type="button" id="season-create">Nueva temporada</button>
+            <span class="tag" id="season-current"></span>
+          </div>
+          <p class="admin-msg" id="season-msg"></p>
+          <div id="season-list"></div>
+        </section>
+
         <!-- Ranking -->
         <section data-section="ranking">
           <div class="admin-section-tools">
@@ -154,18 +169,18 @@ import "../styles/admin.css";
             </div>
             <div class="admin-step-card">
               <span>2 · Revisar</span>
-              <p>Editá horarios, canchas y resultados en la tabla.</p>
+              <p>Editá día, horario, cancha y parejas. El score se carga en Resultados.</p>
             </div>
             <div class="admin-step-card">
               <span>3 · Publicar</span>
-              <p>Las fechas viejas pasan a Resultados y el ranking suma los scores.</p>
+              <p>Se publica la fecha en juego. Las fechas anteriores quedan en Resultados.</p>
             </div>
           </div>
 
           <div class="admin-panel">
             <div class="admin-toolbar">
               <label class="admin-week">Fecha en juego
-                <input id="fx-week" value="Fecha 5" placeholder="Fecha 6" />
+                <input id="fx-week" value="Fecha 1" placeholder="Fecha 1" />
               </label>
               <button class="btn btn-ghost" type="button" id="fx-add">+ Partido</button>
               <button class="btn btn-ghost" type="button" id="fx-import-toggle" aria-expanded="false">Importar</button>
@@ -188,11 +203,6 @@ import "../styles/admin.css";
             </div>
           </div>
 
-          <div class="admin-callout">
-            <strong>Resultados</strong>
-            Desde Pareja 1: <b>6-4 6-2</b> (2-0 = 3 pts) o <b>6-4 3-6 6-2</b> (2-1 = 2 pts y 1 la otra).
-          </div>
-
           <p class="admin-msg" id="fx-msg"></p>
           <div class="admin-empty" id="fx-empty" hidden>
             <p>Todavía no hay partidos. Usá Importar o + Partido.</p>
@@ -209,7 +219,6 @@ import "../styles/admin.css";
                   <th>Cancha</th>
                   <th>Pareja 1</th>
                   <th>Pareja 2</th>
-                  <th class="col-result">Resultado</th>
                   <th></th>
                 </tr>
               </thead>
@@ -217,7 +226,7 @@ import "../styles/admin.css";
             </table>
           </div>
           <div class="admin-sticky-bar">
-            <p class="admin-sticky-note">Al publicar, fechas anteriores van a Resultados y se actualiza el ranking según scores.</p>
+            <p class="admin-sticky-note">Publicá el fixture de la fecha. Los resultados se cargan en la sección Resultados.</p>
             <div class="admin-sticky-actions">
               <button class="btn btn-lime" type="button" id="fx-publish">Publicar fixture</button>
             </div>
@@ -227,8 +236,8 @@ import "../styles/admin.css";
         <!-- Resultados -->
         <section data-section="resultados" hidden>
           <div class="admin-callout">
-            <strong>Archivo</strong>
-            Acá ves fechas archivadas y partidos del fixture en juego que ya tienen resultado. Para editar un live, usá Fixture.
+            <strong>Cómo se carga</strong>
+            Desde Pareja 1: <b>6-4 6-2</b> (2-0 = 3 pts) o <b>6-4 3-6 6-2</b> (2-1 = 2 pts y 1 la otra).
           </div>
           <div class="admin-section-tools">
             <button class="btn btn-ghost" type="button" id="res-reload">Actualizar</button>
@@ -245,9 +254,16 @@ import "../styles/admin.css";
             </div>
           </div>
           <div class="admin-empty" id="res-empty" hidden>
-            <p>Todavía no hay resultados cargados.</p>
+            <p>Todavía no hay partidos. Cuando publiques un fixture, aparecen acá para cargar el resultado.</p>
           </div>
+          <p class="admin-msg" id="res-msg"></p>
           <div id="res-list"></div>
+          <div class="admin-sticky-bar">
+            <p class="admin-sticky-note">Publicar suma los scores al ranking de la temporada del partido.</p>
+            <div class="admin-sticky-actions">
+              <button class="btn btn-lime" type="button" id="res-publish">Publicar resultados</button>
+            </div>
+          </div>
         </section>
 
         <!-- Fecha -->
@@ -418,12 +434,6 @@ import "../styles/admin.css";
         <section data-section="sitio" hidden>
           <form class="form" id="site-form">
             <div class="admin-site-grid">
-              <div class="admin-site-block">
-                <h3>Temporada</h3>
-                <label>Temporada en juego
-                  <input name="currentSeason" />
-                </label>
-              </div>
               <div class="admin-site-block">
                 <h3>Contacto</h3>
                 <label>WhatsApp (549…)

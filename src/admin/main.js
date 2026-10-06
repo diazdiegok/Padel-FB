@@ -6,6 +6,7 @@ import { createFecha } from "./fecha.js";
 import { createFixture } from "./fixture.js";
 import { createRanking } from "./ranking.js";
 import { createResults } from "./results.js";
+import { createSeasons } from "./seasons.js";
 import { createShell } from "./shell.js";
 import { $ } from "./ui.js";
 
@@ -29,6 +30,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   let ranking;
   let fixture;
   let results;
+  let seasons;
   let fecha;
   let cms;
 
@@ -44,9 +46,21 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
     onRankingChanged() {
       ranking.refresh();
       results?.render();
+      seasons?.render();
     },
   });
-  results = createResults(ctx, api, shell);
+  results = createResults(ctx, api, shell, {
+    onRankingChanged() {
+      ranking.refresh();
+      seasons?.render();
+    },
+  });
+  seasons = createSeasons(ctx, api, shell, {
+    onSeasonChanged() {
+      ranking.refresh();
+      fecha?.fill();
+    },
+  });
   fecha = createFecha(ctx, api, shell);
   cms = createCms(ctx, api, shell);
 
@@ -57,7 +71,8 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
     sessionStorage.removeItem("liga-fb-gh-token");
     ctx.token = api.getPublishToken();
     ranking.refresh();
-    $("fx-week").value = ctx.fixture[0]?.week || $("fx-week").value || "Fecha 5";
+    seasons.render();
+    $("fx-week").value = ctx.fixture[0]?.week || $("fx-week").value || "Fecha 1";
     fixture.render();
     results.render();
     cms.refreshAll();
@@ -73,6 +88,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   ranking.bind();
   fixture.bind();
   results.bind();
+  seasons.bind();
   fecha.bind();
   cms.bind();
 

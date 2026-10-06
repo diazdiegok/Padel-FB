@@ -264,6 +264,11 @@ h3 { font-size: 22px; }
   text-transform: uppercase;
   color: var(--muted);
 }
+.scoreboard .empty-season {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
 .live { color: var(--lime); }
 .live::before {
   content: "";

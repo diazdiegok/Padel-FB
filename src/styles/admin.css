@@ -693,6 +693,21 @@ body.is-admin main > .wrap {
   font-weight: 500;
 }
 
+.admin-result-score {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.admin-result-score input {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 15px;
+}
+
 .admin-result-meta {
   display: flex;
   flex-wrap: wrap;

@@ -1,5 +1,6 @@
 import { CATS, RANK_COLS, RANK_PATH } from "./constants.js";
 import { cleanRow, downloadCsv, parseRankingCsv } from "./csv.js";
+import { listSeasons } from "../lib/liga.js";
 import { $, confirmModal, escAttr, num, setBusy, setMsg, toast } from "./ui.js";
 
 export function createRanking(ctx, api, shell) {
@@ -7,7 +8,7 @@ export function createRanking(ctx, api, shell) {
   let filterCat = "TODAS";
 
   function temps() {
-    return [...new Set(ctx.rows.map((r) => r.temp))].sort();
+    return listSeasons(ctx.siteData, ctx.rows.map((r) => r.temp));
   }
 
   function catsInView() {

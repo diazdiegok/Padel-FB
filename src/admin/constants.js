@@ -44,13 +44,14 @@ export const VENUE_MAP = {
 };
 
 export const SECTIONS = {
+  temporadas: { group: "Liga", title: "Temporadas", help: "Creá una temporada y dejala en juego. Ranking, fixture y fecha pasan a usar esa." },
   ranking: { group: "Liga", title: "Ranking", help: "Editá posiciones, importá CSV y publicá la tabla." },
-  fixture: { group: "Liga", title: "Fixture", help: "Cargá la fecha, revisá partidos y publicá." },
-  resultados: { group: "Liga", title: "Resultados", help: "Archivo de fechas jugadas y resultados cargados." },
+  fixture: { group: "Liga", title: "Fixture", help: "Cargá la fecha, revisá partidos y publicá. Los resultados se cargan en Resultados." },
+  resultados: { group: "Liga", title: "Resultados", help: "Cargá el score de cada partido. Al publicar se actualiza el ranking." },
   fecha: { group: "Liga", title: "Fecha", help: "Abrí o cerrá la carga de disponibilidad de las parejas." },
   sedes: { group: "Liga", title: "Sedes", help: "Complejos de la liga y la academia. Marcá dónde se muestra cada uno." },
   academia: { group: "Academia", title: "Adultos", help: "Profes, programas y textos de las clases de adultos." },
   infantiles: { group: "Academia", title: "Infantiles", help: "Textos, sedes y horarios de las clases infantiles." },
-  sitio: { group: "Sitio", title: "Datos del sitio", help: "Temporada, contacto y texto de inicio." },
+  sitio: { group: "Sitio", title: "Datos del sitio", help: "Contacto, ciudad y texto de inicio." },
   torneos: { group: "Torneos", title: "Torneos", help: "Listado de torneos. Si está vacío, la web muestra el aviso." },
 };

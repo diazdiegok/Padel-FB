@@ -8,6 +8,22 @@ export function seasonLabel(temp) {
   return n ? `Temporada ${n}` : "Temporada";
 }
 
+export function normalizeSeason(temp) {
+  const n = seasonNumber(temp);
+  return n ? `T${n}` : "";
+}
+
+export function listSeasons(site, extra = []) {
+  const listed = Array.isArray(site?.seasons) ? site.seasons : [];
+  const all = [...listed, ...extra, site?.currentSeason].map(normalizeSeason).filter(Boolean);
+  return [...new Set(all)].sort((a, b) => seasonNumber(a) - seasonNumber(b));
+}
+
+export function nextSeason(seasons) {
+  const max = (seasons || []).reduce((n, temp) => Math.max(n, seasonNumber(temp)), 0);
+  return `T${max + 1}`;
+}
+
 export function weekNumber(week) {
   const match = String(week || "").match(/(\d+)/);
   return match ? Number(match[1]) : 0;

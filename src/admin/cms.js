@@ -87,7 +87,6 @@ export function createCms(ctx, api, shell) {
   function fillSiteForm() {
     const form = $("site-form");
     if (!form) return;
-    form.currentSeason.value = ctx.siteData.currentSeason || "T4";
     form.whatsapp.value = ctx.siteData.whatsapp || "";
     form.instagram.value = ctx.siteData.instagram || "";
     form.city.value = ctx.siteData.city || "";
@@ -755,7 +754,6 @@ export function createCms(ctx, api, shell) {
       const form = e.target;
       ctx.siteData = {
         ...ctx.siteData,
-        currentSeason: form.currentSeason.value.trim() || "T4",
         whatsapp: form.whatsapp.value.trim(),
         instagram: form.instagram.value.trim(),
         city: form.city.value.trim(),
@@ -768,7 +766,6 @@ export function createCms(ctx, api, shell) {
         const local = cleanSiteForSave();
         await publishSiteFields(
           {
-            currentSeason: local.currentSeason,
             whatsapp: local.whatsapp,
             instagram: local.instagram,
             city: local.city,
