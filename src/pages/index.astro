@@ -56,7 +56,7 @@ const leagueVenues = (site.venues || []).filter((v) => v.liga !== false);
 
   <div class="wrap">
     <div class="home-stats">
-      <div class="home-stats-filter">
+      <div class="home-cell">
         <span class="filter-kicker">Temporada</span>
         <div class="seg" id="home-temps">
           {seasons.map((t) => (
@@ -66,11 +66,18 @@ const leagueVenues = (site.venues || []).filter((v) => v.liga !== false);
           ))}
         </div>
       </div>
-      <div class="home-stats-count">
+      <div class="home-cell">
         <b id="home-players">{seasonCounts[current] || 0}</b>
         <span id="home-players-label">Jugadores en {current}</span>
       </div>
-      <p class="home-stats-note">{leagueVenues.length} sedes de la liga · 1 partido por semana</p>
+      <div class="home-cell">
+        <b>{leagueVenues.length}</b>
+        <span>Sedes de la liga</span>
+      </div>
+      <div class="home-cell">
+        <b>1</b>
+        <span>Partido por semana</span>
+      </div>
     </div>
   </div>
   <script define:vars={{ seasonCounts }}>
