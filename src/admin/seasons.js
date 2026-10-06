@@ -17,6 +17,16 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
     return Number.isFinite(saved) ? saved : fallbackVenues();
   }
 
+  async function load() {
+    const remote = await api.readRemoteJson(SITE_PATH, null);
+    if (!remote || typeof remote !== "object") return;
+    if (remote.currentSeason) ctx.siteData.currentSeason = remote.currentSeason;
+    if (Array.isArray(remote.seasons)) ctx.siteData.seasons = remote.seasons;
+    if (remote.seasonVenues && typeof remote.seasonVenues === "object") {
+      ctx.siteData.seasonVenues = { ...remote.seasonVenues };
+    }
+  }
+
   function render() {
     const current = ctx.siteData.currentSeason || "";
     const list = seasons();
@@ -129,6 +139,17 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
       setMsg($("season-msg"), `Guardando sedes de ${seasonLabel(temp)}…`);
       try {
         const remote = await api.readRemoteJson(SITE_PATH, ctx.siteData);
+        const prev = Number(remote.seasonVenues?.[temp]);
+        if (prev === count) {
+          if (remote.seasonVenues) ctx.siteData.seasonVenues = { ...remote.seasonVenues };
+          setMsg(
+            $("season-msg"),
+            `${seasonLabel(temp)} ya tiene ${count} sedes. En el inicio elegí ${temp} para verlas. La página abre en la temporada en juego.`,
+            "ok"
+          );
+          toast("Ya estaba guardado", "ok");
+          return;
+        }
         const seasonVenues = { ...(remote.seasonVenues || {}), [temp]: count };
         const nextSite = { ...remote, seasonVenues };
         await api.publishFile(
@@ -138,7 +159,11 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
         );
         Object.assign(ctx.siteData, nextSite);
         render();
-        setMsg($("season-msg"), `${seasonLabel(temp)} va a mostrar ${count} sedes en el inicio. Se actualiza en ~1 minuto.`, "ok");
+        setMsg(
+          $("season-msg"),
+          `${seasonLabel(temp)} guardada con ${count} sedes. En el inicio elegí ${temp} para ver ese número.`,
+          "ok"
+        );
         toast("Sedes guardadas", "ok");
       } catch (err) {
         const message = api.publishError(err);
@@ -150,5 +175,5 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
     });
   }
 
-  return { bind, render };
+  return { bind, render, load };
 }

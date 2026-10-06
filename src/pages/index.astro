@@ -87,24 +87,44 @@ const seasonVenues = Object.fromEntries(
       </div>
     </div>
   </div>
-  <script define:vars={{ seasonCounts, seasonVenues }}>
+  <script define:vars={{ seasonCounts, seasonVenues, githubOwner: site.githubOwner, githubRepo: site.githubRepo }}>
     const counts = seasonCounts;
     const venues = seasonVenues;
     const num = document.querySelector("#home-players");
     const label = document.querySelector("#home-players-label");
     const venueNum = document.querySelector("#home-venues");
     const venueLabel = document.querySelector("#home-venues-label");
+    function selectedTemp() {
+      return document.querySelector("#home-temps .on")?.dataset.temp || "";
+    }
+    function paint(temp) {
+      num.textContent = String(counts[temp] || 0);
+      label.textContent = "Jugadores en " + temp;
+      venueNum.textContent = String(venues[temp] ?? 0);
+      venueLabel.textContent = "Sedes en " + temp;
+    }
     document.querySelectorAll("#home-temps [data-temp]").forEach((btn) => {
       btn.addEventListener("click", () => {
         document.querySelectorAll("#home-temps [data-temp]").forEach((b) => b.classList.remove("on"));
         btn.classList.add("on");
-        const temp = btn.dataset.temp;
-        num.textContent = String(counts[temp] || 0);
-        label.textContent = "Jugadores en " + temp;
-        venueNum.textContent = String(venues[temp] ?? 0);
-        venueLabel.textContent = "Sedes en " + temp;
+        paint(btn.dataset.temp);
       });
     });
+    if (githubOwner && githubRepo) {
+      fetch("https://raw.githubusercontent.com/" + githubOwner + "/" + githubRepo + "/main/src/data/site.json?t=" + Date.now(), { cache: "no-store" })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((remote) => {
+          const saved = remote && remote.seasonVenues;
+          if (!saved || typeof saved !== "object") return;
+          Object.keys(venues).forEach((temp) => {
+            const n = Number(saved[temp]);
+            if (Number.isFinite(n)) venues[temp] = n;
+          });
+          const temp = selectedTemp();
+          if (temp) paint(temp);
+        })
+        .catch(() => {});
+    }
   </script>
 
   <section>

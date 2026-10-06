@@ -64,12 +64,17 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   fecha = createFecha(ctx, api, shell);
   cms = createCms(ctx, api, shell);
 
-  function showApp() {
+  async function showApp() {
     $("gate").hidden = true;
     $("app").hidden = false;
     document.body.classList.add("admin-ready");
     sessionStorage.removeItem("liga-fb-gh-token");
     ctx.token = api.getPublishToken();
+    try {
+      await seasons.load();
+    } catch {
+      /* si GitHub no responde, se usan los datos de la última publicación */
+    }
     ranking.refresh();
     seasons.render();
     $("fx-week").value = ctx.fixture[0]?.week || $("fx-week").value || "Fecha 1";
