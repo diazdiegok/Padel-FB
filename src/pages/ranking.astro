@@ -2,12 +2,13 @@
 import Layout from "../layouts/Layout.astro";
 import ranking from "../data/ranking.json";
 import { site } from "../data/site";
+import { seasonNumber } from "../lib/liga.js";
 
 const HIDDEN_CATS = new Set(["S Masculina"]);
 const rows = ranking.filter((p) => !HIDDEN_CATS.has(p.cat));
-const temps = [...new Set(rows.map((p) => p.temp))];
+const temps = [...new Set(rows.map((p) => p.temp))].sort((a, b) => seasonNumber(a) - seasonNumber(b));
 const cats = [...new Set(rows.map((p) => p.cat))].sort();
-const current = site.currentSeason || temps[temps.length - 1];
+const current = temps.includes(site.currentSeason) ? site.currentSeason : temps[temps.length - 1];
 const seasonCounts = Object.fromEntries(temps.map((t) => [t, rows.filter((p) => p.temp === t).length]));
 ---
 <Layout

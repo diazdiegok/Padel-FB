@@ -2,13 +2,16 @@
 import Layout from "../layouts/Layout.astro";
 import { site } from "../data/site";
 import ranking from "../data/ranking.json";
+import { seasonNumber } from "../lib/liga.js";
 import { asset, page } from "../lib/paths";
 import VenueLinks from "../components/VenueLinks.astro";
 
 const HIDDEN_CATS = new Set(["S Masculina"]);
 const rows = ranking.filter((p) => !HIDDEN_CATS.has(p.cat));
 const current = site.currentSeason || "T4";
-const live = rows.filter((p) => p.temp === current);
+const rankingTemps = [...new Set(rows.map((p) => p.temp))].sort((a, b) => seasonNumber(a) - seasonNumber(b));
+const rankingSeason = rows.some((p) => p.temp === current) ? current : rankingTemps[rankingTemps.length - 1];
+const live = rows.filter((p) => p.temp === rankingSeason);
 const cats = [...new Set(live.map((p) => p.cat))];
 const leaders = cats
   .map((cat) => live.filter((p) => p.cat === cat).sort((a, b) => a.pos - b.pos || b.pts - a.pts)[0])
@@ -35,7 +38,7 @@ const featuredVenues = leagueVenues.slice(0, 4);
         </div>
         <aside class="scoreboard">
           <header>
-            <span>Líderes {current}</span>
+            <span>Líderes {rankingSeason}</span>
             <span class="live">En juego</span>
           </header>
           {leaders.map((p) => p && (

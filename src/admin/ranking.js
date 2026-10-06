@@ -18,7 +18,7 @@ export function createRanking(ctx, api, shell) {
   function fillFilters() {
     const tlist = temps();
     if (filterTemp !== "TODAS" && tlist.length && !tlist.includes(filterTemp)) {
-      filterTemp = tlist.includes(ctx.siteData.currentSeason) ? ctx.siteData.currentSeason : tlist[0];
+      filterTemp = tlist.includes(ctx.siteData.currentSeason) ? ctx.siteData.currentSeason : tlist[tlist.length - 1];
     }
     const counts = Object.fromEntries(tlist.map((t) => [t, ctx.rows.filter((r) => r.temp === t).length]));
     $("f-temps").innerHTML = tlist
