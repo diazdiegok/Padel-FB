@@ -5,7 +5,13 @@
   "instagram": "https://www.instagram.com/ligapadelfb/",
   "whatsapp": "5493434767996",
   "currentSeason": "T5",
-  "seasons": ["T1", "T2", "T3", "T4", "T5"],
+  "seasons": [
+    "T1",
+    "T2",
+    "T3",
+    "T4",
+    "T5"
+  ],
   "githubOwner": "diazdiegok",
   "githubRepo": "Padel-FB",
   "apiUrl": "https://padel-fb-api.diazdiegonicok.workers.dev",
@@ -256,5 +262,8 @@
     "/images/MM-LOGO.png",
     "/images/Logo-redondo-FB-blanco.png",
     "/images/Screenshot_1-removebg-preview.png"
-  ]
+  ],
+  "seasonVenues": {
+    "T1": 3
+  }
 }
