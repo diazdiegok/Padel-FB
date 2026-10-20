@@ -88,10 +88,15 @@ export function createPlayoff(ctx, api, shell) {
     $("po-pairs").innerHTML = [BYE, ...(cat ? rankingPairs(cat.cat) : [])]
       .map((name) => `<option value="${escAttr(name)}"></option>`)
       .join("");
-    $("po-venues").innerHTML = (ctx.siteData.venues || [])
-      .filter((v) => v.liga !== false)
-      .map((v) => `<option value="${escAttr(v.name)}"></option>`)
-      .join("");
+  }
+
+  function venueOptions(current) {
+    const names = (ctx.siteData.venues || []).filter((v) => v.liga !== false).map((v) => v.name);
+    const list = current && !names.includes(current) ? [...names, current] : names;
+    return (
+      `<option value="">Sede</option>` +
+      list.map((name) => `<option value="${escAttr(name)}" ${name === current ? "selected" : ""}>${escAttr(name)}</option>`).join("")
+    );
   }
 
   function scoreHint(m) {
@@ -129,7 +134,7 @@ export function createPlayoff(ctx, api, shell) {
       <div class="po-grid">
         <input data-po-field="day" value="${escAttr(m.day)}" placeholder="Día" />
         <input data-po-field="time" value="${escAttr(m.time)}" placeholder="Horario" />
-        <input data-po-field="venue" list="po-venues" value="${escAttr(m.venue)}" placeholder="Sede" />
+        <select data-po-field="venue" aria-label="Sede">${venueOptions(m.venue)}</select>
         <input data-po-field="court" value="${escAttr(m.court)}" placeholder="Cancha" />
       </div>
       <div class="po-score">
