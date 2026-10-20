@@ -5,7 +5,7 @@ import { createCms } from "./cms.js";
 import { createFecha } from "./fecha.js";
 import { createFixture } from "./fixture.js";
 import { createPlayoff } from "./playoff.js";
-import { normalizePlayoff } from "../lib/playoff.js";
+import { normalizePlayoffs } from "../lib/playoff.js";
 import { createRanking } from "./ranking.js";
 import { createResults } from "./results.js";
 import { createSeasons } from "./seasons.js";
@@ -19,7 +19,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
     fixture: structuredClone(fixtureJson || []),
     results: structuredClone(resultsJson || []),
     disp: structuredClone(dispJson),
-    playoff: normalizePlayoff(playoffJson || {}),
+    playoffs: normalizePlayoffs(playoffJson),
     owner: siteJson.githubOwner,
     repo: siteJson.githubRepo,
     API_URL: String(siteJson.apiUrl || "").replace(/\/$/, ""),

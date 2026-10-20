@@ -1,4 +1,5 @@
 import { describeResult } from "./scoring.js";
+import { seasonNumber } from "./liga.js";
 
 export const PLAYOFF_SIZES = [2, 4, 8, 16];
 export const BYE = "Libre";
@@ -102,11 +103,32 @@ export function normalizeCategory(raw = {}) {
 export function normalizePlayoff(raw = {}) {
   return {
     temp: String(raw.temp || "").trim().toUpperCase(),
+    year: String(raw.year || "").trim(),
     title: String(raw.title || "").trim(),
     dates: String(raw.dates || "").trim(),
     note: String(raw.note || "").trim(),
     categories: (Array.isArray(raw.categories) ? raw.categories : []).map(normalizeCategory).filter((c) => c.cat),
   };
+}
+
+/** Un playoff por temporada, de la más nueva a la más vieja. Acepta el formato viejo de un solo playoff. */
+export function normalizePlayoffs(raw) {
+  const list = Array.isArray(raw) ? raw : raw && typeof raw === "object" ? [raw] : [];
+  const byTemp = new Map();
+  for (const item of list.map(normalizePlayoff)) {
+    if (item.temp) byTemp.set(item.temp, item);
+  }
+  return [...byTemp.values()].sort((a, b) => seasonNumber(b.temp) - seasonNumber(a.temp));
+}
+
+export function serializePlayoffs(list) {
+  return normalizePlayoffs(list)
+    .filter((p) => p.categories.length)
+    .map(serializePlayoff);
+}
+
+export function playoffSlug(temp) {
+  return String(temp || "").trim().toLowerCase();
 }
 
 /** Arma la primera ronda con las mejores parejas del ranking (ordenadas por posición). */

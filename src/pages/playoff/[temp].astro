@@ -1,12 +1,18 @@
 ---
-import Layout from "../layouts/Layout.astro";
-import playoffJson from "../data/playoff.json";
-import { site } from "../data/site";
-import { seasonLabel } from "../lib/liga.js";
-import { normalizePlayoff, resolveCategory } from "../lib/playoff.js";
-import { page } from "../lib/paths";
+import Layout from "../../layouts/Layout.astro";
+import playoffJson from "../../data/playoff.json";
+import { site } from "../../data/site";
+import { seasonLabel } from "../../lib/liga.js";
+import { normalizePlayoffs, playoffSlug, resolveCategory } from "../../lib/playoff.js";
+import { page } from "../../lib/paths";
 
-const playoff = normalizePlayoff(playoffJson);
+export function getStaticPaths() {
+  return normalizePlayoffs(playoffJson)
+    .filter((p) => p.categories.length)
+    .map((playoff) => ({ params: { temp: playoffSlug(playoff.temp) }, props: { playoff } }));
+}
+
+const { playoff } = Astro.props;
 const visible = playoff.categories.length > 0;
 const categories = visible ? playoff.categories.map(resolveCategory) : [];
 const season = seasonLabel(playoff.temp || site.currentSeason);
@@ -18,7 +24,7 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
 <Layout title={`${title} | Padel FB`} description={`Cuadro y resultados del ${title} de Padel FB en ${site.city}.`}>
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker">Liga · {season}{playoff.dates ? ` · ${playoff.dates}` : ""}</p>
+      <p class="kicker"><a class="po-back" href={page("playoff/")}>← Playoff</a> · {season}{playoff.year ? ` · ${playoff.year}` : ""}{playoff.dates ? ` · ${playoff.dates}` : ""}</p>
       <h1>{visible ? title : "Playoff"}</h1>
       {visible ? (
         <p>{playoff.note || "Cuadro por categoría. La pareja ganadora de cada partido pasa a la ronda siguiente."}</p>
@@ -127,6 +133,8 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
 
 <style>
   .po-link { color: var(--lime); }
+  .po-back { color: inherit; }
+  .po-back:hover { color: var(--cream); }
   .po-cat { padding: 8px 0 56px; }
   .po-winner {
     border: 1px solid #ffc83c;

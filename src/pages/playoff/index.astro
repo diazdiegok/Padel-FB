@@ -1,0 +1,33 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import playoffJson from "../../data/playoff.json";
+import { site } from "../../data/site";
+import { seasonLabel } from "../../lib/liga.js";
+import { normalizePlayoffs, playoffSlug } from "../../lib/playoff.js";
+import { page } from "../../lib/paths";
+
+const playoffs = normalizePlayoffs(playoffJson).filter((p) => p.categories.length);
+---
+<Layout title="Playoff | Padel FB" description={`Cuadros y resultados de los playoff de cada temporada de Padel FB en ${site.city}.`}>
+  <div class="wrap">
+    <header class="page-hero">
+      <p class="kicker">Liga</p>
+      <h1>Playoff</h1>
+      <p>El cierre de cada temporada: cruces, horarios, resultados y campeones por categoría.</p>
+    </header>
+
+    {playoffs.length === 0 ? (
+      <p class="empty" style="display:block;padding:48px 0">Todavía no hay playoff publicados.</p>
+    ) : (
+      <div class="hub-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+        {playoffs.map((p) => (
+          <a class="hub-card" href={page(`playoff/${playoffSlug(p.temp)}/`)}>
+            <p class="kicker" style="margin:0">Playoff</p>
+            <h2>{seasonLabel(p.temp)}</h2>
+            <p>{[p.year, p.dates].filter(Boolean).join(" · ") || `${p.categories.length} categorías`}</p>
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+</Layout>

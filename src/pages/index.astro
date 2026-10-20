@@ -2,12 +2,14 @@
 import Layout from "../layouts/Layout.astro";
 import { site } from "../data/site";
 import ranking from "../data/ranking.json";
-import playoff from "../data/playoff.json";
+import playoffJson from "../data/playoff.json";
+import { normalizePlayoffs, playoffSlug } from "../lib/playoff.js";
 import { listSeasons } from "../lib/liga.js";
 import { asset, page } from "../lib/paths";
 
 const HIDDEN_CATS = new Set(["S Masculina"]);
-const playoffOn = Boolean(playoff.categories?.length);
+const latestPlayoff = normalizePlayoffs(playoffJson).find((p) => p.categories.length);
+const playoffOn = Boolean(latestPlayoff);
 const rows = ranking.filter((p) => !HIDDEN_CATS.has(p.cat));
 const current = site.currentSeason || "T4";
 const seasons = listSeasons(site, rows.map((p) => p.temp));
@@ -38,7 +40,7 @@ const seasonVenues = Object.fromEntries(
           <h1>Sin esfuerzo<br />no hay gloria</h1>
           <p class="lead">{site.ligaIntro}</p>
           <div class="actions">
-            {playoffOn && <a class="btn btn-lime" href={page("playoff/")}>Ver playoff</a>}
+            {latestPlayoff && <a class="btn btn-lime" href={page(`playoff/${playoffSlug(latestPlayoff.temp)}/`)}>Ver playoff</a>}
             <a class:list={["btn", playoffOn ? "btn-ghost" : "btn-lime"]} href={page("liga/")}>Entrar a la liga</a>
             <a class="btn btn-ghost" href={page("academia/")}>Ver academia</a>
           </div>

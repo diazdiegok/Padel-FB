@@ -1295,3 +1295,5 @@ body.is-admin main > .wrap {
 .po-match .admin-hint { margin: 0; }
 .admin-hint.err { color: #ff8a8a; }
 .po-champ .po-match strong { color: var(--lime); font-size: 16px; }
+
+.po-year { width: 80px; }

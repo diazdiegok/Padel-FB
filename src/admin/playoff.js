@@ -9,23 +9,30 @@ import {
   invalidResults,
   normalizeCategory,
   normalizePlayoff,
+  normalizePlayoffs,
   resolveCategory,
   roundName,
   seedCategory,
-  serializePlayoff,
+  serializePlayoffs,
 } from "../lib/playoff.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
 export function createPlayoff(ctx, api, shell) {
   let activeCat = "";
   let loaded = false;
+  let editing = ctx.playoffs[0]?.temp || ctx.siteData.currentSeason || "T4";
 
   function data() {
-    return ctx.playoff;
+    let item = ctx.playoffs.find((p) => p.temp === editing);
+    if (!item) {
+      item = normalizePlayoff({ temp: editing, year: String(new Date().getFullYear()), title: `Playoff ${seasonLabel(editing)}` });
+      ctx.playoffs.push(item);
+    }
+    return item;
   }
 
   function temp() {
-    return data().temp || ctx.siteData.currentSeason || "T4";
+    return editing;
   }
 
   function category() {
@@ -59,9 +66,14 @@ export function createPlayoff(ctx, api, shell) {
   function fillHeader() {
     const seasons = listSeasons(ctx.siteData, ctx.rows.map((r) => r.temp));
     const current = temp();
-    $("po-temp").innerHTML = [...new Set([...seasons, current])]
-      .map((t) => `<option value="${escAttr(t)}" ${t === current ? "selected" : ""}>${escAttr(seasonLabel(t))}</option>`)
+    const armed = new Set(ctx.playoffs.filter((p) => p.categories.length).map((p) => p.temp));
+    $("po-temp").innerHTML = [...new Set([...seasons, ...armed, current])]
+      .map(
+        (t) =>
+          `<option value="${escAttr(t)}" ${t === current ? "selected" : ""}>${escAttr(seasonLabel(t))}${armed.has(t) ? " · armado" : ""}</option>`
+      )
       .join("");
+    $("po-year").value = data().year || "";
     $("po-title").value = data().title || "";
     $("po-dates").value = data().dates || "";
     $("po-note").value = data().note || "";
@@ -216,7 +228,7 @@ export function createPlayoff(ctx, api, shell) {
     if (ctx.dirty.has("playoff") && !force) return;
     try {
       const remote = await api.readRemoteJson(PLAYOFF_PATH, null);
-      if (remote) ctx.playoff = normalizePlayoff(remote);
+      if (remote) ctx.playoffs = normalizePlayoffs(remote);
       loaded = true;
       shell.clearDirty("playoff");
       render();
@@ -228,11 +240,12 @@ export function createPlayoff(ctx, api, shell) {
 
   function bind() {
     $("po-temp")?.addEventListener("change", (e) => {
-      data().temp = e.target.value;
-      markDirty();
-      fillLists();
+      editing = e.target.value;
+      activeCat = "";
+      render();
     });
     for (const [id, key] of [
+      ["po-year", "year"],
       ["po-title", "title"],
       ["po-dates", "dates"],
       ["po-note", "note"],
@@ -355,9 +368,10 @@ export function createPlayoff(ctx, api, shell) {
         toast(gate.message, "err");
         return;
       }
-      const bad = invalidResults(data());
+      const bad = ctx.playoffs.flatMap((p) => invalidResults(p).map((b) => ({ ...b, temp: p.temp })));
       if (bad.length) {
-        const { cat, match } = bad[0];
+        const { cat, match, temp: badTemp } = bad[0];
+        editing = badTemp;
         activeCat = cat;
         render();
         const message = `Resultado inválido en ${cat} (${match.home || "pareja"} vs ${match.away || "pareja"}). Usá 6-4 6-2 o 6-4 3-6 10-8.`;
@@ -371,12 +385,16 @@ export function createPlayoff(ctx, api, shell) {
         confirmLabel: "Publicar playoff",
       });
       if (!ok) return;
-      const next = serializePlayoff(data());
+      const next = serializePlayoffs(ctx.playoffs);
       setBusy($("po-publish"), true, "Publicando…");
       setMsg($("po-msg"), "Publicando playoff…");
       try {
-        await api.publishFile(PLAYOFF_PATH, JSON.stringify(next, null, 2) + "\n", "Actualiza el playoff desde el admin.");
-        ctx.playoff = normalizePlayoff(next);
+        await api.publishFile(
+          PLAYOFF_PATH,
+          JSON.stringify(next, null, 2) + "\n",
+          `Actualiza el playoff de ${seasonLabel(editing)} desde el admin.`
+        );
+        ctx.playoffs = normalizePlayoffs(next);
         shell.clearDirty("playoff");
         render();
         setMsg($("po-msg"), "Playoff publicado. El sitio se actualiza en ~1 minuto.", "ok");

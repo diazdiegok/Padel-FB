@@ -2,11 +2,12 @@
 import Layout from "../../layouts/Layout.astro";
 import { page } from "../../lib/paths";
 import { site } from "../../data/site";
-import playoff from "../../data/playoff.json";
+import playoffJson from "../../data/playoff.json";
+import { normalizePlayoffs } from "../../lib/playoff.js";
 
-const playoffOn = Boolean(playoff.categories?.length);
+const playoffOn = normalizePlayoffs(playoffJson).some((p) => p.categories.length);
 const links = [
-  ...(playoffOn ? [{ href: "playoff/", title: "Playoff", text: playoff.dates || "Cuadro y resultados del playoff." }] : []),
+  ...(playoffOn ? [{ href: "playoff/", title: "Playoff", text: "Cuadros y campeones de cada temporada." }] : []),
   { href: "ranking/", title: "Ranking", text: "Tabla por categoría y temporada." },
   { href: "fixture/", title: "Fixture", text: "Partidos semanales de la temporada." },
   { href: "resultados/", title: "Resultados", text: "Resultados cargados de cada fecha." },

@@ -1,4 +1,10 @@
 import type { APIRoute } from "astro";
+import playoffJson from "../data/playoff.json";
+import { normalizePlayoffs, playoffSlug } from "../lib/playoff.js";
+
+const playoffRoutes = normalizePlayoffs(playoffJson)
+  .filter((p) => p.categories.length)
+  .map((p) => `playoff/${playoffSlug(p.temp)}/`);
 
 const routes = [
   "",
@@ -7,6 +13,7 @@ const routes = [
   "fixture/",
   "resultados/",
   "playoff/",
+  ...playoffRoutes,
   "fecha/",
   "sedes/",
   "academia/",
