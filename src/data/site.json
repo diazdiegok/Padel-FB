@@ -59,16 +59,12 @@
     "profeRole": "Profe · Academia infantil",
     "groups": [
       {
-        "venue": "Club Palermo",
-        "when": "Lunes y jueves",
+        "venue": "Terrazas Padel",
+        "when": "Jueves",
         "rows": [
           {
-            "time": "17:00 hs",
-            "level": "Avanzados"
-          },
-          {
-            "time": "18:00 hs",
-            "level": "Principiantes"
+            "time": "!0:00 hs (4 a 6 años)",
+            "level": ""
           }
         ]
       },
@@ -87,18 +83,22 @@
         "when": "Miércoles",
         "rows": [
           {
-            "time": "16:00 hs",
+            "time": "16:00 hs (4 a 6 años)",
             "level": ""
           }
         ]
       },
       {
-        "venue": "Terrazas Padel",
-        "when": "Jueves",
+        "venue": "Club Palermo",
+        "when": "Lunes y jueves",
         "rows": [
           {
-            "time": "!0:00 hs",
-            "level": ""
+            "time": "17:00 hs",
+            "level": "Avanzados"
+          },
+          {
+            "time": "18:00 hs",
+            "level": "Principiantes"
           }
         ]
       }
