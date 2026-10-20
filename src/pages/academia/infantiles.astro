@@ -3,32 +3,18 @@ import Layout from "../../layouts/Layout.astro";
 import { site } from "../../data/site";
 import { asset, page } from "../../lib/paths";
 import VenueLinks from "../../components/VenueLinks.astro";
+import { sameVenue, venueKey } from "../../lib/venues.js";
 
 const kids = site.kids || {};
 const titleLines = String(kids.title || "Clases infantiles").split("\n");
 const staff = (site.staff || []).find((p) => p.id === kids.profeId) || (site.staff || []).find((p) => /barrionuevo/i.test(p.name || ""));
 const features = kids.features || [];
 
-function venueKey(s) {
-  return String(s || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/club|padel/g, "")
-    .replace(/[^a-z0-9]/g, "");
-}
-
-function sameVenue(a, b) {
-  const ka = venueKey(a);
-  const kb = venueKey(b);
-  return !!ka && !!kb && (ka === kb || ka.includes(kb) || kb.includes(ka));
-}
-
 const flagged = (site.venues || []).filter((v) => v.infantiles === true);
 const kidsVenues = flagged.map((v) => ({ ...v, groups: [] }));
 for (const g of kids.groups || []) {
   const name = String(g.venue || "").trim();
-  if (!name) continue;
+  if (!name || (!String(g.when || "").trim() && !(g.rows || []).length)) continue;
   let card = kidsVenues.find((v) => sameVenue(v.name, name));
   if (!card) {
     const match = flagged.length ? null : (site.venues || []).find((v) => sameVenue(v.name, name));

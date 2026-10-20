@@ -1,4 +1,5 @@
 import { SITE_PATH } from "./constants.js";
+import { syncKidsGroups } from "../lib/venues.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
 export function createCms(ctx, api, shell) {
@@ -228,6 +229,7 @@ export function createCms(ctx, api, shell) {
   function fillKidsForm() {
     ensureCms();
     const k = ctx.siteData.kids;
+    k.groups = syncKidsGroups(ctx.siteData.venues, k.groups);
     const form = $("kids-copy");
     form.title.value = k.title || "";
     form.age.value = k.age || "";
@@ -547,6 +549,12 @@ export function createCms(ctx, api, shell) {
     });
     $("venue-list")?.addEventListener("change", (e) => {
       shell.markDirty("sedes");
+      if (e.target.matches("[data-k='infantiles'], [data-k='name']")) {
+        readVenuesFromDom();
+        readKidsFromDom();
+        fillKidsForm();
+        return;
+      }
       const input = e.target.closest("[data-photo='venue']");
       const file = input?.files?.[0];
       if (!file) return;
@@ -706,6 +714,8 @@ export function createCms(ctx, api, shell) {
       const gate = api.usePublishToken();
       if (!gate.ok) return toast(gate.message, "err");
       readVenuesFromDom();
+      readKidsFromDom();
+      fillKidsForm();
       setBusy($("venue-save"), true, "Guardando…");
       setMsg($("venue-msg"), "Guardando sedes…");
       try {
@@ -713,10 +723,11 @@ export function createCms(ctx, api, shell) {
         await uploadPending(ctx.siteData.moreVenues, "more");
         const local = cleanSiteForSave();
         await publishSiteFields(
-          { venues: local.venues, moreVenues: local.moreVenues },
+          { venues: local.venues, moreVenues: local.moreVenues, kids: local.kids },
           "Actualiza sedes desde el admin."
         );
         shell.clearDirty("sedes");
+        shell.clearDirty("infantiles");
         fillVenueForm();
         setMsg($("venue-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
         toast("Sedes guardadas", "ok");
