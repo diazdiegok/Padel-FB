@@ -61,6 +61,11 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
                           <span class="po-team-name">{m.winnerName || "A definir"}</span>
                           <span class="po-team-sets"></span>
                         </div>
+                        <div class="po-team lose">
+                          <span class="po-team-seed"></span>
+                          <span class="po-team-name po-free">Libre</span>
+                          <span class="po-team-sets"></span>
+                        </div>
                       </article>
                     ) : (
                       <article class:list={["po-card", { done: m.winner }]}>
@@ -163,6 +168,7 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
+  .po-free { text-transform: uppercase; letter-spacing: 0.12em; font-size: 12px; }
   .po-info { color: #7cc7ff; font-weight: 700; }
   .po-team {
     display: grid;
