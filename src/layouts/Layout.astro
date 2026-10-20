@@ -1,7 +1,6 @@
 ---
 import "../styles/global.css";
 import { site } from "../data/site";
-import playoff from "../data/playoff.json";
 import { asset, page } from "../lib/paths";
 
 interface Props {
@@ -26,7 +25,6 @@ const inLiga =
   path.includes("/fecha") ||
   (path.includes("/sedes") && !path.includes("/academia")) ||
   path.includes("/liga/");
-const playoffOn = Boolean(playoff.visible && playoff.categories?.length);
 const inAcademia = path.includes("/academia");
 const inTorneos = path.includes("/torneos");
 ---
@@ -108,10 +106,10 @@ const inTorneos = path.includes("/torneos");
               <div class="nav-drop">
                 <div class="nav-drop-inner">
                   <a href={page("liga/")}>Resumen</a>
+                  <a href={page("playoff/")}>Playoff</a>
                   <a href={page("ranking/")}>Ranking</a>
                   <a href={page("fixture/")}>Fixture</a>
                   <a href={page("resultados/")}>Resultados</a>
-                  {playoffOn && <a href={page("playoff/")}>Playoff</a>}
                   <a href={page("fecha/")}>Fecha</a>
                   <a href={page("sedes/")}>Sedes</a>
                 </div>
