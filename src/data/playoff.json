@@ -6,6 +6,7 @@
   "categories": [
     {
       "cat": "A Masculina",
+      "pairs": 6,
       "size": 8,
       "matches": [
         {
@@ -15,10 +16,10 @@
           "homeSeed": 1,
           "home": "Fusse, Bruno / Rodríguez, Marcos",
           "awaySeed": 8,
-          "away": "Lescano, Santiago / Cobalán, Diego",
-          "day": "25/10/2026",
+          "away": "Libre",
+          "day": "",
           "time": "",
-          "venue": "Palermo Padel",
+          "venue": "",
           "court": "",
           "result": "",
           "wo": ""
@@ -31,9 +32,9 @@
           "home": "Izza, Omar / Minigutti, Matías",
           "awaySeed": 5,
           "away": "Gercie, Roman / Ortiz, Joaquín",
-          "day": "25/10/2026",
+          "day": "",
           "time": "",
-          "venue": "Palermo Padel",
+          "venue": "",
           "court": "",
           "result": "",
           "wo": ""
@@ -45,10 +46,10 @@
           "homeSeed": 2,
           "home": "Agnoli, Imanol / Rodriguez, Roman",
           "awaySeed": 7,
-          "away": "Gea Sánchez, Julián / Gea Sánchez, Joaquín",
-          "day": "25/10/2026",
+          "away": "Libre",
+          "day": "",
           "time": "",
-          "venue": "Palermo Padel",
+          "venue": "",
           "court": "",
           "result": "",
           "wo": ""
@@ -61,9 +62,9 @@
           "home": "Enrique, Ariel / Enrique, Marcelo",
           "awaySeed": 6,
           "away": "Marquez, Denis / Ramira, Omar",
-          "day": "25/10/2026",
+          "day": "",
           "time": "",
-          "venue": "Palermo Padel",
+          "venue": "",
           "court": "",
           "result": "",
           "wo": ""
@@ -72,13 +73,13 @@
           "id": "2-1",
           "round": 2,
           "slot": 1,
-          "homeSeed": null,
-          "home": "",
+          "homeSeed": 1,
+          "home": "Fusse, Bruno / Rodríguez, Marcos",
           "awaySeed": null,
           "away": "",
-          "day": "25/10/2026",
+          "day": "",
           "time": "",
-          "venue": "Palermo Padel",
+          "venue": "",
           "court": "",
           "result": "",
           "wo": ""
@@ -87,13 +88,13 @@
           "id": "2-2",
           "round": 2,
           "slot": 2,
-          "homeSeed": null,
-          "home": "",
+          "homeSeed": 2,
+          "home": "Agnoli, Imanol / Rodriguez, Roman",
           "awaySeed": null,
           "away": "",
-          "day": "25/10/2026",
+          "day": "",
           "time": "",
-          "venue": "Palermo Padel",
+          "venue": "",
           "court": "",
           "result": "",
           "wo": ""
@@ -106,9 +107,9 @@
           "home": "",
           "awaySeed": null,
           "away": "",
-          "day": "25/10/2026",
+          "day": "",
           "time": "",
-          "venue": "Palermo Padel",
+          "venue": "",
           "court": "",
           "result": "",
           "wo": ""
@@ -117,6 +118,7 @@
     },
     {
       "cat": "B Masculina",
+      "pairs": 8,
       "size": 8,
       "matches": [
         {
@@ -228,6 +230,7 @@
     },
     {
       "cat": "C Masculina",
+      "pairs": 8,
       "size": 8,
       "matches": [
         {
@@ -339,6 +342,7 @@
     },
     {
       "cat": "B Femenino",
+      "pairs": 8,
       "size": 8,
       "matches": [
         {
@@ -450,6 +454,7 @@
     },
     {
       "cat": "C Femenino",
+      "pairs": 8,
       "size": 8,
       "matches": [
         {
