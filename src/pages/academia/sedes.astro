@@ -5,7 +5,7 @@ import { asset, page } from "../../lib/paths";
 import VenueLinks from "../../components/VenueLinks.astro";
 
 const venues = (site.venues || []).filter((v) =>
-  v.academia === true || (v.academia == null && /academia|clases/i.test(v.type || ""))
+  v.academia === true || v.infantiles === true || (v.academia == null && /academia|clases/i.test(v.type || ""))
 );
 const list = venues.length ? venues : site.venues || [];
 ---

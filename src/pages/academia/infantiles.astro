@@ -19,8 +19,8 @@ function venueKey(s) {
 }
 
 const seen = new Set();
-const kidsVenues = [];
-for (const g of kids.groups || []) {
+const kidsVenues = (site.venues || []).filter((v) => v.infantiles === true);
+if (!kidsVenues.length) for (const g of kids.groups || []) {
   const name = String(g.venue || "").trim();
   if (!name) continue;
   const key = venueKey(name);

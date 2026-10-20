@@ -170,6 +170,7 @@ export function createCms(ctx, api, shell) {
             <div class="cms-checks cms-span">
               <label class="cms-chip"><input data-k="liga" type="checkbox" ${v.liga !== false ? "checked" : ""} /> Liga</label>
               <label class="cms-chip"><input data-k="academia" type="checkbox" ${v.academia ? "checked" : ""} /> Academia</label>
+              <label class="cms-chip"><input data-k="infantiles" type="checkbox" ${v.infantiles ? "checked" : ""} /> Infantiles</label>
             </div>
           </div>
         </article>`
@@ -245,7 +246,7 @@ export function createCms(ctx, api, shell) {
               ${cmsMoveBtns("kids-group", i, (k.groups || []).length)}
               <button class="btn cms-btn cms-btn-del" type="button" data-kids-group-del="${i}">Quitar</button>
             </div>
-            <label>Sede <input data-k="venue" value="${escAttr(g.venue)}" /></label>
+            <label>Sede <input data-k="venue" list="kids-venue-options" value="${escAttr(g.venue)}" /></label>
             <label>Días <input data-k="when" value="${escAttr(g.when)}" placeholder="Lunes y jueves" /></label>
             <label class="cms-span">Horarios (un renglón: 17:00 hs | Avanzados)
               <textarea data-k="rows" rows="3">${escAttr((g.rows || []).map((r) => [r.time, r.level].filter(Boolean).join(" | ")).join("\n"))}</textarea>
@@ -253,7 +254,11 @@ export function createCms(ctx, api, shell) {
           </div>
         </article>`
       )
-      .join("");
+      .join("") +
+      `<datalist id="kids-venue-options">${(ctx.siteData.venues || [])
+        .filter((v) => v.infantiles && v.name)
+        .map((v) => `<option value="${escAttr(v.name)}"></option>`)
+        .join("")}</datalist>`;
     $("kids-price-list").innerHTML = (k.prices || [])
       .map(
         (p, i) => `<article class="cms-card cms-card-plain" data-kids-price="${i}">
@@ -315,6 +320,7 @@ export function createCms(ctx, api, shell) {
       v.maps = card.querySelector("[data-k='maps']")?.value.trim() || "";
       v.liga = !!card.querySelector("[data-k='liga']")?.checked;
       v.academia = !!card.querySelector("[data-k='academia']")?.checked;
+      v.infantiles = !!card.querySelector("[data-k='infantiles']")?.checked;
       if (!v.id) v.id = slugify(v.name);
     });
     $("more-list").querySelectorAll("[data-more]").forEach((card) => {
@@ -511,6 +517,7 @@ export function createCms(ctx, api, shell) {
         whatsapp: "",
         liga: true,
         academia: false,
+        infantiles: false,
       });
       shell.markDirty("sedes");
       fillVenueForm();

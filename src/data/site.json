@@ -189,7 +189,8 @@
       "instagram": "https://www.instagram.com/openpadelfb/",
       "whatsapp": "5493434638322",
       "liga": true,
-      "academia": false
+      "academia": false,
+      "infantiles": true
     },
     {
       "id": "palermo",
@@ -202,7 +203,8 @@
       "instagram": "https://www.instagram.com/palermo_padel/",
       "whatsapp": "5493435075537",
       "liga": true,
-      "academia": false
+      "academia": false,
+      "infantiles": true
     },
     {
       "id": "sede-1788866297203",
