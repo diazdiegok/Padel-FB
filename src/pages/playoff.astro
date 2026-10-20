@@ -66,7 +66,7 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
                       <article class:list={["po-card", { done: m.winner }]}>
                         <div class="po-card-meta">
                           <span>{m.label}</span>
-                          {when(m) && <span>{when(m)}</span>}
+                          {when(m) && <span class="po-info">{when(m)}</span>}
                         </div>
                         {(["home", "away"] as const).map((side) => (
                           <div class:list={["po-team", { win: m.winner === side, lose: m.winner && m.winner !== side }]}>
@@ -80,7 +80,7 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
                             </span>
                           </div>
                         ))}
-                        {where(m) && <div class="po-card-meta">{where(m)}</div>}
+                        {where(m) && <div class="po-card-meta"><span class="po-info">{where(m)}</span></div>}
                       </article>
                     ))}
                   </div>
@@ -163,6 +163,7 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
+  .po-info { color: var(--lime); font-weight: 700; }
   .po-team {
     display: grid;
     grid-template-columns: 22px 1fr auto;
