@@ -18,19 +18,24 @@ function venueKey(s) {
     .replace(/[^a-z0-9]/g, "");
 }
 
-const seen = new Set();
-const kidsVenues = (site.venues || []).filter((v) => v.infantiles === true);
-if (!kidsVenues.length) for (const g of kids.groups || []) {
+function sameVenue(a, b) {
+  const ka = venueKey(a);
+  const kb = venueKey(b);
+  return !!ka && !!kb && (ka === kb || ka.includes(kb) || kb.includes(ka));
+}
+
+const flagged = (site.venues || []).filter((v) => v.infantiles === true);
+const kidsVenues = flagged.map((v) => ({ ...v, groups: [] }));
+for (const g of kids.groups || []) {
   const name = String(g.venue || "").trim();
   if (!name) continue;
-  const key = venueKey(name);
-  if (!key || seen.has(key)) continue;
-  seen.add(key);
-  const match = (site.venues || []).find((v) => {
-    const vk = venueKey(v.name);
-    return vk && (vk === key || vk.includes(key) || key.includes(vk));
-  });
-  kidsVenues.push(match || { name, id: key });
+  let card = kidsVenues.find((v) => sameVenue(v.name, name));
+  if (!card) {
+    const match = flagged.length ? null : (site.venues || []).find((v) => sameVenue(v.name, name));
+    card = { ...(match || { name, id: venueKey(name) }), groups: [] };
+    kidsVenues.push(card);
+  }
+  card.groups.push(g);
 }
 ---
 <Layout
@@ -106,6 +111,17 @@ if (!kidsVenues.length) for (const g of kids.groups || []) {
               {v.address && <p>{v.address}</p>}
               {v.city && <p>{v.city}</p>}
               {v.type && <p>{v.type}</p>}
+              {v.groups.map((g) => (
+                <div class="kids-sched">
+                  {g.when && <p class="kids-sched-when">{g.when}</p>}
+                  {(g.rows || []).map((r) => (
+                    <p class="kids-sched-row">
+                      <span>{r.time}</span>
+                      {r.level && <span>{r.level}</span>}
+                    </p>
+                  ))}
+                </div>
+              ))}
               {v.maps && <VenueLinks maps={v.maps} instagram={v.instagram} whatsapp={v.whatsapp} />}
             </div>
           </article>
