@@ -4,19 +4,22 @@ import { HIDDEN_CATS } from "./constants.js";
 import { createCms } from "./cms.js";
 import { createFecha } from "./fecha.js";
 import { createFixture } from "./fixture.js";
+import { createPlayoff } from "./playoff.js";
+import { normalizePlayoff } from "../lib/playoff.js";
 import { createRanking } from "./ranking.js";
 import { createResults } from "./results.js";
 import { createSeasons } from "./seasons.js";
 import { createShell } from "./shell.js";
 import { $ } from "./ui.js";
 
-export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson }) {
+export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson }) {
   const ctx = {
     rows: structuredClone(rankingJson.filter((p) => !HIDDEN_CATS.has(p.cat))),
     siteData: structuredClone(siteJson),
     fixture: structuredClone(fixtureJson || []),
     results: structuredClone(resultsJson || []),
     disp: structuredClone(dispJson),
+    playoff: normalizePlayoff(playoffJson || {}),
     owner: siteJson.githubOwner,
     repo: siteJson.githubRepo,
     API_URL: String(siteJson.apiUrl || "").replace(/\/$/, ""),
@@ -33,11 +36,13 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   let seasons;
   let fecha;
   let cms;
+  let playoff;
 
   const shell = createShell(ctx, {
     onEnterSection(id) {
       if (id === "fecha") fecha?.reload();
       if (id === "resultados") results?.reload();
+      if (id === "playoff") playoff?.reload();
     },
   });
 
@@ -63,6 +68,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   });
   fecha = createFecha(ctx, api, shell);
   cms = createCms(ctx, api, shell);
+  playoff = createPlayoff(ctx, api, shell);
 
   async function showApp() {
     $("gate").hidden = true;
@@ -80,6 +86,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
     $("fx-week").value = ctx.fixture[0]?.week || $("fx-week").value || "Fecha 1";
     fixture.render();
     results.render();
+    playoff.render();
     cms.refreshAll();
     fecha.fill();
     fecha.reload();
@@ -96,6 +103,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   seasons.bind();
   fecha.bind();
   cms.bind();
+  playoff.bind();
 
   if (auth.isLoggedIn()) showApp();
 }

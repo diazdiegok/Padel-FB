@@ -50,6 +50,7 @@ import "../styles/admin.css";
         <button class="admin-nav-btn on" type="button" data-nav="ranking">Ranking</button>
         <button class="admin-nav-btn" type="button" data-nav="fixture">Fixture</button>
         <button class="admin-nav-btn" type="button" data-nav="resultados">Resultados</button>
+        <button class="admin-nav-btn" type="button" data-nav="playoff">Playoff</button>
         <button class="admin-nav-btn" type="button" data-nav="fecha">Fecha</button>
         <button class="admin-nav-btn" type="button" data-nav="sedes">Sedes</button>
       </div>
@@ -263,6 +264,57 @@ import "../styles/admin.css";
             <p class="admin-sticky-note">Publicar suma los scores al ranking de la temporada del partido.</p>
             <div class="admin-sticky-actions">
               <button class="btn btn-lime" type="button" id="res-publish">Publicar resultados</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Playoff -->
+        <section data-section="playoff" hidden>
+          <div class="admin-callout">
+            <strong>Cómo se carga</strong>
+            <span>Elegí la categoría, revisá el cuadro (se arma con el ranking: 1 vs 8, 4 vs 5, 2 vs 7, 3 vs 6) y cargá día, horario y resultado de cada partido: <b>6-4 6-2</b> o <b>6-4 3-6 10-8</b>. La ganadora pasa sola a la ronda siguiente. Escribí <b>Libre</b> si a una pareja le toca pasar directo. El playoff no suma puntos al ranking.</span>
+          </div>
+          <div class="admin-panel">
+            <div class="admin-toolbar">
+              <label class="admin-week">Temporada
+                <select id="po-temp"></select>
+              </label>
+              <label class="admin-week">Título
+                <input id="po-title" placeholder="Playoff Temporada 4" />
+              </label>
+              <label class="admin-week">Fechas
+                <input id="po-dates" placeholder="Sábado 24 y domingo 25 de octubre" />
+              </label>
+            </div>
+            <div class="admin-toolbar">
+              <label class="admin-week po-note">Aviso
+                <input id="po-note" placeholder="Texto opcional para la web (sedes, horarios, premios…)" />
+              </label>
+              <label class="chk"><input id="po-visible" type="checkbox" /> Mostrar en la web</label>
+              <span class="admin-status-pill" id="po-status"></span>
+            </div>
+          </div>
+          <div class="admin-section-tools">
+            <div class="pills" id="po-cats"></div>
+            <select class="po-select" id="po-cat-add" aria-label="Agregar categoría"></select>
+            <button class="btn btn-ghost" type="button" id="po-reload">Actualizar</button>
+          </div>
+          <div class="admin-section-tools" id="po-cat-tools" hidden>
+            <select class="po-select" id="po-size" aria-label="Tamaño del cuadro"></select>
+            <button class="btn btn-ghost" type="button" id="po-arm">Armar desde ranking</button>
+            <button class="btn btn-ghost" type="button" id="po-cat-remove">Quitar categoría</button>
+          </div>
+          <p class="admin-msg" id="po-msg"></p>
+          <div class="admin-empty" id="po-empty" hidden>
+            <p>Todavía no hay categorías en el playoff. Agregá una con + Categoría.</p>
+          </div>
+          <div class="po-bracket" id="po-bracket"></div>
+          <datalist id="po-pairs"></datalist>
+          <datalist id="po-venues"></datalist>
+          <div class="admin-sticky-bar">
+            <p class="admin-sticky-note">Publicá cada vez que cargues resultados. El sitio se actualiza en ~1 minuto.</p>
+            <div class="admin-sticky-actions">
+              <button class="btn btn-lime" type="button" id="po-publish">Publicar playoff</button>
             </div>
           </div>
         </section>
@@ -491,8 +543,9 @@ import "../styles/admin.css";
     import siteJson from "../data/site.json";
     import dispJson from "../data/disponibilidad.json";
     import resultsJson from "../data/results.json";
+    import playoffJson from "../data/playoff.json";
     import { bootAdmin } from "../admin/main.js";
 
-    bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson });
+    bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson });
   </script>
 </Layout>

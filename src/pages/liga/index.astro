@@ -2,8 +2,11 @@
 import Layout from "../../layouts/Layout.astro";
 import { page } from "../../lib/paths";
 import { site } from "../../data/site";
+import playoff from "../../data/playoff.json";
 
+const playoffOn = Boolean(playoff.visible && playoff.categories?.length);
 const links = [
+  ...(playoffOn ? [{ href: "playoff/", title: "Playoff", text: playoff.dates || "Cuadro y resultados del playoff." }] : []),
   { href: "ranking/", title: "Ranking", text: "Tabla por categoría y temporada." },
   { href: "fixture/", title: "Fixture", text: "Partidos semanales de la temporada." },
   { href: "resultados/", title: "Resultados", text: "Resultados cargados de cada fecha." },

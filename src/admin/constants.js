@@ -4,6 +4,7 @@ export const RANK_PATH = "src/data/ranking.json";
 export const SITE_PATH = "src/data/site.json";
 export const FIXTURE_PATH = "src/data/fixture.json";
 export const RESULTS_PATH = "src/data/results.json";
+export const PLAYOFF_PATH = "src/data/playoff.json";
 export const RANK_COLS = ["name", "cat", "pts", "pj", "dif", "pos", "temp"];
 export const FX_COLS = ["categoria", "partido", "complejo", "cancha", "dia", "horario"];
 export const CATS = [
@@ -48,6 +49,7 @@ export const SECTIONS = {
   ranking: { group: "Liga", title: "Ranking", help: "Editá posiciones, importá CSV y publicá la tabla." },
   fixture: { group: "Liga", title: "Fixture", help: "Cargá la fecha, revisá partidos y publicá. Los resultados se cargan en Resultados." },
   resultados: { group: "Liga", title: "Resultados", help: "Cargá el score de cada partido. Al publicar se actualiza el ranking." },
+  playoff: { group: "Liga", title: "Playoff", help: "Armá el cuadro de cada categoría, cargá días, horarios y resultados. La ganadora pasa sola a la siguiente ronda." },
   fecha: { group: "Liga", title: "Fecha", help: "Abrí o cerrá la carga de disponibilidad de las parejas." },
   sedes: { group: "Liga", title: "Sedes", help: "Complejos de la liga y la academia. Marcá dónde se muestra cada uno." },
   academia: { group: "Academia", title: "Adultos", help: "Profes, programas y textos de las clases de adultos." },

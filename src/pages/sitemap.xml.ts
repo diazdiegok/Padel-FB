@@ -6,6 +6,7 @@ const routes = [
   "ranking/",
   "fixture/",
   "resultados/",
+  "playoff/",
   "fecha/",
   "sedes/",
   "academia/",

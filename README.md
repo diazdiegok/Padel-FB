@@ -30,6 +30,7 @@ Panel en `/admin/` (acceso vía `/acceso-fb/`).
 | **Ranking** | Editar tabla, CSV (modelo / exportar / importar), publicar `ranking.json` |
 | **Fixture** | Cargar Drive/CSV → revisar partidos → publicar (archiva fechas viejas en Resultados y actualiza ranking con scores) |
 | **Resultados** | Archivo de fechas jugadas + partidos live con resultado |
+| **Playoff** | Cuadro por categoría (se arma con el ranking), días, horarios y resultados; la ganadora pasa sola de ronda. Publica `playoff.json` → `/playoff/` (no suma al ranking) |
 | **Fecha** | Abrir/cerrar carga de disponibilidad (`/fecha/`) |
 | **Sedes** | Complejos (flags Liga / Academia) |
 | **Academia / Infantiles** | Textos, profes, horarios |

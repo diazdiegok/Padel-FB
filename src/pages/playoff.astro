@@ -1,0 +1,176 @@
+---
+import Layout from "../layouts/Layout.astro";
+import playoffJson from "../data/playoff.json";
+import { site } from "../data/site";
+import { seasonLabel } from "../lib/liga.js";
+import { normalizePlayoff, resolveCategory } from "../lib/playoff.js";
+import { page } from "../lib/paths";
+
+const playoff = normalizePlayoff(playoffJson);
+const visible = playoff.visible && playoff.categories.length > 0;
+const categories = visible ? playoff.categories.map(resolveCategory) : [];
+const season = seasonLabel(playoff.temp || site.currentSeason);
+const title = playoff.title || `Playoff ${season}`;
+const slug = (cat: string) => cat.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-");
+const when = (m: { day: string; time: string }) => [m.day, m.time].filter(Boolean).join(" · ");
+const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter(Boolean).join(" · ");
+---
+<Layout title={`${title} | Padel FB`} description={`Cuadro y resultados del ${title} de Padel FB en ${site.city}.`}>
+  <div class="wrap">
+    <header class="page-hero">
+      <p class="kicker">Liga · {season}{playoff.dates ? ` · ${playoff.dates}` : ""}</p>
+      <h1>{visible ? title : "Playoff"}</h1>
+      {visible ? (
+        <p>{playoff.note || "Cuadro por categoría. La pareja ganadora de cada partido pasa a la ronda siguiente."}</p>
+      ) : (
+        <p>El cuadro todavía no está publicado. Mientras tanto, mirá el <a class="po-link" href={page("ranking/")}>ranking</a>.</p>
+      )}
+    </header>
+
+    {visible && (
+      <>
+        <div class="filters">
+          <div class="filter-group">
+            <span>Categoría</span>
+            <div class="pills" id="po-cats">
+              {categories.map((c, i) => (
+                <button class:list={["pill", { on: i === 0 }]} type="button" data-cat={slug(c.cat)}>{c.cat}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {categories.map((c, i) => (
+          <section class="po-cat" data-cat-panel={slug(c.cat)} hidden={i !== 0}>
+            {c.champion && (
+              <div class="po-winner">
+                <p class="kicker">Campeón · {c.cat}</p>
+                <strong>{c.champion}</strong>
+              </div>
+            )}
+            <div class="po-board" style={`--rounds:${c.rounds.length}`}>
+              {c.rounds.map((r) => (
+                <div class="po-col">
+                  <h2>{r.name}</h2>
+                  <div class="po-col-list">
+                    {r.matches.map((m) => (
+                      <article class:list={["po-card", { done: m.winner, bye: m.bye }]}>
+                        <div class="po-card-meta">
+                          <span>{m.label}</span>
+                          {when(m) && <span>{when(m)}</span>}
+                        </div>
+                        {(["home", "away"] as const).map((side) => (
+                          <div class:list={["po-team", { win: m.winner === side, lose: m.winner && m.winner !== side }]}>
+                            <span class="po-team-seed">{m[`${side}Seed`] ?? ""}</span>
+                            <span class:list={["po-team-name", { tbd: !m[side] }]}>
+                              {m[side] || (m.round > 1 ? `Ganador ${side === "home" ? m.homeFrom : m.awayFrom}` : "A definir")}
+                            </span>
+                            <span class="po-team-sets">
+                              {m.info?.sets.map(([h, a]) => <b>{side === "home" ? h : a}</b>)}
+                              {m.wo === side && <b>W.O.</b>}
+                            </span>
+                          </div>
+                        ))}
+                        {where(m) && !m.bye && <div class="po-card-meta">{where(m)}</div>}
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </>
+    )}
+  </div>
+
+  <script>
+    const buttons = document.querySelectorAll<HTMLButtonElement>("#po-cats [data-cat]");
+    const panels = document.querySelectorAll<HTMLElement>("[data-cat-panel]");
+    function show(cat: string) {
+      buttons.forEach((b) => b.classList.toggle("on", b.dataset.cat === cat));
+      panels.forEach((p) => (p.hidden = p.dataset.catPanel !== cat));
+    }
+    buttons.forEach((btn) =>
+      btn.addEventListener("click", () => {
+        show(btn.dataset.cat || "");
+        history.replaceState(null, "", "#" + btn.dataset.cat);
+      })
+    );
+    const fromHash = location.hash.replace(/^#/, "");
+    if (fromHash && [...buttons].some((b) => b.dataset.cat === fromHash)) show(fromHash);
+  </script>
+</Layout>
+
+<style>
+  .po-link { color: var(--lime); }
+  .po-cat { padding: 8px 0 56px; }
+  .po-winner {
+    border: 1px solid var(--lime);
+    background: rgba(214, 255, 47, 0.06);
+    padding: 18px 20px;
+    margin: 8px 0 24px;
+    display: grid;
+    gap: 6px;
+  }
+  .po-winner strong { font-family: var(--display); font-size: 28px; color: var(--lime); }
+  .po-board {
+    display: grid;
+    grid-template-columns: repeat(var(--rounds), minmax(250px, 1fr));
+    gap: 20px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+  }
+  .po-col { display: flex; flex-direction: column; gap: 14px; }
+  .po-col h2 {
+    font-size: 14px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .po-col-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    gap: 14px;
+  }
+  .po-card {
+    border: 1px solid var(--line);
+    background: var(--bg-2);
+    padding: 12px 14px;
+    display: grid;
+    gap: 6px;
+  }
+  .po-card.done { border-color: rgba(214, 255, 47, 0.35); }
+  .po-card.bye { opacity: 0.7; }
+  .po-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 12px;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .po-team {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    gap: 8px;
+    align-items: center;
+    font-size: 15px;
+  }
+  .po-team-seed { color: var(--muted); font-size: 12px; text-align: center; }
+  .po-team-name { overflow-wrap: anywhere; }
+  .po-team-name.tbd { color: var(--muted); font-style: italic; font-size: 13px; }
+  .po-team.win .po-team-name { color: var(--lime); font-weight: 700; }
+  .po-team.lose .po-team-name { color: var(--muted); }
+  .po-team-sets { display: flex; gap: 8px; font-variant-numeric: tabular-nums; }
+  .po-team-sets b { min-width: 14px; text-align: center; }
+  .po-team.win .po-team-sets b { color: var(--lime); }
+  .po-team.lose .po-team-sets b { color: var(--muted); font-weight: 500; }
+  @media (max-width: 700px) {
+    .po-board { grid-template-columns: repeat(var(--rounds), minmax(230px, 82vw)); }
+  }
+</style>

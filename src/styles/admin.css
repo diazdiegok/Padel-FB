@@ -1205,3 +1205,93 @@ body.is-admin main > .wrap {
     align-items: stretch;
   }
 }
+
+/* Playoff */
+.po-note { flex: 1; min-width: 260px; }
+.po-note input { flex: 1; }
+.po-select {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--cream);
+  padding: 9px 12px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 13px;
+}
+.po-bracket {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(310px, 1fr);
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 16px;
+}
+.po-round {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 12px;
+}
+.po-round h3 {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+.po-match {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg-2);
+}
+.po-match.done { border-color: rgba(214, 255, 47, 0.35); }
+.po-match header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.po-side {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 6px;
+  align-items: center;
+}
+.po-side.win .po-name,
+.po-side.win .po-name-ro { color: var(--lime); font-weight: 700; }
+.po-match input,
+.po-match select {
+  width: 100%;
+  min-width: 0;
+  background: var(--bg-3);
+  border: 1px solid transparent;
+  color: var(--cream);
+  padding: 8px 10px;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13px;
+}
+.po-match input:focus,
+.po-match select:focus { outline: none; border-color: var(--lime); }
+.po-match input:disabled,
+.po-match select:disabled { opacity: 0.4; }
+.po-match .po-seed { text-align: center; font-weight: 700; padding-inline: 4px; }
+.po-seed-tag {
+  text-align: center;
+  font-weight: 700;
+  color: var(--muted);
+  font-size: 13px;
+}
+.po-name-ro { font-size: 14px; overflow-wrap: anywhere; }
+.po-name-ro.muted { color: var(--muted); font-style: italic; }
+.po-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.po-score { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.po-match .admin-hint { margin: 0; }
+.admin-hint.err { color: #ff8a8a; }
+.po-champ .po-match strong { color: var(--lime); font-size: 16px; }
