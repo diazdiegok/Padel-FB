@@ -167,7 +167,8 @@
       "instagram": "https://www.instagram.com/terrazaspadelclub/",
       "whatsapp": "5493435056072",
       "liga": true,
-      "academia": true
+      "academia": true,
+      "infantiles": true
     },
     {
       "id": "sede-1788865630499",
@@ -180,7 +181,8 @@
       "instagram": "https://www.instagram.com/clubtalleresparana",
       "whatsapp": "5493434535029",
       "liga": false,
-      "academia": true
+      "academia": true,
+      "infantiles": false
     },
     {
       "id": "open",
@@ -221,7 +223,8 @@
       "instagram": "https://www.instagram.com/ciclista_toro_padel",
       "whatsapp": "5493436212530",
       "liga": false,
-      "academia": true
+      "academia": true,
+      "infantiles": false
     },
     {
       "id": "sede-1788866854805",
@@ -234,7 +237,8 @@
       "instagram": "https://www.instagram.com/recreativo.parana",
       "whatsapp": "5493435083224",
       "liga": false,
-      "academia": true
+      "academia": true,
+      "infantiles": false
     },
     {
       "id": "bengurion",
@@ -247,7 +251,8 @@
       "instagram": "https://www.instagram.com/bengurionpadelclub/",
       "whatsapp": "5493434767996",
       "liga": true,
-      "academia": true
+      "academia": true,
+      "infantiles": false
     },
     {
       "id": "americas",
@@ -260,7 +265,8 @@
       "instagram": "https://www.instagram.com/americaspadel/",
       "whatsapp": "5493434630623",
       "liga": true,
-      "academia": false
+      "academia": false,
+      "infantiles": false
     }
   ],
   "moreVenues": [],
