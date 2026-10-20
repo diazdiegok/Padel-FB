@@ -73,7 +73,6 @@ export function createPlayoff(ctx, api, shell) {
           `<option value="${escAttr(t)}" ${t === current ? "selected" : ""}>${escAttr(seasonLabel(t))}${armed.has(t) ? " · armado" : ""}</option>`
       )
       .join("");
-    $("po-year").value = data().year || "";
     $("po-title").value = data().title || "";
     $("po-dates").value = data().dates || "";
     $("po-note").value = data().note || "";
@@ -245,7 +244,6 @@ export function createPlayoff(ctx, api, shell) {
       render();
     });
     for (const [id, key] of [
-      ["po-year", "year"],
       ["po-title", "title"],
       ["po-dates", "dates"],
       ["po-note", "note"],
