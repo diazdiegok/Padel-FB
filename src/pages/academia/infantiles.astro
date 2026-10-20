@@ -11,17 +11,21 @@ const staff = (site.staff || []).find((p) => p.id === kids.profeId) || (site.sta
 const features = kids.features || [];
 
 const flagged = (site.venues || []).filter((v) => v.infantiles === true);
-const kidsVenues = flagged.map((v) => ({ ...v, groups: [] }));
+const pool = flagged.length ? flagged : site.venues || [];
+const kidsVenues = [];
 for (const g of kids.groups || []) {
   const name = String(g.venue || "").trim();
   if (!name || (!String(g.when || "").trim() && !(g.rows || []).length)) continue;
   let card = kidsVenues.find((v) => sameVenue(v.name, name));
   if (!card) {
-    const match = flagged.length ? null : (site.venues || []).find((v) => sameVenue(v.name, name));
+    const match = pool.find((v) => sameVenue(v.name, name));
     card = { ...(match || { name, id: venueKey(name) }), groups: [] };
     kidsVenues.push(card);
   }
   card.groups.push(g);
+}
+for (const v of flagged) {
+  if (!kidsVenues.some((card) => sameVenue(card.name, v.name))) kidsVenues.push({ ...v, groups: [] });
 }
 ---
 <Layout
