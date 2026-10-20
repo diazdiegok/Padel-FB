@@ -53,8 +53,17 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
                 <div class="po-col">
                   <h2>{r.name}</h2>
                   <div class="po-col-list">
-                    {r.matches.map((m) => (
-                      <article class:list={["po-card", { done: m.winner, bye: m.bye }]}>
+                    {r.matches.map((m) => m.bye ? (
+                      <article class="po-card bye">
+                        <div class="po-card-meta"><span>{m.label}</span><span>Pasa directo</span></div>
+                        <div class="po-team win">
+                          <span class="po-team-seed">{m.winnerSeed ?? ""}</span>
+                          <span class="po-team-name">{m.winnerName || "A definir"}</span>
+                          <span class="po-team-sets"></span>
+                        </div>
+                      </article>
+                    ) : (
+                      <article class:list={["po-card", { done: m.winner }]}>
                         <div class="po-card-meta">
                           <span>{m.label}</span>
                           {when(m) && <span>{when(m)}</span>}
@@ -71,7 +80,7 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
                             </span>
                           </div>
                         ))}
-                        {where(m) && !m.bye && <div class="po-card-meta">{where(m)}</div>}
+                        {where(m) && <div class="po-card-meta">{where(m)}</div>}
                       </article>
                     ))}
                   </div>
@@ -143,7 +152,7 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
     gap: 6px;
   }
   .po-card.done { border-color: rgba(214, 255, 47, 0.35); }
-  .po-card.bye { opacity: 0.7; }
+  .po-card.bye { border-style: dashed; }
   .po-card-meta {
     display: flex;
     flex-wrap: wrap;

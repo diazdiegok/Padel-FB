@@ -3,7 +3,9 @@ import { describeResult } from "../lib/scoring.js";
 import { listSeasons, seasonLabel } from "../lib/liga.js";
 import {
   BYE,
-  PLAYOFF_SIZES,
+  MAX_PAIRS,
+  MIN_PAIRS,
+  bracketSize,
   invalidResults,
   normalizeCategory,
   normalizePlayoff,
@@ -35,6 +37,19 @@ export function createPlayoff(ctx, api, shell) {
       .filter((r) => r.temp === temp() && r.cat === cat && r.name)
       .sort((a, b) => Number(a.pos) - Number(b.pos))
       .map((r) => r.name);
+  }
+
+  function byeText(pairs) {
+    const size = bracketSize(pairs);
+    const byes = size - pairs;
+    const next = roundName(size, 2).toLowerCase();
+    return byes === 1 ? `la 1° pasa directo a ${next}` : `de la 1° a la ${byes}° pasan directo a ${next}`;
+  }
+
+  function pairsLabel(n) {
+    const size = bracketSize(n);
+    const start = roundName(size, 1);
+    return n === size ? `${n} parejas (${start})` : `${n} parejas (${start}, ${byeText(n)})`;
   }
 
   function markDirty() {
@@ -137,9 +152,9 @@ export function createPlayoff(ctx, api, shell) {
       $("po-bracket").innerHTML = "";
       return;
     }
-    $("po-size").innerHTML = PLAYOFF_SIZES.map(
-      (n) => `<option value="${n}" ${n === cat.size ? "selected" : ""}>${n} parejas (${roundName(n, 1)})</option>`
-    ).join("");
+    $("po-size").innerHTML = Array.from({ length: MAX_PAIRS - MIN_PAIRS + 1 }, (_, i) => MIN_PAIRS + i)
+      .map((n) => `<option value="${n}" ${n === cat.pairs ? "selected" : ""}>${escAttr(pairsLabel(n))}</option>`)
+      .join("");
     const resolved = resolveCategory(cat);
     $("po-bracket").innerHTML =
       resolved.rounds
@@ -234,7 +249,7 @@ export function createPlayoff(ctx, api, shell) {
     $("po-cat-add")?.addEventListener("change", (e) => {
       const cat = e.target.value;
       if (!cat) return;
-      const base = normalizeCategory({ cat, size: 8 });
+      const base = normalizeCategory({ cat, pairs: 8 });
       data().categories.push(seedCategory(base, rankingPairs(cat)));
       data().categories.sort((a, b) => CATS.indexOf(a.cat) - CATS.indexOf(b.cat));
       activeCat = cat;
@@ -245,18 +260,18 @@ export function createPlayoff(ctx, api, shell) {
     $("po-size")?.addEventListener("change", async (e) => {
       const cat = category();
       if (!cat) return;
-      const size = Number(e.target.value);
+      const pairs = Number(e.target.value);
       const ok = await confirmModal({
-        title: `Cuadro de ${size} parejas`,
-        body: `Se rearma ${cat.cat} con las ${size} mejores del ranking de ${seasonLabel(temp())}. Los resultados cargados en esta categoría se borran.`,
+        title: `Cuadro de ${pairs} parejas`,
+        body: `Se rearma ${cat.cat} con las ${pairs} mejores del ranking de ${seasonLabel(temp())}${pairs === bracketSize(pairs) ? "" : `; ${byeText(pairs)}`}. Los resultados cargados en esta categoría se borran.`,
         confirmLabel: "Rearmar cuadro",
         danger: true,
       });
       if (!ok) {
-        e.target.value = String(cat.size);
+        e.target.value = String(cat.pairs);
         return;
       }
-      const next = seedCategory(normalizeCategory({ cat: cat.cat, size }), rankingPairs(cat.cat));
+      const next = seedCategory(normalizeCategory({ cat: cat.cat, pairs }), rankingPairs(cat.cat));
       Object.assign(cat, next);
       markDirty();
       render();
@@ -272,7 +287,7 @@ export function createPlayoff(ctx, api, shell) {
       }
       const ok = await confirmModal({
         title: `Armar ${cat.cat} desde el ranking`,
-        body: `Se cargan las ${Math.min(cat.size, pairs.length)} mejores de ${seasonLabel(temp())} (1 vs ${cat.size}, 2 vs ${cat.size - 1}…). Los días y horarios quedan; los resultados se borran.`,
+        body: `Se cargan las ${Math.min(cat.pairs, pairs.length)} mejores de ${seasonLabel(temp())}. Los días y horarios quedan; los resultados se borran.`,
         confirmLabel: "Armar cuadro",
       });
       if (!ok) return;

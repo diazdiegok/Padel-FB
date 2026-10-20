@@ -2,6 +2,8 @@ import { describeResult } from "./scoring.js";
 
 export const PLAYOFF_SIZES = [2, 4, 8, 16];
 export const BYE = "Libre";
+export const MIN_PAIRS = 2;
+export const MAX_PAIRS = 16;
 
 const ROUND_NAMES = { 2: "Final", 4: "Semifinal", 8: "Cuartos", 16: "Octavos" };
 const ROUND_SHORT = { 2: "F", 4: "SF", 8: "CF", 16: "OF" };
@@ -62,9 +64,16 @@ function cleanSeed(value) {
   return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
 }
 
-/** Normaliza una categoría: tamaño válido y todos los partidos de cada ronda. */
+export function bracketSize(pairs) {
+  return PLAYOFF_SIZES.find((size) => size >= pairs) || PLAYOFF_SIZES[PLAYOFF_SIZES.length - 1];
+}
+
+/** Normaliza una categoría: cantidad de parejas, tamaño del cuadro y todos los partidos de cada ronda. */
 export function normalizeCategory(raw = {}) {
-  const size = PLAYOFF_SIZES.includes(Number(raw.size)) ? Number(raw.size) : 8;
+  const legacySize = PLAYOFF_SIZES.includes(Number(raw.size)) ? Number(raw.size) : 8;
+  const asked = Math.round(Number(raw.pairs) || legacySize);
+  const pairs = Math.min(MAX_PAIRS, Math.max(MIN_PAIRS, asked));
+  const size = bracketSize(pairs);
   const byId = new Map((Array.isArray(raw.matches) ? raw.matches : []).map((m) => [String(m.id), m]));
   const matches = [];
   for (let round = 1; round <= roundCount(size); round++) {
@@ -87,7 +96,7 @@ export function normalizeCategory(raw = {}) {
       });
     }
   }
-  return { cat: String(raw.cat || "").trim(), size, matches };
+  return { cat: String(raw.cat || "").trim(), pairs, size, matches };
 }
 
 export function normalizePlayoff(raw = {}) {
@@ -102,11 +111,10 @@ export function normalizePlayoff(raw = {}) {
 
 /** Arma la primera ronda con las mejores parejas del ranking (ordenadas por posición). */
 export function seedCategory(category, pairs) {
-  const size = category.size;
-  const order = seedOrder(size);
-  const next = normalizeCategory({ cat: category.cat, size, matches: [] });
+  const next = normalizeCategory({ cat: category.cat, pairs: category.pairs, matches: [] });
+  const order = seedOrder(next.size);
   const keep = new Map(category.matches.map((m) => [m.id, m]));
-  const pick = (seed) => (seed <= pairs.length ? pairs[seed - 1] : BYE);
+  const pick = (seed) => (seed <= Math.min(next.pairs, pairs.length) ? pairs[seed - 1] : BYE);
   next.matches = next.matches.map((m) => {
     const old = keep.get(m.id) || {};
     const schedule = { day: old.day || "", time: old.time || "", venue: old.venue || "", court: old.court || "" };
@@ -185,6 +193,7 @@ export function serializePlayoff(playoff) {
       const resolved = resolveCategory(category);
       return {
         cat: category.cat,
+        pairs: category.pairs,
         size: category.size,
         matches: resolved.rounds.flatMap((r) =>
           r.matches.map((m) => ({
