@@ -206,6 +206,34 @@ export function resolveCategory(rawCategory) {
   };
 }
 
+function sidesKey(m) {
+  return `${m.home}|${m.away}`;
+}
+
+/**
+ * Aplica un cambio y borra el resultado de los partidos siguientes cuyas parejas cambiaron,
+ * para que no reaparezca un score viejo con otro rival.
+ */
+export function updateCategory(category, change) {
+  const before = new Map(resolveCategory(category).rounds.flatMap((r) => r.matches).map((m) => [m.id, sidesKey(m)]));
+  change(category);
+  for (let guard = 0; guard < 8; guard++) {
+    const after = resolveCategory(category).rounds.flatMap((r) => r.matches);
+    let cleared = false;
+    for (const m of after) {
+      if (m.round === 1 || before.get(m.id) === sidesKey(m)) continue;
+      const raw = category.matches.find((x) => x.id === m.id);
+      if (raw && (raw.result || raw.wo)) {
+        raw.result = "";
+        raw.wo = "";
+        cleared = true;
+      }
+    }
+    if (!cleared) break;
+  }
+  return category;
+}
+
 /** Lo que se guarda en el JSON: incluye las parejas ya clasificadas en cada ronda. */
 export function serializePlayoff(playoff) {
   const clean = normalizePlayoff(playoff);
@@ -230,8 +258,8 @@ export function serializePlayoff(playoff) {
             time: m.time,
             venue: m.venue,
             court: m.court,
-            result: m.result,
-            wo: m.wo,
+            result: m.home && m.away ? m.result : "",
+            wo: m.home && m.away ? m.wo : "",
           }))
         ),
       };

@@ -14,6 +14,7 @@ import {
   roundName,
   seedCategory,
   serializePlayoffs,
+  updateCategory,
 } from "../lib/playoff.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
@@ -214,12 +215,14 @@ export function createPlayoff(ctx, api, shell) {
     const cat = category();
     const m = cat?.matches.find((x) => x.id === id);
     if (!m) return;
-    if (field === "homeSeed" || field === "awaySeed") {
-      const n = Number(value);
-      m[field] = Number.isFinite(n) && n > 0 ? Math.round(n) : null;
-    } else {
-      m[field] = String(value || "").trim();
-    }
+    updateCategory(cat, () => {
+      if (field === "homeSeed" || field === "awaySeed") {
+        const n = Number(value);
+        m[field] = Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+      } else {
+        m[field] = String(value || "").trim();
+      }
+    });
     markDirty();
   }
 
@@ -332,7 +335,7 @@ export function createPlayoff(ctx, api, shell) {
       const el = e.target.closest("[data-po-field]");
       const card = e.target.closest("[data-po-id]");
       if (!el || !card) return;
-      updateMatch(card.dataset.poId, el.dataset.poField, el.value);
+      markDirty();
       if (el.dataset.poField === "result") {
         const hint = card.querySelector(".admin-hint");
         const parsed = describeResult(el.value);
