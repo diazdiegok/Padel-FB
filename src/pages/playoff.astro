@@ -7,7 +7,7 @@ import { normalizePlayoff, resolveCategory } from "../lib/playoff.js";
 import { page } from "../lib/paths";
 
 const playoff = normalizePlayoff(playoffJson);
-const visible = playoff.visible && playoff.categories.length > 0;
+const visible = playoff.categories.length > 0;
 const categories = visible ? playoff.categories.map(resolveCategory) : [];
 const season = seasonLabel(playoff.temp || site.currentSeason);
 const title = playoff.title || `Playoff ${season}`;

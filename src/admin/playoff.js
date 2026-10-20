@@ -50,16 +50,6 @@ export function createPlayoff(ctx, api, shell) {
     $("po-title").value = data().title || "";
     $("po-dates").value = data().dates || "";
     $("po-note").value = data().note || "";
-    $("po-visible").checked = Boolean(data().visible);
-    updateStatus();
-  }
-
-  function updateStatus() {
-    const pill = $("po-status");
-    if (!pill) return;
-    const on = Boolean(data().visible);
-    pill.textContent = on ? "Visible en la web" : "Oculto en la web";
-    pill.className = "admin-status-pill " + (on ? "open" : "closed");
   }
 
   function fillCats() {
@@ -232,12 +222,6 @@ export function createPlayoff(ctx, api, shell) {
         markDirty();
       });
     }
-    $("po-visible")?.addEventListener("change", (e) => {
-      data().visible = e.target.checked;
-      markDirty();
-      updateStatus();
-    });
-
     $("po-cats")?.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-po-cat]");
       if (!btn) return;
@@ -363,9 +347,7 @@ export function createPlayoff(ctx, api, shell) {
       }
       const ok = await confirmModal({
         title: "Publicar playoff",
-        body: data().visible
-          ? "Se publica el cuadro y los resultados en /playoff/. El sitio se actualiza en ~1 minuto."
-          : "Se guarda el cuadro, pero queda oculto en la web hasta que marques Mostrar en la web.",
+        body: "Se publica el cuadro y los resultados en la página Playoff. El sitio se actualiza en ~1 minuto.",
         confirmLabel: "Publicar playoff",
       });
       if (!ok) return;
@@ -377,10 +359,7 @@ export function createPlayoff(ctx, api, shell) {
         ctx.playoff = normalizePlayoff(next);
         shell.clearDirty("playoff");
         render();
-        const text = next.visible
-          ? "Playoff publicado. El sitio se actualiza en ~1 minuto."
-          : "Playoff guardado. Sigue oculto en la web.";
-        setMsg($("po-msg"), text, "ok");
+        setMsg($("po-msg"), "Playoff publicado. El sitio se actualiza en ~1 minuto.", "ok");
         toast("Playoff publicado", "ok");
       } catch (err) {
         const message = api.publishError(err);

@@ -7,7 +7,7 @@ import { listSeasons } from "../lib/liga.js";
 import { asset, page } from "../lib/paths";
 
 const HIDDEN_CATS = new Set(["S Masculina"]);
-const playoffOn = Boolean(playoff.visible && playoff.categories?.length);
+const playoffOn = Boolean(playoff.categories?.length);
 const rows = ranking.filter((p) => !HIDDEN_CATS.has(p.cat));
 const current = site.currentSeason || "T4";
 const seasons = listSeasons(site, rows.map((p) => p.temp));

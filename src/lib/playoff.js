@@ -96,7 +96,6 @@ export function normalizePlayoff(raw = {}) {
     title: String(raw.title || "").trim(),
     dates: String(raw.dates || "").trim(),
     note: String(raw.note || "").trim(),
-    visible: Boolean(raw.visible),
     categories: (Array.isArray(raw.categories) ? raw.categories : []).map(normalizeCategory).filter((c) => c.cat),
   };
 }
