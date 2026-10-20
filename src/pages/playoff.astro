@@ -44,11 +44,11 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
           <section class="po-cat" data-cat-panel={slug(c.cat)} hidden={i !== 0}>
             {c.champion && (
               <div class="po-winner">
-                <p class="kicker">Campeón · {c.cat}</p>
+                <p class="kicker">🏆 Campeón · {c.cat}</p>
                 <strong>{c.champion}</strong>
               </div>
             )}
-            <div class="po-board" style={`--rounds:${c.rounds.length}`}>
+            <div class="po-board" style={`--rounds:${c.rounds.length + 1}`}>
               {c.rounds.map((r) => (
                 <div class="po-col">
                   <h2>{r.name}</h2>
@@ -91,6 +91,15 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
                   </div>
                 </div>
               ))}
+              <div class="po-col">
+                <h2>Campeón</h2>
+                <div class="po-col-list">
+                  <article class:list={["po-card", "po-champ", { done: c.champion }]}>
+                    <span class="po-champ-icon" aria-hidden="true">🏆</span>
+                    <span class:list={["po-champ-name", { tbd: !c.champion }]}>{c.champion || "A definir"}</span>
+                  </article>
+                </div>
+              </div>
             </div>
           </section>
         ))}
@@ -120,14 +129,14 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
   .po-link { color: var(--lime); }
   .po-cat { padding: 8px 0 56px; }
   .po-winner {
-    border: 1px solid var(--lime);
-    background: rgba(214, 255, 47, 0.06);
+    border: 1px solid #ffc83c;
+    background: rgba(255, 200, 60, 0.08);
     padding: 18px 20px;
     margin: 8px 0 24px;
     display: grid;
     gap: 6px;
   }
-  .po-winner strong { font-family: var(--display); font-size: 28px; color: var(--lime); }
+  .po-winner strong { font-family: var(--display); font-size: 28px; color: #ffc83c; }
   .po-board {
     display: grid;
     grid-template-columns: repeat(var(--rounds), minmax(250px, 1fr));
@@ -168,6 +177,18 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
+  .po-champ {
+    justify-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 20px 14px;
+    border-color: rgba(255, 200, 60, 0.45);
+    background: linear-gradient(180deg, rgba(255, 200, 60, 0.1), var(--bg-2));
+  }
+  .po-champ.done { border-color: #ffc83c; }
+  .po-champ-icon { font-size: 40px; line-height: 1; }
+  .po-champ-name { font-family: var(--display); font-size: 20px; color: #ffc83c; overflow-wrap: anywhere; }
+  .po-champ-name.tbd { font-family: var(--font); font-size: 13px; font-style: italic; color: var(--muted); }
   .po-free { text-transform: uppercase; letter-spacing: 0.12em; font-size: 12px; }
   .po-info { color: #7cc7ff; font-weight: 700; }
   .po-team {
