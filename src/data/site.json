@@ -77,14 +77,15 @@
         "when": "Martes y viernes",
         "rows": [
           {
-            "time": "16:00 hs",
-            "level": "4 a 6 años"
-          },
-          {
             "time": "17:00 hs",
             "level": "Principiantes"
           }
         ]
+      },
+      {
+        "venue": "Terrazas Padel",
+        "when": "",
+        "rows": []
       }
     ],
     "prices": []
