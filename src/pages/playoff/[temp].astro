@@ -24,7 +24,7 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
 <Layout title={`${title} | Padel FB`} description={`Cuadro y resultados del ${title} de Padel FB en ${site.city}.`}>
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker"><a class="po-back" href={page("playoff/")}>← Playoff</a> · {season}{playoff.year ? ` · ${playoff.year}` : ""}{playoff.dates ? ` · ${playoff.dates}` : ""}</p>
+      <p class="kicker"><a class="po-back" href={page("playoff/")}>← Playoff</a> · {season}{playoff.dates ? ` · ${playoff.dates}` : ""}</p>
       <h1>{visible ? title : "Playoff"}</h1>
       {visible ? (
         <p>{playoff.note || "Cuadro por categoría. La pareja ganadora de cada partido pasa a la ronda siguiente."}</p>

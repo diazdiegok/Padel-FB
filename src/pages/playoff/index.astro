@@ -24,7 +24,7 @@ const playoffs = normalizePlayoffs(playoffJson).filter((p) => p.categories.lengt
           <a class="hub-card" href={page(`playoff/${playoffSlug(p.temp)}/`)}>
             <p class="kicker" style="margin:0">Playoff</p>
             <h2>{seasonLabel(p.temp)}</h2>
-            <p>{[p.year, p.dates].filter(Boolean).join(" · ") || `${p.categories.length} categorías`}</p>
+            <p>{p.dates || `${p.categories.length} categorías`}</p>
           </a>
         ))}
       </div>

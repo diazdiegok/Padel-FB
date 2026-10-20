@@ -26,7 +26,7 @@ export function createPlayoff(ctx, api, shell) {
   function data() {
     let item = ctx.playoffs.find((p) => p.temp === editing);
     if (!item) {
-      item = normalizePlayoff({ temp: editing, year: String(new Date().getFullYear()), title: `Playoff ${seasonLabel(editing)}` });
+      item = normalizePlayoff({ temp: editing, title: `Playoff ${seasonLabel(editing)}` });
       ctx.playoffs.push(item);
     }
     return item;

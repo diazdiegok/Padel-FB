@@ -103,7 +103,6 @@ export function normalizeCategory(raw = {}) {
 export function normalizePlayoff(raw = {}) {
   return {
     temp: String(raw.temp || "").trim().toUpperCase(),
-    year: String(raw.year || "").trim(),
     title: String(raw.title || "").trim(),
     dates: String(raw.dates || "").trim(),
     note: String(raw.note || "").trim(),
