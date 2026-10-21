@@ -16,3 +16,9 @@ export function deadlineText(value) {
   const [, month, day] = date.split("-");
   return `${Number(day)}/${Number(month)} a las ${time}`;
 }
+
+export function closeStatus(open, value) {
+  const when = deadlineText(value);
+  if (!open) return when ? `Cerrada · cerró el ${when}` : "Inscripción cerrada";
+  return when ? `Abierta hasta el ${when}` : "Inscripción abierta";
+}

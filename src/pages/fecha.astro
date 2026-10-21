@@ -4,7 +4,7 @@ import { site } from "../data/site";
 import disp from "../data/disponibilidad.json";
 import parejas from "../data/parejas.json";
 import { DAYS } from "../lib/disponibilidad.js";
-import { deadlinePassed, deadlineText, validDeadline } from "../lib/cierre.js";
+import { closeStatus, deadlinePassed, validDeadline } from "../lib/cierre.js";
 
 const base = import.meta.env.BASE_URL;
 const season = (disp as any).temp || site.currentSeason;
@@ -32,9 +32,7 @@ const cargaAbierta = disp.open !== false && !deadlinePassed(deadline);
         Anotá los días y horarios en los que su pareja puede jugar. Con eso se arman los partidos
         de la fecha.
       </p>
-      {deadline && (
-        <p class="deadline" id="fecha-deadline"><strong>Cierra el</strong> {deadlineText(deadline)}</p>
-      )}
+      <p class="tag" id="fecha-deadline" hidden={!cargaAbierta}>{closeStatus(cargaAbierta, deadline)}</p>
     </header>
 
     <form class="form form-fecha" id="fecha-form" hidden={!cargaAbierta}>
@@ -97,7 +95,7 @@ const cargaAbierta = disp.open !== false && !deadlinePassed(deadline);
         <p class="admin-msg" id="fecha-msg" aria-live="polite"></p>
       </form>
       <p class="empty" id="fecha-closed" hidden={cargaAbierta}>
-        La carga de {disp.week} está cerrada. Cuando se abra la próxima fecha va a aparecer acá.
+        <strong>{closeStatus(false, deadline)}.</strong> Cuando se abra la próxima fecha va a aparecer acá.
       </p>
   </div>
 

@@ -69,6 +69,7 @@ const copy = {
   <script>
     import site from "../data/site.json";
     import { fold } from "../lib/disponibilidad.js";
+    import { closeStatus } from "../lib/cierre.js";
 
     const apiUrl = String(site.apiUrl || "").replace(/\/$/, "");
     const form = document.querySelector("#insc-form");
@@ -82,12 +83,6 @@ const copy = {
       if (!msg) return;
       msg.textContent = text;
       msg.className = "admin-msg" + (kind ? " " + kind : "");
-    }
-
-    function deadlineText(deadline) {
-      const [date, time] = deadline.split("T");
-      const [, month, day] = date.split("-");
-      return `${Number(day)}/${Number(month)} a las ${time}`;
     }
 
     function showClosed(text) {
@@ -114,7 +109,7 @@ const copy = {
           document.querySelector("#insc-closed").hidden = true;
           const tag = document.querySelector("#insc-deadline");
           if (state.deadline && tag) {
-            tag.textContent = `Inscripción abierta hasta el ${deadlineText(state.deadline)}`;
+            tag.textContent = closeStatus(true, state.deadline);
             tag.hidden = false;
           }
         })

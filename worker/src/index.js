@@ -1,5 +1,5 @@
 import { addPairsToRanking } from "../../src/lib/scoring.js";
-import { deadlinePassed, deadlineText, validDeadline } from "../../src/lib/cierre.js";
+import { closeStatus, deadlinePassed, validDeadline } from "../../src/lib/cierre.js";
 
 const PASS_SALT = "liga-fb-admin-v1";
 const RANK_PATH = "src/data/ranking.json";
@@ -311,12 +311,11 @@ async function registrationState(env) {
   const deadline = validDeadline(json.deadline);
   const copy = copyFields(json);
   if (json.open === false || deadlinePassed(deadline)) {
-    const when = deadlineText(deadline);
     return {
       open: false,
       deadline,
       ...copy,
-      message: when ? `La inscripción de parejas cerró el ${when}.` : "La inscripción de parejas está cerrada.",
+      message: `${closeStatus(false, deadline)}.`,
     };
   }
   return { open: true, deadline, ...copy };
@@ -517,8 +516,7 @@ async function appendAvailability(env, raw) {
   for (let attempt = 0; attempt < 4; attempt++) {
     const file = await readAvailability(env);
     if (!file.json.open || deadlinePassed(file.json.deadline)) {
-      const when = deadlineText(file.json.deadline);
-      throw new Error(when ? `La carga de esta fecha cerró el ${when}.` : "La carga de esta fecha ya está cerrada.");
+      throw new Error(`${closeStatus(false, file.json.deadline)}.`);
     }
     if (file.json.temp && pair.temp && file.json.temp !== pair.temp) {
       throw new Error(`Esa pareja está inscripta en ${pair.temp} y la fecha es de ${file.json.temp}. Inscribila para esta temporada.`);

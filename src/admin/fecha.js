@@ -1,5 +1,5 @@
 import { DISP_PATH, fold, pairLabel } from "../lib/disponibilidad.js";
-import { deadlinePassed, deadlineText, validDeadline } from "../lib/cierre.js";
+import { closeStatus, deadlinePassed, validDeadline } from "../lib/cierre.js";
 import { weekNumber } from "../lib/liga.js";
 import { downloadCsv } from "./csv.js";
 import { $, confirmModal, escAttr as esc, setBusy, setMsg, toast } from "./ui.js";
@@ -27,13 +27,7 @@ export function createFecha(ctx, api, shell) {
     const open = $("disp-open").checked;
     const status = $("disp-status");
     if (!status) return;
-    status.textContent = !open
-      ? deadline
-        ? `Cerrada · cerró el ${deadlineText(deadline)}`
-        : "Carga cerrada"
-      : deadline
-        ? `Abierta hasta el ${deadlineText(deadline)}`
-        : "Carga abierta";
+    status.textContent = closeStatus(open, deadline);
     status.className = "admin-status-pill" + (open ? " open" : " closed");
     clearTimeout(closeTimer);
     if (open && deadline) {

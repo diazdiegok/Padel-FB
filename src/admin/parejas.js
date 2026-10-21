@@ -9,7 +9,7 @@ const personKey = (name) => fold(name).split(" ").filter(Boolean).sort().join(" 
 const pairKey = (p) => [personKey(p.p1), personKey(p.p2)].sort().join("|");
 const newId = () => `p${Date.now().toString(36)}${Math.random().toString(16).slice(2, 6)}`;
 const cleanPhone = (v) => String(v || "").replace(/\D/g, "").slice(0, 15);
-import { deadlinePassed, deadlineText, validDeadline } from "../lib/cierre.js";
+import { closeStatus, deadlinePassed, validDeadline } from "../lib/cierre.js";
 
 const COPY = {
   title: "Inscribí tu pareja",
@@ -57,15 +57,8 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
     if (deadlinePassed(deadline)) $("pairs-open").checked = false;
     const open = $("pairs-open").checked;
     const status = $("pairs-status");
-    const closed = !open;
-    status.textContent = closed
-      ? deadline
-        ? `Cerrada · cerró el ${deadlineText(deadline)}`
-        : "Inscripción cerrada"
-      : deadline
-        ? `Abierta hasta el ${deadlineText(deadline)}`
-        : "Inscripción abierta";
-    status.className = "admin-status-pill" + (closed ? " closed" : " open");
+    status.textContent = closeStatus(open, deadline);
+    status.className = "admin-status-pill" + (open ? " open" : " closed");
     clearTimeout(closeTimer);
     if (open && deadline) {
       const wait = Date.parse(`${deadline}:00-03:00`) - Date.now();
