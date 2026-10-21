@@ -60,7 +60,7 @@ const inTorneos = path.includes("/torneos");
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Oswald:wght@500;600&display=swap" rel="stylesheet" />
   </head>
-  <body class:list={["court", { "is-admin": noindex }]}>
+  <body class:list={["court", { "is-admin": noindex, "is-home": isHome }]}>
     <a class="skip-link" href="#main-content">Saltar al contenido</a>
     {!noindex && (
       <div class="splash" id="splash" hidden>
@@ -237,9 +237,8 @@ const inTorneos = path.includes("/torneos");
       document.querySelectorAll("[data-year]").forEach((el) => {
         el.textContent = String(new Date().getFullYear());
       });
-      if (splash && !sessionStorage.getItem("liga-fb-splash-v4")) {
+      if (splash && document.body.classList.contains("is-home")) {
         splash.hidden = false;
-        sessionStorage.setItem("liga-fb-splash-v4", "1");
         setTimeout(() => {
           splash.classList.add("out");
           setTimeout(() => splash.remove(), 560);

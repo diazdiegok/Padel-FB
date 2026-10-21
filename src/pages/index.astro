@@ -139,24 +139,20 @@ const seasonVenues = Object.fromEntries(
     if (root && !reduce) {
       const arm = () => root.classList.add("home-play");
       const splash = document.getElementById("splash");
-      if (sessionStorage.getItem("liga-fb-splash-v4")) {
-        arm();
-      } else {
+      setTimeout(() => {
+        if (!splash || splash.hidden || !splash.isConnected) {
+          arm();
+          return;
+        }
+        const watch = new MutationObserver(() => {
+          if (splash.classList.contains("out") || !splash.isConnected) arm();
+        });
+        watch.observe(splash, { attributes: true, attributeFilter: ["class"] });
         setTimeout(() => {
-          if (!splash || splash.hidden || !splash.isConnected) {
-            arm();
-            return;
-          }
-          const watch = new MutationObserver(() => {
-            if (splash.classList.contains("out") || !splash.isConnected) arm();
-          });
-          watch.observe(splash, { attributes: true, attributeFilter: ["class"] });
-          setTimeout(() => {
-            arm();
-            watch.disconnect();
-          }, 3400);
-        }, 0);
-      }
+          arm();
+          watch.disconnect();
+        }, 3400);
+      }, 0);
     }
   </script>
 
