@@ -2,7 +2,7 @@ import { FIXTURE_PATH, FX_COLS, RESULTS_PATH } from "./constants.js";
 import { cleanMatch, downloadCsv, driveRow, matchKey, parseFixtureText } from "./csv.js";
 import { DISP_PATH } from "../lib/disponibilidad.js";
 import { buildFixture } from "../lib/fixturer.js";
-import { mergeArchivedMatches, weekKey, weekNumber } from "../lib/liga.js";
+import { latestWeek, mergeArchivedMatches, weekKey, weekNumber } from "../lib/liga.js";
 import { pairsMatch } from "../lib/scoring.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
@@ -10,23 +10,31 @@ const isPending = (m) => !!m.pending && !String(m.away || "").trim();
 
 export function createFixture(ctx, api, shell, { onRankingChanged }) {
   let buildCount = 0;
+  let editing = -1;
+  let focusEdit = false;
 
   function fallbackWeek() {
-    return $("fx-week")?.value.trim() || ctx.fixture[0]?.week || "Fecha 1";
+    return $("fx-week")?.value.trim() || latestWeek(ctx.fixture) || "Fecha 1";
+  }
+
+  function syncWeek() {
+    const latest = latestWeek(ctx.fixture);
+    if ($("fx-week") && latest) $("fx-week").value = latest;
+    return fallbackWeek();
   }
 
   function updateSummary() {
     const el = $("fx-summary");
     if (!el) return;
-    const games = ctx.fixture.filter((m) => !isPending(m));
-    const pending = ctx.fixture.length - games.length;
+    const week = fallbackWeek();
+    const games = ctx.fixture.filter((m) => !isPending(m) && (m.week || "") === week);
+    const pending = ctx.fixture.filter((m) => isPending(m) && (m.week || "") === week).length;
     const n = games.length;
     const cats = new Set(games.map((m) => m.cat).filter(Boolean));
-    const weeks = [...new Set(ctx.fixture.map((m) => m.week).filter(Boolean))];
-    el.textContent = ctx.fixture.length
-      ? `${n} partido${n === 1 ? "" : "s"} · ${cats.size} categorí${cats.size === 1 ? "a" : "as"} · ${weeks.join(", ") || "sin semana"}` +
+    el.textContent = n || pending
+      ? `${n} partido${n === 1 ? "" : "s"} · ${cats.size} categorí${cats.size === 1 ? "a" : "as"} · ${week}` +
         (pending ? ` · ${pending} pendiente${pending === 1 ? "" : "s"}` : "")
-      : "Sin partidos cargados";
+      : `Sin partidos en ${week}`;
   }
 
   function renderVenues() {
@@ -68,7 +76,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   function renderPending() {
     const box = $("fx-pending");
     if (!box) return;
-    const pending = ctx.fixture.map((m, i) => ({ m, i })).filter(({ m }) => isPending(m));
+    const pending = ctx.fixture.map((m, i) => ({ m, i })).filter(({ m }) => isPending(m) && (m.week || "") === fallbackWeek());
     box.hidden = !pending.length;
     if (!pending.length) {
       box.innerHTML = "";
@@ -111,25 +119,41 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     updateSummary();
     renderVenues();
     renderPending();
-    const games = ctx.fixture.map((m, i) => ({ m, i })).filter(({ m }) => !isPending(m));
+    const week = fallbackWeek();
+    const games = ctx.fixture.map((m, i) => ({ m, i })).filter(({ m }) => !isPending(m) && (m.week || "") === week);
     const repeated = renderWarnings(games) || new Set();
     const empty = $("fx-empty");
-    if (empty) empty.hidden = ctx.fixture.length > 0;
+    if (empty) empty.hidden = games.length > 0 || ctx.fixture.some((m) => isPending(m) && (m.week || "") === week);
     $("fx-body").innerHTML = games
       .map(
-        ({ m, i }) => `<tr data-i="${i}"${repeated.has(i) ? ' class="is-rematch" title="Ya se enfrentaron en esta temporada"' : ""}>
-          <td><input data-k="week" value="${escAttr(m.week)}" /></td>
-          <td><input data-k="day" value="${escAttr(m.day)}" placeholder="Jueves" /></td>
-          <td><input data-k="time" value="${escAttr(m.time)}" placeholder="19:00 - 20:30" /></td>
-          <td><input data-k="cat" value="${escAttr(m.cat)}" /></td>
-          <td><input data-k="venue" value="${escAttr(m.venue)}" list="fx-venues" placeholder="Complejo" /></td>
-          <td><input data-k="court" value="${escAttr(m.court)}" placeholder="Cancha 1" /></td>
-          <td><input data-k="home" value="${escAttr(m.home)}" /></td>
-          <td><input data-k="away" value="${escAttr(m.away)}" /></td>
-          <td><button class="admin-del" type="button" data-fx-del="${i}" aria-label="Eliminar">×</button></td>
-        </tr>`
+        ({ m, i }) => {
+          const on = editing === i;
+          const field = (k, placeholder) =>
+            on
+              ? `<input data-k="${k}" value="${escAttr(m[k])}" placeholder="${placeholder}"${k === "venue" ? ' list="fx-venues"' : ""} />`
+              : escAttr(m[k]);
+          return `<tr data-i="${i}"${repeated.has(i) ? ' class="is-rematch" title="Ya se enfrentaron en esta temporada"' : ""}>
+          <td>${field("day", "Jueves")}</td>
+          <td>${field("time", "19:00 - 20:30")}</td>
+          <td>${field("cat", "A Masculina")}</td>
+          <td>${field("venue", "Complejo")}</td>
+          <td>${field("court", "Cancha 1")}</td>
+          <td>${field("home", "Pareja 1")}</td>
+          <td>${field("away", "Pareja 2")}</td>
+          <td class="col-actions">
+            <button class="admin-del admin-edit${on ? " on" : ""}" type="button" data-fx-edit="${i}" aria-label="${on ? "Cerrar edición" : "Editar"}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16.5V20h3.5L18.8 8.7l-3.5-3.5L4 16.5zm15.7-9.2a1 1 0 0 0 0-1.4l-1.6-1.6a1 1 0 0 0-1.4 0l-1.1 1.1 3.5 3.5 1.6-1.6z"/></svg>
+            </button>
+            <button class="admin-del" type="button" data-fx-del="${i}" aria-label="Eliminar">×</button>
+          </td>
+        </tr>`;
+        }
       )
       .join("");
+    if (focusEdit && editing >= 0) {
+      focusEdit = false;
+      $("fx-body")?.querySelector(`tr[data-i="${editing}"] input`)?.focus();
+    }
   }
 
   function loadFixtureText(text) {
@@ -268,6 +292,8 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           ctx.siteData.currentSeason || "T4"
         )
       );
+      editing = ctx.fixture.length - 1;
+      focusEdit = true;
       shell.markDirty("fixture");
       render();
     });
@@ -280,8 +306,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       if (!k) return;
       ctx.fixture[i][k] = e.target.value;
       shell.markDirty("fixture");
-      if (["home", "away", "cat", "week"].includes(k)) render();
-      else updateSummary();
+      if (["home", "away", "cat"].includes(k)) {
+        render();
+        $("fx-body")?.querySelector(`tr[data-i="${i}"] input[data-k="${k}"]`)?.focus();
+      } else updateSummary();
     });
 
     $("fx-pending")?.addEventListener("change", (e) => {
@@ -364,7 +392,18 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
     });
 
-    $("fx-week")?.addEventListener("change", () => shell.markDirty("fixture"));
+    $("fx-body")?.addEventListener("click", (e) => {
+      const edit = e.target.closest("[data-fx-edit]");
+      if (!edit) return;
+      const i = Number(edit.dataset.fxEdit);
+      editing = editing === i ? -1 : i;
+      focusEdit = editing >= 0;
+      render();
+    });
+    $("fx-week")?.addEventListener("input", () => {
+      editing = -1;
+      render();
+    });
 
     $("fx-publish")?.addEventListener("click", async () => {
       const gate = api.usePublishToken();
@@ -416,7 +455,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         ctx.fixture = nextFixture;
         ctx.fixturePublished = structuredClone(nextFixture);
         ctx.results = nextResults;
-        $("fx-week").value = nextFixture[0]?.week || $("fx-week").value;
+        $("fx-week").value = latestWeek(nextFixture) || $("fx-week").value;
         shell.clearDirty("fixture");
         onRankingChanged?.();
         render();
@@ -434,5 +473,5 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     });
   }
 
-  return { bind, render, fallbackWeek, buildFromFecha };
+  return { bind, render, fallbackWeek, syncWeek, buildFromFecha };
 }

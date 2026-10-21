@@ -114,7 +114,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
     }
     ranking.refresh();
     seasons.render();
-    $("fx-week").value = ctx.fixture[0]?.week || $("fx-week").value || "Fecha 1";
+    fixture.syncWeek();
     fixture.render();
     results.render();
     playoff.render();

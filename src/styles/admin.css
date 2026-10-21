@@ -471,6 +471,31 @@ body.is-admin main > .wrap {
   text-align: center;
 }
 
+.admin-table .col-actions {
+  width: 84px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.admin-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+.admin-edit svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.admin-edit.on,
+.admin-edit:hover {
+  background: rgba(212, 255, 58, 0.12);
+  color: var(--lime);
+}
+
 .admin-del {
   width: 32px;
   height: 32px;

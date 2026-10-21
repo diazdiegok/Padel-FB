@@ -16,12 +16,12 @@ const copy = {
 };
 ---
 <Layout
-  title="Inscripción de parejas | Padel FB"
+  title="Inscripciones de parejas | Padel FB"
   description="Inscribí tu pareja en la liga de Padel FB en Paraná. Se hace una sola vez por temporada."
 >
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker">Inscripción de parejas · {seasonLabel(site.currentSeason)}</p>
+      <p class="kicker" id="insc-kicker">Inscripciones de parejas · {seasonLabel(site.currentSeason)}</p>
       <h1 id="insc-title">{copy.title}</h1>
       <p id="insc-intro">{copy.intro}</p>
       <p class="tag" id="insc-deadline" hidden></p>
