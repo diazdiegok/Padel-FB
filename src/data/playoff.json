@@ -67,7 +67,7 @@
             "time": "12:45",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "0-6 0-6",
             "wo": ""
           },
           {
@@ -91,8 +91,8 @@
             "slot": 2,
             "homeSeed": 2,
             "home": "Fusse, Bruno / Rodríguez, Marcos",
-            "awaySeed": null,
-            "away": "",
+            "awaySeed": 5,
+            "away": "Izza, Omar / Minigutti, Matías",
             "day": "25/10/2026",
             "time": "16:30",
             "venue": "Palermo Padel",
