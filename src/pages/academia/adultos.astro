@@ -1,0 +1,82 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { site } from "../../data/site";
+import { asset, page } from "../../lib/paths";
+
+const ac = site.academia || {};
+const staff = site.staff || [];
+const titleLines = String(ac.title || "Entrená como se juega").split("\n");
+const programs = ac.programs || [];
+const names = staff.map((p) => p.name).filter(Boolean).join(", ");
+---
+<Layout
+  title="Clases adultos | Padel FB"
+  description={`Clases de pádel para adultos de la Academia FB en ${site.city}.${names ? " " + names + "." : ""}`}
+>
+  <div class="wrap">
+    <header class="page-hero">
+      <p class="kicker">{ac.kicker || "Academia FB"}</p>
+      <h1>
+        {titleLines.map((line, i) => (
+          <>{i > 0 && <br />}{line}</>
+        ))}
+      </h1>
+      <p>{ac.intro}</p>
+      <div class="actions">
+        <a class="btn btn-lime" href={page("academia/inscripcion/")}>{ac.cta || "Inscripción"}</a>
+        <a class="btn btn-ghost" href={page("academia/infantiles/")}>Clases infantiles</a>
+      </div>
+    </header>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="kicker">{ac.teamKicker || "Equipo"}</p>
+          <h2>{ac.teamTitle || "Con quién entrenás"}</h2>
+        </div>
+        <p>{ac.teamNote}</p>
+      </div>
+      <div class="staff-list">
+        {staff.map((p) => (
+          <article class="staff-card">
+            {p.image && <img class="staff-photo" src={asset(p.image)} alt={p.name} />}
+            <div>
+              <p class="staff-role">{p.role}</p>
+              <h2>{p.name}</h2>
+              {p.bio && <p class="lead">{p.bio}</p>}
+              {p.bullets?.length > 0 && (
+                <ul class="staff-bullets">
+                  {p.bullets.map((b) => <li>{b}</li>)}
+                </ul>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  {programs.length > 0 && (
+    <section style="padding-top:0">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="kicker">{ac.programsKicker || "Programas"}</p>
+            <h2>{ac.programsTitle || "Qué entrenás"}</h2>
+          </div>
+        </div>
+        <div class="steps">
+          {programs.map((pr) => (
+            <article class="step">
+              <div class="n">{pr.n}</div>
+              <h3>{pr.title}</h3>
+              <p>{pr.text}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+</Layout>

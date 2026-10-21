@@ -1,82 +1,34 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import { page } from "../../lib/paths";
 import { site } from "../../data/site";
-import { asset, page } from "../../lib/paths";
 
-const ac = site.academia || {};
-const staff = site.staff || [];
-const titleLines = String(ac.title || "Entrená como se juega").split("\n");
-const programs = ac.programs || [];
-const names = staff.map((p) => p.name).filter(Boolean).join(", ");
+const links = [
+  { href: "academia/inscripcion/", title: "Inscripción", text: "Anotate a las clases de adultos o infantiles." },
+  { href: "academia/adultos/", title: "Clases Adultos", text: "Entrenamiento, equipo y programas." },
+  { href: "academia/infantiles/", title: "Clases Infantiles", text: "Academia para los más chicos." },
+  { href: "academia/sedes/", title: "Sedes", text: "Complejos donde se entrenan adultos y niños." },
+];
 ---
 <Layout
-  title="Academia | Padel FB"
-  description={`Clases de pádel de la Academia FB en ${site.city}.${names ? " " + names + "." : ""}`}
+  title={`Academia | Padel FB`}
+  description={`Clases de adultos e infantiles de la Academia FB en ${site.city}.`}
 >
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker">{ac.kicker || "Academia FB"}</p>
-      <h1>
-        {titleLines.map((line, i) => (
-          <>{i > 0 && <br />}{line}</>
-        ))}
-      </h1>
-      <p>{ac.intro}</p>
-      <div class="actions">
-        <a class="btn btn-lime" href={page("academia/inscripcion/")}>{ac.cta || "Inscripción"}</a>
-        <a class="btn btn-ghost" href={page("academia/infantiles/")}>Clases infantiles</a>
-      </div>
+      <p class="kicker">Academia FB</p>
+      <h1>Academia</h1>
+      <p>Clases de adultos e infantiles, inscripción y sedes donde se entrena.</p>
     </header>
-  </div>
 
-  <section>
-    <div class="wrap">
-      <div class="section-head">
-        <div>
-          <p class="kicker">{ac.teamKicker || "Equipo"}</p>
-          <h2>{ac.teamTitle || "Con quién entrenás"}</h2>
-        </div>
-        <p>{ac.teamNote}</p>
-      </div>
-      <div class="staff-list">
-        {staff.map((p) => (
-          <article class="staff-card">
-            {p.image && <img class="staff-photo" src={asset(p.image)} alt={p.name} />}
-            <div>
-              <p class="staff-role">{p.role}</p>
-              <h2>{p.name}</h2>
-              {p.bio && <p class="lead">{p.bio}</p>}
-              {p.bullets?.length > 0 && (
-                <ul class="staff-bullets">
-                  {p.bullets.map((b) => <li>{b}</li>)}
-                </ul>
-              )}
-            </div>
-          </article>
-        ))}
-      </div>
+    <div class="hub-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+      {links.map((l) => (
+        <a class="hub-card" href={page(l.href)}>
+          <p class="kicker" style="margin:0">{l.title}</p>
+          <h2>{l.title}</h2>
+          <p>{l.text}</p>
+        </a>
+      ))}
     </div>
-  </section>
-
-  {programs.length > 0 && (
-    <section style="padding-top:0">
-      <div class="wrap">
-        <div class="section-head">
-          <div>
-            <p class="kicker">{ac.programsKicker || "Programas"}</p>
-            <h2>{ac.programsTitle || "Qué entrenás"}</h2>
-          </div>
-        </div>
-        <div class="steps">
-          {programs.map((pr) => (
-            <article class="step">
-              <div class="n">{pr.n}</div>
-              <h3>{pr.title}</h3>
-              <p>{pr.text}</p>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  )}
+  </div>
 </Layout>
