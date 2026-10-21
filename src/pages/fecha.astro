@@ -2,7 +2,6 @@
 import Layout from "../layouts/Layout.astro";
 import { site } from "../data/site";
 import disp from "../data/disponibilidad.json";
-import ranking from "../data/ranking.json";
 import { CATS, DAYS } from "../lib/disponibilidad.js";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -10,11 +9,6 @@ const HOURS: string[] = [];
 for (let m = 8 * 60; m <= 24 * 60; m += 30) HOURS.push(`${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`);
 const FROM_HOURS = HOURS.slice(0, -3);
 const TO_HOURS = HOURS.slice(3);
-const season = (disp as any).temp || site.currentSeason;
-const pairs = (ranking as any[])
-  .filter((r) => r.temp === season && CATS.includes(r.cat) && String(r.name || "").includes("/"))
-  .map((r) => ({ name: String(r.name).trim(), cat: r.cat }))
-  .sort((a, b) => a.name.localeCompare(b.name, "es"));
 ---
 <Layout
   title={`${disp.week} | Padel FB`}
@@ -35,15 +29,6 @@ const pairs = (ranking as any[])
 
     {disp.open ? (
       <form class="form form-fecha" id="fecha-form">
-        {pairs.length > 0 && (
-          <label>Buscá tu pareja en el ranking
-            <input id="pair-pick" list="pair-options" placeholder="Escribí un apellido" autocomplete="off" />
-            <datalist id="pair-options">
-              {pairs.map((p) => <option value={p.name} label={p.cat} />)}
-            </datalist>
-            <small class="form-hint">Si ya juegan en la liga, elegila de la lista y se completa sola. Si son nuevos, escriban los nombres abajo.</small>
-          </label>
-        )}
         <div class="form-grid">
           <label>Primer integrante
             <input name="p1" required placeholder="Apellido y nombre" autocomplete="name" />
@@ -134,17 +119,6 @@ const pairs = (ranking as any[])
         });
       });
     }
-
-    const pick = document.querySelector("#pair-pick");
-    const pairOptions = [...document.querySelectorAll("#pair-options option")].map((o) => ({ name: o.value, cat: o.label }));
-    pick?.addEventListener("change", () => {
-      const found = pairOptions.find((p) => p.name === pick.value.trim());
-      if (!found || !form) return;
-      const [a, b] = found.name.split("/").map((s) => s.trim());
-      form.p1.value = a || "";
-      form.p2.value = b || "";
-      if (found.cat) form.cat.value = found.cat;
-    });
 
     form?.querySelectorAll("[name=day]").forEach((box) => {
       box.addEventListener("change", syncDays);

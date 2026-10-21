@@ -2,7 +2,8 @@ import { FIXTURE_PATH, FX_COLS, RESULTS_PATH } from "./constants.js";
 import { cleanMatch, downloadCsv, driveRow, matchKey, parseFixtureText } from "./csv.js";
 import { DISP_PATH } from "../lib/disponibilidad.js";
 import { buildFixture } from "../lib/fixturer.js";
-import { mergeArchivedMatches, weekKey } from "../lib/liga.js";
+import { mergeArchivedMatches, weekKey, weekNumber } from "../lib/liga.js";
+import { pairsMatch } from "../lib/scoring.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
 const isPending = (m) => !!m.pending && !String(m.away || "").trim();
@@ -33,6 +34,35 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     if (!list) return;
     const venues = (ctx.siteData.venues || []).filter((v) => v.liga !== false);
     list.innerHTML = venues.map((v) => `<option value="${escAttr(v.name)}"></option>`).join("");
+  }
+
+  function previousMeetings(m) {
+    if (!m.home || !m.away) return [];
+    const played = [...(ctx.results || []), ...(ctx.fixturePublished || [])].filter(
+      (p) => p.home && p.away && p.temp === m.temp && p.cat === m.cat && p.week !== m.week
+    );
+    const weeks = played
+      .filter((p) => (pairsMatch(p.home, m.home) && pairsMatch(p.away, m.away)) || (pairsMatch(p.home, m.away) && pairsMatch(p.away, m.home)))
+      .map((p) => p.week + (p.result ? ` (${p.result})` : ""));
+    return [...new Set(weeks)].sort((a, b) => weekNumber(a) - weekNumber(b));
+  }
+
+  function renderWarnings(games) {
+    const box = $("fx-warnings");
+    if (!box) return;
+    const list = games.map(({ m, i }) => ({ m, i, weeks: previousMeetings(m) })).filter((x) => x.weeks.length);
+    box.hidden = !list.length;
+    box.innerHTML = list.length
+      ? `<h3>Revisar · ${list.length} cruce${list.length === 1 ? "" : "s"} repetido${list.length === 1 ? "" : "s"}</h3>
+        <p class="admin-help">Estas parejas ya se enfrentaron en esta temporada. El fixtureador lo evita cuando hay otra opción; si está bien así, podés publicar igual.</p>
+        <ul>${list
+          .map(
+            ({ m, weeks }) =>
+              `<li><strong>${escAttr(m.home)}</strong> vs <strong>${escAttr(m.away)}</strong> <span>${escAttr(m.cat)} · ya jugaron en ${escAttr(weeks.join(", "))}</span></li>`
+          )
+          .join("")}</ul>`
+      : "";
+    return new Set(list.map((x) => x.i));
   }
 
   function renderPending() {
@@ -82,11 +112,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     renderVenues();
     renderPending();
     const games = ctx.fixture.map((m, i) => ({ m, i })).filter(({ m }) => !isPending(m));
+    const repeated = renderWarnings(games) || new Set();
     const empty = $("fx-empty");
     if (empty) empty.hidden = ctx.fixture.length > 0;
     $("fx-body").innerHTML = games
       .map(
-        ({ m, i }) => `<tr data-i="${i}">
+        ({ m, i }) => `<tr data-i="${i}"${repeated.has(i) ? ' class="is-rematch" title="Ya se enfrentaron en esta temporada"' : ""}>
           <td><input data-k="week" value="${escAttr(m.week)}" /></td>
           <td><input data-k="day" value="${escAttr(m.day)}" placeholder="Jueves" /></td>
           <td><input data-k="time" value="${escAttr(m.time)}" placeholder="19:00 - 20:30" /></td>
@@ -197,7 +228,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         pending.length ? `${pending.length} pendiente${pending.length === 1 ? "" : "s"}` : "sin pendientes",
       ];
       if (out.byes.length) parts.push(`${out.byes.length} no juega${out.byes.length === 1 ? "" : "n"}`);
-      if (rematches) parts.push(`${rematches} repite rival (no había otra opción)`);
+      if (rematches) parts.push(`${rematches} repite rival, mirá el aviso Revisar`);
       setMsg($("fx-msg"), `${week} armada: ${parts.join(" · ")}. Completá complejo y cancha, revisá y publicá.`, "ok");
       toast(`${week} armada`, "ok");
     } catch (err) {
@@ -249,7 +280,8 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       if (!k) return;
       ctx.fixture[i][k] = e.target.value;
       shell.markDirty("fixture");
-      updateSummary();
+      if (["home", "away", "cat", "week"].includes(k)) render();
+      else updateSummary();
     });
 
     $("fx-pending")?.addEventListener("change", (e) => {
@@ -343,12 +375,14 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       const season = ctx.siteData.currentSeason || "T4";
       const nextFixture = ctx.fixture.map((m) => cleanMatch(m, {}, season)).filter((m) => m.home || m.away);
       const incomplete = nextFixture.filter((m) => !m.pending && (!m.home || !m.away || !m.day || !m.time));
+      const repeated = nextFixture.filter((m) => previousMeetings(m).length).length;
       const ok = await confirmModal({
         title: "Publicar fixture",
         body:
           (incomplete.length
             ? `Ojo: ${incomplete.length} partido${incomplete.length === 1 ? "" : "s"} sin pareja, día u horario. `
             : "") +
+          (repeated ? `${repeated} cruce${repeated === 1 ? "" : "s"} ya se jugó en esta temporada (ver Revisar). ` : "") +
           "Se publica esta fecha. Las fechas que salgan del fixture quedan guardadas en Resultados, sin mezclar los scores. El sitio se actualiza en ~1 minuto.",
         confirmLabel: "Publicar fixture",
         danger: incomplete.length > 0,

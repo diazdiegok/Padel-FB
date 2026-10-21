@@ -845,6 +845,37 @@ body.is-admin main > .wrap {
   margin-bottom: 22px;
 }
 
+.fx-warnings {
+  margin: 0 0 18px;
+  padding: 16px;
+  border: 1px solid #ff7a59;
+  border-radius: 16px;
+  background: rgba(255, 122, 89, 0.08);
+}
+
+.fx-warnings h3 {
+  margin: 0 0 4px;
+  color: #ff7a59;
+}
+
+.fx-warnings ul {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.fx-warnings li span {
+  color: var(--muted);
+  font-size: 13px;
+  margin-left: 6px;
+}
+
+.admin-table tr.is-rematch td:first-child {
+  box-shadow: inset 3px 0 0 #ff7a59;
+}
+
 .fx-pending {
   margin: 0 0 18px;
   padding: 16px;
