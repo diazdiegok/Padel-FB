@@ -10,6 +10,10 @@ GITHUB_OWNER = "diazdiegok"
 GITHUB_REPO = "Padel-FB"
 SITE_ORIGIN = "https://diazdiegok.github.io,https://padel-fb.vercel.app"
 
+[[kv_namespaces]]
+binding = "AUTH_KV"
+id = "63f2d6288ea5479a8c29d62f1d5960d0"
+
 [[ratelimits]]
 name = "LOGIN_LIMITER"
 namespace_id = "1001"
