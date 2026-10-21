@@ -2,6 +2,6 @@
   "week": "Fecha 1",
   "temp": "T4",
   "deadline": "",
-  "open": false,
+  "open": true,
   "entries": []
 }
