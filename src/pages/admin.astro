@@ -46,14 +46,14 @@ import "../styles/admin.css";
 
       <div class="admin-nav-group">
         <div class="admin-nav-label">Liga</div>
-        <button class="admin-nav-btn" type="button" data-nav="temporadas">Temporadas</button>
+        <button class="admin-nav-btn on" type="button" data-nav="temporadas">Temporadas</button>
         <button class="admin-nav-btn" type="button" data-nav="parejas">Inscripciones de parejas</button>
         <button class="admin-nav-btn" type="button" data-nav="fecha">Fecha</button>
         <button class="admin-nav-btn" type="button" data-nav="fixture">Fixture</button>
         <button class="admin-nav-btn" type="button" data-nav="resultados">Resultados</button>
-        <button class="admin-nav-btn" type="button" data-nav="playoff">Playoff</button>
-        <button class="admin-nav-btn on" type="button" data-nav="ranking">Ranking</button>
+        <button class="admin-nav-btn" type="button" data-nav="ranking">Ranking</button>
         <button class="admin-nav-btn" type="button" data-nav="sedes">Sedes</button>
+        <button class="admin-nav-btn" type="button" data-nav="playoff">Playoff</button>
       </div>
       <div class="admin-nav-group">
         <div class="admin-nav-label">Academia</div>
@@ -80,8 +80,8 @@ import "../styles/admin.css";
         <div class="admin-topbar-left">
           <button class="admin-menu-btn" type="button" id="admin-menu-btn" aria-label="Menú">☰</button>
           <div>
-            <h1 id="admin-page-title">Ranking</h1>
-            <p class="admin-page-help" id="admin-page-help">La tabla se arma con las parejas inscriptas y los resultados. Acá corregís a mano y publicás.</p>
+            <h1 id="admin-page-title">Temporadas</h1>
+            <p class="admin-page-help" id="admin-page-help">Creá una temporada y dejala en juego. Ranking, fixture y fecha pasan a usar esa.</p>
           </div>
         </div>
         <div class="admin-topbar-right">
@@ -91,7 +91,7 @@ import "../styles/admin.css";
 
       <div class="admin-content">
         <!-- Temporadas -->
-        <section data-section="temporadas" hidden>
+        <section data-section="temporadas">
           <div class="admin-callout">
             <strong>En juego</strong>
             La temporada activa es la que usan el inicio, el ranking, el fixture y la fecha.
@@ -106,7 +106,7 @@ import "../styles/admin.css";
         </section>
 
         <!-- Ranking -->
-        <section data-section="ranking">
+        <section data-section="ranking" hidden>
           <div class="admin-section-tools">
             <button class="btn btn-ghost" type="button" id="csv-export">Exportar</button>
             <span class="tag" id="rank-count"></span>

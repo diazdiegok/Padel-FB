@@ -14,7 +14,7 @@ export function createShell(ctx, { onEnterSection, onDiscardSection }) {
   }
 
   function setSection(id, { force = false } = {}) {
-    if (!SECTIONS[id]) id = "ranking";
+    if (!SECTIONS[id]) id = "temporadas";
     if (!force && ctx.currentSection && ctx.currentSection !== id && ctx.dirty.has(ctx.currentSection)) {
       return confirmModal({
         title: "Cambios sin guardar",
@@ -69,7 +69,7 @@ export function createShell(ctx, { onEnterSection, onDiscardSection }) {
       $("admin-nav-backdrop")?.classList.remove("open");
     });
     window.addEventListener("hashchange", () => {
-      const id = location.hash.replace(/^#/, "") || "ranking";
+      const id = location.hash.replace(/^#/, "") || "temporadas";
       if (id === ctx.currentSection) return;
       setSection(id).then((ok) => {
         if (!ok) history.replaceState(null, "", "#" + ctx.currentSection);
@@ -78,8 +78,10 @@ export function createShell(ctx, { onEnterSection, onDiscardSection }) {
   }
 
   function initialSection() {
+    const nav = performance.getEntriesByType("navigation")[0];
+    if (nav?.type === "reload") return "temporadas";
     const fromHash = location.hash.replace(/^#/, "");
-    return SECTIONS[fromHash] ? fromHash : "ranking";
+    return SECTIONS[fromHash] ? fromHash : "temporadas";
   }
 
   return { bind, setSection, markDirty, clearDirty, initialSection };
