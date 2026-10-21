@@ -4,6 +4,7 @@ import { HIDDEN_CATS } from "./constants.js";
 import { createCms } from "./cms.js";
 import { createFecha } from "./fecha.js";
 import { createFixture } from "./fixture.js";
+import { createParejas } from "./parejas.js";
 import { createPlayoff } from "./playoff.js";
 import { normalizePlayoffs } from "../lib/playoff.js";
 import { createRanking } from "./ranking.js";
@@ -12,7 +13,7 @@ import { createSeasons } from "./seasons.js";
 import { createShell } from "./shell.js";
 import { $ } from "./ui.js";
 
-export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson }) {
+export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson, pairsJson }) {
   const ctx = {
     rows: structuredClone(rankingJson.filter((p) => !HIDDEN_CATS.has(p.cat))),
     siteData: structuredClone(siteJson),
@@ -20,6 +21,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
     fixturePublished: structuredClone(fixtureJson || []),
     results: structuredClone(resultsJson || []),
     disp: structuredClone(dispJson),
+    pairs: structuredClone(Array.isArray(pairsJson) ? pairsJson : []),
     playoffs: normalizePlayoffs(playoffJson),
     owner: siteJson.githubOwner,
     repo: siteJson.githubRepo,
@@ -38,12 +40,14 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   let fecha;
   let cms;
   let playoff;
+  let parejas;
 
   const shell = createShell(ctx, {
     onEnterSection(id) {
       if (id === "fecha") fecha?.reload();
       if (id === "resultados") results?.reload();
       if (id === "playoff") playoff?.reload();
+      if (id === "parejas") parejas?.reload();
     },
     onDiscardSection(id) {
       if (id === "fixture") {
@@ -53,6 +57,10 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
       if (id === "resultados") {
         for (const m of [...ctx.fixture, ...ctx.results]) m.result = m.appliedResult || "";
         results?.render();
+      }
+      if (id === "parejas") {
+        ctx.dirty.delete("parejas");
+        parejas?.reload();
       }
     },
   });
@@ -82,6 +90,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   });
   cms = createCms(ctx, api, shell);
   playoff = createPlayoff(ctx, api, shell);
+  parejas = createParejas(ctx, api, shell);
 
   async function showApp() {
     $("gate").hidden = true;
@@ -100,6 +109,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
     fixture.render();
     results.render();
     playoff.render();
+    parejas.render();
     cms.refreshAll();
     fecha.fill();
     fecha.reload();
@@ -117,6 +127,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   fecha.bind();
   cms.bind();
   playoff.bind();
+  parejas.bind();
 
   if (auth.isLoggedIn()) showApp();
 }

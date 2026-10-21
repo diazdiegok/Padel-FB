@@ -5,6 +5,7 @@ export const SITE_PATH = "src/data/site.json";
 export const FIXTURE_PATH = "src/data/fixture.json";
 export const RESULTS_PATH = "src/data/results.json";
 export const PLAYOFF_PATH = "src/data/playoff.json";
+export const PAIRS_PATH = "src/data/parejas.json";
 export const RANK_COLS = ["name", "cat", "pts", "pj", "dif", "pos", "temp"];
 export const FX_COLS = ["categoria", "partido", "complejo", "cancha", "dia", "horario"];
 export const CATS = [
@@ -51,6 +52,7 @@ export const SECTIONS = {
   resultados: { group: "Liga", title: "Resultados", help: "Cargá el score de cada partido. Al publicar se actualiza el ranking." },
   playoff: { group: "Liga", title: "Playoff", help: "Armá el cuadro de cada categoría, cargá días, horarios y resultados. La ganadora pasa sola a la siguiente ronda." },
   fecha: { group: "Liga", title: "Inscripciones de la fecha", help: "Lo que mandan las parejas desde el formulario /fecha/ de la web. Abrí o cerrá la carga y armá el fixture con esto." },
+  parejas: { group: "Liga", title: "Parejas inscriptas", help: "Las parejas se inscriben una vez por temporada en /inscribir-pareja/. En Fecha solo buscan su nombre y marcan los días." },
   sedes: { group: "Liga", title: "Sedes", help: "Complejos de la liga y la academia. Marcá dónde se muestra cada uno." },
   academia: { group: "Academia", title: "Adultos", help: "Profes, programas y textos de las clases de adultos." },
   infantiles: { group: "Academia", title: "Infantiles", help: "Textos, sedes y horarios de las clases infantiles." },

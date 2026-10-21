@@ -2,7 +2,14 @@
 import Layout from "../layouts/Layout.astro";
 import { site } from "../data/site";
 import disp from "../data/disponibilidad.json";
-import { CATS, DAYS } from "../lib/disponibilidad.js";
+import parejas from "../data/parejas.json";
+import { DAYS } from "../lib/disponibilidad.js";
+
+const base = import.meta.env.BASE_URL;
+const season = (disp as any).temp || site.currentSeason;
+const builtPairs = (parejas as any[])
+  .filter((p) => p.temp === season)
+  .map((p) => ({ id: p.id, p1: p.p1, p2: p.p2, cat: p.cat }));
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const HOURS: string[] = [];
@@ -29,19 +36,20 @@ const TO_HOURS = HOURS.slice(3);
 
     {disp.open ? (
       <form class="form form-fecha" id="fecha-form">
-        <div class="form-grid">
-          <label>Primer integrante
-            <input name="p1" required placeholder="Apellido y nombre" autocomplete="name" />
+        <div class="pair-picker" id="pair-picker">
+          <label>Buscá tu pareja
+            <input id="pair-q" type="search" placeholder="Escribí tu apellido" autocomplete="off" aria-controls="pair-results" />
           </label>
-          <label>Segundo integrante
-            <input name="p2" required placeholder="Apellido y nombre" autocomplete="off" />
-          </label>
+          <ul class="pair-results" id="pair-results" role="listbox" hidden></ul>
+          <div class="pair-chosen" id="pair-chosen" hidden>
+            <div>
+              <strong id="pair-chosen-name"></strong>
+              <span id="pair-chosen-cat"></span>
+            </div>
+            <button class="btn btn-ghost" type="button" id="pair-change">Cambiar</button>
+          </div>
+          <p class="form-hint">¿No aparece su pareja? <a href={`${base}inscribir-pareja/`}>Inscríbanla acá</a> (se hace una sola vez) y vuelvan.</p>
         </div>
-        <label>Categoría de la pareja
-          <select name="cat" required>
-            {CATS.map((c) => <option value={c}>{c}</option>)}
-          </select>
-        </label>
         <fieldset class="form-set">
           <legend>¿Necesitan recuperar fecha?</legend>
           <div class="seg">
@@ -93,20 +101,99 @@ const TO_HOURS = HOURS.slice(3);
     )}
   </div>
 
+  <script is:inline define:vars={{ builtPairs, season }}>
+    window.__fechaPairs = { builtPairs, season };
+  </script>
   <script>
     import site from "../data/site.json";
-    import { DAYS, cleanEntry, validateEntry } from "../lib/disponibilidad.js";
+    import { DAYS, cleanEntry, fold, validateEntry } from "../lib/disponibilidad.js";
 
     const apiUrl = String(site.apiUrl || "").replace(/\/$/, "");
     const form = document.querySelector("#fecha-form");
     const msg = document.querySelector("#fecha-msg");
     const bye = form?.querySelector("[name=bye]");
+    const { builtPairs = [], season = "" } = window.__fechaPairs || {};
+    let pairs = builtPairs;
+    let chosen = null;
 
     function setMsg(text, kind) {
       if (!msg) return;
       msg.textContent = text;
       msg.className = "admin-msg" + (kind ? " " + kind : "");
     }
+
+    const q = document.querySelector("#pair-q");
+    const results = document.querySelector("#pair-results");
+    const chosenBox = document.querySelector("#pair-chosen");
+
+    async function loadPairs() {
+      if (!apiUrl) return;
+      try {
+        const res = await fetch(`${apiUrl}/pairs?temp=${encodeURIComponent(season)}`);
+        if (res.ok) {
+          const live = await res.json();
+          if (Array.isArray(live)) pairs = live;
+        }
+      } catch {
+        /* queda la lista publicada */
+      }
+      if (q?.value) showResults();
+    }
+
+    function showResults() {
+      const term = fold(q.value);
+      results.innerHTML = "";
+      if (term.length < 2) {
+        results.hidden = true;
+        return;
+      }
+      const words = term.split(" ");
+      const found = pairs.filter((p) => {
+        const blob = fold(`${p.p1} ${p.p2}`);
+        return words.every((w) => blob.includes(w));
+      }).slice(0, 8);
+      if (!found.length) {
+        const li = document.createElement("li");
+        li.className = "pair-none";
+        li.textContent = "No encontramos esa pareja. Si no se inscribieron, usen el link de abajo.";
+        results.append(li);
+      }
+      for (const p of found) {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.setAttribute("role", "option");
+        const name = document.createElement("strong");
+        name.textContent = `${p.p1} / ${p.p2}`;
+        const cat = document.createElement("span");
+        cat.textContent = p.cat;
+        btn.append(name, cat);
+        btn.addEventListener("click", () => choose(p));
+        li.append(btn);
+        results.append(li);
+      }
+      results.hidden = false;
+    }
+
+    function choose(p) {
+      chosen = p;
+      document.querySelector("#pair-chosen-name").textContent = `${p.p1} / ${p.p2}`;
+      document.querySelector("#pair-chosen-cat").textContent = p.cat;
+      chosenBox.hidden = false;
+      results.hidden = true;
+      q.closest("label").hidden = true;
+      setMsg("");
+    }
+
+    q?.addEventListener("input", showResults);
+    document.querySelector("#pair-change")?.addEventListener("click", () => {
+      chosen = null;
+      chosenBox.hidden = true;
+      q.closest("label").hidden = false;
+      q.value = "";
+      q.focus();
+    });
+    loadPairs();
 
     function syncDays() {
       const off = Boolean(bye?.checked);
@@ -144,10 +231,15 @@ const TO_HOURS = HOURS.slice(3);
         const to = form.querySelector(`[data-to="${day}"]`)?.value || "";
         if (on) days[day] = from && to ? `${from} - ${to}` : "";
       });
+      if (!chosen) {
+        setMsg("Buscá y elegí su pareja arriba. Si no aparece, inscríbanla primero.", "err");
+        q?.focus();
+        return;
+      }
       const entry = cleanEntry({
-        p1: form.p1.value,
-        p2: form.p2.value,
-        cat: form.cat.value,
+        p1: chosen.p1,
+        p2: chosen.p2,
+        cat: chosen.cat,
         recover: form.recover.value === "si",
         bye: bye?.checked,
         days,
@@ -169,7 +261,7 @@ const TO_HOURS = HOURS.slice(3);
         const res = await fetch(`${apiUrl}/availability`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...entry, website: form.website.value }),
+          body: JSON.stringify({ ...entry, pairId: chosen.id, website: form.website.value }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.message || "No se pudo enviar.");

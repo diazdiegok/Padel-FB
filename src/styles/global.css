@@ -650,6 +650,46 @@ footer a:hover { color: var(--lime); }
 .day-hours { display: flex; gap: 8px; }
 .day-hours select { flex: 1; min-width: 0; padding: 10px 12px; }
 .day-hours select:disabled { opacity: 0.4; }
+.pair-picker { display: grid; gap: 10px; position: relative; }
+.pair-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  max-height: 320px;
+  overflow: auto;
+}
+.pair-results li + li { border-top: 1px solid var(--line); }
+.pair-results button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: none;
+  border: 0;
+  color: var(--cream);
+  text-align: left;
+  cursor: pointer;
+}
+.pair-results button:hover, .pair-results button:focus-visible { background: rgba(214, 255, 58, 0.08); outline: none; }
+.pair-results button span { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.pair-none { padding: 12px 16px; color: var(--muted); }
+.pair-chosen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--lime);
+  background: var(--bg-2);
+}
+.pair-chosen div { display: grid; gap: 2px; }
+.pair-chosen span { color: var(--muted); font-size: 13px; }
+.form-hint a { color: var(--lime); }
+.insc-done { display: grid; gap: 18px; justify-items: start; padding: 48px 0; }
+.pair-chosen[hidden], .insc-done[hidden], .pair-results[hidden], .pair-picker label[hidden] { display: none; }
 .form-hint { display: block; color: var(--muted); font-size: 13px; font-weight: 400; text-transform: none; letter-spacing: 0; }
 .hp { position: absolute; left: -9999px; height: 0; width: 0; opacity: 0; }
 .join-liga {

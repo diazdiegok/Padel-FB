@@ -1,0 +1,93 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { site } from "../data/site";
+import { CATS } from "../lib/disponibilidad.js";
+import { seasonLabel } from "../lib/liga.js";
+
+const base = import.meta.env.BASE_URL;
+---
+<Layout
+  title="Inscripción de parejas | Padel FB"
+  description="Inscribí tu pareja en la liga de Padel FB en Paraná. Se hace una sola vez por temporada."
+>
+  <div class="wrap">
+    <header class="page-hero">
+      <p class="kicker">Inscripción de parejas · {seasonLabel(site.currentSeason)}</p>
+      <h1>Inscribí tu pareja</h1>
+      <p>
+        Se hace una sola vez por temporada. Después, cada semana solo entran a Fecha, buscan su pareja y marcan
+        los días que pueden jugar.
+      </p>
+    </header>
+
+    <form class="form form-fecha" id="insc-form">
+      <div class="form-grid">
+        <label>Primer integrante
+          <input name="p1" required maxlength="80" placeholder="Apellido y nombre" autocomplete="name" />
+        </label>
+        <label>Segundo integrante
+          <input name="p2" required maxlength="80" placeholder="Apellido y nombre" autocomplete="off" />
+        </label>
+      </div>
+      <label>Categoría de la pareja
+        <select name="cat" required>
+          <option value="">Elegí la categoría</option>
+          {CATS.map((c) => <option value={c}>{c}</option>)}
+        </select>
+      </label>
+      <p class="form-hint">Escriban los nombres completos y bien: así aparecen en el fixture, los resultados y el ranking.</p>
+      <input class="hp" name="website" tabindex="-1" autocomplete="off" />
+      <button class="btn btn-lime" type="submit" id="insc-send">Inscribir pareja</button>
+      <p class="admin-msg" id="insc-msg" aria-live="polite"></p>
+    </form>
+
+    <div class="empty insc-done" id="insc-done" hidden>
+      <p><strong>Listo.</strong> <span id="insc-done-text"></span></p>
+      <a class="btn btn-lime" href={`${base}fecha/`}>Ir a Fecha</a>
+    </div>
+  </div>
+
+  <script>
+    import site from "../data/site.json";
+
+    const apiUrl = String(site.apiUrl || "").replace(/\/$/, "");
+    const form = document.querySelector("#insc-form");
+    const msg = document.querySelector("#insc-msg");
+
+    function setMsg(text, kind) {
+      if (!msg) return;
+      msg.textContent = text;
+      msg.className = "admin-msg" + (kind ? " " + kind : "");
+    }
+
+    form?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (form.website.value) return;
+      const p1 = form.p1.value.trim();
+      const p2 = form.p2.value.trim();
+      const cat = form.cat.value;
+      if (!p1 || !p2) return setMsg("Completá los dos integrantes de la pareja.", "err");
+      if (!cat) return setMsg("Elegí la categoría.", "err");
+      if (!apiUrl) return setMsg("La inscripción todavía no está configurada.", "err");
+      const btn = document.querySelector("#insc-send");
+      btn.disabled = true;
+      setMsg("Enviando…");
+      try {
+        const res = await fetch(`${apiUrl}/pairs`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ p1, p2, cat, temp: site.currentSeason, website: form.website.value }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || "No se pudo inscribir.");
+        form.hidden = true;
+        document.querySelector("#insc-done-text").textContent =
+          `${p1} / ${p2} quedó inscripta en ${cat}. Cada semana entren a Fecha, busquen su pareja y marquen los días.`;
+        document.querySelector("#insc-done").hidden = false;
+      } catch (ex) {
+        setMsg(ex.message || "No se pudo inscribir.", "err");
+        btn.disabled = false;
+      }
+    });
+  </script>
+</Layout>

@@ -1,6 +1,9 @@
 const PASS_SALT = "liga-fb-admin-v1";
 const DISP_PATH = "src/data/disponibilidad.json";
+const PAIRS_PATH = "src/data/parejas.json";
 const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const CATS = ["A Masculina", "B Masculina", "C Masculina", "A Femenino", "B Femenino", "C Femenino"];
+const PAIRS_CACHE = "https://padel-fb-api.cache/pairs";
 
 const DATA_FILE = /^src\/data\/[a-z0-9_-]+\.json$/;
 const IMAGE_FILE = /^public\/images\/[a-z0-9_-]+\.(png|jpg|webp|gif)$/;
@@ -251,12 +254,76 @@ async function allowed(limiter, request, scope) {
   return success;
 }
 
-async function readAvailability(env) {
-  const path = `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${DISP_PATH}?ref=main`;
+async function readData(env, file, fallback) {
+  const path = `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${file}?ref=main`;
   const res = await github(env, path);
+  if (res.status === 404 && fallback !== undefined) return { sha: undefined, json: fallback };
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "No se pudo leer la fecha.");
+  if (!res.ok) throw new Error(data.message || "No se pudieron leer los datos.");
   return { sha: data.sha, json: JSON.parse(decodeBase64(data.content)) };
+}
+
+async function writeData(env, file, json, sha, message) {
+  const body = { message, content: encodeBase64(JSON.stringify(json, null, 2) + "\n"), branch: "main" };
+  if (sha) body.sha = sha;
+  const path = `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${file}`;
+  const saved = await github(env, path, { method: "PUT", body: JSON.stringify(body) });
+  if (saved.ok) return true;
+  if (saved.status === 409 || saved.status === 422) return false;
+  const data = await saved.json().catch(() => ({}));
+  throw new Error(data.message || "No se pudo guardar.");
+}
+
+async function readAvailability(env) {
+  return readData(env, DISP_PATH);
+}
+
+async function readPairs(env) {
+  const file = await readData(env, PAIRS_PATH, []);
+  return { ...file, json: Array.isArray(file.json) ? file.json : [] };
+}
+
+function cleanName(value) {
+  return String(value || "").replace(/\s+/g, " ").trim().slice(0, 80);
+}
+
+async function registerPair(env, raw) {
+  const pair = {
+    id: `p${Date.now().toString(36)}${crypto.randomUUID().slice(0, 4)}`,
+    createdAt: new Date().toISOString(),
+    temp: String(raw.temp || "").trim().toUpperCase(),
+    cat: String(raw.cat || "").trim(),
+    p1: cleanName(raw.p1),
+    p2: cleanName(raw.p2),
+  };
+  if (!pair.p1 || !pair.p2) throw new Error("Completá los dos integrantes de la pareja.");
+  if (fold(pair.p1) === fold(pair.p2)) throw new Error("Los dos integrantes no pueden ser la misma persona.");
+  if (!CATS.includes(pair.cat)) throw new Error("Elegí la categoría.");
+  if (!/^T\d{1,3}$/.test(pair.temp)) throw new Error("Temporada inválida.");
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const file = await readPairs(env);
+    const same = file.json.find((row) => row.temp === pair.temp && pairKey(row) === pairKey(pair));
+    if (same) throw new Error(`Esta pareja ya está inscripta en ${same.cat}. Ya pueden anotarse en Fecha.`);
+    const saved = await writeData(env, PAIRS_PATH, [...file.json, pair], file.sha, `Inscribe a ${pair.p1} / ${pair.p2} en ${pair.cat}.`);
+    if (saved) {
+      await caches.default.delete(PAIRS_CACHE);
+      return { ok: true, pair: { id: pair.id, p1: pair.p1, p2: pair.p2, cat: pair.cat } };
+    }
+    await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
+  }
+  throw new Error("Hubo muchos envíos juntos. Probá de nuevo en unos segundos.");
+}
+
+async function listPairs(env) {
+  const cached = await caches.default.match(PAIRS_CACHE);
+  if (cached) return cached.json();
+  const file = await readPairs(env);
+  const list = file.json.map((p) => ({ id: p.id, temp: p.temp, cat: p.cat, p1: p.p1, p2: p.p2 }));
+  await caches.default.put(
+    PAIRS_CACHE,
+    new Response(JSON.stringify(list), { headers: { "Content-Type": "application/json", "Cache-Control": "max-age=30" } })
+  );
+  return list;
 }
 
 function fold(value) {
@@ -269,8 +336,12 @@ function fold(value) {
     .trim();
 }
 
+function personKey(name) {
+  return fold(name).split(" ").filter(Boolean).sort().join(" ");
+}
+
 function pairKey(entry) {
-  return [fold(entry.p1), fold(entry.p2)].sort().join("|");
+  return [personKey(entry.p1), personKey(entry.p2)].sort().join("|");
 }
 
 function cleanAvailability(raw) {
@@ -303,27 +374,29 @@ function validateAvailability(entry) {
 }
 
 async function appendAvailability(env, raw) {
-  const entry = cleanAvailability(raw);
+  const pairId = String(raw.pairId || "").trim();
+  if (!pairId) throw new Error("Elegí tu pareja. Si no aparece, inscribila primero en Inscripción de parejas.");
+  const pairs = await readPairs(env);
+  const pair = pairs.json.find((p) => p.id === pairId);
+  if (!pair) throw new Error("No encontramos esa pareja. Inscribila primero en Inscripción de parejas.");
+  const entry = { ...cleanAvailability({ ...raw, p1: pair.p1, p2: pair.p2, cat: pair.cat }), pairId };
   const error = validateAvailability(entry);
   if (error) throw new Error(error);
-  const file = await readAvailability(env);
-  if (!file.json.open) throw new Error("La carga de esta fecha ya está cerrada.");
-  if ((file.json.entries || []).some((row) => pairKey(row) === pairKey(entry))) {
-    throw new Error(`Esta pareja ya está anotada en ${file.json.week || "la fecha"}.`);
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const file = await readAvailability(env);
+    if (!file.json.open) throw new Error("La carga de esta fecha ya está cerrada.");
+    if (file.json.temp && pair.temp && file.json.temp !== pair.temp) {
+      throw new Error(`Esa pareja está inscripta en ${pair.temp} y la fecha es de ${file.json.temp}. Inscribila para esta temporada.`);
+    }
+    if ((file.json.entries || []).some((row) => row.pairId === pairId || pairKey(row) === pairKey(entry))) {
+      throw new Error(`Esta pareja ya está anotada en ${file.json.week || "la fecha"}.`);
+    }
+    const next = { ...file.json, entries: [...(file.json.entries || []), entry] };
+    const saved = await writeData(env, DISP_PATH, next, file.sha, `Carga disponibilidad de ${entry.p1} / ${entry.p2} en ${file.json.week}.`);
+    if (saved) return { ok: true, week: file.json.week, pair: `${entry.p1} / ${entry.p2}` };
+    await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
   }
-  file.json.entries = [...(file.json.entries || []), entry];
-  const content = encodeBase64(JSON.stringify(file.json, null, 2) + "\n");
-  const body = JSON.stringify({
-    message: `Carga disponibilidad de ${entry.p1} / ${entry.p2} en ${file.json.week}.`,
-    content,
-    sha: file.sha,
-    branch: "main",
-  });
-  const path = `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${DISP_PATH}`;
-  const saved = await github(env, path, { method: "PUT", body });
-  const data = await saved.json();
-  if (!saved.ok) throw new Error(data.message || "No se pudo guardar la disponibilidad.");
-  return { ok: true, week: file.json.week };
+  throw new Error("Hubo muchos envíos juntos. Probá de nuevo en unos segundos.");
 }
 
 export default {
@@ -386,6 +459,21 @@ export default {
           return response(request, env, { message: "Muchos envíos seguidos. Esperá un minuto y probá de nuevo." }, 429);
         }
         return response(request, env, await appendAvailability(env, body));
+      }
+
+      if (url.pathname === "/pairs" && request.method === "GET") {
+        const temp = String(url.searchParams.get("temp") || "").toUpperCase();
+        const list = await listPairs(env);
+        return response(request, env, temp ? list.filter((p) => p.temp === temp) : list);
+      }
+
+      if (url.pathname === "/pairs" && request.method === "POST") {
+        const body = await request.json();
+        if (body.website) return response(request, env, { ok: true });
+        if (!(await allowed(env.FORM_LIMITER, request, "form"))) {
+          return response(request, env, { message: "Muchos envíos seguidos. Esperá un minuto y probá de nuevo." }, 429);
+        }
+        return response(request, env, await registerPair(env, body));
       }
 
       return response(request, env, { message: "No encontrado." }, 404);

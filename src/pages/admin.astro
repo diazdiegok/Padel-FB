@@ -52,6 +52,7 @@ import "../styles/admin.css";
         <button class="admin-nav-btn" type="button" data-nav="resultados">Resultados</button>
         <button class="admin-nav-btn" type="button" data-nav="playoff">Playoff</button>
         <button class="admin-nav-btn" type="button" data-nav="fecha">Fecha · Inscripciones</button>
+        <button class="admin-nav-btn" type="button" data-nav="parejas">Parejas inscriptas</button>
         <button class="admin-nav-btn" type="button" data-nav="sedes">Sedes</button>
       </div>
       <div class="admin-nav-group">
@@ -335,13 +336,33 @@ import "../styles/admin.css";
           </div>
           <div class="disp-summary" id="disp-summary"></div>
           <input class="admin-search" id="disp-search" type="search" placeholder="Buscar jugador…" autocomplete="off" />
-          <p class="admin-help">Circuito de cada semana: las parejas se anotan en /fecha/ → cerrás la carga → armás el fixture → publicás → abrís la próxima fecha.</p>
+          <p class="admin-help">Circuito de cada semana: las parejas inscriptas eligen su nombre y marcan días en /fecha/ → cerrás la carga → armás el fixture → publicás → abrís la próxima fecha.</p>
           <p class="admin-msg" id="disp-msg"></p>
           <div id="disp-list"></div>
           <div class="admin-sticky-bar">
             <p class="admin-sticky-note">Guardá para publicar semana, deadline y estado abierta/cerrada.</p>
             <div class="admin-sticky-actions">
               <button class="btn btn-lime" type="button" id="disp-publish">Guardar fecha</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Parejas -->
+        <section data-section="parejas" hidden>
+          <div class="admin-section-tools">
+            <button class="btn btn-ghost" type="button" id="pairs-reload">Actualizar lista</button>
+            <button class="btn btn-ghost" type="button" id="pairs-add">+ Pareja</button>
+            <button class="btn btn-ghost" type="button" id="pairs-import">Traer parejas del ranking</button>
+            <span class="tag" id="pairs-count"></span>
+          </div>
+          <input class="admin-search" id="pairs-search" type="search" placeholder="Buscar jugador…" autocomplete="off" />
+          <p class="admin-help">Corregí nombres o categoría si se equivocaron. Las marcadas como Repetida están inscriptas dos veces: quitá una.</p>
+          <p class="admin-msg" id="pairs-msg"></p>
+          <div id="pairs-list"></div>
+          <div class="admin-sticky-bar">
+            <p class="admin-sticky-note">Guardá para que los cambios aparezcan en el buscador de Fecha.</p>
+            <div class="admin-sticky-actions">
+              <button class="btn btn-lime" type="button" id="pairs-publish">Guardar parejas</button>
             </div>
           </div>
         </section>
@@ -542,8 +563,9 @@ import "../styles/admin.css";
     import dispJson from "../data/disponibilidad.json";
     import resultsJson from "../data/results.json";
     import playoffJson from "../data/playoff.json";
+    import pairsJson from "../data/parejas.json";
     import { bootAdmin } from "../admin/main.js";
 
-    bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson });
+    bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson, pairsJson });
   </script>
 </Layout>
