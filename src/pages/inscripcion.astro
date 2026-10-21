@@ -1,63 +1,31 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { site } from "../data/site";
+import { page } from "../lib/paths";
 ---
 <Layout
-  title="Inscripción | Padel FB"
-  description="Anotate a Padel FB o a las clases de la academia en Paraná. Te confirmamos por WhatsApp."
+  title="Sumate | Padel FB"
+  description="Inscribí tu pareja en la liga de Padel FB o anotate a las clases de la academia en Paraná."
 >
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker">Un solo formulario</p>
-      <h1>Sumate</h1>
-      <p>Liga, academia o las dos. El mensaje sale por WhatsApp con los datos armados.</p>
+      <p class="kicker">Sumate</p>
+      <h1>¿A qué te querés sumar?</h1>
+      <p>Elegí una opción y te llevamos a su inscripción.</p>
     </header>
 
-    <form class="form" id="form" style="padding: 32px 0 80px">
-      <label>Nombre
-        <input name="nombre" required placeholder="Tu nombre y apellido" />
-      </label>
-      <label>WhatsApp
-        <input name="tel" required placeholder="Ej. 343 555 0000" />
-      </label>
-      <label>Quiero
-        <select name="tipo">
-          <option>Liga</option>
-          <option>Clases de academia</option>
-          <option>Liga + academia</option>
-        </select>
-      </label>
-      <label>Categoría / nivel
-        <select name="cat">
-          <option>A</option>
-          <option selected>B</option>
-          <option>C</option>
-          <option>Niños</option>
-          <option>No sé — me orientan</option>
-        </select>
-      </label>
-      <label>Comentario
-        <textarea name="nota" rows="3" placeholder="Días, horario, si ya jugaste en la liga…"></textarea>
-      </label>
-      <button class="btn btn-lime" type="submit">Enviar por WhatsApp</button>
-    </form>
+    <div class="hub-grid sumate-grid">
+      <a class="hub-card" href={page("inscribir-pareja/")}>
+        <p class="kicker" style="margin:0">Liga</p>
+        <h2>Competir en la liga</h2>
+        <p>Inscribí tu pareja una vez por temporada. Después cada semana marcan los días en Fecha.</p>
+        <span class="btn btn-lime">Inscribir pareja</span>
+      </a>
+      <a class="hub-card" href={page("academia/inscripcion/")}>
+        <p class="kicker" style="margin:0">Academia</p>
+        <h2>Tomar clases</h2>
+        <p>Adultos o infantiles, en la sede y horario que te quede mejor. Te confirmamos por WhatsApp.</p>
+        <span class="btn btn-lime">Quiero clases</span>
+      </a>
+    </div>
   </div>
-
-  <script define:vars={{ number: site.whatsapp }}>
-    document.querySelector("#form")?.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const data = Object.fromEntries(new FormData(e.target));
-      const text = [
-        "Hola, quiero sumarme a Padel FB.",
-        `Nombre: ${data.nombre}`,
-        `Tel: ${data.tel}`,
-        `Quiero: ${data.tipo}`,
-        `Nivel: ${data.cat}`,
-        data.nota ? `Nota: ${data.nota}` : null,
-      ]
-        .filter(Boolean)
-        .join("\n");
-      window.open("https://wa.me/" + number + "?text=" + encodeURIComponent(text), "_blank");
-    });
-  </script>
 </Layout>

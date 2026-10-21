@@ -1,10 +1,13 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { site } from "../data/site";
+import config from "../data/inscripcion-parejas.json";
 import { CATS } from "../lib/disponibilidad.js";
 import { seasonLabel } from "../lib/liga.js";
 
 const base = import.meta.env.BASE_URL;
+const deadline = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(config.deadline || "") ? config.deadline : "";
+const closedAtBuild = config.open === false || (Boolean(deadline) && Date.now() > Date.parse(`${deadline}:00-03:00`));
 ---
 <Layout
   title="Inscripción de parejas | Padel FB"
@@ -18,15 +21,22 @@ const base = import.meta.env.BASE_URL;
         Se hace una sola vez por temporada. Después, cada semana solo entran a Fecha, buscan su pareja y marcan
         los días que pueden jugar.
       </p>
+      <p class="tag" id="insc-deadline" hidden></p>
     </header>
 
-    <form class="form form-fecha" id="insc-form">
+    <form class="form form-fecha" id="insc-form" hidden={closedAtBuild}>
       <div class="form-grid">
         <label>Primer integrante
           <input name="p1" required maxlength="80" placeholder="Apellido y nombre" autocomplete="name" />
         </label>
+        <label>WhatsApp
+          <input name="tel1" required inputmode="tel" maxlength="20" placeholder="Ej. 343 555 0000" autocomplete="tel" />
+        </label>
         <label>Segundo integrante
           <input name="p2" required maxlength="80" placeholder="Apellido y nombre" autocomplete="off" />
+        </label>
+        <label>WhatsApp
+          <input name="tel2" required inputmode="tel" maxlength="20" placeholder="Ej. 343 555 0000" autocomplete="off" />
         </label>
       </div>
       <label>Categoría de la pareja
@@ -35,11 +45,20 @@ const base = import.meta.env.BASE_URL;
           {CATS.map((c) => <option value={c}>{c}</option>)}
         </select>
       </label>
-      <p class="form-hint">Escriban los nombres completos y bien: así aparecen en el fixture, los resultados y el ranking.</p>
+      <p class="form-hint">
+        Escriban los nombres completos y bien: así aparecen en el fixture, los resultados y el ranking. Los WhatsApp
+        solo los ve la organización.
+      </p>
       <input class="hp" name="website" tabindex="-1" autocomplete="off" />
       <button class="btn btn-lime" type="submit" id="insc-send">Inscribir pareja</button>
       <p class="admin-msg" id="insc-msg" aria-live="polite"></p>
+      <a class="btn btn-ghost" id="insc-go-fecha" href={`${base}fecha/`} hidden>Ir a Fecha</a>
     </form>
+
+    <div class="empty insc-done" id="insc-closed" hidden={!closedAtBuild}>
+      <p><strong>Inscripción cerrada.</strong> <span id="insc-closed-text">Por ahora no se toman parejas nuevas. Consultá a la organización por WhatsApp.</span></p>
+      <a class="btn btn-ghost" href={`${base}fecha/`}>Ya estamos inscriptos: ir a Fecha</a>
+    </div>
 
     <div class="empty insc-done" id="insc-done" hidden>
       <p><strong>Listo.</strong> <span id="insc-done-text"></span></p>
@@ -49,10 +68,15 @@ const base = import.meta.env.BASE_URL;
 
   <script>
     import site from "../data/site.json";
+    import { fold } from "../lib/disponibilidad.js";
 
     const apiUrl = String(site.apiUrl || "").replace(/\/$/, "");
     const form = document.querySelector("#insc-form");
     const msg = document.querySelector("#insc-msg");
+    const goFecha = document.querySelector("#insc-go-fecha");
+    const personKey = (name) => fold(name).split(" ").filter(Boolean).sort().join(" ");
+    const pairKey = (p) => [personKey(p.p1), personKey(p.p2)].sort().join("|");
+    let registered = [];
 
     function setMsg(text, kind) {
       if (!msg) return;
@@ -60,14 +84,65 @@ const base = import.meta.env.BASE_URL;
       msg.className = "admin-msg" + (kind ? " " + kind : "");
     }
 
+    function deadlineText(deadline) {
+      const [date, time] = deadline.split("T");
+      const [, month, day] = date.split("-");
+      return `${Number(day)}/${Number(month)} a las ${time}`;
+    }
+
+    function showClosed(text) {
+      form.hidden = true;
+      document.querySelector("#insc-closed").hidden = false;
+      if (text) document.querySelector("#insc-closed-text").textContent = text;
+    }
+
+    function repeatedText(same) {
+      return `${same.p1} / ${same.p2} ya está inscripta en ${same.cat}. Está repetida: no hace falta inscribirla de nuevo, búsquenla directo en Fecha.`;
+    }
+
+    if (apiUrl) {
+      fetch(`${apiUrl}/pairs/status`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((state) => {
+          if (!state) return;
+          if (!state.open) return showClosed(state.message);
+          form.hidden = false;
+          document.querySelector("#insc-closed").hidden = true;
+          const tag = document.querySelector("#insc-deadline");
+          if (state.deadline && tag) {
+            tag.textContent = `Inscripción abierta hasta el ${deadlineText(state.deadline)}`;
+            tag.hidden = false;
+          }
+        })
+        .catch(() => {});
+      fetch(`${apiUrl}/pairs?temp=${encodeURIComponent(site.currentSeason)}`)
+        .then((r) => (r.ok ? r.json() : []))
+        .then((list) => {
+          if (Array.isArray(list)) registered = list;
+        })
+        .catch(() => {});
+    }
+
     form?.addEventListener("submit", async (e) => {
       e.preventDefault();
       if (form.website.value) return;
+      goFecha.hidden = true;
       const p1 = form.p1.value.trim();
       const p2 = form.p2.value.trim();
+      const tel1 = form.tel1.value.trim();
+      const tel2 = form.tel2.value.trim();
       const cat = form.cat.value;
+      const digits = (v) => v.replace(/\D/g, "").length;
       if (!p1 || !p2) return setMsg("Completá los dos integrantes de la pareja.", "err");
+      if (digits(tel1) < 8 || digits(tel2) < 8) {
+        return setMsg("Dejá el WhatsApp de cada integrante, con característica (ej. 343 555 0000).", "err");
+      }
       if (!cat) return setMsg("Elegí la categoría.", "err");
+      const same = registered.find((p) => pairKey(p) === pairKey({ p1, p2 }));
+      if (same) {
+        goFecha.hidden = false;
+        return setMsg(repeatedText(same), "err");
+      }
       if (!apiUrl) return setMsg("La inscripción todavía no está configurada.", "err");
       const btn = document.querySelector("#insc-send");
       btn.disabled = true;
@@ -76,16 +151,21 @@ const base = import.meta.env.BASE_URL;
         const res = await fetch(`${apiUrl}/pairs`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ p1, p2, cat, temp: site.currentSeason, website: form.website.value }),
+          body: JSON.stringify({ p1, p2, tel1, tel2, cat, temp: site.currentSeason, website: form.website.value }),
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.message || "No se pudo inscribir.");
+        if (!res.ok) {
+          if (/ya está inscripta/.test(data.message || "")) goFecha.hidden = false;
+          if (/cerrada|cerró/.test(data.message || "")) return showClosed(data.message);
+          throw new Error(data.message || "No se pudo inscribir.");
+        }
         form.hidden = true;
         document.querySelector("#insc-done-text").textContent =
           `${p1} / ${p2} quedó inscripta en ${cat}. Cada semana entren a Fecha, busquen su pareja y marquen los días.`;
         document.querySelector("#insc-done").hidden = false;
       } catch (ex) {
         setMsg(ex.message || "No se pudo inscribir.", "err");
+      } finally {
         btn.disabled = false;
       }
     });

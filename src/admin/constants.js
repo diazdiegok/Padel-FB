@@ -5,6 +5,7 @@ export const SITE_PATH = "src/data/site.json";
 export const FIXTURE_PATH = "src/data/fixture.json";
 export const RESULTS_PATH = "src/data/results.json";
 export const PLAYOFF_PATH = "src/data/playoff.json";
+export const PAIRS_CONFIG_PATH = "src/data/inscripcion-parejas.json";
 export const PAIRS_PATH = "src/data/parejas.json";
 export const RANK_COLS = ["name", "cat", "pts", "pj", "dif", "pos", "temp"];
 export const FX_COLS = ["categoria", "partido", "complejo", "cancha", "dia", "horario"];

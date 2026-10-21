@@ -59,6 +59,19 @@ export function createApi(ctx) {
     return data;
   }
 
+  async function worker(path, body) {
+    if (!ctx.API_URL) throw new Error("Falta configurar la API segura del sitio.");
+    ctx.token = getPublishToken();
+    const res = await fetch(`${ctx.API_URL}${path}`, {
+      method: body ? "POST" : "GET",
+      headers: { Authorization: "Bearer " + ctx.token, "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(publishError({ message: data.message || "Error " + res.status }));
+    return data;
+  }
+
   async function readRemoteJson(filePath, fallback) {
     try {
       const file = await api(`/repos/${ctx.owner}/${ctx.repo}/contents/${filePath}?ref=main`);
@@ -134,6 +147,7 @@ export function createApi(ctx) {
 
   return {
     api,
+    worker,
     readRemoteJson,
     publishFile,
     publishFiles,

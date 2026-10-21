@@ -348,14 +348,25 @@ import "../styles/admin.css";
 
         <!-- Parejas -->
         <section data-section="parejas" hidden>
+          <div class="admin-panel">
+            <div class="admin-toolbar">
+              <label class="chk"><input id="pairs-open" type="checkbox" checked /> Inscripción abierta</label>
+              <label class="admin-week">Cierra el
+                <input id="pairs-deadline" type="datetime-local" />
+              </label>
+              <span class="admin-status-pill open" id="pairs-status">Inscripción abierta</span>
+            </div>
+            <p class="admin-help">Si ponés fecha de cierre, a esa hora la web deja de aceptar parejas sola. Destildá para cerrarla ya. Se aplica al tocar Guardar parejas.</p>
+          </div>
           <div class="admin-section-tools">
             <button class="btn btn-ghost" type="button" id="pairs-reload">Actualizar lista</button>
             <button class="btn btn-ghost" type="button" id="pairs-add">+ Pareja</button>
             <button class="btn btn-ghost" type="button" id="pairs-import">Traer parejas del ranking</button>
+            <button class="btn btn-ghost" type="button" id="pairs-export">Exportar con WhatsApp</button>
             <span class="tag" id="pairs-count"></span>
           </div>
           <input class="admin-search" id="pairs-search" type="search" placeholder="Buscar jugador…" autocomplete="off" />
-          <p class="admin-help">Corregí nombres o categoría si se equivocaron. Las marcadas como Repetida están inscriptas dos veces: quitá una.</p>
+          <p class="admin-help">Corregí nombres o categoría si se equivocaron. Las marcadas como Repetida están inscriptas dos veces: quitá una. Los WhatsApp no se publican en la web: solo los ves acá.</p>
           <p class="admin-msg" id="pairs-msg"></p>
           <div id="pairs-list"></div>
           <div class="admin-sticky-bar">
@@ -563,8 +574,9 @@ import "../styles/admin.css";
     import resultsJson from "../data/results.json";
     import playoffJson from "../data/playoff.json";
     import pairsJson from "../data/parejas.json";
+    import pairsConfigJson from "../data/inscripcion-parejas.json";
     import { bootAdmin } from "../admin/main.js";
 
-    bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson, pairsJson });
+    bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson, pairsJson, pairsConfigJson });
   </script>
 </Layout>

@@ -13,7 +13,7 @@ import { createSeasons } from "./seasons.js";
 import { createShell } from "./shell.js";
 import { $ } from "./ui.js";
 
-export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson, pairsJson }) {
+export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson, pairsJson, pairsConfigJson }) {
   const ctx = {
     rows: structuredClone(rankingJson.filter((p) => !HIDDEN_CATS.has(p.cat))),
     siteData: structuredClone(siteJson),
@@ -22,6 +22,8 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
     results: structuredClone(resultsJson || []),
     disp: structuredClone(dispJson),
     pairs: structuredClone(Array.isArray(pairsJson) ? pairsJson : []),
+    pairsConfig: { open: true, deadline: "", ...(pairsConfigJson || {}) },
+    contacts: {},
     playoffs: normalizePlayoffs(playoffJson),
     owner: siteJson.githubOwner,
     repo: siteJson.githubRepo,

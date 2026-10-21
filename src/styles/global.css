@@ -169,6 +169,8 @@ nav .wrap {
 .hub-card h2 { font-size: 34px; margin: 0; }
 .hub-card p { color: var(--muted); margin: 0; }
 .hub-card .actions { margin-top: auto; }
+.sumate-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.sumate-grid .btn { justify-self: start; margin-top: auto; }
 .hub-links { display: grid; gap: 8px; margin-top: 8px; }
 .hub-links a { color: var(--muted); }
 .hub-links a:hover { color: var(--lime); }
@@ -689,7 +691,9 @@ footer a:hover { color: var(--lime); }
 .pair-chosen span { color: var(--muted); font-size: 13px; }
 .form-hint a { color: var(--lime); }
 .insc-done { display: grid; gap: 18px; justify-items: start; padding: 48px 0; }
-.pair-chosen[hidden], .insc-done[hidden], .pair-results[hidden], .form label[hidden] { display: none; }
+.pair-chosen[hidden], .insc-done[hidden], .pair-results[hidden], .form label[hidden],
+.form[hidden], .form .btn[hidden], .tag[hidden] { display: none; }
+#insc-go-fecha { justify-self: start; }
 .form-hint { display: block; color: var(--muted); font-size: 13px; font-weight: 400; text-transform: none; letter-spacing: 0; }
 .hp { position: absolute; left: -9999px; height: 0; width: 0; opacity: 0; }
 .join-liga {
