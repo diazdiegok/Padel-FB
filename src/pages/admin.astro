@@ -166,8 +166,8 @@ import "../styles/admin.css";
         <section data-section="fixture" hidden>
           <div class="admin-stepper">
             <div class="admin-step-card">
-              <span>1 · Cargar</span>
-              <p>Pegá la tabla de Drive, importá CSV o sumá un partido a mano.</p>
+              <span>1 · Armar</span>
+              <p>Armar desde Fecha cruza las parejas anotadas según día y horario. Las que no coinciden quedan pendientes.</p>
             </div>
             <div class="admin-step-card">
               <span>2 · Revisar</span>
@@ -184,6 +184,7 @@ import "../styles/admin.css";
               <label class="admin-week">Fecha en juego
                 <input id="fx-week" value="Fecha 1" placeholder="Fecha 1" />
               </label>
+              <button class="btn btn-lime" type="button" id="fx-build">Armar desde Fecha</button>
               <button class="btn btn-ghost" type="button" id="fx-add">+ Partido</button>
               <button class="btn btn-ghost" type="button" id="fx-import-toggle" aria-expanded="false">Importar</button>
               <span class="admin-summary" id="fx-summary">Sin partidos cargados</span>
@@ -206,9 +207,11 @@ import "../styles/admin.css";
           </div>
 
           <p class="admin-msg" id="fx-msg"></p>
+          <datalist id="fx-venues"></datalist>
           <div class="admin-empty" id="fx-empty" hidden>
-            <p>Todavía no hay partidos. Usá Importar o + Partido.</p>
+            <p>Todavía no hay partidos. Usá Armar desde Fecha, Importar o + Partido.</p>
           </div>
+          <div class="fx-pending" id="fx-pending" hidden></div>
           <div class="admin-scroll">
             <table class="admin-table">
               <thead>
@@ -324,9 +327,11 @@ import "../styles/admin.css";
           </div>
           <div class="admin-section-tools">
             <button class="btn btn-ghost" type="button" id="disp-reload">Actualizar lista</button>
+            <button class="btn btn-lime" type="button" id="disp-build">Armar fixture con estas inscripciones</button>
+            <button class="btn btn-ghost" type="button" id="disp-next">Abrir próxima fecha</button>
             <span class="tag" id="disp-count"></span>
           </div>
-          <p class="admin-help">Las parejas cargan disponibilidad en /fecha/. Acá ves lo anotado y podés abrir o cerrar la fecha.</p>
+          <p class="admin-help">Circuito de cada semana: las parejas se anotan en /fecha/ → cerrás la carga → armás el fixture → publicás → abrís la próxima fecha.</p>
           <p class="admin-msg" id="disp-msg"></p>
           <div id="disp-list"></div>
           <div class="admin-sticky-bar">

@@ -72,7 +72,15 @@ export function cleanMatch(m, defaults = {}, currentSeason = "T4") {
     !m.home && !m.away && (m.partido || "")
       ? splitPartido(m.partido)
       : { home: m.home, away: m.away };
+  const away = String(fromPartido.away || "").trim();
+  const extra = {};
+  if (m.pending && !away) {
+    extra.pending = true;
+    if (m.reason) extra.reason = String(m.reason).trim();
+    if (m.avail) extra.avail = String(m.avail).trim();
+  }
   return {
+    ...extra,
     week: String(m.week || defaults.week || "").trim(),
     day: String(m.day || m.dia || "").trim(),
     date: String(m.date || "").trim(),
@@ -82,7 +90,7 @@ export function cleanMatch(m, defaults = {}, currentSeason = "T4") {
     venue: normVenue(m.venue || m.complejo || m.sede || ""),
     court: String(m.court || m.cancha || "").trim(),
     home: String(fromPartido.home || "").trim(),
-    away: String(fromPartido.away || "").trim(),
+    away,
     result: String(m.result || m.resultado || "").trim(),
     appliedResult: String(m.appliedResult || "").trim(),
   };

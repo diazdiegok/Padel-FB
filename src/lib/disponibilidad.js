@@ -61,6 +61,14 @@ export function validateEntry(entry) {
   if (!entry.bye) {
     const missing = Object.entries(entry.days).filter(([, hours]) => !hours);
     if (missing.length) return `Falta el horario de ${missing[0][0]}.`;
+    for (const [day, hours] of Object.entries(entry.days)) {
+      const m = String(hours).match(/^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);
+      if (!m) continue;
+      const from = Number(m[1]) * 60 + Number(m[2]);
+      let to = Number(m[3]) * 60 + Number(m[4]);
+      if (to <= from) to += 24 * 60;
+      if (to - from < 90) return `En ${day} el horario tiene que cubrir al menos 1:30 (lo que dura un partido).`;
+    }
   }
   return "";
 }

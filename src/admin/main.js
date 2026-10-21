@@ -17,6 +17,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
     rows: structuredClone(rankingJson.filter((p) => !HIDDEN_CATS.has(p.cat))),
     siteData: structuredClone(siteJson),
     fixture: structuredClone(fixtureJson || []),
+    fixturePublished: structuredClone(fixtureJson || []),
     results: structuredClone(resultsJson || []),
     disp: structuredClone(dispJson),
     playoffs: normalizePlayoffs(playoffJson),
@@ -44,6 +45,16 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
       if (id === "resultados") results?.reload();
       if (id === "playoff") playoff?.reload();
     },
+    onDiscardSection(id) {
+      if (id === "fixture") {
+        ctx.fixture = structuredClone(ctx.fixturePublished);
+        fixture?.render();
+      }
+      if (id === "resultados") {
+        for (const m of [...ctx.fixture, ...ctx.results]) m.result = m.appliedResult || "";
+        results?.render();
+      }
+    },
   });
 
   ranking = createRanking(ctx, api, shell);
@@ -66,7 +77,9 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
       fecha?.fill();
     },
   });
-  fecha = createFecha(ctx, api, shell);
+  fecha = createFecha(ctx, api, shell, {
+    onBuildFixture: () => fixture.buildFromFecha(),
+  });
   cms = createCms(ctx, api, shell);
   playoff = createPlayoff(ctx, api, shell);
 

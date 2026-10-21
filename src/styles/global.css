@@ -643,7 +643,14 @@ footer a:hover { color: var(--lime); }
   opacity: 0.9;
 }
 .day-row input[type="text"]:disabled { opacity: 0.4; }
-.day-bye { grid-template-columns: auto 1fr; }
+.day-bye { grid-template-columns: 1fr; }
+.day-row:has(.day-hours) { grid-template-columns: 160px 1fr; }
+.form .day-check { display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--cream); }
+.form .day-check input { padding: 0; width: 18px; height: 18px; flex: none; }
+.day-hours { display: flex; gap: 8px; }
+.day-hours select { flex: 1; min-width: 0; padding: 10px 12px; }
+.day-hours select:disabled { opacity: 0.4; }
+.form-hint { display: block; color: var(--muted); font-size: 13px; font-weight: 400; text-transform: none; letter-spacing: 0; }
 .hp { position: absolute; left: -9999px; height: 0; width: 0; opacity: 0; }
 .join-liga {
   padding: 48px 0 80px;
@@ -936,6 +943,24 @@ footer strong { color: var(--cream); }
   color: inherit;
   opacity: 0.75;
 }
+.fixture-pending {
+  margin: 8px 0 56px;
+  padding: 22px;
+  border: 1px dashed var(--line);
+  background: var(--bg-2);
+}
+.fixture-pending h2 { font-size: 24px; margin-bottom: 8px; }
+.fixture-pending > p { color: var(--muted); margin-bottom: 16px; max-width: 640px; }
+.fixture-pending-cat h3 {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 14px 0 8px;
+}
+.fixture-pending-cat ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.fixture-pending-cat li { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.fixture-pending-cat li span { color: var(--muted); font-size: 13px; }
 .fixture-week { padding: 28px 0 8px; }
 .fixture-week h2 { font-size: 28px; margin-bottom: 16px; }
 .fixture-list { display: grid; gap: 10px; padding-bottom: 40px; }

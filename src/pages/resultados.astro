@@ -11,7 +11,7 @@ const dayIdx = (d: string) => {
   const i = DAY_ORDER.indexOf(key);
   return i < 0 ? 99 : i;
 };
-const matches = combineResults(results, fixture).sort((a, b) => {
+const matches = combineResults(results, fixture.filter((m: any) => m.home && m.away)).sort((a, b) => {
   const da = dayIdx(a.day);
   const db = dayIdx(b.day);
   if (da !== db) return da - db;

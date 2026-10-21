@@ -2,7 +2,19 @@
 import Layout from "../layouts/Layout.astro";
 import { site } from "../data/site";
 import disp from "../data/disponibilidad.json";
+import ranking from "../data/ranking.json";
 import { CATS, DAYS } from "../lib/disponibilidad.js";
+
+const pad = (n: number) => String(n).padStart(2, "0");
+const HOURS: string[] = [];
+for (let m = 8 * 60; m <= 24 * 60; m += 30) HOURS.push(`${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`);
+const FROM_HOURS = HOURS.slice(0, -3);
+const TO_HOURS = HOURS.slice(3);
+const season = (disp as any).temp || site.currentSeason;
+const pairs = (ranking as any[])
+  .filter((r) => r.temp === season && CATS.includes(r.cat) && String(r.name || "").includes("/"))
+  .map((r) => ({ name: String(r.name).trim(), cat: r.cat }))
+  .sort((a, b) => a.name.localeCompare(b.name, "es"));
 ---
 <Layout
   title={`${disp.week} | Padel FB`}
@@ -23,6 +35,15 @@ import { CATS, DAYS } from "../lib/disponibilidad.js";
 
     {disp.open ? (
       <form class="form form-fecha" id="fecha-form">
+        {pairs.length > 0 && (
+          <label>Buscá tu pareja en el ranking
+            <input id="pair-pick" list="pair-options" placeholder="Escribí un apellido" autocomplete="off" />
+            <datalist id="pair-options">
+              {pairs.map((p) => <option value={p.name} label={p.cat} />)}
+            </datalist>
+            <small class="form-hint">Si ya juegan en la liga, elegila de la lista y se completa sola. Si son nuevos, escriban los nombres abajo.</small>
+          </label>
+        )}
         <div class="form-grid">
           <label>Primer integrante
             <input name="p1" required placeholder="Apellido y nombre" autocomplete="name" />
@@ -47,16 +68,30 @@ import { CATS, DAYS } from "../lib/disponibilidad.js";
           <legend>Días que pueden jugar</legend>
           <div class="day-list">
             {DAYS.map((d) => (
-              <label class="day-row">
-                <input type="checkbox" name="day" value={d} />
-                <span>{d}</span>
-                <input type="text" data-hours={d} placeholder="19:00 - 22:00" disabled />
-              </label>
+              <div class="day-row">
+                <label class="day-check">
+                  <input type="checkbox" name="day" value={d} />
+                  <span>{d}</span>
+                </label>
+                <span class="day-hours">
+                  <select data-from={d} aria-label={`${d} desde`} disabled>
+                    <option value="">Desde</option>
+                    {FROM_HOURS.map((h) => <option value={h}>{h}</option>)}
+                  </select>
+                  <select data-to={d} aria-label={`${d} hasta`} disabled>
+                    <option value="">Hasta</option>
+                    {TO_HOURS.map((h) => <option value={h}>{h}</option>)}
+                  </select>
+                </span>
+              </div>
             ))}
             <label class="day-row day-bye">
-              <input type="checkbox" name="bye" />
-              <span>No puedo jugar esta semana</span>
+              <span class="day-check">
+                <input type="checkbox" name="bye" />
+                <span>No podemos jugar esta semana</span>
+              </span>
             </label>
+            <p class="form-hint">Cada partido dura 1:30. Cuanto más amplio el horario, más fácil es encontrarles rival.</p>
           </div>
         </fieldset>
         <label>Información adicional
@@ -93,12 +128,23 @@ import { CATS, DAYS } from "../lib/disponibilidad.js";
       form?.querySelectorAll("[name=day]").forEach((box) => {
         box.disabled = off;
         if (off) box.checked = false;
-        const hours = form.querySelector(`[data-hours="${box.value}"]`);
-        if (!hours) return;
-        hours.disabled = off || !box.checked;
-        if (hours.disabled) hours.value = "";
+        form.querySelectorAll(`[data-from="${box.value}"], [data-to="${box.value}"]`).forEach((sel) => {
+          sel.disabled = off || !box.checked;
+          if (sel.disabled) sel.value = "";
+        });
       });
     }
+
+    const pick = document.querySelector("#pair-pick");
+    const pairOptions = [...document.querySelectorAll("#pair-options option")].map((o) => ({ name: o.value, cat: o.label }));
+    pick?.addEventListener("change", () => {
+      const found = pairOptions.find((p) => p.name === pick.value.trim());
+      if (!found || !form) return;
+      const [a, b] = found.name.split("/").map((s) => s.trim());
+      form.p1.value = a || "";
+      form.p2.value = b || "";
+      if (found.cat) form.cat.value = found.cat;
+    });
 
     form?.querySelectorAll("[name=day]").forEach((box) => {
       box.addEventListener("change", syncDays);
@@ -120,8 +166,9 @@ import { CATS, DAYS } from "../lib/disponibilidad.js";
       const days = {};
       DAYS.forEach((day) => {
         const on = form.querySelector(`[name=day][value="${day}"]`)?.checked;
-        const hours = form.querySelector(`[data-hours="${day}"]`)?.value || "";
-        if (on) days[day] = hours.trim();
+        const from = form.querySelector(`[data-from="${day}"]`)?.value || "";
+        const to = form.querySelector(`[data-to="${day}"]`)?.value || "";
+        if (on) days[day] = from && to ? `${from} - ${to}` : "";
       });
       const entry = cleanEntry({
         p1: form.p1.value,
@@ -157,7 +204,9 @@ import { CATS, DAYS } from "../lib/disponibilidad.js";
         ok.className = "empty";
         ok.style.display = "block";
         ok.style.padding = "48px 0";
-        ok.innerHTML = `<strong>Listo.</strong> ${entry.p1} / ${entry.p2} quedó cargada para ${site.currentSeason}. Cuando cerremos la fecha armamos el partido.`;
+        const strong = document.createElement("strong");
+        strong.textContent = "Listo. ";
+        ok.append(strong, `${entry.p1} / ${entry.p2} quedó anotada. Cuando se cierre la carga se arma el fixture y lo ven en la sección Fixture.`);
         form.insertAdjacentElement("afterend", ok);
       } catch (ex) {
         setMsg(ex.message || "No se pudo enviar.", "err");

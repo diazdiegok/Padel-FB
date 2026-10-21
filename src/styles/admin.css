@@ -845,6 +845,66 @@ body.is-admin main > .wrap {
   margin-bottom: 22px;
 }
 
+.fx-pending {
+  margin: 0 0 18px;
+  padding: 16px;
+  border: 1px dashed #f0b44c;
+  border-radius: 16px;
+  background: var(--bg-2);
+}
+
+.fx-pending h3 {
+  margin: 0 0 4px;
+  color: #f0b44c;
+}
+
+.fx-pending h4 {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 14px 0 8px;
+}
+
+.fx-pending-cat {
+  display: grid;
+  gap: 8px;
+}
+
+.fx-pending-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.fx-pending-card strong {
+  flex: 1 1 220px;
+}
+
+.fx-pending-card .admin-help {
+  flex: 2 1 260px;
+  margin: 0;
+}
+
+.fx-pending-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.fx-pending-actions select {
+  min-width: 200px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--cream);
+}
+
 .admin-disp-group h3 {
   font-size: 13px;
   letter-spacing: 0.12em;

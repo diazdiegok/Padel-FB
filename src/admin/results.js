@@ -1,5 +1,5 @@
 import { FIXTURE_PATH, RANK_PATH, RESULTS_PATH } from "./constants.js";
-import { cleanMatch, cleanRow } from "./csv.js";
+import { cleanMatch, cleanRow, matchKey } from "./csv.js";
 import { applyFixtureResults, describeResult } from "../lib/scoring.js";
 import { combineResults, seasonLabel, seasonNumber, weekKey, weekNumber } from "../lib/liga.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
@@ -13,11 +13,13 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
 
   function allMatches() {
     const season = ctx.siteData.currentSeason || "T4";
-    const live = (ctx.fixture || []).map((m, i) => ({
-      ...cleanMatch(m, {}, season),
-      _source: "fixture",
-      _i: i,
-    }));
+    const live = (ctx.fixture || [])
+      .map((m, i) => ({
+        ...cleanMatch(m, {}, season),
+        _source: "fixture",
+        _i: i,
+      }))
+      .filter((m) => m.home && m.away);
     const liveKeys = new Set(live.map(weekKey));
     const archive = (ctx.results || [])
       .map((m, i) => ({ ...cleanMatch(m, {}, season), _source: "archive", _i: i }))
@@ -149,8 +151,16 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
 
   async function reload() {
     try {
-      const remote = await api.readRemoteJson(RESULTS_PATH, []);
-      ctx.results = Array.isArray(remote) ? remote : [];
+      const clean = !ctx.dirty.has("fixture") && !ctx.dirty.has("resultados");
+      const [remote, remoteFx] = await Promise.all([
+        api.readRemoteJson(RESULTS_PATH, []),
+        clean ? api.readRemoteJson(FIXTURE_PATH, null) : null,
+      ]);
+      if (!ctx.dirty.has("resultados")) ctx.results = Array.isArray(remote) ? remote : [];
+      if (Array.isArray(remoteFx)) {
+        ctx.fixture = remoteFx;
+        ctx.fixturePublished = structuredClone(remoteFx);
+      }
       loaded = true;
       render();
     } catch (err) {
@@ -201,6 +211,14 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
         toast(gate.message, "err");
         return;
       }
+      if (ctx.dirty.has("fixture") || ctx.dirty.has("ranking")) {
+        const message = ctx.dirty.has("fixture")
+          ? "Hay un fixture armado sin publicar. Publicalo o descartalo en Fixture antes de publicar resultados."
+          : "Hay cambios del ranking sin publicar. Publicalos en Ranking antes de cargar resultados.";
+        setMsg($("res-msg"), message, "err");
+        toast(message, "err");
+        return;
+      }
       const pending = [...(ctx.fixture || []), ...(ctx.results || [])];
       const invalid = pending.find((m) => String(m.result || "").trim() && !describeResult(m.result));
       if (invalid) {
@@ -217,17 +235,30 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
       if (!ok) return;
 
       const season = ctx.siteData.currentSeason || "T4";
-      const ranking = structuredClone(ctx.rows)
-        .map((row) => cleanRow(row, season))
-        .filter((row) => row.name && row.cat.toLowerCase() !== "s masculina");
-      const snapshot = pending.map((m) => m.appliedResult);
+      const edits = new Map(allMatches().map((m) => [matchKey(m), String(m.result || "").trim()]));
       setBusy($("res-publish"), true, "Publicando…");
       setMsg($("res-msg"), "Publicando resultados y ranking…");
       try {
-        const report = applyFixtureResults(ranking, pending);
+        const [remoteRank, remoteFx, remoteRes] = await Promise.all([
+          api.readRemoteJson(RANK_PATH, ctx.rows),
+          api.readRemoteJson(FIXTURE_PATH, []),
+          api.readRemoteJson(RESULTS_PATH, []),
+        ]);
+        const ranking = (Array.isArray(remoteRank) ? remoteRank : [])
+          .map((row) => cleanRow(row, season))
+          .filter((row) => row.name && row.cat.toLowerCase() !== "s masculina");
+        const nextFixture = (Array.isArray(remoteFx) ? remoteFx : []).map((m) => cleanMatch(m, {}, season)).filter((m) => m.home || m.away);
+        const nextResults = (Array.isArray(remoteRes) ? remoteRes : []).map((m) => cleanMatch(m, {}, season)).filter((m) => m.home || m.away);
+        const remoteKeys = new Set();
+        for (const m of [...nextFixture, ...nextResults]) {
+          const key = matchKey(m);
+          remoteKeys.add(key);
+          if (edits.has(key)) m.result = edits.get(key);
+        }
+        const lost = allMatches().find((m) => String(m.result || "").trim() !== String(m.appliedResult || "").trim() && !remoteKeys.has(matchKey(m)));
+        if (lost) throw new Error(`El partido ${lost.home} vs ${lost.away} cambió en el fixture publicado. Tocá Actualizar y volvé a cargarlo.`);
+        const report = applyFixtureResults(ranking, [...nextFixture, ...nextResults]);
         if (report.unmatched.length) throw new Error(report.unmatched[0]);
-        const nextFixture = ctx.fixture.map((m) => cleanMatch(m, {}, season)).filter((m) => m.home || m.away);
-        const nextResults = ctx.results.map((m) => cleanMatch(m, {}, season)).filter((m) => m.home || m.away);
         await api.publishFiles(
           [
             { path: FIXTURE_PATH, content: JSON.stringify(nextFixture, null, 2) + "\n" },
@@ -240,6 +271,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
         );
         ctx.rows = ranking;
         ctx.fixture = nextFixture;
+        ctx.fixturePublished = structuredClone(nextFixture);
         ctx.results = nextResults;
         shell.clearDirty("resultados");
         shell.clearDirty("ranking");
@@ -252,9 +284,6 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
         setMsg($("res-msg"), text, "ok");
         toast("Resultados publicados", "ok");
       } catch (err) {
-        pending.forEach((m, i) => {
-          m.appliedResult = snapshot[i];
-        });
         const message = api.publishError(err);
         setMsg($("res-msg"), message, "err");
         toast(message, "err");

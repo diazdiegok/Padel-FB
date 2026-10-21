@@ -169,6 +169,10 @@ export function applyFixtureResults(ranking, matches) {
     const next = String(match.result || "").trim();
     const prev = String(match.appliedResult || "").trim();
     if (next === prev) continue;
+    if (!String(match.home || "").trim() || !String(match.away || "").trim()) {
+      if (next) unmatched.push(`Falta una de las parejas en ${match.cat || "un partido"} (${match.home || match.away || "sin nombre"}).`);
+      continue;
+    }
 
     const nextScore = next ? describeResult(next) : null;
     const prevScore = prev ? describeResult(prev) : null;

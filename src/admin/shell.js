@@ -1,7 +1,7 @@
 import { SECTIONS } from "./constants.js";
 import { $, confirmModal, updateDirtyBadge } from "./ui.js";
 
-export function createShell(ctx, { onEnterSection }) {
+export function createShell(ctx, { onEnterSection, onDiscardSection }) {
   function markDirty(section) {
     ctx.dirty.add(section);
     updateDirtyBadge(ctx.dirty);
@@ -23,6 +23,7 @@ export function createShell(ctx, { onEnterSection }) {
         danger: true,
       }).then((ok) => {
         if (!ok) return false;
+        onDiscardSection?.(ctx.currentSection);
         clearDirty(ctx.currentSection);
         applySection(id);
         return true;
@@ -69,7 +70,10 @@ export function createShell(ctx, { onEnterSection }) {
     });
     window.addEventListener("hashchange", () => {
       const id = location.hash.replace(/^#/, "") || "ranking";
-      if (id !== ctx.currentSection) setSection(id, { force: true });
+      if (id === ctx.currentSection) return;
+      setSection(id).then((ok) => {
+        if (!ok) history.replaceState(null, "", "#" + ctx.currentSection);
+      });
     });
   }
 

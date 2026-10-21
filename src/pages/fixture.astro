@@ -11,7 +11,12 @@ const dayIdx = (d: string) => {
   return i < 0 ? 99 : i;
 };
 const currentWeek = latestWeek(fixture);
-const matches = liveFixture(fixture).sort((a, b) => {
+const live: any[] = liveFixture(fixture);
+const pending = live
+  .filter((m) => !m.away)
+  .sort((a, b) => String(a.cat).localeCompare(String(b.cat), "es") || String(a.home).localeCompare(String(b.home), "es"));
+const pendingCats = [...new Set(pending.map((m) => m.cat || "Sin categoría"))];
+const matches = live.filter((m) => m.home && m.away).sort((a, b) => {
   const da = dayIdx(a.day);
   const db = dayIdx(b.day);
   if (da !== db) return da - db;
@@ -72,6 +77,26 @@ const courts = [...new Set(matches.map((m) => m.venue).filter(Boolean))].sort((a
         <p class="empty" id="empty" hidden>No hay partidos con ese filtro.</p>
       </>
     )}
+
+    {pending.length > 0 && (
+      <section class="fixture-pending">
+        <h2>Pendientes · {pending.length}</h2>
+        <p>Estas parejas se anotaron pero no coincidieron en día y horario con otra de su categoría. Si pueden en otro horario, avisen a la organización.</p>
+        {pendingCats.map((cat) => (
+          <div class="fixture-pending-cat">
+            <h3>{cat}</h3>
+            <ul>
+              {pending.filter((m) => (m.cat || "Sin categoría") === cat).map((m) => (
+                <li>
+                  <strong>{m.home}</strong>
+                  {m.avail && <span>{m.avail}</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
+    )}
   </div>
 
   <script>
@@ -121,7 +146,7 @@ const courts = [...new Set(matches.map((m) => m.venue).filter(Boolean))].sort((a
           ? `<b>${esc(info.score)}</b><span>${info.label}</span>`
           : m.result
             ? `<b>${esc(m.result)}</b>`
-            : `<span class="tag">Pendiente</span>`
+            : `<span class="tag">Por jugar</span>`
       }</div>`;
     }
 
