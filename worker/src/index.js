@@ -218,10 +218,36 @@ function adminRequest(env, path, method, rawBody) {
   return null;
 }
 
+const MAX_FAILS = 5;
+const LOCK_SECONDS = 3600;
+
+function clientIp(request) {
+  return request.headers.get("CF-Connecting-IP") || "anon";
+}
+
+async function loginLock(env, request) {
+  if (!env.AUTH_KV) return null;
+  const state = await env.AUTH_KV.get(`fail:${clientIp(request)}`, "json");
+  const left = Number(state?.until || 0) - Math.floor(Date.now() / 1000);
+  return left > 0 ? Math.ceil(left / 60) : null;
+}
+
+async function loginFailed(env, request) {
+  if (!env.AUTH_KV) return;
+  const key = `fail:${clientIp(request)}`;
+  const state = (await env.AUTH_KV.get(key, "json")) || { n: 0 };
+  const n = Number(state.n || 0) + 1;
+  const until = n >= MAX_FAILS ? Math.floor(Date.now() / 1000) + LOCK_SECONDS : 0;
+  await env.AUTH_KV.put(key, JSON.stringify({ n, until }), { expirationTtl: LOCK_SECONDS });
+}
+
+async function loginOk(env, request) {
+  if (env.AUTH_KV) await env.AUTH_KV.delete(`fail:${clientIp(request)}`);
+}
+
 async function allowed(limiter, request, scope) {
   if (!limiter) return true;
-  const ip = request.headers.get("CF-Connecting-IP") || "anon";
-  const { success } = await limiter.limit({ key: `${scope}:${ip}` });
+  const { success } = await limiter.limit({ key: `${scope}:${clientIp(request)}` });
   return success;
 }
 
@@ -308,24 +334,35 @@ export default {
     try {
       if (url.pathname === "/health") return response(request, env, { ok: true });
 
-      const tooMany = () =>
-        response(request, env, { message: "Demasiados intentos. Esperá un minuto y probá de nuevo." }, 429);
+      const isAuth = url.pathname === "/auth/password" || url.pathname === "/auth/login";
+      if (isAuth && request.method === "POST") {
+        const lockedMinutes = await loginLock(env, request);
+        if (lockedMinutes) {
+          const wait = lockedMinutes >= 60 ? "1 hora" : lockedMinutes > 1 ? `${lockedMinutes} minutos` : "1 minuto";
+          return response(request, env, { message: `Demasiados intentos fallidos. Probá de nuevo en ${wait}.` }, 429);
+        }
+        if (!(await allowed(env.LOGIN_LIMITER, request, "login"))) {
+          return response(request, env, { message: "Demasiados intentos. Esperá un minuto y probá de nuevo." }, 429);
+        }
+      }
 
       if (url.pathname === "/auth/password" && request.method === "POST") {
-        if (!(await allowed(env.LOGIN_LIMITER, request, "login"))) return tooMany();
         const body = await request.json();
         const ok = await validPassword(env, body.user, body.password);
-        return ok
-          ? response(request, env, { ok: true })
-          : response(request, env, { message: "Usuario o clave incorrectos." }, 401);
+        if (ok) return response(request, env, { ok: true });
+        await loginFailed(env, request);
+        return response(request, env, { message: "Usuario o clave incorrectos." }, 401);
       }
 
       if (url.pathname === "/auth/login" && request.method === "POST") {
-        if (!(await allowed(env.LOGIN_LIMITER, request, "login"))) return tooMany();
         const body = await request.json();
         const passwordOk = await validPassword(env, body.user, body.password);
         const otpOk = passwordOk && (await validTotp(env.TOTP_SECRET, body.otp));
-        if (!otpOk) return response(request, env, { message: "Datos de acceso incorrectos." }, 401);
+        if (!otpOk) {
+          await loginFailed(env, request);
+          return response(request, env, { message: "Datos de acceso incorrectos." }, 401);
+        }
+        await loginOk(env, request);
         return response(request, env, await createSession(env));
       }
 
