@@ -25,7 +25,7 @@ const routes = [
 
 export const GET: APIRoute = ({ site }) => {
   const origin = site || new URL("https://diazdiegok.github.io");
-  const base = "/Padel-FB/";
+  const base = import.meta.env.BASE_URL;
   const urls = routes
     .map((route) => `<url><loc>${new URL(`${base}${route}`, origin).href}</loc></url>`)
     .join("");

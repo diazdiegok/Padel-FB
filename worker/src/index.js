@@ -2,11 +2,22 @@ const PASS_SALT = "liga-fb-admin-v1";
 const DISP_PATH = "src/data/disponibilidad.json";
 const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
+const DATA_FILE = /^src\/data\/[a-z0-9_-]+\.json$/;
+const IMAGE_FILE = /^public\/images\/[a-z0-9_-]+\.(png|jpg|webp|gif)$/;
+
+function siteOrigins(env) {
+  return String(env.SITE_ORIGIN || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
 function cors(request, env) {
   const origin = request.headers.get("Origin") || "";
-  const allowed = origin === env.SITE_ORIGIN || origin === "http://localhost:4321";
+  const origins = siteOrigins(env);
+  const allowed = origins.includes(origin) || origin === "http://localhost:4321";
   return {
-    "Access-Control-Allow-Origin": allowed ? origin : env.SITE_ORIGIN,
+    "Access-Control-Allow-Origin": allowed ? origin : origins[0] || "",
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Max-Age": "86400",
@@ -152,6 +163,68 @@ async function github(env, path, options = {}) {
   });
 }
 
+function writableFile(path) {
+  return DATA_FILE.test(path) || IMAGE_FILE.test(path);
+}
+
+function parseBody(body) {
+  try {
+    return JSON.parse(body || "{}");
+  } catch {
+    return null;
+  }
+}
+
+// Solo deja pasar lo que usa el admin: leer y escribir datos/fotos y armar commits sobre main.
+function adminRequest(env, path, method, rawBody) {
+  const prefix = `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}`;
+  if (!String(path || "").startsWith(`${prefix}/`)) return null;
+  const [route, query = ""] = path.slice(prefix.length + 1).split("?");
+  if (query && query !== "ref=main") return null;
+  const body = method === "GET" ? undefined : parseBody(rawBody);
+  if (body === null) return null;
+
+  if (route.startsWith("contents/")) {
+    const file = route.slice("contents/".length);
+    if (!writableFile(file)) return null;
+    if (method === "GET") return { path, method };
+    if (method !== "PUT" || typeof body.content !== "string" || !body.message) return null;
+    const clean = { message: String(body.message), content: body.content, branch: "main" };
+    if (body.sha) clean.sha = String(body.sha);
+    return { path: `${prefix}/${route}`, method, body: JSON.stringify(clean) };
+  }
+  if (route === "git/refs/heads/main") {
+    if (method === "GET") return { path, method };
+    if (method !== "PATCH" || !/^[0-9a-f]{40}$/.test(body.sha || "")) return null;
+    return { path, method, body: JSON.stringify({ sha: body.sha, force: false }) };
+  }
+  if (/^git\/commits\/[0-9a-f]{40}$/.test(route) && method === "GET") return { path, method };
+  if (route === "git/commits" && method === "POST") {
+    const sha = /^[0-9a-f]{40}$/;
+    const parents = Array.isArray(body.parents) ? body.parents : [];
+    if (!sha.test(body.tree || "") || parents.length !== 1 || !sha.test(parents[0])) return null;
+    return { path, method, body: JSON.stringify({ message: String(body.message || ""), tree: body.tree, parents }) };
+  }
+  if (route === "git/trees" && method === "POST") {
+    const tree = Array.isArray(body.tree) ? body.tree : [];
+    const ok =
+      /^[0-9a-f]{40}$/.test(body.base_tree || "") &&
+      tree.length > 0 &&
+      tree.every((f) => writableFile(f.path) && f.mode === "100644" && f.type === "blob" && typeof f.content === "string");
+    if (!ok) return null;
+    const clean = tree.map((f) => ({ path: f.path, mode: "100644", type: "blob", content: f.content }));
+    return { path, method, body: JSON.stringify({ base_tree: body.base_tree, tree: clean }) };
+  }
+  return null;
+}
+
+async function allowed(limiter, request, scope) {
+  if (!limiter) return true;
+  const ip = request.headers.get("CF-Connecting-IP") || "anon";
+  const { success } = await limiter.limit({ key: `${scope}:${ip}` });
+  return success;
+}
+
 async function readAvailability(env) {
   const path = `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${DISP_PATH}?ref=main`;
   const res = await github(env, path);
@@ -235,7 +308,11 @@ export default {
     try {
       if (url.pathname === "/health") return response(request, env, { ok: true });
 
+      const tooMany = () =>
+        response(request, env, { message: "Demasiados intentos. Esperá un minuto y probá de nuevo." }, 429);
+
       if (url.pathname === "/auth/password" && request.method === "POST") {
+        if (!(await allowed(env.LOGIN_LIMITER, request, "login"))) return tooMany();
         const body = await request.json();
         const ok = await validPassword(env, body.user, body.password);
         return ok
@@ -244,6 +321,7 @@ export default {
       }
 
       if (url.pathname === "/auth/login" && request.method === "POST") {
+        if (!(await allowed(env.LOGIN_LIMITER, request, "login"))) return tooMany();
         const body = await request.json();
         const passwordOk = await validPassword(env, body.user, body.password);
         const otpOk = passwordOk && (await validTotp(env.TOTP_SECRET, body.otp));
@@ -254,7 +332,10 @@ export default {
       if (url.pathname === "/github" && request.method === "POST") {
         if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
         const body = await request.json();
-        const upstream = await github(env, body.path, { method: body.method, body: body.body });
+        const method = String(body.method || "GET").toUpperCase();
+        const call = adminRequest(env, String(body.path || ""), method, body.body);
+        if (!call) return response(request, env, { message: "Operación no permitida desde el admin." }, 403);
+        const upstream = await github(env, call.path, { method: call.method, body: call.body });
         return new Response(await upstream.text(), {
           status: upstream.status,
           headers: { "Content-Type": "application/json; charset=utf-8", ...cors(request, env) },
@@ -264,6 +345,9 @@ export default {
       if (url.pathname === "/availability" && request.method === "POST") {
         const body = await request.json();
         if (body.website) return response(request, env, { ok: true });
+        if (!(await allowed(env.FORM_LIMITER, request, "form"))) {
+          return response(request, env, { message: "Muchos envíos seguidos. Esperá un minuto y probá de nuevo." }, 429);
+        }
         return response(request, env, await appendAvailability(env, body));
       }
 

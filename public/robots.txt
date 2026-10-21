@@ -1,6 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /Padel-FB/admin/
-Disallow: /Padel-FB/acceso-fb/
-
-Sitemap: https://diazdiegok.github.io/Padel-FB/sitemap.xml

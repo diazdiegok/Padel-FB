@@ -8,4 +8,20 @@ preview_urls = false
 ADMIN_USER = "Admin"
 GITHUB_OWNER = "diazdiegok"
 GITHUB_REPO = "Padel-FB"
-SITE_ORIGIN = "https://diazdiegok.github.io"
+SITE_ORIGIN = "https://diazdiegok.github.io,https://padel-fb.vercel.app"
+
+[[ratelimits]]
+name = "LOGIN_LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 5
+  period = 60
+
+[[ratelimits]]
+name = "FORM_LIMITER"
+namespace_id = "1002"
+
+  [ratelimits.simple]
+  limit = 3
+  period = 60
