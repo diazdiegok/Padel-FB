@@ -1,4 +1,7 @@
+import { addPairsToRanking } from "../../src/lib/scoring.js";
+
 const PASS_SALT = "liga-fb-admin-v1";
+const RANK_PATH = "src/data/ranking.json";
 const DISP_PATH = "src/data/disponibilidad.json";
 const PAIRS_PATH = "src/data/parejas.json";
 const PAIRS_CONFIG_PATH = "src/data/inscripcion-parejas.json";
@@ -338,11 +341,22 @@ async function registerPair(env, raw) {
     if (saved) {
       await caches.default.delete(PAIRS_CACHE);
       if (env.AUTH_KV) await env.AUTH_KV.put(`contact:${pair.id}`, "", { metadata: contact });
+      await addToRanking(env, pair).catch(() => {});
       return { ok: true, pair: { id: pair.id, p1: pair.p1, p2: pair.p2, cat: pair.cat } };
     }
     await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
   }
   throw new Error("Hubo muchos envíos juntos. Probá de nuevo en unos segundos.");
+}
+
+async function addToRanking(env, pair) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const file = await readData(env, RANK_PATH, []);
+    const rows = Array.isArray(file.json) ? file.json : [];
+    if (!addPairsToRanking(rows, [pair]).length) return;
+    if (await writeData(env, RANK_PATH, rows, file.sha, `Suma a ${pair.p1} / ${pair.p2} al ranking de ${pair.cat}.`)) return;
+    await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
+  }
 }
 
 async function listPairs(env) {

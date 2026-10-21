@@ -51,9 +51,14 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
           </div>
           <p>${count} pareja${count === 1 ? "" : "s"} en el ranking.</p>
           <div class="admin-season-venues">
-            <label>Sedes de la liga
-              <input type="number" min="0" step="1" data-season-venues="${escAttr(temp)}" value="${venuesFor(temp)}" />
-            </label>
+            <div class="admin-season-field">
+              <span>Sedes de la liga</span>
+              <span class="admin-stepper">
+                <button type="button" data-season-step="${escAttr(temp)}" data-dir="-1" aria-label="Una sede menos">−</button>
+                <input type="number" min="0" step="1" inputmode="numeric" aria-label="Sedes de la liga" data-season-venues="${escAttr(temp)}" value="${venuesFor(temp)}" />
+                <button type="button" data-season-step="${escAttr(temp)}" data-dir="1" aria-label="Una sede más">+</button>
+              </span>
+            </div>
             <button class="btn btn-ghost" type="button" data-season-venues-save="${escAttr(temp)}">Guardar</button>
           </div>
         </article>`;
@@ -124,6 +129,12 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
         });
         if (!ok) return;
         await activate(temp, { button: play });
+        return;
+      }
+      const step = e.target.closest("[data-season-step]");
+      if (step) {
+        const input = document.querySelector(`[data-season-venues="${step.dataset.seasonStep}"]`);
+        if (input) input.value = Math.max(0, (Math.round(Number(input.value)) || 0) + Number(step.dataset.dir));
         return;
       }
       const btn = e.target.closest("[data-season-venues-save]");

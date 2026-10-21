@@ -116,6 +116,23 @@ export function findPairIndex(rows, name, cat, temp) {
   return best;
 }
 
+/** Suma al ranking, con 0 puntos y al final de su categoría, las parejas inscriptas que todavía no están. */
+export function addPairsToRanking(rows, pairs) {
+  const added = [];
+  for (const pair of pairs) {
+    const temp = String(pair.temp || "").toUpperCase();
+    if (!pair.p1 || !pair.p2 || !pair.cat || !temp) continue;
+    const name = `${pair.p1} / ${pair.p2}`;
+    if (findPairIndex(rows, name, pair.cat, temp) >= 0) continue;
+    const last = rows
+      .filter((r) => r.cat === pair.cat && String(r.temp).toUpperCase() === temp)
+      .reduce((max, r) => Math.max(max, Number(r.pos) || 0), 0);
+    rows.push({ name, cat: pair.cat, pts: 0, pj: 0, dif: 0, pos: last + 1, temp });
+    added.push(name);
+  }
+  return added;
+}
+
 function ensurePair(rows, name, cat, temp) {
   const i = findPairIndex(rows, name, cat, temp);
   if (i >= 0) return i;

@@ -108,6 +108,7 @@ import "../styles/admin.css";
         <section data-section="ranking">
           <div class="admin-section-tools">
             <button class="btn btn-ghost" type="button" id="add">+ Pareja</button>
+            <button class="btn btn-ghost" type="button" id="rank-sync">Sumar parejas inscriptas</button>
             <button class="btn btn-ghost" type="button" id="rank-csv-toggle" aria-expanded="false">CSV</button>
             <span class="tag" id="rank-count"></span>
           </div>
@@ -136,7 +137,7 @@ import "../styles/admin.css";
           </div>
           <p class="admin-msg" id="rank-msg"></p>
           <div class="admin-empty" id="rank-empty" hidden>
-            <p>No hay filas con estos filtros. Agregá una pareja o importá un CSV.</p>
+            <p>Todavía no hay parejas en esta categoría. Cuando se inscriban aparecen solas acá con 0 puntos.</p>
           </div>
           <div class="admin-scroll">
             <table class="admin-table">
@@ -148,7 +149,6 @@ import "../styles/admin.css";
                   <th class="col-num">PJ</th>
                   <th class="col-num">Dif</th>
                   <th class="col-num">Pts</th>
-                  <th class="col-temp">Temp</th>
                   <th></th>
                 </tr>
               </thead>
@@ -156,7 +156,7 @@ import "../styles/admin.css";
             </table>
           </div>
           <div class="admin-sticky-bar">
-            <p class="admin-sticky-note">Publicá cuando la tabla esté lista. El sitio se actualiza en ~1 minuto.</p>
+            <p class="admin-sticky-note">Los puntos se suman solos al publicar Resultados. Acá corregís a mano si hace falta.</p>
             <div class="admin-sticky-actions">
               <button class="btn btn-lime" type="button" id="publish">Publicar ranking</button>
             </div>

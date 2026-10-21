@@ -1,5 +1,6 @@
-import { CATS, PAIRS_CONFIG_PATH, PAIRS_PATH } from "./constants.js";
+import { CATS, PAIRS_CONFIG_PATH, PAIRS_PATH, RANK_PATH } from "./constants.js";
 import { fold } from "../lib/disponibilidad.js";
+import { addPairsToRanking } from "../lib/scoring.js";
 import { seasonLabel, seasonNumber } from "../lib/liga.js";
 import { downloadCsv } from "./csv.js";
 import { $, confirmModal, escAttr as esc, setBusy, setMsg, toast } from "./ui.js";
@@ -17,7 +18,7 @@ function deadlineText(v) {
   return `${Number(day)}/${Number(month)} ${time}`;
 }
 
-export function createParejas(ctx, api, shell) {
+export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
   let term = "";
   let knownIds = new Set((ctx.pairs || []).map((p) => p.id));
   const deleted = new Set();
@@ -261,13 +262,18 @@ export function createParejas(ctx, api, shell) {
         const remote = await api.readRemoteJson(PAIRS_PATH, []);
         const fresh = (Array.isArray(remote) ? remote : []).filter((p) => !knownIds.has(p.id) && !deleted.has(p.id));
         const next = [...ctx.pairs, ...fresh];
+        const seasonPairs = next.filter((p) => p.temp === season());
+        const ranking = await api.readRemoteJson(RANK_PATH, []);
+        const toRanking = Array.isArray(ranking) ? addPairsToRanking(ranking, seasonPairs) : [];
         await api.publishFiles(
           [
             { path: PAIRS_PATH, content: JSON.stringify(next, null, 2) + "\n" },
             { path: PAIRS_CONFIG_PATH, content: JSON.stringify(config, null, 2) + "\n" },
+            ...(toRanking.length ? [{ path: RANK_PATH, content: JSON.stringify(ranking, null, 2) + "\n" }] : []),
           ],
           config.open ? "Actualiza parejas inscriptas desde el admin." : "Cierra la inscripción de parejas."
         );
+        if (addPairsToRanking(ctx.rows, seasonPairs).length) onRankingChanged?.();
         ctx.pairs = next;
         ctx.pairsConfig = config;
         knownIds = new Set(next.map((p) => p.id));
@@ -284,7 +290,10 @@ export function createParejas(ctx, api, shell) {
         const extra = fresh.length
           ? ` Se ${fresh.length === 1 ? "sumó 1 pareja que se inscribió" : `sumaron ${fresh.length} parejas que se inscribieron`} mientras editabas.`
           : "";
-        setMsg($("pairs-msg"), "Parejas guardadas. El buscador de Fecha ya las usa." + extra, "ok");
+        const ranked = toRanking.length
+          ? ` ${toRanking.length === 1 ? "1 pareja nueva quedó" : `${toRanking.length} parejas nuevas quedaron`} en el ranking con 0 puntos.`
+          : "";
+        setMsg($("pairs-msg"), "Parejas guardadas. El buscador de Fecha ya las usa." + extra + ranked, "ok");
         toast("Parejas guardadas", "ok");
       } catch (err) {
         const m = api.publishError(err);

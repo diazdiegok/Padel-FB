@@ -90,7 +90,12 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   fecha = createFecha(ctx, api, shell);
   cms = createCms(ctx, api, shell);
   playoff = createPlayoff(ctx, api, shell);
-  parejas = createParejas(ctx, api, shell);
+  parejas = createParejas(ctx, api, shell, {
+    onRankingChanged() {
+      ranking.refresh();
+      seasons?.render();
+    },
+  });
 
   async function showApp() {
     $("gate").hidden = true;

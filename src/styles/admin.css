@@ -720,7 +720,7 @@ body.is-admin main > .wrap {
   gap: 10px;
   margin-top: 4px;
 }
-.admin-season-venues label {
+.admin-season-field {
   display: grid;
   gap: 6px;
   font-size: 11px;
@@ -728,15 +728,43 @@ body.is-admin main > .wrap {
   text-transform: uppercase;
   color: var(--muted);
 }
-.admin-season-venues input {
-  width: 88px;
-  padding: 10px 12px;
+.admin-stepper {
+  display: inline-flex;
+  align-items: stretch;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: #0c100e;
-  color: var(--cream);
+  overflow: hidden;
 }
-.admin-season-venues .btn { width: auto; }
+.admin-stepper button {
+  width: 40px;
+  border: 0;
+  background: transparent;
+  color: var(--cream);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.admin-stepper button:hover { background: rgba(212, 255, 58, 0.1); color: var(--lime); }
+.admin-season-venues input {
+  width: 52px;
+  padding: 10px 0;
+  border: 0;
+  border-inline: 1px solid var(--line);
+  background: transparent;
+  color: var(--cream);
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.admin-season-venues input::-webkit-inner-spin-button,
+.admin-season-venues input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.admin-season-venues .btn { width: auto; min-height: 0; padding: 11px 18px; }
 
 .admin-season-head {
   display: flex;
@@ -1560,3 +1588,5 @@ body.is-admin main > .wrap {
 .po-match .admin-hint { margin: 0; }
 .admin-hint.err { color: #ff8a8a; }
 .po-champ .po-match strong { color: var(--lime); font-size: 16px; }
+
+.pills .pill small { margin-left: 4px; opacity: 0.6; font-variant-numeric: tabular-nums; }
