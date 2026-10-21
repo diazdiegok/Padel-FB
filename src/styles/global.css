@@ -753,9 +753,9 @@ footer a:hover { color: var(--lime); }
 
 @media (max-width: 860px) {
   .nav-links { display: none; }
-  nav .nav-actions { display: flex; }
+  nav .nav-actions { display: flex; margin-left: auto; gap: 10px; }
   .nav-cta { padding: 8px 10px; font-size: 12px; }
-  .menu-btn { display: block; }
+  .menu-btn { display: block; font: inherit; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
   nav.open .nav-links {
     display: flex;
     flex-direction: column;
