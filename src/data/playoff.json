@@ -37,7 +37,7 @@
             "time": "12:45",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "6-2 6-2",
             "wo": ""
           },
           {
@@ -76,8 +76,8 @@
             "slot": 1,
             "homeSeed": 1,
             "home": "Gea Sánchez, Julián / Gea Sánchez, Joaquín",
-            "awaySeed": null,
-            "away": "",
+            "awaySeed": 3,
+            "away": "Enrique, Ariel / Enrique, Marcelo",
             "day": "25/10/2026",
             "time": "16:30",
             "venue": "Palermo Padel",
