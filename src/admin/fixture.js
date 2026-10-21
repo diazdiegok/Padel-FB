@@ -1,5 +1,5 @@
-import { FIXTURE_PATH, FX_COLS, RESULTS_PATH } from "./constants.js";
-import { cleanMatch, downloadCsv, driveRow, matchKey, parseFixtureText } from "./csv.js";
+import { FIXTURE_PATH, RESULTS_PATH } from "./constants.js";
+import { cleanMatch } from "./csv.js";
 import { DISP_PATH } from "../lib/disponibilidad.js";
 import { buildFixture } from "../lib/fixturer.js";
 import { latestWeek, mergeArchivedMatches, weekKey, weekNumber } from "../lib/liga.js";
@@ -156,21 +156,6 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     }
   }
 
-  function loadFixtureText(text) {
-    const season = ctx.siteData.currentSeason || "T4";
-    const parsed = parseFixtureText(text, { week: fallbackWeek(), temp: season }, season);
-    const prev = new Map(ctx.fixture.map((m) => [matchKey(m), m]));
-    ctx.fixture = parsed.map((m) => {
-      const old = prev.get(matchKey(m));
-      if (!old) return m;
-      return { ...m, result: m.result || old.result, appliedResult: old.appliedResult };
-    });
-    shell.markDirty("fixture");
-    render();
-    toast(`Cargué ${parsed.length} partidos de ${fallbackWeek()}`, "ok");
-    setMsg($("fx-msg"), `Cargué ${parsed.length} partidos. Revisá y publicá.`, "ok");
-  }
-
   async function readDisp() {
     if (!ctx.token) return ctx.disp;
     const file = await api.api(`/repos/${ctx.owner}/${ctx.repo}/contents/${DISP_PATH}?ref=main`);
@@ -264,13 +249,6 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   }
 
   function bind() {
-    $("fx-import-toggle")?.addEventListener("click", () => {
-      const panel = $("fx-import-panel");
-      if (!panel) return;
-      panel.hidden = !panel.hidden;
-      $("fx-import-toggle").setAttribute("aria-expanded", String(!panel.hidden));
-    });
-
     $("fx-build")?.addEventListener("click", buildFromFecha);
 
     $("fx-add")?.addEventListener("click", () => {
@@ -345,52 +323,6 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     };
     $("fx-body")?.addEventListener("click", onDelete);
     $("fx-pending")?.addEventListener("click", onDelete);
-
-    $("fx-model")?.addEventListener("click", () => {
-      downloadCsv("modelo-fixture.csv", FX_COLS, [
-        {
-          categoria: "A MASC",
-          partido: "Apellido Nombre - Apellido Nombre vs Apellido Nombre - Apellido Nombre",
-          complejo: "OPEN",
-          cancha: "Cancha 1",
-          dia: "Jueves",
-          horario: "19:00 - 20:30",
-        },
-      ]);
-      toast("Modelo CSV descargado", "ok");
-    });
-    $("fx-export")?.addEventListener("click", () => {
-      const season = ctx.siteData.currentSeason || "T4";
-      downloadCsv(
-        "fixture-liga-fb.csv",
-        FX_COLS,
-        ctx.fixture.filter((m) => !isPending(m)).map((m) => driveRow(cleanMatch(m, {}, season)))
-      );
-      toast("Fixture exportado", "ok");
-    });
-
-    $("fx-csv")?.addEventListener("change", async (e) => {
-      const file = e.target.files?.[0];
-      e.target.value = "";
-      if (!file) return;
-      try {
-        loadFixtureText(await file.text());
-        $("fx-import-panel").hidden = true;
-      } catch (err) {
-        toast(err.message, "err");
-        setMsg($("fx-msg"), err.message, "err");
-      }
-    });
-
-    $("fx-paste-btn")?.addEventListener("click", () => {
-      try {
-        loadFixtureText($("fx-paste").value);
-        $("fx-import-panel").hidden = true;
-      } catch (err) {
-        toast(err.message, "err");
-        setMsg($("fx-msg"), err.message, "err");
-      }
-    });
 
     $("fx-body")?.addEventListener("click", (e) => {
       const edit = e.target.closest("[data-fx-edit]");

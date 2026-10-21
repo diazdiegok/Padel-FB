@@ -1,7 +1,7 @@
-import { CATS, PAIRS_PATH, RANK_COLS, RANK_PATH } from "./constants.js";
-import { cleanRow, downloadCsv, parseRankingCsv } from "./csv.js";
+import { CATS, RANK_COLS, RANK_PATH } from "./constants.js";
+import { cleanRow, downloadCsv } from "./csv.js";
 import { listSeasons } from "../lib/liga.js";
-import { addPairsToRanking, fold } from "../lib/scoring.js";
+import { fold } from "../lib/scoring.js";
 import { $, confirmModal, escAttr, num, setBusy, setMsg, toast } from "./ui.js";
 
 export function createRanking(ctx, api, shell) {
@@ -127,52 +127,6 @@ export function createRanking(ctx, api, shell) {
       refresh();
     });
 
-    $("add")?.addEventListener("click", () => {
-      const temp = filterTemp;
-      const cat = filterCat;
-      const last = ctx.rows.filter((r) => r.temp === temp && r.cat === cat).reduce((m, r) => Math.max(m, Number(r.pos) || 0), 0);
-      ctx.rows.push(cleanRow({ name: "", cat, pts: 0, pj: 0, dif: 0, pos: last + 1, temp }, temp));
-      $("f-q").value = "";
-      shell.markDirty("ranking");
-      refresh();
-      $("tbody")?.querySelector("tr:last-child input[data-k=name]")?.focus();
-    });
-
-    $("rank-sync")?.addEventListener("click", async () => {
-      const btn = $("rank-sync");
-      setBusy(btn, true, "Buscando…");
-      try {
-        const remote = ctx.token ? await api.readRemoteJson(PAIRS_PATH, ctx.pairs) : ctx.pairs;
-        if (Array.isArray(remote)) ctx.pairs = remote;
-        const added = addPairsToRanking(ctx.rows, ctx.pairs.filter((p) => p.temp === filterTemp));
-        if (!added.length) {
-          setMsg($("rank-msg"), `Todas las parejas inscriptas en ${filterTemp} ya están en el ranking.`, "ok");
-          return;
-        }
-        shell.markDirty("ranking");
-        refresh();
-        setMsg($("rank-msg"), `Sumé ${added.length} pareja${added.length === 1 ? "" : "s"} inscripta${added.length === 1 ? "" : "s"} con 0 puntos. Publicá el ranking.`, "ok");
-      } catch (err) {
-        setMsg($("rank-msg"), err.message, "err");
-      } finally {
-        setBusy(btn, false);
-      }
-    });
-
-    $("csv-model")?.addEventListener("click", () => {
-      downloadCsv("modelo-ranking.csv", RANK_COLS, [
-        {
-          name: "Apellido, Nombre / Apellido, Nombre",
-          cat: "A Masculina",
-          pts: 0,
-          pj: 0,
-          dif: 0,
-          pos: 1,
-          temp: ctx.siteData.currentSeason || "T4",
-        },
-      ]);
-      toast("Modelo CSV descargado", "ok");
-    });
     $("csv-export")?.addEventListener("click", () => {
       downloadCsv(
         "ranking-liga-fb.csv",
@@ -180,29 +134,6 @@ export function createRanking(ctx, api, shell) {
         ctx.rows.map((r) => cleanRow(r, ctx.siteData.currentSeason || "T4"))
       );
       toast("Ranking exportado", "ok");
-    });
-
-    $("csv")?.addEventListener("change", async (e) => {
-      const file = e.target.files?.[0];
-      e.target.value = "";
-      if (!file) return;
-      try {
-        const fallbackTemp = filterTemp;
-        const parsed = parseRankingCsv(await file.text(), { fallbackTemp });
-        if (!parsed.length) throw new Error("El CSV no tiene filas válidas.");
-        if ($("replace-temp").checked) {
-          const tempsIn = [...new Set(parsed.map((r) => r.temp))];
-          ctx.rows = ctx.rows.filter((r) => !tempsIn.includes(r.temp)).concat(parsed);
-          toast(`Reemplacé ${tempsIn.join(", ")} · ${parsed.length} filas`, "ok");
-        } else {
-          ctx.rows = ctx.rows.concat(parsed);
-          toast(`Agregué ${parsed.length} filas`, "ok");
-        }
-        shell.markDirty("ranking");
-        refresh();
-      } catch (err) {
-        toast(err.message, "err");
-      }
     });
 
     $("publish")?.addEventListener("click", async () => {
@@ -245,13 +176,6 @@ export function createRanking(ctx, api, shell) {
       } finally {
         setBusy($("publish"), false);
       }
-    });
-
-    $("rank-csv-toggle")?.addEventListener("click", () => {
-      const panel = $("rank-csv-panel");
-      if (!panel) return;
-      panel.hidden = !panel.hidden;
-      $("rank-csv-toggle").setAttribute("aria-expanded", String(!panel.hidden));
     });
   }
 

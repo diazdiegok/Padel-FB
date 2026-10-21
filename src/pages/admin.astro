@@ -81,7 +81,7 @@ import "../styles/admin.css";
           <button class="admin-menu-btn" type="button" id="admin-menu-btn" aria-label="Menú">☰</button>
           <div>
             <h1 id="admin-page-title">Ranking</h1>
-            <p class="admin-page-help" id="admin-page-help">Editá posiciones, importá CSV y publicá la tabla.</p>
+            <p class="admin-page-help" id="admin-page-help">La tabla se arma con las parejas inscriptas y los resultados. Acá corregís a mano y publicás.</p>
           </div>
         </div>
         <div class="admin-topbar-right">
@@ -108,22 +108,8 @@ import "../styles/admin.css";
         <!-- Ranking -->
         <section data-section="ranking">
           <div class="admin-section-tools">
-            <button class="btn btn-ghost" type="button" id="add">+ Pareja</button>
-            <button class="btn btn-ghost" type="button" id="rank-sync">Sumar parejas inscriptas</button>
-            <button class="btn btn-ghost" type="button" id="rank-csv-toggle" aria-expanded="false">CSV</button>
+            <button class="btn btn-ghost" type="button" id="csv-export">Exportar</button>
             <span class="tag" id="rank-count"></span>
-          </div>
-          <div class="admin-dropdown-panel" id="rank-csv-panel" hidden>
-            <div class="admin-toolbar">
-              <button class="btn btn-ghost" type="button" id="csv-model">Modelo</button>
-              <button class="btn btn-ghost" type="button" id="csv-export">Exportar</button>
-              <label class="btn btn-ghost" style="cursor:pointer">
-                Importar
-                <input id="csv" type="file" accept=".csv,.txt,.tsv" hidden />
-              </label>
-              <label class="chk"><input id="replace-temp" type="checkbox" checked /> Reemplazar temporada</label>
-            </div>
-            <p class="admin-help">Columnas: name, cat, pts, pj, dif, pos, temp</p>
           </div>
           <div class="season-bar">
             <span class="filter-kicker">Temporada</span>
@@ -188,30 +174,14 @@ import "../styles/admin.css";
               </label>
               <button class="btn btn-lime" type="button" id="fx-build">Armar desde Fecha</button>
               <button class="btn btn-ghost" type="button" id="fx-add">+ Partido</button>
-              <button class="btn btn-ghost" type="button" id="fx-import-toggle" aria-expanded="false">Importar</button>
               <span class="admin-summary" id="fx-summary">Sin partidos cargados</span>
-            </div>
-            <div class="admin-dropdown-panel" id="fx-import-panel" hidden>
-              <p class="admin-help">Formato Drive: categoria, partido, complejo, cancha, dia, horario</p>
-              <div class="admin-toolbar">
-                <button class="btn btn-ghost" type="button" id="fx-model">Modelo CSV</button>
-                <button class="btn btn-ghost" type="button" id="fx-export">Exportar CSV</button>
-                <label class="btn btn-ghost" style="cursor:pointer">
-                  Importar CSV
-                  <input id="fx-csv" type="file" accept=".csv,.txt,.tsv" hidden />
-                </label>
-              </div>
-              <label class="admin-help" style="display:block">Pegá la tabla de Drive
-                <textarea id="fx-paste" rows="6" placeholder="categoria	partido	complejo	cancha	dia	horario"></textarea>
-              </label>
-              <button class="btn btn-ghost" type="button" id="fx-paste-btn">Cargar tabla</button>
             </div>
           </div>
 
           <p class="admin-msg" id="fx-msg"></p>
           <datalist id="fx-venues"></datalist>
           <div class="admin-empty" id="fx-empty" hidden>
-            <p>Todavía no hay partidos. Usá Armar desde Fecha, Importar o + Partido.</p>
+            <p>Todavía no hay partidos. Usá Armar desde Fecha o + Partido.</p>
           </div>
           <div class="fx-warnings" id="fx-warnings" role="status" hidden></div>
           <div class="fx-pending" id="fx-pending" hidden></div>
@@ -375,7 +345,6 @@ import "../styles/admin.css";
           <div class="admin-section-tools">
             <button class="btn btn-ghost" type="button" id="pairs-reload">Actualizar lista</button>
             <button class="btn btn-ghost" type="button" id="pairs-add">+ Pareja</button>
-            <button class="btn btn-ghost" type="button" id="pairs-import">Traer parejas del ranking</button>
             <button class="btn btn-ghost" type="button" id="pairs-export">Exportar con WhatsApp</button>
             <span class="tag" id="pairs-count"></span>
           </div>

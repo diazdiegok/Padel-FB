@@ -48,7 +48,7 @@ export const VENUE_MAP = {
 
 export const SECTIONS = {
   temporadas: { group: "Liga", title: "Temporadas", help: "Creá una temporada y dejala en juego. Ranking, fixture y fecha pasan a usar esa." },
-  ranking: { group: "Liga", title: "Ranking", help: "Editá posiciones, importá CSV y publicá la tabla." },
+  ranking: { group: "Liga", title: "Ranking", help: "La tabla se arma con las parejas inscriptas y los resultados. Acá corregís a mano y publicás." },
   fixture: { group: "Liga", title: "Fixture", help: "Cargá la fecha, revisá partidos y publicá. Los resultados se cargan en Resultados." },
   resultados: { group: "Liga", title: "Resultados", help: "Cargá el score de cada partido. Al publicar se actualiza el ranking." },
   playoff: { group: "Liga", title: "Playoff", help: "Armá el cuadro de cada categoría, cargá días, horarios y resultados. La ganadora pasa sola a la siguiente ronda." },

@@ -1,7 +1,7 @@
 import { CATS, PAIRS_CONFIG_PATH, PAIRS_PATH, RANK_PATH } from "./constants.js";
 import { fold } from "../lib/disponibilidad.js";
 import { addPairsToRanking } from "../lib/scoring.js";
-import { seasonLabel, seasonNumber } from "../lib/liga.js";
+import { seasonLabel } from "../lib/liga.js";
 import { downloadCsv } from "./csv.js";
 import { $, confirmModal, escAttr as esc, setBusy, setMsg, toast } from "./ui.js";
 
@@ -114,7 +114,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       : `<div class="admin-empty"><p>${
           list.length
             ? "Nadie coincide con la búsqueda."
-            : `Todavía no hay parejas inscriptas en ${esc(seasonLabel(temp))}. Compartí el link /inscribir-pareja/ o traé las del ranking.`
+            : `Todavía no hay parejas inscriptas en ${esc(seasonLabel(temp))}. Compartí el link /inscribir-pareja/.`
         }</p></div>`;
   }
 
@@ -148,41 +148,6 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       render();
       if (!quiet || !loaded) setMsg($("pairs-msg"), err.message, "err");
     }
-  }
-
-  function importFromRanking() {
-    const current = season();
-    let temp = current;
-    let rows = ctx.rows.filter((r) => r.temp === temp && String(r.name || "").includes("/"));
-    if (!rows.length) {
-      const prev = [...new Set(ctx.rows.map((r) => r.temp))]
-        .filter((t) => seasonNumber(t) < seasonNumber(current))
-        .sort((a, b) => seasonNumber(b) - seasonNumber(a))[0];
-      if (prev) {
-        temp = prev;
-        rows = ctx.rows.filter((r) => r.temp === temp && String(r.name || "").includes("/"));
-      }
-    }
-    if (!rows.length) {
-      toast("No hay parejas en el ranking para traer", "err");
-      return;
-    }
-    const have = new Set(ctx.pairs.filter((p) => p.temp === current).map(pairKey));
-    let added = 0;
-    for (const r of rows) {
-      if (!CATS.includes(r.cat)) continue;
-      const [p1, p2] = String(r.name).split("/").map((s) => s.trim());
-      if (!p1 || !p2) continue;
-      const pair = { id: newId() + added, createdAt: new Date().toISOString(), temp: current, cat: r.cat, p1, p2, source: "ranking" };
-      if (have.has(pairKey(pair))) continue;
-      have.add(pairKey(pair));
-      ctx.pairs.push(pair);
-      added += 1;
-    }
-    shell.markDirty("parejas");
-    render();
-    const from = temp === current ? "" : ` (tomadas de ${seasonLabel(temp)})`;
-    setMsg($("pairs-msg"), added ? `Sumé ${added} parejas del ranking${from}. Revisá y guardá.` : "Todas las parejas del ranking ya estaban inscriptas.", "ok");
   }
 
   function exportCsv() {
@@ -223,7 +188,6 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       render();
     });
     $("pairs-reload")?.addEventListener("click", () => reload({ quiet: false }));
-    $("pairs-import")?.addEventListener("click", importFromRanking);
     $("pairs-export")?.addEventListener("click", exportCsv);
     $("pairs-add")?.addEventListener("click", () => {
       ctx.pairs.push({ id: newId(), createdAt: new Date().toISOString(), temp: season(), cat: CATS[0], p1: "", p2: "", source: "admin" });
