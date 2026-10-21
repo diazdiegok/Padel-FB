@@ -372,6 +372,57 @@ async function listPairs(env) {
 }
 
 // Los WhatsApp quedan en KV y no en el repo, que es público.
+function clip(value, max) {
+  return String(value || "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+async function saveAcademy(env, raw) {
+  if (!env.AUTH_KV) throw new Error("Falta configurar el guardado de inscripciones.");
+  const entry = {
+    id: `a${Date.now().toString(36)}${crypto.randomUUID().slice(0, 4)}`,
+    createdAt: new Date().toISOString(),
+    para: raw.para === "Infantiles" ? "Infantiles" : "Adultos",
+    nombre: cleanName(raw.nombre),
+    tel: cleanPhone(raw.tel),
+    edad: clip(raw.edad, 3).replace(/\D/g, ""),
+    nivel: clip(raw.nivel, 40),
+    sede: clip(raw.sede, 60),
+    horario: clip(raw.horario, 120),
+    nota: clip(raw.nota, 500),
+  };
+  if (!entry.nombre) throw new Error("Completá el nombre.");
+  if (entry.tel.length < 8) throw new Error("Dejá un WhatsApp con característica (ej. 343 555 0000).");
+  if (entry.para === "Infantiles" && !entry.edad) throw new Error("Para infantiles, completá la edad.");
+  await env.AUTH_KV.put(`acad:${entry.id}`, JSON.stringify(entry));
+  return { ok: true };
+}
+
+async function listAcademy(env) {
+  if (!env.AUTH_KV) return [];
+  const out = [];
+  let cursor;
+  do {
+    const page = await env.AUTH_KV.list({ prefix: "acad:", cursor });
+    const values = await Promise.all(page.keys.map((key) => env.AUTH_KV.get(key.name)));
+    for (const value of values) {
+      try {
+        if (value) out.push(JSON.parse(value));
+      } catch {
+        /* una entrada vieja mal grabada no frena el listado */
+      }
+    }
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+  return out.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+}
+
+async function deleteAcademy(env, id) {
+  if (!env.AUTH_KV) throw new Error("Falta configurar el guardado de inscripciones.");
+  if (!/^a[a-z0-9]{6,40}$/.test(String(id || ""))) throw new Error("Inscripción inválida.");
+  await env.AUTH_KV.delete(`acad:${id}`);
+  return { ok: true };
+}
+
 async function listContacts(env) {
   if (!env.AUTH_KV) return {};
   const out = {};
@@ -536,6 +587,26 @@ export default {
         const temp = String(url.searchParams.get("temp") || "").toUpperCase();
         const list = await listPairs(env);
         return response(request, env, temp ? list.filter((p) => p.temp === temp) : list);
+      }
+
+      if (url.pathname === "/academia" && request.method === "POST") {
+        const body = await request.json();
+        if (body.website) return response(request, env, { ok: true });
+        if (!(await allowed(env.FORM_LIMITER, request, "form"))) {
+          return response(request, env, { message: "Muchos envíos seguidos. Esperá un minuto y probá de nuevo." }, 429);
+        }
+        return response(request, env, await saveAcademy(env, body));
+      }
+
+      if (url.pathname === "/academia" && request.method === "GET") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        return response(request, env, await listAcademy(env));
+      }
+
+      if (url.pathname === "/academia/delete" && request.method === "POST") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        const body = await request.json();
+        return response(request, env, await deleteAcademy(env, body.id));
       }
 
       if (url.pathname === "/pairs/status" && request.method === "GET") {

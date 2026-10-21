@@ -47,16 +47,17 @@ import "../styles/admin.css";
       <div class="admin-nav-group">
         <div class="admin-nav-label">Liga</div>
         <button class="admin-nav-btn" type="button" data-nav="temporadas">Temporadas</button>
-        <button class="admin-nav-btn on" type="button" data-nav="ranking">Ranking</button>
+        <button class="admin-nav-btn" type="button" data-nav="parejas">Parejas inscriptas</button>
+        <button class="admin-nav-btn" type="button" data-nav="fecha">Fecha</button>
         <button class="admin-nav-btn" type="button" data-nav="fixture">Fixture</button>
         <button class="admin-nav-btn" type="button" data-nav="resultados">Resultados</button>
         <button class="admin-nav-btn" type="button" data-nav="playoff">Playoff</button>
-        <button class="admin-nav-btn" type="button" data-nav="fecha">Fecha · Inscripciones</button>
-        <button class="admin-nav-btn" type="button" data-nav="parejas">Parejas inscriptas</button>
+        <button class="admin-nav-btn on" type="button" data-nav="ranking">Ranking</button>
         <button class="admin-nav-btn" type="button" data-nav="sedes">Sedes</button>
       </div>
       <div class="admin-nav-group">
         <div class="admin-nav-label">Academia</div>
+        <button class="admin-nav-btn" type="button" data-nav="acadinsc">Inscripciones</button>
         <button class="admin-nav-btn" type="button" data-nav="academia">Adultos</button>
         <button class="admin-nav-btn" type="button" data-nav="infantiles">Infantiles</button>
       </div>
@@ -375,6 +376,19 @@ import "../styles/admin.css";
               <button class="btn btn-lime" type="button" id="pairs-publish">Guardar parejas</button>
             </div>
           </div>
+        </section>
+
+        <!-- Inscripciones academia -->
+        <section data-section="acadinsc" hidden>
+          <div class="admin-section-tools">
+            <button class="btn btn-ghost" type="button" id="acad-reload">Actualizar lista</button>
+            <button class="btn btn-ghost" type="button" id="acad-export">Exportar</button>
+            <span class="tag" id="acad-count"></span>
+          </div>
+          <input class="admin-search" id="acad-search" type="search" placeholder="Buscar nombre o WhatsApp…" autocomplete="off" />
+          <p class="admin-help">Cada vez que alguien completa la inscripción de la academia, queda acá. El WhatsApp sigue abriéndose para responderles.</p>
+          <p class="admin-msg" id="acad-msg"></p>
+          <div id="acad-list"></div>
         </section>
 
         <!-- Academia -->

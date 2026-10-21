@@ -765,6 +765,10 @@ body.is-admin main > .wrap {
   margin: 0;
 }
 .admin-season-venues .btn { width: auto; min-height: 0; padding: 11px 18px; }
+.acad-leads { display: grid; gap: 12px; }
+.acad-lead p { margin: 0; color: var(--muted); }
+.acad-lead a { color: var(--cream); }
+.acad-note { color: var(--cream); }
 
 .admin-season-head {
   display: flex;

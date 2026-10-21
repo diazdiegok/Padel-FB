@@ -107,12 +107,12 @@ const inTorneos = path.includes("/torneos");
               <div class="nav-drop">
                 <div class="nav-drop-inner">
                   <a href={page("liga/")}>Resumen</a>
-                  <a href={page("playoff/")}>Playoff</a>
-                  <a href={page("ranking/")}>Ranking</a>
-                  <a href={page("fixture/")}>Fixture</a>
-                  <a href={page("resultados/")}>Resultados</a>
                   <a href={page("inscribir-pareja/")}>Inscripción de parejas</a>
                   <a href={page("fecha/")}>Fecha</a>
+                  <a href={page("fixture/")}>Fixture</a>
+                  <a href={page("resultados/")}>Resultados</a>
+                  <a href={page("playoff/")}>Playoff</a>
+                  <a href={page("ranking/")}>Ranking</a>
                   <a href={page("sedes/")}>Sedes</a>
                 </div>
               </div>
@@ -121,10 +121,10 @@ const inTorneos = path.includes("/torneos");
               <button class:list={["nav-trigger", { on: inAcademia }]} type="button" data-nav-drop aria-expanded="false">Academia</button>
               <div class="nav-drop">
                 <div class="nav-drop-inner">
+                  <a href={page("academia/inscripcion/")} aria-current={path.includes("/academia/inscripcion") ? "page" : undefined}>Inscripción</a>
                   <a href={page("academia/")} aria-current={inAcademia && !path.includes("/sedes") && !path.includes("/infantiles") && !path.includes("/inscripcion") ? "page" : undefined}>Clases Adultos</a>
                   <a href={page("academia/infantiles/")} aria-current={path.includes("/infantiles") ? "page" : undefined}>Clases Infantiles</a>
                   <a href={page("academia/sedes/")} aria-current={path.includes("/academia") && path.includes("/sedes") ? "page" : undefined}>Sedes</a>
-                  <a href={page("academia/inscripcion/")} aria-current={path.includes("/academia/inscripcion") ? "page" : undefined}>Inscripción</a>
                 </div>
               </div>
             </li>

@@ -1,3 +1,4 @@
+import { createAcademiaInscripciones } from "./acadinsc.js";
 import { createApi } from "./api.js";
 import { createAuth } from "./auth.js";
 import { HIDDEN_CATS } from "./constants.js";
@@ -43,6 +44,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   let cms;
   let playoff;
   let parejas;
+  let acadinsc;
 
   const shell = createShell(ctx, {
     onEnterSection(id) {
@@ -50,6 +52,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
       if (id === "resultados") results?.reload();
       if (id === "playoff") playoff?.reload();
       if (id === "parejas") parejas?.reload();
+      if (id === "acadinsc") acadinsc?.reload();
     },
     onDiscardSection(id) {
       if (id === "fixture") {
@@ -90,6 +93,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   fecha = createFecha(ctx, api, shell);
   cms = createCms(ctx, api, shell);
   playoff = createPlayoff(ctx, api, shell);
+  acadinsc = createAcademiaInscripciones(ctx, api);
   parejas = createParejas(ctx, api, shell, {
     onRankingChanged() {
       ranking.refresh();
@@ -133,6 +137,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   cms.bind();
   playoff.bind();
   parejas.bind();
+  acadinsc.bind();
 
   if (auth.isLoggedIn()) showApp();
 }

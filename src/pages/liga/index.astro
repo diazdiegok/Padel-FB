@@ -7,12 +7,12 @@ import { normalizePlayoffs } from "../../lib/playoff.js";
 
 const playoffOn = normalizePlayoffs(playoffJson).some((p) => p.categories.length);
 const links = [
-  ...(playoffOn ? [{ href: "playoff/", title: "Playoff", text: "Cuadros y campeones de cada temporada." }] : []),
-  { href: "ranking/", title: "Ranking", text: "Tabla por categoría y temporada." },
-  { href: "fixture/", title: "Fixture", text: "Partidos semanales de la temporada." },
-  { href: "resultados/", title: "Resultados", text: "Resultados cargados de cada fecha." },
   { href: "inscribir-pareja/", title: "Inscripción de parejas", text: "Se hace una vez por temporada." },
   { href: "fecha/", title: "Fecha", text: "Disponibilidad y carga de la semana." },
+  { href: "fixture/", title: "Fixture", text: "Partidos semanales de la temporada." },
+  { href: "resultados/", title: "Resultados", text: "Resultados cargados de cada fecha." },
+  ...(playoffOn ? [{ href: "playoff/", title: "Playoff", text: "Cuadros y campeones de cada temporada." }] : []),
+  { href: "ranking/", title: "Ranking", text: "Tabla por categoría y temporada." },
   { href: "sedes/", title: "Sedes", text: "Canchas oficiales de la liga." },
 ];
 ---

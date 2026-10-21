@@ -14,7 +14,7 @@ const kidsVenues = venues.filter((v: any) => v.infantiles === true).map((v: any)
     <header class="page-hero">
       <p class="kicker">Academia · Inscripción</p>
       <h1>Anotate a las clases</h1>
-      <p>Adultos o infantiles. Completá los datos y el mensaje sale por WhatsApp armado; te respondemos con horarios y valores.</p>
+      <p>Adultos o infantiles. Completá los datos: quedan anotados y se abre WhatsApp con el mensaje armado para que te confirmemos horarios y valores.</p>
     </header>
 
     <form class="form form-fecha" id="ac-form">
@@ -56,12 +56,13 @@ const kidsVenues = venues.filter((v: any) => v.infantiles === true).map((v: any)
       <label>Comentario
         <textarea name="nota" rows="3" maxlength="500" placeholder="Clase individual o grupal, alguna consulta…"></textarea>
       </label>
-      <button class="btn btn-lime" type="submit">Enviar por WhatsApp</button>
+      <input class="hp" name="website" tabindex="-1" autocomplete="off" />
+      <button class="btn btn-lime" type="submit">Enviar inscripción</button>
       <p class="admin-msg" id="ac-msg" aria-live="polite"></p>
     </form>
   </div>
 
-  <script define:vars={{ number: site.whatsapp, adultVenues, kidsVenues }}>
+  <script define:vars={{ number: site.whatsapp, adultVenues, kidsVenues, apiUrl: String(site.apiUrl || "").replace(/\/$/, "") }}>
     const form = document.querySelector("#ac-form");
     const sede = form.querySelector("[data-sede]");
     const kids = form.querySelector("[data-kids]");
@@ -86,10 +87,17 @@ const kidsVenues = venues.filter((v: any) => v.infantiles === true).map((v: any)
     form.querySelectorAll("input[name=para]").forEach((r) => r.addEventListener("change", sync));
     sync();
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
+      if (form.website.value) return;
       const d = Object.fromEntries(new FormData(form));
+      const msg = document.querySelector("#ac-msg");
       const isKids = d.para === "Infantiles";
+      if (String(d.tel || "").replace(/\D/g, "").length < 8) {
+        msg.textContent = "Dejá un WhatsApp con característica (ej. 343 555 0000).";
+        msg.className = "admin-msg err";
+        return;
+      }
       const text = [
         `Hola, quiero anotarme a las clases de ${isKids ? "infantiles" : "adultos"} de la academia Padel FB.`,
         `${isKids ? "Nombre del chico/a" : "Nombre"}: ${d.nombre}`,
@@ -102,10 +110,29 @@ const kidsVenues = venues.filter((v: any) => v.infantiles === true).map((v: any)
       ]
         .filter(Boolean)
         .join("\n");
+      msg.textContent = "Guardando…";
+      msg.className = "admin-msg";
+      let saved = false;
+      try {
+        const res = await fetch(apiUrl + "/academia", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...d, website: form.website.value }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || "No se pudo guardar.");
+        saved = true;
+      } catch (ex) {
+        msg.textContent = (ex.message || "No se pudo guardar la inscripción.") + " Igual podés mandarla por WhatsApp.";
+        msg.className = "admin-msg err";
+      }
       window.open("https://wa.me/" + number + "?text=" + encodeURIComponent(text), "_blank");
-      const msg = document.querySelector("#ac-msg");
-      msg.textContent = "Se abrió WhatsApp con el mensaje listo. Solo falta tocar enviar.";
-      msg.className = "admin-msg ok";
+      if (saved) {
+        msg.textContent = "Quedó anotada en la academia y se abrió WhatsApp. Solo falta tocar enviar.";
+        msg.className = "admin-msg ok";
+        form.reset();
+        sync();
+      }
     });
   </script>
 </Layout>
