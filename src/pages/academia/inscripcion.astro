@@ -1,0 +1,111 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { site } from "../../data/site";
+
+const venues = ((site as any).venues || []).filter((v: any) => v.academia === true || v.infantiles === true);
+const adultVenues = venues.filter((v: any) => v.academia === true).map((v: any) => v.name);
+const kidsVenues = venues.filter((v: any) => v.infantiles === true).map((v: any) => v.name);
+---
+<Layout
+  title="Inscripción a la academia | Padel FB"
+  description="Anotate a las clases de pádel de la academia Padel FB en Paraná, para adultos o infantiles. Te confirmamos por WhatsApp."
+>
+  <div class="wrap">
+    <header class="page-hero">
+      <p class="kicker">Academia · Inscripción</p>
+      <h1>Anotate a las clases</h1>
+      <p>Adultos o infantiles. Completá los datos y el mensaje sale por WhatsApp armado; te respondemos con horarios y valores.</p>
+    </header>
+
+    <form class="form form-fecha" id="ac-form">
+      <fieldset class="form-set">
+        <legend>Las clases son para</legend>
+        <div class="seg">
+          <label class="seg-item on"><input type="radio" name="para" value="Adultos" checked /> Adultos</label>
+          <label class="seg-item"><input type="radio" name="para" value="Infantiles" /> Infantiles</label>
+        </div>
+      </fieldset>
+      <div class="form-grid">
+        <label><span data-name-label>Nombre y apellido</span>
+          <input name="nombre" required maxlength="80" placeholder="Nombre y apellido" autocomplete="name" />
+        </label>
+        <label>WhatsApp
+          <input name="tel" required maxlength="30" inputmode="tel" placeholder="Ej. 343 555 0000" autocomplete="tel" />
+        </label>
+      </div>
+      <div class="form-grid">
+        <label data-kids hidden>Edad
+          <input name="edad" inputmode="numeric" maxlength="3" placeholder="Ej. 9" />
+        </label>
+        <label>Nivel
+          <select name="nivel">
+            <option>Nunca jugué</option>
+            <option>Inicial</option>
+            <option>Intermedio</option>
+            <option>Avanzado</option>
+            <option>No sé, me orientan</option>
+          </select>
+        </label>
+        <label>Sede preferida
+          <select name="sede" data-sede></select>
+        </label>
+      </div>
+      <label>Días y horarios que te quedan cómodos
+        <input name="horario" maxlength="120" placeholder="Ej. martes y jueves después de las 18" />
+      </label>
+      <label>Comentario
+        <textarea name="nota" rows="3" maxlength="500" placeholder="Clase individual o grupal, alguna consulta…"></textarea>
+      </label>
+      <button class="btn btn-lime" type="submit">Enviar por WhatsApp</button>
+      <p class="admin-msg" id="ac-msg" aria-live="polite"></p>
+    </form>
+  </div>
+
+  <script define:vars={{ number: site.whatsapp, adultVenues, kidsVenues }}>
+    const form = document.querySelector("#ac-form");
+    const sede = form.querySelector("[data-sede]");
+    const kids = form.querySelector("[data-kids]");
+    const nameLabel = form.querySelector("[data-name-label]");
+
+    function sync() {
+      const isKids = form.para.value === "Infantiles";
+      kids.hidden = !isKids;
+      form.edad.required = isKids;
+      nameLabel.textContent = isKids ? "Nombre del chico/a" : "Nombre y apellido";
+      form.querySelectorAll(".seg-item").forEach((el) => el.classList.toggle("on", el.querySelector("input").checked));
+      const list = isKids ? kidsVenues : adultVenues;
+      sede.replaceChildren(
+        ...["Cualquiera", ...list].map((name) => {
+          const opt = document.createElement("option");
+          opt.textContent = name;
+          return opt;
+        })
+      );
+    }
+
+    form.querySelectorAll("input[name=para]").forEach((r) => r.addEventListener("change", sync));
+    sync();
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const d = Object.fromEntries(new FormData(form));
+      const isKids = d.para === "Infantiles";
+      const text = [
+        `Hola, quiero anotarme a las clases de ${isKids ? "infantiles" : "adultos"} de la academia Padel FB.`,
+        `${isKids ? "Nombre del chico/a" : "Nombre"}: ${d.nombre}`,
+        isKids && d.edad ? `Edad: ${d.edad}` : null,
+        `WhatsApp: ${d.tel}`,
+        `Nivel: ${d.nivel}`,
+        `Sede: ${d.sede}`,
+        d.horario ? `Horarios: ${d.horario}` : null,
+        d.nota ? `Comentario: ${d.nota}` : null,
+      ]
+        .filter(Boolean)
+        .join("\n");
+      window.open("https://wa.me/" + number + "?text=" + encodeURIComponent(text), "_blank");
+      const msg = document.querySelector("#ac-msg");
+      msg.textContent = "Se abrió WhatsApp con el mensaje listo. Solo falta tocar enviar.";
+      msg.className = "admin-msg ok";
+    });
+  </script>
+</Layout>

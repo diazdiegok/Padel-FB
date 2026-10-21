@@ -85,9 +85,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
       fecha?.fill();
     },
   });
-  fecha = createFecha(ctx, api, shell, {
-    onBuildFixture: () => fixture.buildFromFecha(),
-  });
+  fecha = createFecha(ctx, api, shell);
   cms = createCms(ctx, api, shell);
   playoff = createPlayoff(ctx, api, shell);
   parejas = createParejas(ctx, api, shell);

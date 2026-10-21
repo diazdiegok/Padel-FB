@@ -16,7 +16,7 @@ const daysText = (e) =>
         .map(([d, h]) => `${d} ${h}`)
         .join(" · ");
 
-export function createFecha(ctx, api, shell, { onBuildFixture } = {}) {
+export function createFecha(ctx, api, shell) {
   let term = "";
 
   function renderSummary(list) {
@@ -163,8 +163,6 @@ export function createFecha(ctx, api, shell, { onBuildFixture } = {}) {
       );
       toast("Inscripciones exportadas", "ok");
     });
-    $("disp-build")?.addEventListener("click", () => onBuildFixture?.());
-
     $("disp-list")?.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-disp-del]");
       if (!btn) return;

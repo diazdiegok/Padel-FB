@@ -20,6 +20,7 @@ const routes = [
   "academia/",
   "academia/infantiles/",
   "academia/sedes/",
+  "academia/inscripcion/",
   "torneos/",
   "inscripcion/",
 ];
