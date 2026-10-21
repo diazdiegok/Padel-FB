@@ -516,7 +516,7 @@ async function appendAvailability(env, raw) {
   for (let attempt = 0; attempt < 4; attempt++) {
     const file = await readAvailability(env);
     if (!file.json.open || deadlinePassed(file.json.deadline)) {
-      throw new Error(`${closeStatus(false, file.json.deadline)}.`);
+      throw new Error(`${closeStatus(false, file.json.deadline, "Fecha")}.`);
     }
     if (file.json.temp && pair.temp && file.json.temp !== pair.temp) {
       throw new Error(`Esa pareja está inscripta en ${pair.temp} y la fecha es de ${file.json.temp}. Inscribila para esta temporada.`);

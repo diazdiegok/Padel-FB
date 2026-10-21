@@ -40,7 +40,7 @@ import "../styles/admin.css";
         <div class="admin-brand-mark">FB</div>
         <div>
           <strong>PADEL FB</strong>
-          <span>Consola</span>
+          <span>Admin</span>
         </div>
       </div>
 
@@ -287,13 +287,13 @@ import "../styles/admin.css";
         <section data-section="fecha" hidden>
           <div class="admin-panel">
             <div class="admin-toolbar">
-              <label class="chk"><input id="disp-open" type="checkbox" checked /> Inscripción abierta</label>
+              <label class="chk"><input id="disp-open" type="checkbox" checked /> Fecha abierta</label>
               <label class="admin-week">Cierra el
                 <input id="disp-deadline" type="datetime-local" />
               </label>
-              <span class="admin-status-pill open" id="disp-status">Inscripción abierta</span>
+              <span class="admin-status-pill open" id="disp-status">Fecha abierta</span>
             </div>
-            <p class="admin-help">Si ponés fecha y hora, a esa hora se destilda sola y la web deja de aceptar inscripciones. Destildá para cerrarla ya. Se aplica al tocar Guardar fecha.</p>
+            <p class="admin-help">Si ponés fecha y hora, a esa hora se destilda sola y la web deja de aceptar la fecha. Destildá para cerrarla ya. Se aplica al tocar Guardar fecha.</p>
             <div class="admin-toolbar">
               <label class="admin-week">Fecha
                 <input id="disp-week" placeholder="Fecha 6" />
@@ -308,7 +308,7 @@ import "../styles/admin.css";
           </div>
           <div class="disp-summary" id="disp-summary"></div>
           <input class="admin-search" id="disp-search" type="search" placeholder="Buscar jugador…" autocomplete="off" />
-          <p class="admin-help">Circuito de cada semana: las parejas inscriptas eligen su nombre y marcan días en /fecha/ → cerrás la carga → en Fixture tocás Armar desde Fecha → publicás → abrís la próxima fecha.</p>
+          <p class="admin-help">Circuito de cada semana: las parejas inscriptas eligen su nombre y marcan días en /fecha/ → cerrás la fecha → en Fixture tocás Armar desde Fecha → publicás → abrís la próxima fecha.</p>
           <p class="admin-msg" id="disp-msg"></p>
           <div id="disp-list"></div>
           <div class="admin-sticky-bar">

@@ -21,13 +21,13 @@ export function createFecha(ctx, api, shell) {
   let term = "";
   let closeTimer = 0;
 
-  function renderStatus() {
+  function renderStatus({ keepOpen = false } = {}) {
     const deadline = validDeadline($("disp-deadline").value);
-    if (deadlinePassed(deadline)) $("disp-open").checked = false;
+    if (!keepOpen && deadlinePassed(deadline)) $("disp-open").checked = false;
     const open = $("disp-open").checked;
     const status = $("disp-status");
     if (!status) return;
-    status.textContent = closeStatus(open, deadline);
+    status.textContent = closeStatus(open, deadline, "Fecha");
     status.className = "admin-status-pill" + (open ? " open" : " closed");
     clearTimeout(closeTimer);
     if (open && deadline) {
@@ -145,8 +145,11 @@ export function createFecha(ctx, api, shell) {
   function bind() {
     ["disp-week", "disp-deadline", "disp-open"].forEach((id) => {
       $(id)?.addEventListener("change", () => {
+        if (id === "disp-open" && $(id).checked && deadlinePassed($("disp-deadline").value)) {
+          $("disp-deadline").value = "";
+        }
         shell.markDirty("fecha");
-        if (id !== "disp-week") renderStatus();
+        if (id !== "disp-week") renderStatus({ keepOpen: id === "disp-open" && $(id).checked });
       });
       $(id)?.addEventListener("input", () => {
         shell.markDirty("fecha");
@@ -162,12 +165,12 @@ export function createFecha(ctx, api, shell) {
     $("disp-export")?.addEventListener("click", () => {
       const list = ctx.disp.entries || [];
       if (!list.length) {
-        toast("No hay inscripciones para exportar", "err");
+        toast("No hay parejas en esta fecha", "err");
         return;
       }
       const cols = ["categoria", "jugador1", "jugador2", "juega", "recupera", "dias", "nota", "enviado"];
       downloadCsv(
-        `inscripciones-${fold(ctx.disp.week || "fecha").replace(/\s+/g, "-")}.csv`,
+        `fecha-${fold(ctx.disp.week || "fecha").replace(/\s+/g, "-")}.csv`,
         cols,
         list.map((e) => ({
           categoria: e.cat,
@@ -180,7 +183,7 @@ export function createFecha(ctx, api, shell) {
           enviado: sentAt(e.createdAt),
         }))
       );
-      toast("Inscripciones exportadas", "ok");
+      toast("Fecha exportada", "ok");
     });
     $("disp-list")?.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-disp-del]");
@@ -245,7 +248,7 @@ export function createFecha(ctx, api, shell) {
         title: `Abrir ${nextWeek}`,
         body:
           (entries.length && !built
-            ? `Ojo: todavía no armaste el fixture de ${current}. Las ${entries.length} inscripciones se borran al abrir la próxima. `
+            ? `Ojo: todavía no armaste el fixture de ${current}. Las ${entries.length} parejas anotadas se borran al abrir la próxima. `
             : entries.length
               ? `Se vacía la lista de ${current} (el fixture ya está armado). `
               : "") + `Las parejas pueden anotarse para ${nextWeek} en /fecha/.`,

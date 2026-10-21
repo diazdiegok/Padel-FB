@@ -183,7 +183,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         return;
       }
       const warnings = [];
-      if (disp.open !== false) warnings.push("La carga de la fecha sigue abierta: si alguien se anota después, va a faltar en el fixture.");
+      if (disp.open !== false) warnings.push("La fecha sigue abierta: si alguien se anota después, va a faltar en el fixture.");
       const unsaved = ctx.fixture.filter((m) => String(m.result || "").trim() !== String(m.appliedResult || "").trim());
       if (unsaved.length) {
         setMsg($("fx-msg"), `Hay ${unsaved.length} resultado${unsaved.length === 1 ? "" : "s"} sin publicar. Publicalos en Resultados antes de armar la fecha nueva.`, "err");

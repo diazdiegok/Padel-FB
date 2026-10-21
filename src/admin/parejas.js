@@ -52,9 +52,9 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
     };
   }
 
-  function renderStatus() {
+  function renderStatus({ keepOpen = false } = {}) {
     const deadline = validDeadline($("pairs-deadline").value);
-    if (deadlinePassed(deadline)) $("pairs-open").checked = false;
+    if (!keepOpen && deadlinePassed(deadline)) $("pairs-open").checked = false;
     const open = $("pairs-open").checked;
     const status = $("pairs-status");
     status.textContent = closeStatus(open, deadline);
@@ -172,8 +172,11 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
   function bind() {
     ["pairs-open", "pairs-deadline", "pairs-title", "pairs-intro", "pairs-hint", "pairs-cta"].forEach((id) => {
       $(id)?.addEventListener("change", () => {
+        if (id === "pairs-open" && $(id).checked && deadlinePassed($("pairs-deadline").value)) {
+          $("pairs-deadline").value = "";
+        }
         shell.markDirty("parejas");
-        renderStatus();
+        renderStatus({ keepOpen: id === "pairs-open" && $(id).checked });
       });
     });
     $("pairs-deadline")?.addEventListener("input", renderStatus);
