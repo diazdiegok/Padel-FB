@@ -845,6 +845,56 @@ body.is-admin main > .wrap {
   margin-bottom: 22px;
 }
 
+.disp-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.disp-sum-card {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg-2);
+}
+
+.disp-sum-card span {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.disp-sum-card strong {
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.disp-sum-card small {
+  color: var(--muted);
+}
+
+.admin-search {
+  width: 100%;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-2);
+  color: var(--cream);
+}
+
+.admin-disp-card.is-bye {
+  opacity: 0.6;
+}
+
+.disp-sent {
+  margin-left: auto;
+}
+
 .fx-warnings {
   margin: 0 0 18px;
   padding: 16px;

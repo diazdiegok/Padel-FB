@@ -50,7 +50,7 @@ export const SECTIONS = {
   fixture: { group: "Liga", title: "Fixture", help: "Cargá la fecha, revisá partidos y publicá. Los resultados se cargan en Resultados." },
   resultados: { group: "Liga", title: "Resultados", help: "Cargá el score de cada partido. Al publicar se actualiza el ranking." },
   playoff: { group: "Liga", title: "Playoff", help: "Armá el cuadro de cada categoría, cargá días, horarios y resultados. La ganadora pasa sola a la siguiente ronda." },
-  fecha: { group: "Liga", title: "Fecha", help: "Abrí o cerrá la carga de disponibilidad de las parejas." },
+  fecha: { group: "Liga", title: "Inscripciones de la fecha", help: "Lo que mandan las parejas desde el formulario /fecha/ de la web. Abrí o cerrá la carga y armá el fixture con esto." },
   sedes: { group: "Liga", title: "Sedes", help: "Complejos de la liga y la academia. Marcá dónde se muestra cada uno." },
   academia: { group: "Academia", title: "Adultos", help: "Profes, programas y textos de las clases de adultos." },
   infantiles: { group: "Academia", title: "Infantiles", help: "Textos, sedes y horarios de las clases infantiles." },

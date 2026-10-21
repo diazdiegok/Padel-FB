@@ -1,8 +1,42 @@
-import { DISP_PATH, pairLabel } from "../lib/disponibilidad.js";
+import { DISP_PATH, fold, pairLabel } from "../lib/disponibilidad.js";
 import { weekNumber } from "../lib/liga.js";
+import { downloadCsv } from "./csv.js";
 import { $, confirmModal, escAttr as esc, setBusy, setMsg, toast } from "./ui.js";
 
+const sentAt = (iso) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("es-AR", { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
+};
+
+const daysText = (e) =>
+  e.bye
+    ? "No juega esta semana"
+    : Object.entries(e.days || {})
+        .map(([d, h]) => `${d} ${h}`)
+        .join(" · ");
+
 export function createFecha(ctx, api, shell, { onBuildFixture } = {}) {
+  let term = "";
+
+  function renderSummary(list) {
+    const box = $("disp-summary");
+    if (!box) return;
+    const cats = [...new Set(list.map((e) => e.cat || "Sin categoría"))].sort((a, b) => a.localeCompare(b, "es"));
+    box.innerHTML = cats
+      .map((cat) => {
+        const rows = list.filter((e) => (e.cat || "Sin categoría") === cat);
+        const playing = rows.filter((e) => !e.bye).length;
+        const recover = rows.filter((e) => e.recover && !e.bye).length;
+        return `<div class="disp-sum-card">
+          <span>${esc(cat)}</span>
+          <strong>${playing}</strong>
+          <small>juegan${rows.length - playing ? ` · ${rows.length - playing} no` : ""}${recover ? ` · ${recover} recupera${recover === 1 ? "" : "n"}` : ""}</small>
+        </div>`;
+      })
+      .join("");
+  }
+
   function fill() {
     $("disp-week").value = ctx.disp.week || "Fecha 1";
     $("disp-deadline").value = ctx.disp.deadline || "";
@@ -16,25 +50,28 @@ export function createFecha(ctx, api, shell, { onBuildFixture } = {}) {
       status.textContent = ctx.disp.open !== false ? "Carga abierta" : "Carga cerrada";
       status.className = "admin-status-pill" + (ctx.disp.open !== false ? " open" : " closed");
     }
-    const groups = [...new Set(list.map((e) => e.cat || "Sin categoría"))];
+    renderSummary(list);
+    const q = fold(term);
+    const shown = q ? list.filter((e) => fold([e.p1, e.p2, e.note].join(" ")).includes(q)) : list;
+    const groups = [...new Set(shown.map((e) => e.cat || "Sin categoría"))].sort((a, b) => a.localeCompare(b, "es"));
     $("disp-list").innerHTML = groups.length
       ? groups
           .map((cat) => {
-            const rows = list.filter((e) => (e.cat || "Sin categoría") === cat);
+            const rows = shown
+              .filter((e) => (e.cat || "Sin categoría") === cat)
+              .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
             return `<section class="admin-disp-group">
               <h3>${esc(cat)} · ${rows.length}</h3>
               <div class="admin-disp-rows">
                 ${rows
                   .map((e) => {
-                    const when = e.bye
-                      ? "No juega esta semana"
-                      : Object.entries(e.days || {})
-                          .map(([d, h]) => `${d} ${h}`)
-                          .join(" · ");
-                    return `<article class="admin-disp-card" data-disp="${esc(e.id)}">
+                    const when = daysText(e);
+                    const sent = sentAt(e.createdAt);
+                    return `<article class="admin-disp-card${e.bye ? " is-bye" : ""}" data-disp="${esc(e.id)}">
                       <div class="admin-result-meta">
-                        <span>${e.bye ? "No juega" : e.recover ? "Recupera" : "Fecha"}</span>
+                        <span>${e.bye ? "No juega" : e.recover ? "Recupera · 2 partidos" : "Juega"}</span>
                         <span>${esc(when || "Sin horario")}</span>
+                        ${sent ? `<span class="disp-sent">Enviado ${esc(sent)}</span>` : ""}
                       </div>
                       <strong>${esc(pairLabel(e))}</strong>
                       ${e.note ? `<p class="admin-help">${esc(e.note)}</p>` : ""}
@@ -46,7 +83,9 @@ export function createFecha(ctx, api, shell, { onBuildFixture } = {}) {
             </section>`;
           })
           .join("")
-      : `<div class="admin-empty" id="disp-empty"><p>Todavía no hay disponibilidades en ${esc(ctx.disp.week || "esta fecha")}.</p></div>`;
+      : `<div class="admin-empty" id="disp-empty"><p>${
+          list.length ? "Nadie coincide con la búsqueda." : `Todavía no se anotó nadie en ${esc(ctx.disp.week || "esta fecha")}. Compartí el link /fecha/ de la web.`
+        }</p></div>`;
   }
 
   async function readLatest() {
@@ -97,6 +136,33 @@ export function createFecha(ctx, api, shell, { onBuildFixture } = {}) {
     });
 
     $("disp-reload")?.addEventListener("click", () => reload());
+    $("disp-search")?.addEventListener("input", (e) => {
+      term = e.target.value;
+      fill();
+    });
+    $("disp-export")?.addEventListener("click", () => {
+      const list = ctx.disp.entries || [];
+      if (!list.length) {
+        toast("No hay inscripciones para exportar", "err");
+        return;
+      }
+      const cols = ["categoria", "jugador1", "jugador2", "juega", "recupera", "dias", "nota", "enviado"];
+      downloadCsv(
+        `inscripciones-${fold(ctx.disp.week || "fecha").replace(/\s+/g, "-")}.csv`,
+        cols,
+        list.map((e) => ({
+          categoria: e.cat,
+          jugador1: e.p1,
+          jugador2: e.p2,
+          juega: e.bye ? "No" : "Sí",
+          recupera: e.recover ? "Sí" : "No",
+          dias: daysText(e),
+          nota: e.note,
+          enviado: sentAt(e.createdAt),
+        }))
+      );
+      toast("Inscripciones exportadas", "ok");
+    });
     $("disp-build")?.addEventListener("click", () => onBuildFixture?.());
 
     $("disp-list")?.addEventListener("click", async (e) => {

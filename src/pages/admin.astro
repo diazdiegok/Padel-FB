@@ -51,7 +51,7 @@ import "../styles/admin.css";
         <button class="admin-nav-btn" type="button" data-nav="fixture">Fixture</button>
         <button class="admin-nav-btn" type="button" data-nav="resultados">Resultados</button>
         <button class="admin-nav-btn" type="button" data-nav="playoff">Playoff</button>
-        <button class="admin-nav-btn" type="button" data-nav="fecha">Fecha</button>
+        <button class="admin-nav-btn" type="button" data-nav="fecha">Fecha · Inscripciones</button>
         <button class="admin-nav-btn" type="button" data-nav="sedes">Sedes</button>
       </div>
       <div class="admin-nav-group">
@@ -330,8 +330,11 @@ import "../styles/admin.css";
             <button class="btn btn-ghost" type="button" id="disp-reload">Actualizar lista</button>
             <button class="btn btn-lime" type="button" id="disp-build">Armar fixture con estas inscripciones</button>
             <button class="btn btn-ghost" type="button" id="disp-next">Abrir próxima fecha</button>
+            <button class="btn btn-ghost" type="button" id="disp-export">Exportar CSV</button>
             <span class="tag" id="disp-count"></span>
           </div>
+          <div class="disp-summary" id="disp-summary"></div>
+          <input class="admin-search" id="disp-search" type="search" placeholder="Buscar jugador…" autocomplete="off" />
           <p class="admin-help">Circuito de cada semana: las parejas se anotan en /fecha/ → cerrás la carga → armás el fixture → publicás → abrís la próxima fecha.</p>
           <p class="admin-msg" id="disp-msg"></p>
           <div id="disp-list"></div>
