@@ -9,14 +9,7 @@ const personKey = (name) => fold(name).split(" ").filter(Boolean).sort().join(" 
 const pairKey = (p) => [personKey(p.p1), personKey(p.p2)].sort().join("|");
 const newId = () => `p${Date.now().toString(36)}${Math.random().toString(16).slice(2, 6)}`;
 const cleanPhone = (v) => String(v || "").replace(/\D/g, "").slice(0, 15);
-const validDeadline = (v) => (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v || "") ? v : "");
-const deadlinePassed = (v) => Boolean(v) && Date.now() > Date.parse(`${v}:00-03:00`);
-
-function deadlineText(v) {
-  const [date, time] = v.split("T");
-  const [, month, day] = date.split("-");
-  return `${Number(day)}/${Number(month)} ${time}`;
-}
+import { deadlinePassed, deadlineText, validDeadline } from "../lib/cierre.js";
 
 const COPY = {
   title: "Inscribí tu pareja",
@@ -31,6 +24,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
   const deleted = new Set();
   const contactsDirty = new Set();
   let loaded = false;
+  let closeTimer = 0;
 
   const season = () => ctx.siteData.currentSeason || "T4";
   const contact = (id) => ctx.contacts[id] || {};
@@ -59,18 +53,24 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
   }
 
   function renderStatus() {
-    const open = $("pairs-open").checked;
     const deadline = validDeadline($("pairs-deadline").value);
+    if (deadlinePassed(deadline)) $("pairs-open").checked = false;
+    const open = $("pairs-open").checked;
     const status = $("pairs-status");
-    const closed = !open || deadlinePassed(deadline);
-    status.textContent = !open
-      ? "Inscripción cerrada"
-      : closed
+    const closed = !open;
+    status.textContent = closed
+      ? deadline
         ? `Cerrada · cerró el ${deadlineText(deadline)}`
-        : deadline
-          ? `Abierta hasta el ${deadlineText(deadline)}`
-          : "Inscripción abierta";
+        : "Inscripción cerrada"
+      : deadline
+        ? `Abierta hasta el ${deadlineText(deadline)}`
+        : "Inscripción abierta";
     status.className = "admin-status-pill" + (closed ? " closed" : " open");
+    clearTimeout(closeTimer);
+    if (open && deadline) {
+      const wait = Date.parse(`${deadline}:00-03:00`) - Date.now();
+      if (wait > 0 && wait < 2147000000) closeTimer = setTimeout(renderStatus, wait + 250);
+    }
   }
 
   function render() {
@@ -183,6 +183,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         renderStatus();
       });
     });
+    $("pairs-deadline")?.addEventListener("input", renderStatus);
     $("pairs-search")?.addEventListener("input", (e) => {
       term = e.target.value;
       render();

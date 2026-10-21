@@ -1,11 +1,11 @@
 import { addPairsToRanking } from "../../src/lib/scoring.js";
+import { deadlinePassed, deadlineText, validDeadline } from "../../src/lib/cierre.js";
 
 const PASS_SALT = "liga-fb-admin-v1";
 const RANK_PATH = "src/data/ranking.json";
 const DISP_PATH = "src/data/disponibilidad.json";
 const PAIRS_PATH = "src/data/parejas.json";
 const PAIRS_CONFIG_PATH = "src/data/inscripcion-parejas.json";
-const SITE_TZ = "-03:00";
 const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const CATS = ["A Masculina", "B Masculina", "C Masculina", "A Femenino", "B Femenino", "C Femenino"];
 const PAIRS_CACHE = "https://padel-fb-api.cache/pairs";
@@ -296,12 +296,6 @@ function cleanPhone(value) {
   return String(value || "").replace(/\D/g, "").slice(0, 15);
 }
 
-function deadlineText(deadline) {
-  const [date, time] = String(deadline).split("T");
-  const [, month, day] = date.split("-");
-  return `${Number(day)}/${Number(month)} a las ${time}`;
-}
-
 function copyFields(json) {
   const clip = (value, max) => String(value || "").replace(/\s+/g, " ").trim().slice(0, max);
   return {
@@ -314,11 +308,16 @@ function copyFields(json) {
 
 async function registrationState(env) {
   const { json } = await readData(env, PAIRS_CONFIG_PATH, {});
-  const deadline = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(json.deadline || "") ? json.deadline : "";
+  const deadline = validDeadline(json.deadline);
   const copy = copyFields(json);
-  if (json.open === false) return { open: false, deadline, ...copy, message: "La inscripción de parejas está cerrada." };
-  if (deadline && Date.now() > Date.parse(`${deadline}:00${SITE_TZ}`)) {
-    return { open: false, deadline, ...copy, message: `La inscripción de parejas cerró el ${deadlineText(deadline)}.` };
+  if (json.open === false || deadlinePassed(deadline)) {
+    const when = deadlineText(deadline);
+    return {
+      open: false,
+      deadline,
+      ...copy,
+      message: when ? `La inscripción de parejas cerró el ${when}.` : "La inscripción de parejas está cerrada.",
+    };
   }
   return { open: true, deadline, ...copy };
 }
@@ -517,7 +516,10 @@ async function appendAvailability(env, raw) {
   if (error) throw new Error(error);
   for (let attempt = 0; attempt < 4; attempt++) {
     const file = await readAvailability(env);
-    if (!file.json.open) throw new Error("La carga de esta fecha ya está cerrada.");
+    if (!file.json.open || deadlinePassed(file.json.deadline)) {
+      const when = deadlineText(file.json.deadline);
+      throw new Error(when ? `La carga de esta fecha cerró el ${when}.` : "La carga de esta fecha ya está cerrada.");
+    }
     if (file.json.temp && pair.temp && file.json.temp !== pair.temp) {
       throw new Error(`Esa pareja está inscripta en ${pair.temp} y la fecha es de ${file.json.temp}. Inscribila para esta temporada.`);
     }

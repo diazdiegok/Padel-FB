@@ -290,12 +290,13 @@ import "../styles/admin.css";
               <label class="admin-week">Fecha
                 <input id="disp-week" placeholder="Fecha 6" />
               </label>
-              <label class="admin-week">Fecha límite
-                <input id="disp-deadline" placeholder="Viernes 11/9 a las 18:00" />
+              <label class="admin-week">Cierra el
+                <input id="disp-deadline" type="datetime-local" />
               </label>
               <label class="chk"><input id="disp-open" type="checkbox" checked /> Carga abierta</label>
               <span class="admin-status-pill open" id="disp-status">Carga abierta</span>
             </div>
+            <p class="admin-help">Si ponés fecha y hora, a esa hora se destilda sola y la web deja de tomar anotaciones. Destildá para cerrarla ya. Se aplica al tocar Guardar fecha.</p>
           </div>
           <div class="admin-section-tools">
             <button class="btn btn-ghost" type="button" id="disp-reload">Actualizar lista</button>
@@ -326,7 +327,7 @@ import "../styles/admin.css";
               </label>
               <span class="admin-status-pill open" id="pairs-status">Inscripción abierta</span>
             </div>
-            <p class="admin-help">Si ponés fecha de cierre, a esa hora la web deja de aceptar parejas sola. Destildá para cerrarla ya. Los textos de abajo son los de la página pública. Se aplica al tocar Guardar parejas.</p>
+            <p class="admin-help">Si ponés fecha y hora, a esa hora se destilda sola y la web deja de aceptar parejas. Destildá para cerrarla ya. Los textos de abajo son los de la página pública. Se aplica al tocar Guardar parejas.</p>
             <div class="form cms-form pairs-copy">
               <label>Título
                 <input id="pairs-title" maxlength="80" />

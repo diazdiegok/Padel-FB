@@ -692,7 +692,7 @@ footer a:hover { color: var(--lime); }
 .form-hint a { color: var(--lime); }
 .insc-done { display: grid; gap: 18px; justify-items: start; padding: 48px 0; }
 .pair-chosen[hidden], .insc-done[hidden], .pair-results[hidden], .form label[hidden],
-.form[hidden], .form .btn[hidden], .tag[hidden] { display: none; }
+.form[hidden], .form .btn[hidden], .tag[hidden], .empty[hidden], .deadline[hidden] { display: none; }
 #insc-go-fecha { justify-self: start; }
 .form-hint { display: block; color: var(--muted); font-size: 13px; font-weight: 400; text-transform: none; letter-spacing: 0; }
 .hp { position: absolute; left: -9999px; height: 0; width: 0; opacity: 0; }

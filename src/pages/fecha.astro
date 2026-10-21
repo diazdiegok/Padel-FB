@@ -4,6 +4,7 @@ import { site } from "../data/site";
 import disp from "../data/disponibilidad.json";
 import parejas from "../data/parejas.json";
 import { DAYS } from "../lib/disponibilidad.js";
+import { deadlinePassed, deadlineText, validDeadline } from "../lib/cierre.js";
 
 const base = import.meta.env.BASE_URL;
 const season = (disp as any).temp || site.currentSeason;
@@ -16,6 +17,8 @@ const HOURS: string[] = [];
 for (let m = 8 * 60; m <= 24 * 60; m += 30) HOURS.push(`${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`);
 const FROM_HOURS = HOURS.slice(0, -3);
 const TO_HOURS = HOURS.slice(3);
+const deadline = validDeadline(disp.deadline);
+const cargaAbierta = disp.open !== false && !deadlinePassed(deadline);
 ---
 <Layout
   title={`${disp.week} | Padel FB`}
@@ -29,13 +32,12 @@ const TO_HOURS = HOURS.slice(3);
         Anotá los días y horarios en los que su pareja puede jugar. Con eso se arman los partidos
         de la fecha.
       </p>
-      {disp.deadline && (
-        <p class="deadline"><strong>Fecha límite:</strong> {disp.deadline}</p>
+      {deadline && (
+        <p class="deadline" id="fecha-deadline"><strong>Cierra el</strong> {deadlineText(deadline)}</p>
       )}
     </header>
 
-    {disp.open ? (
-      <form class="form form-fecha" id="fecha-form">
+    <form class="form form-fecha" id="fecha-form" hidden={!cargaAbierta}>
         <div class="pair-picker" id="pair-picker">
           <label>Buscá tu pareja
             <input id="pair-q" type="search" placeholder="Escribí tu apellido" autocomplete="off" aria-controls="pair-results" />
@@ -94,11 +96,9 @@ const TO_HOURS = HOURS.slice(3);
         <button class="btn btn-lime" type="submit" id="fecha-send">Enviar disponibilidad</button>
         <p class="admin-msg" id="fecha-msg" aria-live="polite"></p>
       </form>
-    ) : (
-      <p class="empty" style="display:block;padding:48px 0">
+      <p class="empty" id="fecha-closed" hidden={cargaAbierta}>
         La carga de {disp.week} está cerrada. Cuando se abra la próxima fecha va a aparecer acá.
       </p>
-    )}
   </div>
 
   <script is:inline define:vars={{ builtPairs, season }}>
@@ -106,11 +106,29 @@ const TO_HOURS = HOURS.slice(3);
   </script>
   <script>
     import site from "../data/site.json";
+    import disp from "../data/disponibilidad.json";
     import { DAYS, cleanEntry, fold, validateEntry } from "../lib/disponibilidad.js";
+    import { deadlinePassed, validDeadline } from "../lib/cierre.js";
 
     const apiUrl = String(site.apiUrl || "").replace(/\/$/, "");
     const form = document.querySelector("#fecha-form");
     const msg = document.querySelector("#fecha-msg");
+    const closeForm = () => {
+      if (!form) return;
+      form.hidden = true;
+      const closed = document.querySelector("#fecha-closed");
+      const limit = document.querySelector("#fecha-deadline");
+      if (closed) closed.hidden = false;
+      if (limit) limit.hidden = true;
+    };
+    if (form && disp.open !== false) {
+      const deadline = validDeadline(disp.deadline);
+      if (deadlinePassed(deadline)) closeForm();
+      else if (deadline) {
+        const wait = Date.parse(`${deadline}:00-03:00`) - Date.now();
+        if (wait > 0 && wait < 2147000000) setTimeout(closeForm, wait + 250);
+      }
+    }
     const bye = form?.querySelector("[name=bye]");
     const { builtPairs = [], season = "" } = window.__fechaPairs || {};
     let pairs = builtPairs;

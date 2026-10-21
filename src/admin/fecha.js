@@ -1,4 +1,5 @@
 import { DISP_PATH, fold, pairLabel } from "../lib/disponibilidad.js";
+import { deadlinePassed, deadlineText, validDeadline } from "../lib/cierre.js";
 import { weekNumber } from "../lib/liga.js";
 import { downloadCsv } from "./csv.js";
 import { $, confirmModal, escAttr as esc, setBusy, setMsg, toast } from "./ui.js";
@@ -18,6 +19,28 @@ const daysText = (e) =>
 
 export function createFecha(ctx, api, shell) {
   let term = "";
+  let closeTimer = 0;
+
+  function renderStatus() {
+    const deadline = validDeadline($("disp-deadline").value);
+    if (deadlinePassed(deadline)) $("disp-open").checked = false;
+    const open = $("disp-open").checked;
+    const status = $("disp-status");
+    if (!status) return;
+    status.textContent = !open
+      ? deadline
+        ? `Cerrada · cerró el ${deadlineText(deadline)}`
+        : "Carga cerrada"
+      : deadline
+        ? `Abierta hasta el ${deadlineText(deadline)}`
+        : "Carga abierta";
+    status.className = "admin-status-pill" + (open ? " open" : " closed");
+    clearTimeout(closeTimer);
+    if (open && deadline) {
+      const wait = Date.parse(`${deadline}:00-03:00`) - Date.now();
+      if (wait > 0 && wait < 2147000000) closeTimer = setTimeout(renderStatus, wait + 250);
+    }
+  }
 
   function renderSummary(list) {
     const box = $("disp-summary");
@@ -39,17 +62,13 @@ export function createFecha(ctx, api, shell) {
 
   function fill() {
     $("disp-week").value = ctx.disp.week || "Fecha 1";
-    $("disp-deadline").value = ctx.disp.deadline || "";
+    $("disp-deadline").value = validDeadline(ctx.disp.deadline);
     $("disp-open").checked = ctx.disp.open !== false;
+    renderStatus();
     const list = ctx.disp.entries || [];
     const playing = list.filter((e) => !e.bye).length;
     $("disp-count").textContent =
       list.length + (list.length === 1 ? " pareja anotada" : " parejas anotadas") + (list.length !== playing ? ` · ${playing} juegan` : "");
-    const status = $("disp-status");
-    if (status) {
-      status.textContent = ctx.disp.open !== false ? "Carga abierta" : "Carga cerrada";
-      status.className = "admin-status-pill" + (ctx.disp.open !== false ? " open" : " closed");
-    }
     renderSummary(list);
     const q = fold(term);
     const shown = q ? list.filter((e) => fold([e.p1, e.p2, e.note].join(" ")).includes(q)) : list;
@@ -131,8 +150,14 @@ export function createFecha(ctx, api, shell) {
 
   function bind() {
     ["disp-week", "disp-deadline", "disp-open"].forEach((id) => {
-      $(id)?.addEventListener("change", () => shell.markDirty("fecha"));
-      $(id)?.addEventListener("input", () => shell.markDirty("fecha"));
+      $(id)?.addEventListener("change", () => {
+        shell.markDirty("fecha");
+        if (id !== "disp-week") renderStatus();
+      });
+      $(id)?.addEventListener("input", () => {
+        shell.markDirty("fecha");
+        if (id === "disp-deadline") renderStatus();
+      });
     });
 
     $("disp-reload")?.addEventListener("click", () => reload());
@@ -185,7 +210,7 @@ export function createFecha(ctx, api, shell) {
         return;
       }
       ctx.disp.week = $("disp-week").value.trim() || "Fecha 1";
-      ctx.disp.deadline = $("disp-deadline").value.trim();
+      ctx.disp.deadline = validDeadline($("disp-deadline").value);
       ctx.disp.open = $("disp-open").checked;
       ctx.disp.temp = ctx.siteData.currentSeason || "T4";
       setBusy($("disp-publish"), true, "Guardando…");
@@ -240,7 +265,7 @@ export function createFecha(ctx, api, shell) {
         await save(
           { ...latest, week: nextWeek, temp: season, deadline: "", open: true, entries: [] },
           `Abre carga de ${nextWeek}.`,
-          `${nextWeek} abierta. Cargá la fecha límite si querés mostrarla.`
+          `${nextWeek} abierta. Si querés, poné la hora de cierre.`
         );
       } catch (err) {
         setMsg($("disp-msg"), err.message, "err");
