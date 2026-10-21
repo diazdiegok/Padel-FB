@@ -102,6 +102,7 @@ export function createCms(ctx, api, shell) {
     form.title.value = ac.title || "";
     form.intro.value = ac.intro || "";
     form.teamNote.value = ac.teamNote || "";
+    form.cta.value = ac.cta || "";
     const staffEmpty = $("staff-empty");
     if (staffEmpty) staffEmpty.hidden = ctx.siteData.staff.length > 0;
     $("staff-list").innerHTML = ctx.siteData.staff
@@ -285,6 +286,7 @@ export function createCms(ctx, api, shell) {
       title: form.title.value.trim(),
       intro: form.intro.value.trim(),
       teamNote: form.teamNote.value.trim(),
+      cta: form.cta.value.trim(),
     };
     $("staff-list").querySelectorAll("[data-staff]").forEach((card) => {
       const i = Number(card.dataset.staff);

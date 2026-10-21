@@ -8,6 +8,12 @@ import { seasonLabel } from "../lib/liga.js";
 const base = import.meta.env.BASE_URL;
 const deadline = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(config.deadline || "") ? config.deadline : "";
 const closedAtBuild = config.open === false || (Boolean(deadline) && Date.now() > Date.parse(`${deadline}:00-03:00`));
+const copy = {
+  title: config.title || "Inscribí tu pareja",
+  intro: config.intro || "Se hace una sola vez por temporada. Después, cada semana solo entran a Fecha, buscan su pareja y marcan los días que pueden jugar.",
+  hint: config.hint || "Escriban los nombres completos y bien: así aparecen en el fixture, los resultados y el ranking. Los WhatsApp solo los ve la organización.",
+  cta: config.cta || "Inscribir pareja",
+};
 ---
 <Layout
   title="Inscripción de parejas | Padel FB"
@@ -16,11 +22,8 @@ const closedAtBuild = config.open === false || (Boolean(deadline) && Date.now() 
   <div class="wrap">
     <header class="page-hero">
       <p class="kicker">Inscripción de parejas · {seasonLabel(site.currentSeason)}</p>
-      <h1>Inscribí tu pareja</h1>
-      <p>
-        Se hace una sola vez por temporada. Después, cada semana solo entran a Fecha, buscan su pareja y marcan
-        los días que pueden jugar.
-      </p>
+      <h1 id="insc-title">{copy.title}</h1>
+      <p id="insc-intro">{copy.intro}</p>
       <p class="tag" id="insc-deadline" hidden></p>
     </header>
 
@@ -45,12 +48,9 @@ const closedAtBuild = config.open === false || (Boolean(deadline) && Date.now() 
           {CATS.map((c) => <option value={c}>{c}</option>)}
         </select>
       </label>
-      <p class="form-hint">
-        Escriban los nombres completos y bien: así aparecen en el fixture, los resultados y el ranking. Los WhatsApp
-        solo los ve la organización.
-      </p>
+      <p class="form-hint" id="insc-hint">{copy.hint}</p>
       <input class="hp" name="website" tabindex="-1" autocomplete="off" />
-      <button class="btn btn-lime" type="submit" id="insc-send">Inscribir pareja</button>
+      <button class="btn btn-lime" type="submit" id="insc-send">{copy.cta}</button>
       <p class="admin-msg" id="insc-msg" aria-live="polite"></p>
       <a class="btn btn-ghost" id="insc-go-fecha" href={`${base}fecha/`} hidden>Ir a Fecha</a>
     </form>
@@ -105,6 +105,10 @@ const closedAtBuild = config.open === false || (Boolean(deadline) && Date.now() 
         .then((r) => (r.ok ? r.json() : null))
         .then((state) => {
           if (!state) return;
+          if (state.title) document.querySelector("#insc-title").textContent = state.title;
+          if (state.intro) document.querySelector("#insc-intro").textContent = state.intro;
+          if (state.hint) document.querySelector("#insc-hint").textContent = state.hint;
+          if (state.cta) document.querySelector("#insc-send").textContent = state.cta;
           if (!state.open) return showClosed(state.message);
           form.hidden = false;
           document.querySelector("#insc-closed").hidden = true;

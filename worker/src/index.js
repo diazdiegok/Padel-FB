@@ -302,14 +302,25 @@ function deadlineText(deadline) {
   return `${Number(day)}/${Number(month)} a las ${time}`;
 }
 
+function copyFields(json) {
+  const clip = (value, max) => String(value || "").replace(/\s+/g, " ").trim().slice(0, max);
+  return {
+    title: clip(json.title, 80),
+    intro: clip(json.intro, 400),
+    hint: clip(json.hint, 300),
+    cta: clip(json.cta, 40),
+  };
+}
+
 async function registrationState(env) {
   const { json } = await readData(env, PAIRS_CONFIG_PATH, {});
   const deadline = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(json.deadline || "") ? json.deadline : "";
-  if (json.open === false) return { open: false, deadline, message: "La inscripción de parejas está cerrada." };
+  const copy = copyFields(json);
+  if (json.open === false) return { open: false, deadline, ...copy, message: "La inscripción de parejas está cerrada." };
   if (deadline && Date.now() > Date.parse(`${deadline}:00${SITE_TZ}`)) {
-    return { open: false, deadline, message: `La inscripción de parejas cerró el ${deadlineText(deadline)}.` };
+    return { open: false, deadline, ...copy, message: `La inscripción de parejas cerró el ${deadlineText(deadline)}.` };
   }
-  return { open: true, deadline };
+  return { open: true, deadline, ...copy };
 }
 
 async function registerPair(env, raw) {

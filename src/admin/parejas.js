@@ -18,6 +18,13 @@ function deadlineText(v) {
   return `${Number(day)}/${Number(month)} ${time}`;
 }
 
+const COPY = {
+  title: "Inscribí tu pareja",
+  intro: "Se hace una sola vez por temporada. Después, cada semana solo entran a Fecha, buscan su pareja y marcan los días que pueden jugar.",
+  hint: "Escriban los nombres completos y bien: así aparecen en el fixture, los resultados y el ranking. Los WhatsApp solo los ve la organización.",
+  cta: "Inscribir pareja",
+};
+
 export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
   let term = "";
   let knownIds = new Set((ctx.pairs || []).map((p) => p.id));
@@ -32,7 +39,23 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
     const cfg = ctx.pairsConfig;
     $("pairs-open").checked = cfg.open !== false;
     $("pairs-deadline").value = validDeadline(cfg.deadline);
+    $("pairs-title").value = cfg.title || COPY.title;
+    $("pairs-intro").value = cfg.intro || COPY.intro;
+    $("pairs-hint").value = cfg.hint || COPY.hint;
+    $("pairs-cta").value = cfg.cta || COPY.cta;
     renderStatus();
+  }
+
+  function readConfig() {
+    const text = (id, max, fallback) => $(id).value.trim().slice(0, max) || fallback;
+    return {
+      open: $("pairs-open").checked,
+      deadline: validDeadline($("pairs-deadline").value),
+      title: text("pairs-title", 80, COPY.title),
+      intro: text("pairs-intro", 400, COPY.intro),
+      hint: text("pairs-hint", 300, COPY.hint),
+      cta: text("pairs-cta", 40, COPY.cta),
+    };
   }
 
   function renderStatus() {
@@ -189,7 +212,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
   }
 
   function bind() {
-    ["pairs-open", "pairs-deadline"].forEach((id) => {
+    ["pairs-open", "pairs-deadline", "pairs-title", "pairs-intro", "pairs-hint", "pairs-cta"].forEach((id) => {
       $(id)?.addEventListener("change", () => {
         shell.markDirty("parejas");
         renderStatus();
@@ -256,7 +279,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         setMsg($("pairs-msg"), "Hay una pareja sin los dos integrantes. Completala o quitala.", "err");
         return;
       }
-      const config = { open: $("pairs-open").checked, deadline: validDeadline($("pairs-deadline").value) };
+      const config = readConfig();
       setBusy($("pairs-publish"), true, "Guardando…");
       try {
         const remote = await api.readRemoteJson(PAIRS_PATH, []);

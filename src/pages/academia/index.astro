@@ -23,7 +23,7 @@ const names = staff.map((p) => p.name).filter(Boolean).join(", ");
       </h1>
       <p>{ac.intro}</p>
       <div class="actions">
-        <a class="btn btn-lime" href={page("academia/inscripcion/")}>Quiero clases</a>
+        <a class="btn btn-lime" href={page("academia/inscripcion/")}>{ac.cta || "Inscripción"}</a>
         <a class="btn btn-ghost" href={page("academia/infantiles/")}>Clases infantiles</a>
       </div>
     </header>
@@ -54,9 +54,6 @@ const names = staff.map((p) => p.name).filter(Boolean).join(", ");
             </div>
           </article>
         ))}
-      </div>
-      <div class="actions" style="margin-top:28px">
-        <a class="btn btn-lime" href={page("academia/inscripcion/")}>Reservar por WhatsApp</a>
       </div>
     </div>
   </section>

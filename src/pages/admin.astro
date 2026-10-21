@@ -47,7 +47,7 @@ import "../styles/admin.css";
       <div class="admin-nav-group">
         <div class="admin-nav-label">Liga</div>
         <button class="admin-nav-btn" type="button" data-nav="temporadas">Temporadas</button>
-        <button class="admin-nav-btn" type="button" data-nav="parejas">Parejas inscriptas</button>
+        <button class="admin-nav-btn" type="button" data-nav="parejas">Inscripción de parejas</button>
         <button class="admin-nav-btn" type="button" data-nav="fecha">Fecha</button>
         <button class="admin-nav-btn" type="button" data-nav="fixture">Fixture</button>
         <button class="admin-nav-btn" type="button" data-nav="resultados">Resultados</button>
@@ -357,7 +357,21 @@ import "../styles/admin.css";
               </label>
               <span class="admin-status-pill open" id="pairs-status">Inscripción abierta</span>
             </div>
-            <p class="admin-help">Si ponés fecha de cierre, a esa hora la web deja de aceptar parejas sola. Destildá para cerrarla ya. Se aplica al tocar Guardar parejas.</p>
+            <p class="admin-help">Si ponés fecha de cierre, a esa hora la web deja de aceptar parejas sola. Destildá para cerrarla ya. Los textos de abajo son los de la página pública. Se aplica al tocar Guardar parejas.</p>
+            <div class="form cms-form pairs-copy">
+              <label>Título
+                <input id="pairs-title" maxlength="80" />
+              </label>
+              <label>Texto
+                <textarea id="pairs-intro" rows="3" maxlength="400"></textarea>
+              </label>
+              <label>Aclaración del formulario
+                <textarea id="pairs-hint" rows="2" maxlength="300"></textarea>
+              </label>
+              <label>Texto del botón
+                <input id="pairs-cta" maxlength="40" />
+              </label>
+            </div>
           </div>
           <div class="admin-section-tools">
             <button class="btn btn-ghost" type="button" id="pairs-reload">Actualizar lista</button>
@@ -402,6 +416,9 @@ import "../styles/admin.css";
             </label>
             <label>Texto del equipo
               <input name="teamNote" />
+            </label>
+            <label>Texto del botón
+              <input name="cta" placeholder="Inscripción" />
             </label>
           </form>
           <div class="cms-head">
