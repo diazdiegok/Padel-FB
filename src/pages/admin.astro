@@ -245,16 +245,8 @@ import "../styles/admin.css";
             <button class="btn btn-ghost" type="button" id="res-reload">Actualizar</button>
             <span class="tag" id="res-count"></span>
           </div>
-          <div class="filters" style="margin-bottom:16px">
-            <div class="filter-group" style="flex:1;min-width:200px">
-              <span>Fecha</span>
-              <div class="pills" id="res-weeks"></div>
-            </div>
-            <div class="filter-group" style="flex:1;min-width:200px">
-              <span>Categoría</span>
-              <div class="pills" id="res-cats"></div>
-            </div>
-          </div>
+          <div class="res-crumbs" id="res-crumbs" role="navigation" aria-label="Ubicación en resultados"></div>
+          <div class="res-boxes" id="res-boxes"></div>
           <div class="admin-empty" id="res-empty" hidden>
             <p>Todavía no hay partidos. Cuando publiques un fixture, aparecen acá para cargar el resultado.</p>
           </div>
