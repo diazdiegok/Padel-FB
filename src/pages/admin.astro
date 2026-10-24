@@ -239,7 +239,7 @@ import "../styles/admin.css";
         <section data-section="playoff" hidden>
           <div class="admin-callout">
             <strong>Cómo se carga</strong>
-            <span>Elegí la categoría, revisá el cuadro (se arma con el ranking: 1 vs 8, 4 vs 5, 2 vs 7, 3 vs 6) y cargá día, horario y resultado de cada partido: <b>6-4 6-2</b> o <b>6-4 3-6 10-8</b>. La ganadora pasa sola a la ronda siguiente. Escribí <b>Libre</b> si a una pareja le toca pasar directo. El playoff no suma puntos al ranking.</span>
+            <span>Elegí la categoría, revisá el cuadro (se arma con el ranking: 1 vs 8, 4 vs 5, 2 vs 7, 3 vs 6) y cargá día, horario y resultado de cada partido: <b>6-4 6-2</b> o <b>6-4 3-6 10-8</b>. La ganadora pasa sola a la ronda siguiente. Para cambiar una pareja, o escribir <b>Libre</b> si pasa directo, tocá <b>Editar</b>. El playoff no suma puntos al ranking.</span>
           </div>
           <div class="admin-panel">
             <div class="admin-toolbar">
@@ -260,14 +260,24 @@ import "../styles/admin.css";
             </div>
           </div>
           <div class="admin-section-tools">
-            <div class="pills" id="po-cats"></div>
+            <div class="pills" id="po-cat-pills">
+              <div id="po-cats"></div>
+              <button class="pill" type="button" id="po-edit" hidden aria-expanded="false" aria-controls="po-edit-panel">Editar</button>
+            </div>
             <select class="po-select" id="po-cat-add" aria-label="Agregar categoría"></select>
-            <button class="btn btn-ghost" type="button" id="po-reload">Actualizar</button>
+            <button class="pill po-tool" type="button" id="po-reload">Actualizar</button>
+          </div>
+          <div class="po-edit-panel" id="po-edit-panel" hidden>
+            <div>
+              <h3 id="po-edit-title">Editar parejas</h3>
+              <p>Elegí una pareja del ranking o escribí el nombre a mano. Si pasa directo, escribí Libre. Después tocá Publicar playoff.</p>
+            </div>
+            <div id="po-edit-list"></div>
           </div>
           <div class="admin-section-tools" id="po-cat-tools" hidden>
             <select class="po-select" id="po-size" aria-label="Tamaño del cuadro"></select>
-            <button class="btn btn-ghost" type="button" id="po-arm">Armar desde ranking</button>
-            <button class="btn btn-ghost" type="button" id="po-cat-remove">Quitar categoría</button>
+            <button class="pill po-tool" type="button" id="po-arm">Armar desde ranking</button>
+            <button class="pill po-tool po-tool-danger" type="button" id="po-cat-remove">Quitar categoría</button>
           </div>
           <p class="admin-msg" id="po-msg"></p>
           <div class="admin-empty" id="po-empty" hidden>

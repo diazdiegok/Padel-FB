@@ -21,6 +21,7 @@ import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 export function createPlayoff(ctx, api, shell) {
   let activeCat = "";
   let loaded = false;
+  let editingPairs = false;
   let editing = ctx.playoffs[0]?.temp || ctx.siteData.currentSeason || "T4";
 
   function data() {
@@ -127,8 +128,8 @@ export function createPlayoff(ctx, api, shell) {
     const win = m.winner === side;
     if (m.round === 1) {
       return `<div class="po-side${win ? " win" : ""}">
-        <input class="po-seed" data-po-field="${side}Seed" type="number" min="1" inputmode="numeric" value="${seed ?? ""}" aria-label="Posición" />
-        <input class="po-name" data-po-field="${side}" list="po-pairs" value="${escAttr(name)}" placeholder="Pareja o ${BYE}" />
+        <span class="po-seed-tag">${seed ?? "–"}</span>
+        <span class="po-name-ro${name ? "" : " muted"}">${escAttr(name || "Sin pareja")}</span>
       </div>`;
     }
     return `<div class="po-side${win ? " win" : ""}">
@@ -159,6 +160,40 @@ export function createPlayoff(ctx, api, shell) {
       </div>
       <p class="admin-hint${m.result && !m.info && !m.wo ? " err" : ""}">${escAttr(scoreHint(m))}</p>
     </article>`;
+  }
+
+  function editSide(m, side) {
+    const name = m[side];
+    const seed = m[`${side}Seed`];
+    return `<label class="po-edit-side">
+      <input class="po-seed" data-po-edit="${escAttr(m.id)}" data-po-side="${side}" data-po-part="seed" type="number" min="1" inputmode="numeric" value="${seed ?? ""}" aria-label="Posición" />
+      <input data-po-edit="${escAttr(m.id)}" data-po-side="${side}" data-po-part="name" list="po-pairs" value="${escAttr(name)}" placeholder="Pareja o ${BYE}" aria-label="Pareja" />
+    </label>`;
+  }
+
+  function renderEditList() {
+    const panel = $("po-edit-panel");
+    const btn = $("po-edit");
+    const cat = category();
+    if (!cat) editingPairs = false;
+    if (btn) btn.hidden = !cat;
+    if (!panel || !btn) return;
+    btn.classList.toggle("on", editingPairs);
+    btn.setAttribute("aria-expanded", editingPairs ? "true" : "false");
+    panel.hidden = !editingPairs;
+    if (!editingPairs || !cat) return;
+    const title = $("po-edit-title");
+    if (title) title.textContent = `Editar parejas · ${cat.cat}`;
+    const first = resolveCategory(cat).rounds[0];
+    $("po-edit-list").innerHTML = (first?.matches || [])
+      .map(
+        (m) => `<article class="po-edit-match">
+          <span class="po-edit-label">${escAttr(m.label)}</span>
+          ${editSide(m, "home")}
+          ${editSide(m, "away")}
+        </article>`
+      )
+      .join("");
   }
 
   function renderBracket() {
@@ -193,6 +228,7 @@ export function createPlayoff(ctx, api, shell) {
     fillCats();
     fillLists();
     renderBracket();
+    renderEditList();
   }
 
   function focusKey(el) {
@@ -202,9 +238,19 @@ export function createPlayoff(ctx, api, shell) {
 
   function rerenderKeepingFocus() {
     setTimeout(() => {
-      const key = focusKey(document.activeElement);
+      const active = document.activeElement;
+      const key = focusKey(active);
+      const editKey = active?.dataset?.poEdit
+        ? `${active.dataset.poEdit}|${active.dataset.poSide}|${active.dataset.poPart}`
+        : "";
       renderBracket();
       fillCats();
+      renderEditList();
+      if (editKey) {
+        const [id, side, part] = editKey.split("|");
+        document.querySelector(`[data-po-edit="${CSS.escape(id)}"][data-po-side="${side}"][data-po-part="${part}"]`)?.focus();
+        return;
+      }
       if (!key) return;
       const [id, field] = key.split("|");
       document.querySelector(`[data-po-id="${id}"] [data-po-field="${field}"]`)?.focus();
@@ -263,6 +309,21 @@ export function createPlayoff(ctx, api, shell) {
       fillCats();
       fillLists();
       renderBracket();
+      renderEditList();
+    });
+
+    $("po-edit")?.addEventListener("click", () => {
+      if (!category()) return;
+      editingPairs = !editingPairs;
+      renderEditList();
+    });
+
+    $("po-edit-list")?.addEventListener("change", (e) => {
+      const el = e.target.closest("[data-po-edit]");
+      if (!el) return;
+      const field = el.dataset.poPart === "seed" ? `${el.dataset.poSide}Seed` : el.dataset.poSide;
+      updateMatch(el.dataset.poEdit, field, el.value);
+      rerenderKeepingFocus();
     });
 
     $("po-cat-add")?.addEventListener("change", (e) => {

@@ -51,7 +51,7 @@ export const SECTIONS = {
   ranking: { group: "Liga", title: "Ranking", help: "La tabla se arma con las parejas inscriptas y los resultados. Acá corregís a mano y publicás." },
   fixture: { group: "Liga", title: "Fixture", help: "Cargá la fecha, revisá partidos y publicá. Los resultados se cargan en Resultados." },
   resultados: { group: "Liga", title: "Resultados", help: "Cargá el score de cada partido. Al publicar se actualiza el ranking." },
-  playoff: { group: "Liga", title: "Playoff", help: "Armá el cuadro de cada categoría, cargá días, horarios y resultados. La ganadora pasa sola a la siguiente ronda." },
+  playoff: { group: "Liga", title: "Playoff", help: "Armá el cuadro de cada categoría, cargá días, horarios y resultados. Con Editar cambiás una pareja a mano. La ganadora pasa sola a la siguiente ronda." },
   fecha: { group: "Liga", title: "Fecha", help: "Lo que mandan las parejas desde el formulario /fecha/ de la web. Abrí o cerrá la fecha y armá el fixture con esto." },
   parejas: { group: "Liga", title: "Inscripciones de parejas", help: "Los textos de la página y las parejas que se anotan una vez por temporada. En Fecha solo buscan su nombre y marcan los días." },
   sedes: { group: "Liga", title: "Sedes", help: "Complejos de la liga y la academia. Marcá dónde se muestra cada uno." },
