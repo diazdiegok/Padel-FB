@@ -299,7 +299,7 @@
             "time": "14:00",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "6-3 5-7 6-3",
             "wo": ""
           },
           {
@@ -323,8 +323,8 @@
             "slot": 2,
             "homeSeed": 11,
             "home": "Delisa, Marcos / Grippo, Agustin",
-            "awaySeed": null,
-            "away": "",
+            "awaySeed": 10,
+            "away": "Martinez, Francisco / Lanzi, Lucas",
             "day": "25/10/2026",
             "time": "17:45",
             "venue": "Palermo Padel",
