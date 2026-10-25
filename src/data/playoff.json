@@ -67,7 +67,7 @@
             "time": "12:45",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "7-6 7-6",
             "wo": ""
           },
           {
@@ -91,8 +91,8 @@
             "slot": 2,
             "homeSeed": 2,
             "home": "Fusse, Bruno / Rodríguez, Marcos",
-            "awaySeed": null,
-            "away": "",
+            "awaySeed": 4,
+            "away": "Agnoli, Imanol / Rodriguez, Roman",
             "day": "25/10/2026",
             "time": "16:30",
             "venue": "Palermo Padel",
