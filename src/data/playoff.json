@@ -546,7 +546,7 @@
             "time": "19:00",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "5-7 6-0 6-4",
             "wo": ""
           },
           {
@@ -568,8 +568,8 @@
             "id": "4-1",
             "round": 4,
             "slot": 1,
-            "homeSeed": null,
-            "home": "",
+            "homeSeed": 1,
+            "home": "Ramírez, Diego Germán / Rondan, Martín",
             "awaySeed": null,
             "away": "",
             "day": "25/10/2026",
