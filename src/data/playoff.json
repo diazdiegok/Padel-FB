@@ -179,7 +179,7 @@
             "time": "09:00",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "3-6 6-3 7-5",
             "wo": ""
           },
           {
@@ -263,8 +263,8 @@
             "slot": 2,
             "homeSeed": 4,
             "home": "Roldan, Matias / Furlan, Marcelo",
-            "awaySeed": null,
-            "away": "",
+            "awaySeed": 5,
+            "away": "Diaz, Diego / Fontanetto, Emiliano",
             "day": "25/10/2026",
             "time": "12:45",
             "venue": "Palermo Padel",
