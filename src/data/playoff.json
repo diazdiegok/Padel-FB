@@ -82,7 +82,7 @@
             "time": "16:30",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "4-6 4-6",
             "wo": ""
           },
           {
@@ -104,8 +104,8 @@
             "id": "3-1",
             "round": 3,
             "slot": 1,
-            "homeSeed": null,
-            "home": "",
+            "homeSeed": 3,
+            "home": "Enrique, Ariel / Enrique, Marcelo",
             "awaySeed": 4,
             "away": "Agnoli, Imanol / Rodriguez, Roman",
             "day": "25/10/2026",
