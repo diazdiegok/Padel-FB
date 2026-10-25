@@ -150,7 +150,7 @@
             "venue": "Palermo Padel",
             "court": "",
             "result": "",
-            "wo": ""
+            "wo": "home"
           },
           {
             "id": "1-3",
@@ -216,7 +216,7 @@
             "id": "1-7",
             "round": 1,
             "slot": 7,
-            "homeSeed": 17,
+            "homeSeed": 7,
             "home": "Valla, Luis / Bregant, Sebastian",
             "awaySeed": 10,
             "away": "Martinez, Francisco / Lanzi, Lucas",
@@ -248,8 +248,8 @@
             "slot": 1,
             "homeSeed": 16,
             "home": "Sagasta, José Ignacio / Sostersich, Alexis",
-            "awaySeed": null,
-            "away": "",
+            "awaySeed": 8,
+            "away": "Leban, Juan Cruz / Truffer, Germán",
             "day": "25/10/2026",
             "time": "12:45",
             "venue": "Palermo Padel",
@@ -755,7 +755,7 @@
             "time": "10:15",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "6-3 6-4",
             "wo": ""
           },
           {
@@ -839,8 +839,8 @@
             "slot": 2,
             "homeSeed": 3,
             "home": "Vittori, Andrea / Romero, Fabiana",
-            "awaySeed": null,
-            "away": "",
+            "awaySeed": 8,
+            "away": "Aguilera, Karen / Bourlot, Ariana",
             "day": "25/10/2026",
             "time": "15:15",
             "venue": "Palermo Padel",
