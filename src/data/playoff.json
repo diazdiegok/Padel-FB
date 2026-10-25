@@ -441,7 +441,7 @@
             "time": "11:30",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "6-2 6-1",
             "wo": ""
           },
           {
@@ -510,8 +510,8 @@
             "slot": 3,
             "homeSeed": 2,
             "home": "Gaioli, Christian / Vega, Leandro",
-            "awaySeed": null,
-            "away": "",
+            "awaySeed": 7,
+            "away": "Martinez A. Javier / Strack José Maria",
             "day": "25/10/2026",
             "time": "16:30",
             "venue": "Palermo Padel",
