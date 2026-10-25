@@ -164,8 +164,8 @@
             "time": "09:00",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
-            "wo": ""
+            "result": "6-0 6-0",
+            "wo": "home"
           },
           {
             "id": "1-4",
@@ -261,8 +261,8 @@
             "id": "2-2",
             "round": 2,
             "slot": 2,
-            "homeSeed": null,
-            "home": "",
+            "homeSeed": 4,
+            "home": "Roldan, Matias / Furlan, Marcelo",
             "awaySeed": null,
             "away": "",
             "day": "25/10/2026",
