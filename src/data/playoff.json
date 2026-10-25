@@ -411,7 +411,7 @@
             "time": "11:30",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "1-6 4-6",
             "wo": ""
           },
           {
@@ -495,8 +495,8 @@
             "slot": 2,
             "homeSeed": 3,
             "home": "Zarate, Pablo / Diaz, Sebastian",
-            "awaySeed": null,
-            "away": "",
+            "awaySeed": 9,
+            "away": "Sánchez, Valentino / Rivera, Thiago",
             "day": "25/10/2026",
             "time": "15:15",
             "venue": "Palermo Padel",
@@ -785,7 +785,7 @@
             "time": "11:30",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "2-6 3-6",
+            "result": "",
             "wo": ""
           },
           {
@@ -854,8 +854,8 @@
             "slot": 3,
             "homeSeed": 2,
             "home": "Croce, Antonella / Morley, Jessie",
-            "awaySeed": 10,
-            "away": "Cavallaro Florencia / Yancovich Luisina",
+            "awaySeed": null,
+            "away": "",
             "day": "25/10/2026",
             "time": "15:15",
             "venue": "Palermo Padel",
