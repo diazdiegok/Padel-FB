@@ -516,7 +516,7 @@
             "time": "16:30",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "2-6 0-6",
             "wo": ""
           },
           {
@@ -553,8 +553,8 @@
             "id": "3-2",
             "round": 3,
             "slot": 2,
-            "homeSeed": null,
-            "home": "",
+            "homeSeed": 7,
+            "home": "Martinez A. Javier / Strack José Maria",
             "awaySeed": null,
             "away": "",
             "day": "25/10/2026",
