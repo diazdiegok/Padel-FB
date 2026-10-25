@@ -209,7 +209,7 @@
             "time": "10:45",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "6-2 4-6 5-7",
             "wo": ""
           },
           {
@@ -278,8 +278,8 @@
             "slot": 3,
             "homeSeed": 11,
             "home": "Delisa, Marcos / Grippo, Agustin",
-            "awaySeed": null,
-            "away": "",
+            "awaySeed": 14,
+            "away": "Miño, Cesar Hernan / Sartori, Axel",
             "day": "25/10/2026",
             "time": "14:00",
             "venue": "Palermo Padel",
