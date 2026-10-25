@@ -254,7 +254,7 @@
             "time": "12:45",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "3-6 3-6",
             "wo": ""
           },
           {
@@ -306,8 +306,8 @@
             "id": "3-1",
             "round": 3,
             "slot": 1,
-            "homeSeed": null,
-            "home": "",
+            "homeSeed": 8,
+            "home": "Leban, Juan Cruz / Truffer, Germán",
             "awaySeed": null,
             "away": "",
             "day": "25/10/2026",
