@@ -785,7 +785,7 @@
             "time": "11:30",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "2-6 4-6",
             "wo": ""
           },
           {
@@ -854,8 +854,8 @@
             "slot": 3,
             "homeSeed": 2,
             "home": "Croce, Antonella / Morley, Jessie",
-            "awaySeed": null,
-            "away": "",
+            "awaySeed": 10,
+            "away": "Cavallaro Florencia / Yancovich Luisina",
             "day": "25/10/2026",
             "time": "15:15",
             "venue": "Palermo Padel",
