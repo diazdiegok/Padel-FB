@@ -471,7 +471,7 @@
             "time": "12:45",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "7-6 4-6 6-3",
             "wo": ""
           },
           {
@@ -525,8 +525,8 @@
             "slot": 4,
             "homeSeed": 4,
             "home": "Capatto, Facundo / Screpis, Miguel",
-            "awaySeed": null,
-            "away": "",
+            "awaySeed": 6,
+            "away": "Milton Reatto / Joaquín Lucero",
             "day": "25/10/2026",
             "time": "16:30",
             "venue": "Palermo Padel",
