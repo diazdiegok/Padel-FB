@@ -269,7 +269,7 @@
             "time": "12:45",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "2-6 6-7",
             "wo": ""
           },
           {
@@ -308,8 +308,8 @@
             "slot": 1,
             "homeSeed": 8,
             "home": "Leban, Juan Cruz / Truffer, Germán",
-            "awaySeed": null,
-            "away": "",
+            "awaySeed": 5,
+            "away": "Diaz, Diego / Fontanetto, Emiliano",
             "day": "25/10/2026",
             "time": "16:30",
             "venue": "Palermo Padel",
