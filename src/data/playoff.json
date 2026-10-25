@@ -725,7 +725,7 @@
             "time": "10:15",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "0-6 4-6",
             "wo": ""
           },
           {
@@ -824,8 +824,8 @@
             "slot": 1,
             "homeSeed": 1,
             "home": "Garcetti, Flor / Estebenet, Sandra",
-            "awaySeed": null,
-            "away": "",
+            "awaySeed": 12,
+            "away": "Benedetich, Florencia / Benedetich, Stefanía",
             "day": "25/10/2026",
             "time": "14:00",
             "venue": "Palermo Padel",
