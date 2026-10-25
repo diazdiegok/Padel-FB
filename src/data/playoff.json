@@ -381,7 +381,7 @@
             "time": "11:30",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "4-6 4-6",
             "wo": ""
           },
           {
@@ -480,8 +480,8 @@
             "slot": 1,
             "homeSeed": 1,
             "home": "Ramírez, Diego Germán / Rondan, Martín",
-            "awaySeed": null,
-            "away": "",
+            "awaySeed": 12,
+            "away": "Chilotegui, Alejandro / González, Daniel",
             "day": "25/10/2026",
             "time": "15:15",
             "venue": "Palermo Padel",
