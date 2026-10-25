@@ -224,7 +224,7 @@
             "time": "10:45",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "1-6 4-6",
             "wo": ""
           },
           {
@@ -291,8 +291,8 @@
             "id": "2-4",
             "round": 2,
             "slot": 4,
-            "homeSeed": null,
-            "home": "",
+            "homeSeed": 10,
+            "home": "Martinez, Francisco / Lanzi, Lucas",
             "awaySeed": null,
             "away": "",
             "day": "25/10/2026",
