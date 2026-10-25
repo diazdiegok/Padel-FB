@@ -194,7 +194,7 @@
             "time": "09:00",
             "venue": "Palermo Padel",
             "court": "",
-            "result": "",
+            "result": "3-6 6-3 6-3",
             "wo": ""
           },
           {
@@ -276,8 +276,8 @@
             "id": "2-3",
             "round": 2,
             "slot": 3,
-            "homeSeed": null,
-            "home": "",
+            "homeSeed": 6,
+            "home": "Balmaceda, Matias / Fiore, Marcelo",
             "awaySeed": null,
             "away": "",
             "day": "25/10/2026",
