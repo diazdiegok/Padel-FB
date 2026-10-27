@@ -85,7 +85,10 @@ const seasonVenues = Object.fromEntries(
                 <p class="empty-season">La tabla de esta temporada todavía no está publicada.</p>
               ) : (
                 <p class="empty-season empty-season-cta">
-                  <a class="home-inscribe" href={page("inscribir-pareja/")}>¡Inscribite YA!</a>
+                  <span class="home-inscribe-wrap">
+                    <span class="home-hit-ball" aria-hidden="true"></span>
+                    <a class="home-inscribe" href={page("inscribir-pareja/")}>¡Inscribite YA!</a>
+                  </span>
                   <span>{seasonLabel(current)} está por arrancar. Anotá tu pareja.</span>
                 </p>
               )
