@@ -569,10 +569,13 @@ body.is-admin main > .wrap {
   background: #080b08;
 }
 
-.chk {
+.chk,
+.form label.chk,
+.admin-site-grid label.chk,
+.cms-form label.chk {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 13px;
   color: var(--muted);
 }
