@@ -285,7 +285,7 @@ h3 { font-size: 22px; }
   padding: 20px;
 }
 .scoreboard.is-empty { align-self: start; }
-.scoreboard.is-inscribe {
+.scoreboard:not(.is-finished) {
   animation: scoreboard-float 4.8s ease-in-out infinite;
   will-change: transform;
 }
@@ -997,7 +997,7 @@ footer strong { color: var(--cream); }
 .home-open.home-play .scoreboard {
   animation: home-board 0.8s cubic-bezier(0.16, 0.84, 0.32, 1) 0.22s both;
 }
-.home-open.home-play .scoreboard.is-inscribe {
+.home-open.home-play .scoreboard:not(.is-finished) {
   animation:
     home-board 0.8s cubic-bezier(0.16, 0.84, 0.32, 1) 0.22s both,
     scoreboard-float 4.8s ease-in-out 1.1s infinite;
@@ -1099,14 +1099,11 @@ footer strong { color: var(--cream); }
   .home-open.home-play .row-player,
   .home-open.home-play .live::before,
   .home-open.home-play + .wrap .home-stats,
-  .scoreboard.is-inscribe,
+  .scoreboard:not(.is-finished),
   .home-open.home-play .scoreboard.is-inscribe .home-hit-orbit,
   .home-open.home-play .scoreboard.is-inscribe .home-hit-ball,
   .home-open.home-play .scoreboard.is-inscribe .home-inscribe {
     animation: none;
-  }
-  .scoreboard .home-hit-orbit {
-    opacity: 1;
   }
 }
 
