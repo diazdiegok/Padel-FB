@@ -1,4 +1,4 @@
-/** 2-0 = 3 pts ganador. 2-1 = 2 pts ganador y 1 el perdedor. */
+/** Ganador siempre 3 pts. 2-0 = 3-0. 2-1 = 3-1. */
 
 export function fold(s) {
   return String(s || "")
@@ -79,9 +79,9 @@ export function parseResult(raw) {
 
 export function pointsFor(homeSets, awaySets) {
   if (homeSets === 2 && awaySets === 0) return { homePts: 3, awayPts: 0, homeDif: 2, awayDif: -2 };
-  if (homeSets === 2 && awaySets === 1) return { homePts: 2, awayPts: 1, homeDif: 1, awayDif: -1 };
+  if (homeSets === 2 && awaySets === 1) return { homePts: 3, awayPts: 1, homeDif: 1, awayDif: -1 };
   if (homeSets === 0 && awaySets === 2) return { homePts: 0, awayPts: 3, homeDif: -2, awayDif: 2 };
-  if (homeSets === 1 && awaySets === 2) return { homePts: 1, awayPts: 2, homeDif: -1, awayDif: 1 };
+  if (homeSets === 1 && awaySets === 2) return { homePts: 1, awayPts: 3, homeDif: -1, awayDif: 1 };
   return null;
 }
 

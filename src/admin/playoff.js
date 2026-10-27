@@ -72,7 +72,7 @@ export function createPlayoff(ctx, api, shell) {
     $("po-temp").innerHTML = [...new Set([...seasons, ...armed, current])]
       .map(
         (t) =>
-          `<option value="${escAttr(t)}" ${t === current ? "selected" : ""}>${escAttr(seasonLabel(t))}${armed.has(t) ? " · armado" : ""}</option>`
+          `<option value="${escAttr(t)}" ${t === current ? "selected" : ""}>${escAttr(seasonLabel(t))}</option>`
       )
       .join("");
     $("po-title").value = data().title || "";
