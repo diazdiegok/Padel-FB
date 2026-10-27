@@ -323,8 +323,8 @@ h3 { font-size: 22px; }
   border-radius: 50%;
   margin-right: 8px;
 }
-.done { color: #ff6b6b; }
-.done::before {
+.status-done { color: #ff6b6b; }
+.status-done::before {
   content: "";
   display: inline-block;
   width: 7px;
@@ -341,9 +341,10 @@ h3 { font-size: 22px; }
   padding: 12px 0;
   border-top: 1px solid var(--line);
   font-size: 15px;
+  color: var(--cream);
 }
-.scoreboard.done .row-player { grid-template-columns: 36px 1fr; }
-.scoreboard.done .pos { font-size: 18px; color: var(--lime); }
+.scoreboard.is-finished .row-player { grid-template-columns: 36px 1fr; }
+.scoreboard.is-finished .pos { font-size: 18px; color: var(--lime); }
 .pos { font-family: var(--display); font-size: 22px; color: var(--lime); }
 .cat { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
 .pts { font-family: var(--display); font-size: 28px; }
