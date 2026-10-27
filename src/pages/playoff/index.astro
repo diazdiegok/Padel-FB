@@ -13,14 +13,16 @@ const playoffs = normalizePlayoffs(playoffJson)
     const categories = p.categories.map(resolveCategory);
     const champions = categories.filter((c) => c.champion);
     const live = p.temp === current;
+    const done = champions.length > 0 && champions.length === categories.length;
     return {
       ...p,
       categories,
       champions,
+      done,
       live,
-      label: live ? "En juego" : "Histórico",
+      label: done ? "Finalizado" : live ? "En juego" : "Histórico",
       href: page(`playoff/${playoffSlug(p.temp)}/`),
-      heading: p.title || `Playoff ${seasonLabel(p.temp)}`,
+      heading: `Playoff ${seasonLabel(p.temp)} 🎾`,
     };
   });
 ---
@@ -40,7 +42,7 @@ const playoffs = normalizePlayoffs(playoffJson)
           <a class="po-archive-card" href={p.href}>
             <div class="po-archive-top">
               <span class="po-archive-date">{p.dates || seasonLabel(p.temp)}</span>
-              <span class:list={["po-archive-tag", { live: p.live }]}>{p.label}</span>
+              <span class:list={["po-archive-tag", { live: p.live && !p.done, done: p.done }]}>{p.label}</span>
             </div>
             <h2>{p.heading}</h2>
             <p class="po-archive-meta">
@@ -52,7 +54,7 @@ const playoffs = normalizePlayoffs(playoffJson)
                 {p.champions.map((c) => (
                   <li>
                     <span>{c.cat}</span>
-                    <strong>{c.champion}</strong>
+                    <strong><span class="po-archive-medal" aria-hidden="true">🥇</span>{c.champion}</strong>
                   </li>
                 ))}
               </ul>
