@@ -1,6 +1,14 @@
 import { FIXTURE_PATH, RANK_PATH, RESULTS_PATH } from "./constants.js";
-import { cleanMatch, cleanRow, matchKey } from "./csv.js";
-import { applyFixtureResults, describeResult, fold } from "../lib/scoring.js";
+import {
+  RES_IMPORT_COLS,
+  cleanMatch,
+  cleanRow,
+  downloadCsv,
+  matchKey,
+  parseResultsImportObjects,
+  parseResultsImportText,
+} from "./csv.js";
+import { applyFixtureResults, describeResult, fold, pairsMatch, parseResult } from "../lib/scoring.js";
 import { combineResults, seasonLabel, seasonNumber, weekKey, weekNumber } from "../lib/liga.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
@@ -37,6 +45,106 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
 
   const tempOf = (m) => m.temp || ctx.siteData.currentSeason || "T4";
   const weekOf = (m) => m.week || NO_WEEK;
+
+  function flipResult(raw) {
+    const parsed = parseResult(raw);
+    if (!parsed?.sets?.length) return raw;
+    return parsed.sets.map(([a, b]) => `${b}-${a}`).join(" ");
+  }
+
+  function findImportTarget(pool, row) {
+    let best = null;
+    let bestScore = -1;
+    let swapped = false;
+    for (const m of pool) {
+      if (row.temp && tempOf(m) !== row.temp) continue;
+      if (row.week && weekOf(m) !== row.week) continue;
+      if (row.cat && (m.cat || "") !== row.cat) continue;
+      const same = pairsMatch(m.home, row.home) && pairsMatch(m.away, row.away);
+      const flip = !same && pairsMatch(m.home, row.away) && pairsMatch(m.away, row.home);
+      if (!same && !flip) continue;
+      const score = 10 + (row.week ? 2 : 0) + (row.cat ? 1 : 0) + (same ? 1 : 0);
+      if (score > bestScore) {
+        best = m;
+        bestScore = score;
+        swapped = flip;
+      }
+    }
+    return best ? { match: best, swapped } : null;
+  }
+
+  async function readImportRows(file) {
+    const season = ctx.siteData.currentSeason || "T4";
+    const lower = file.name.toLowerCase();
+    if (lower.endsWith(".csv") || lower.endsWith(".txt")) {
+      return parseResultsImportText(await file.text(), season);
+    }
+    if (lower.endsWith(".xls") || lower.endsWith(".xlsx")) {
+      const XLSX = await import("xlsx");
+      const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      if (!sheet) throw new Error("El Excel no tiene hojas.");
+      const objects = XLSX.utils.sheet_to_json(sheet, { defval: "", raw: false });
+      return parseResultsImportObjects(objects, season);
+    }
+    throw new Error("Usá un archivo .csv, .xls o .xlsx.");
+  }
+
+  function exportTemplate() {
+    const season = selTemp || ctx.siteData.currentSeason || "T4";
+    let list = allMatches().filter((m) => tempOf(m) === season);
+    if (selWeek && selWeek !== ALL_WEEKS) list = list.filter((m) => weekOf(m) === selWeek);
+    if (!list.length) {
+      toast("Todavía no hay partidos publicados para armar la plantilla.", "err");
+      return;
+    }
+    downloadCsv(
+      `resultados-${String(season).toLowerCase()}.csv`,
+      RES_IMPORT_COLS,
+      list.map((m) => ({
+        fecha: weekOf(m),
+        categoria: m.cat || "",
+        pareja1: m.home || "",
+        pareja2: m.away || "",
+        resultado: m.result || "",
+      }))
+    );
+    toast("Plantilla descargada", "ok");
+  }
+
+  async function importResultsFile(file) {
+    const rows = await readImportRows(file);
+    const pool = allMatches();
+    if (!pool.length) throw new Error("No hay partidos publicados. Publicá el fixture primero.");
+    let applied = 0;
+    let invalid = 0;
+    let missing = 0;
+    for (const row of rows) {
+      const hit = findImportTarget(pool, row);
+      if (!hit) {
+        missing += 1;
+        continue;
+      }
+      let result = String(row.result || "").trim();
+      if (hit.swapped) result = flipResult(result);
+      if (!describeResult(result)) {
+        invalid += 1;
+        continue;
+      }
+      const target = sourceMatch(hit.match);
+      if (!target) {
+        missing += 1;
+        continue;
+      }
+      target.result = result;
+      applied += 1;
+    }
+    if (applied) {
+      shell.markDirty("resultados");
+      render();
+    }
+    return { applied, invalid, missing, total: rows.length };
+  }
   const played = (list) => list.filter((m) => String(m.result || "").trim()).length;
   const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
   const weekTitle = (week) => (week === ALL_WEEKS ? "Todas las fechas" : week);
@@ -290,6 +398,29 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
       if (hint) hint.textContent = parsed ? `${parsed.label} · ${parsed.homePts}-${parsed.awayPts} pts` : input.value.trim() ? "Resultado inválido" : "Sin resultado";
     });
     $("res-reload")?.addEventListener("click", reload);
+    $("res-template")?.addEventListener("click", exportTemplate);
+    $("res-import")?.addEventListener("click", () => $("res-import-file")?.click());
+    $("res-import-file")?.addEventListener("change", async (e) => {
+      const input = e.target;
+      const file = input.files?.[0];
+      input.value = "";
+      if (!file) return;
+      setBusy($("res-import"), true, "Importando…");
+      try {
+        const report = await importResultsFile(file);
+        const parts = [`${report.applied} de ${report.total} resultado${report.total === 1 ? "" : "s"} cargado${report.applied === 1 ? "" : "s"}`];
+        if (report.missing) parts.push(`${report.missing} sin partido coincidente`);
+        if (report.invalid) parts.push(`${report.invalid} con formato inválido`);
+        const text = parts.join(". ") + ". Revisá y publicá.";
+        setMsg($("res-msg"), text, report.applied ? "ok" : "err");
+        toast(report.applied ? "Resultados importados" : "Nada se pudo importar", report.applied ? "ok" : "err");
+      } catch (err) {
+        setMsg($("res-msg"), err.message || String(err), "err");
+        toast(err.message || "No se pudo importar", "err");
+      } finally {
+        setBusy($("res-import"), false);
+      }
+    });
     $("res-publish")?.addEventListener("click", async () => {
       const gate = api.usePublishToken();
       if (!gate.ok) {

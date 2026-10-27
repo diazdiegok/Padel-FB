@@ -261,9 +261,14 @@ import "../styles/admin.css";
           <div class="admin-callout">
             <strong>Cómo se carga</strong>
             Desde Pareja 1: <b>6-4 6-2</b> (ganador 3 pts) o <b>6-4 3-6 6-2</b> (ganador 3 pts, perdedor 1).
+            También podés <b>Importar Excel</b> (.csv / .xls / .xlsx) con columnas
+            <b>fecha, categoria, pareja1, pareja2, resultado</b>. Bajá la plantilla con los partidos ya publicados.
           </div>
           <div class="admin-section-tools">
             <button class="btn btn-ghost" type="button" id="res-reload">Actualizar</button>
+            <button class="btn btn-ghost" type="button" id="res-template">Plantilla CSV</button>
+            <button class="btn btn-ghost" type="button" id="res-import">Importar Excel</button>
+            <input id="res-import-file" type="file" accept=".csv,.xls,.xlsx,.txt,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden />
             <span class="tag" id="res-count"></span>
           </div>
           <div class="res-crumbs" id="res-crumbs" role="navigation" aria-label="Ubicación en resultados"></div>

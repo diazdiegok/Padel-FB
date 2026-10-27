@@ -228,4 +228,85 @@ export function parseFixtureText(text, defaults = {}, currentSeason = "T4") {
   return parsed;
 }
 
+export const RES_IMPORT_COLS = ["fecha", "categoria", "pareja1", "pareja2", "resultado"];
+
+function foldHeader(h) {
+  return String(h || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[_./]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function pickField(map, names) {
+  for (const name of names) {
+    if (map[name] != null && String(map[name]).trim() !== "") return String(map[name]).trim();
+  }
+  return "";
+}
+
+function importRowFromMap(map, currentSeason) {
+  return cleanMatch(
+    {
+      week: pickField(map, ["fecha", "week", "jornada", "semana"]),
+      temp: pickField(map, ["temp", "temporada", "season"]) || currentSeason,
+      cat: pickField(map, ["categoria", "cat", "category"]),
+      home: pickField(map, ["pareja1", "pareja 1", "home", "local", "jugador1"]),
+      away: pickField(map, ["pareja2", "pareja 2", "away", "visitante", "jugador2"]),
+      partido: pickField(map, ["partido", "match"]),
+      result: pickField(map, ["resultado", "result", "score", "resultado final"]),
+      day: pickField(map, ["dia", "day"]),
+      time: pickField(map, ["horario", "hora", "time"]),
+    },
+    {},
+    currentSeason
+  );
+}
+
+/** Filas de objetos (Excel) → partidos con resultado. */
+export function parseResultsImportObjects(objects, currentSeason = "T4") {
+  const parsed = (objects || [])
+    .map((obj) => {
+      const map = {};
+      Object.entries(obj || {}).forEach(([k, v]) => {
+        map[foldHeader(k)] = v;
+      });
+      return importRowFromMap(map, currentSeason);
+    })
+    .filter((m) => m.home && m.away && String(m.result || "").trim());
+  if (!parsed.length) {
+    throw new Error(
+      "No encontré filas con resultado. Columnas: fecha, categoria, pareja1, pareja2, resultado."
+    );
+  }
+  return parsed;
+}
+
+/** CSV/texto → partidos con resultado. */
+export function parseResultsImportText(text, currentSeason = "T4") {
+  const raw = String(text || "").replace(/^\uFEFF/, "").trim();
+  if (!raw) throw new Error("El archivo está vacío.");
+  const first = raw.split(/\r?\n/, 1)[0] || "";
+  const sep = first.includes("\t") ? "\t" : first.includes(";") ? ";" : ",";
+  const lines = raw.split(/\r?\n/).filter((l) => l.trim());
+  const header = splitLine(lines[0], sep).map(foldHeader);
+  const looksHeader = header.some((h) =>
+    ["fecha", "week", "jornada", "categoria", "cat", "pareja1", "pareja 1", "home", "partido", "resultado", "result"].includes(h)
+  );
+  if (!looksHeader) {
+    throw new Error("Falta la fila de títulos: fecha, categoria, pareja1, pareja2, resultado.");
+  }
+  const objects = lines.slice(1).map((line) => {
+    const cols = splitLine(line, sep);
+    const obj = {};
+    header.forEach((h, i) => {
+      obj[h] = cols[i] || "";
+    });
+    return obj;
+  });
+  return parseResultsImportObjects(objects, currentSeason);
+}
+
 export { RANK_COLS, FX_COLS, CATS };
