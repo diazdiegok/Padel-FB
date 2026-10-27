@@ -16,6 +16,7 @@ const upcoming = upcomingRaw && upcomingRaw !== current ? upcomingRaw : "";
 const seasons = listSeasons(site, rows.map((p) => p.temp));
 const seasonCounts = Object.fromEntries(seasons.map((t) => [t, rows.filter((p) => p.temp === t).length]));
 const live = rows.filter((p) => p.temp === current);
+const seasonStarted = live.some((p) => Number(p.pts) > 0 || Number(p.pj) > 0);
 const cats = [...new Set(live.map((p) => p.cat))];
 const leaders = cats
   .map((cat) => live.filter((p) => p.cat === cat).sort((a, b) => a.pos - b.pos || b.pts - a.pts)[0])
@@ -27,7 +28,14 @@ const champions = currentPlayoff
 const playoffDone = Boolean(currentPlayoff && champions.length > 0 && champions.length === currentPlayoff.categories.length);
 const boardRows = playoffDone
   ? champions.map((c) => ({ name: c.champion, cat: c.cat }))
-  : leaders.map((p) => ({ name: p.name, cat: `${p.cat} · ${p.pts} pts`, pts: p.pts, pos: p.pos }));
+  : seasonStarted
+    ? leaders.map((p) => ({ name: p.name, cat: `${p.cat} · ${p.pts} pts`, pts: p.pts, pos: p.pos }))
+    : [];
+const boardTitle = playoffDone
+  ? `Campeones ${seasonLabel(current)}`
+  : seasonStarted
+    ? `Líderes ${current}`
+    : seasonLabel(current);
 const countedVenues = (site.venues || []).filter((v) => v.liga !== false).length;
 const savedVenues = site.seasonVenues && typeof site.seasonVenues === "object" ? site.seasonVenues : {};
 const seasonVenues = Object.fromEntries(
@@ -60,13 +68,25 @@ const seasonVenues = Object.fromEntries(
           <aside class:list={["scoreboard", { "is-empty": boardRows.length === 0, "is-finished": playoffDone }]}>
             <header>
               {playoffDone ? (
-                <span class="live">Campeones {seasonLabel(current)}</span>
+                <span class="live">{boardTitle}</span>
               ) : (
-                <span>Líderes {current}</span>
+                <span>{boardTitle}</span>
               )}
-              {playoffDone ? <span class="status-done">Finalizado</span> : <span class="live">En juego</span>}
+              {playoffDone ? (
+                <span class="status-done">Finalizado</span>
+              ) : seasonStarted ? (
+                <span class="live">En juego</span>
+              ) : (
+                <span class="status-soon">Próximamente</span>
+              )}
             </header>
-            {boardRows.length === 0 && <p class="empty-season">La tabla de esta temporada todavía no está publicada.</p>}
+            {boardRows.length === 0 && (
+              <p class="empty-season">
+                {seasonStarted
+                  ? "La tabla de esta temporada todavía no está publicada."
+                  : `${seasonLabel(current)} todavía no comenzó. Cuando haya resultados aparecen los líderes.`}
+              </p>
+            )}
             {boardRows.map((p) => (
               <div class="row-player">
                 <span class="pos">{playoffDone ? "🥇" : p.pos}</span>
