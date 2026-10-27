@@ -724,6 +724,30 @@ footer a:hover { color: var(--lime); }
 }
 .form input:focus, .form select:focus, .form textarea:focus { border-color: var(--lime); }
 .form-fecha { max-width: 720px; padding: 32px 0 24px; }
+.insc-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+.insc-actions .btn {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}
+.btn-clear {
+  background: #ff5a3c;
+  border-color: #ff5a3c;
+  color: #111;
+}
+.btn-clear:hover {
+  filter: brightness(1.05);
+}
+@media (max-width: 560px) {
+  .insc-actions {
+    grid-template-columns: 1fr;
+  }
+}
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

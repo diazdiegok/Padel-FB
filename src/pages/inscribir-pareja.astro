@@ -108,7 +108,10 @@ const TO_HOURS = HOURS.slice(3);
       <p class="form-hint" id="insc-hint">{copy.hint}</p>
       <p class="form-notice">Una vez publicados los partidos del fixture tienen <strong>24 hs</strong> para avisar si no pueden jugar; si no, el partido se da por perdido.</p>
       <input class="hp" name="website" tabindex="-1" autocomplete="off" />
-      <button class="btn btn-lime" type="submit" id="insc-send">{copy.cta}</button>
+      <div class="insc-actions">
+        <button class="btn btn-clear" type="button" id="insc-clear">Limpiar formulario</button>
+        <button class="btn btn-lime" type="submit" id="insc-send">{copy.cta}</button>
+      </div>
       <p class="admin-msg" id="insc-msg" aria-live="polite"></p>
     </form>
 
@@ -162,6 +165,12 @@ const TO_HOURS = HOURS.slice(3);
 
     form?.querySelectorAll("[name=day]").forEach((box) => {
       box.addEventListener("change", syncDays);
+    });
+
+    document.querySelector("#insc-clear")?.addEventListener("click", () => {
+      form?.reset();
+      syncDays();
+      setMsg("");
     });
 
     if (apiUrl) {
