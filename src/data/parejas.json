@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "id": "pmvqsry064f25",
+    "createdAt": "2026-10-27T14:45:16.134Z",
+    "temp": "T4",
+    "cat": "A Masculina",
+    "p1": "Test Uno",
+    "p2": "Test Dos",
+    "days": {
+      "Lunes": "19:00 - 22:00"
+    },
+    "note": "prueba"
+  }
+]
