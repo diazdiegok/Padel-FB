@@ -945,6 +945,21 @@ body.is-admin main > .wrap {
 }
 .res-cat-title span { color: var(--muted); font-family: var(--font); font-size: 12px; text-transform: none; margin-left: 8px; }
 
+.res-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 4px 0 16px;
+}
+
+.res-filters[hidden] {
+  display: none;
+}
+
+.res-filters .admin-search {
+  margin-bottom: 0;
+}
+
 #res-list,
 .admin-disp-rows {
   display: grid;

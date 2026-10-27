@@ -133,6 +133,50 @@ export function addPairsToRanking(rows, pairs) {
   return added;
 }
 
+/** Quita del ranking las parejas indicadas (misma cat/temp y nombre coincidente). */
+export function removePairsFromRanking(rows, pairs) {
+  const removed = [];
+  for (const pair of pairs || []) {
+    const temp = String(pair.temp || "").toUpperCase();
+    if (!pair.p1 || !pair.p2 || !pair.cat || !temp) continue;
+    const name = `${pair.p1} / ${pair.p2}`;
+    const i = findPairIndex(rows, name, pair.cat, temp);
+    if (i < 0) continue;
+    removed.push(rows[i]);
+    rows.splice(i, 1);
+  }
+  if (removed.length) recomputePositions(rows);
+  return removed;
+}
+
+/**
+ * Deja en `temp` solo filas que coincidan con inscripciones vigentes.
+ * Otras temporadas no se tocan.
+ */
+export function syncRankingToSeasonPairs(rows, pairs, temp) {
+  const season = String(temp || "").toUpperCase();
+  if (!season || !Array.isArray(rows)) return [];
+  const seasonPairs = (pairs || []).filter(
+    (p) => String(p.temp || "").toUpperCase() === season && p.p1 && p.p2 && p.cat
+  );
+  const removed = [];
+  const keep = [];
+  for (const row of rows) {
+    if (String(row.temp || "").toUpperCase() !== season) {
+      keep.push(row);
+      continue;
+    }
+    const matched = seasonPairs.some((p) => p.cat === row.cat && pairsMatch(row.name, `${p.p1} / ${p.p2}`));
+    if (matched) keep.push(row);
+    else removed.push(row);
+  }
+  if (!removed.length) return removed;
+  rows.length = 0;
+  rows.push(...keep);
+  recomputePositions(rows);
+  return removed;
+}
+
 function ensurePair(rows, name, cat, temp) {
   const i = findPairIndex(rows, name, cat, temp);
   if (i >= 0) return i;

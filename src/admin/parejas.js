@@ -8,7 +8,12 @@ import {
   splitMail,
   validateDays,
 } from "../lib/disponibilidad.js";
-import { addPairsToRanking } from "../lib/scoring.js";
+import {
+  addPairsToRanking,
+  findPairIndex,
+  removePairsFromRanking,
+  syncRankingToSeasonPairs,
+} from "../lib/scoring.js";
 import { seasonLabel } from "../lib/liga.js";
 import { downloadCsv } from "./csv.js";
 import { $, confirmModal, escAttr as esc, setBusy, setMsg, toast } from "./ui.js";
@@ -463,9 +468,19 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       const btn = e.target.closest("[data-pair-del]");
       if (!btn) return;
       const pair = ctx.pairs[Number(btn.dataset.pairDel)];
+      if (!pair) return;
+      const label = `${pair.p1 || "?"} / ${pair.p2 || "?"}`;
+      const rankIdx =
+        pair.p1 && pair.p2 && pair.cat
+          ? findPairIndex(ctx.rows || [], `${pair.p1} / ${pair.p2}`, pair.cat, pair.temp || season())
+          : -1;
+      const rankRow = rankIdx >= 0 ? ctx.rows[rankIdx] : null;
+      const hasStats = rankRow && (Number(rankRow.pts) || Number(rankRow.pj));
       const ok = await confirmModal({
         title: "Quitar pareja",
-        body: `${pair.p1 || "?"} / ${pair.p2 || "?"} deja de aparecer en las inscripciones. Publicá para confirmarlo.`,
+        body: hasStats
+          ? `${label} se quita de las inscripciones y del ranking (${Number(rankRow.pts) || 0} pts, ${Number(rankRow.pj) || 0} PJ). Publicá parejas para confirmarlo.`
+          : `${label} se quita de las inscripciones y del ranking. Publicá parejas para confirmarlo.`,
         confirmLabel: "Quitar",
         danger: true,
       });
@@ -474,6 +489,10 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       delete ctx.contacts[pair.id];
       contactsDirty.add(pair.id);
       ctx.pairs.splice(Number(btn.dataset.pairDel), 1);
+      if (removePairsFromRanking(ctx.rows || [], [pair]).length) {
+        shell.markDirty("ranking");
+        onRankingChanged?.();
+      }
       shell.markDirty("parejas");
       render();
     });
@@ -512,16 +531,21 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         }));
         const seasonPairs = next.filter((p) => p.temp === season());
         const ranking = await api.readRemoteJson(RANK_PATH, []);
-        const toRanking = Array.isArray(ranking) ? addPairsToRanking(ranking, seasonPairs) : [];
+        const rankRows = Array.isArray(ranking) ? ranking : [];
+        const dropped = syncRankingToSeasonPairs(rankRows, seasonPairs, season());
+        const toRanking = addPairsToRanking(rankRows, seasonPairs);
+        const rankingChanged = dropped.length > 0 || toRanking.length > 0;
         await api.publishFiles(
           [
             { path: PAIRS_PATH, content: JSON.stringify(next, null, 2) + "\n" },
             { path: PAIRS_CONFIG_PATH, content: JSON.stringify(config, null, 2) + "\n" },
-            ...(toRanking.length ? [{ path: RANK_PATH, content: JSON.stringify(ranking, null, 2) + "\n" }] : []),
+            ...(rankingChanged ? [{ path: RANK_PATH, content: JSON.stringify(rankRows, null, 2) + "\n" }] : []),
           ],
           config.open ? "Actualiza parejas inscriptas desde el admin." : "Cierra la inscripción de parejas."
         );
-        if (addPairsToRanking(ctx.rows, seasonPairs).length) onRankingChanged?.();
+        const localDropped = syncRankingToSeasonPairs(ctx.rows || [], seasonPairs, season());
+        const localAdded = addPairsToRanking(ctx.rows || [], seasonPairs);
+        if (localDropped.length || localAdded.length) onRankingChanged?.();
         ctx.pairs = next;
         ctx.pairsConfig = config;
         knownIds = new Set(next.map((p) => p.id));
@@ -534,6 +558,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         }
         if (fresh.length) await loadContacts().catch(() => {});
         shell.clearDirty("parejas");
+        shell.clearDirty("ranking");
         render();
         const extra = fresh.length
           ? ` Se ${fresh.length === 1 ? "sumó 1 pareja que se inscribió" : `sumaron ${fresh.length} parejas que se inscribieron`} mientras editabas.`
@@ -541,7 +566,10 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         const ranked = toRanking.length
           ? ` ${toRanking.length === 1 ? "1 pareja nueva quedó" : `${toRanking.length} parejas nuevas quedaron`} en el ranking con 0 puntos.`
           : "";
-        setMsg($("pairs-msg"), "Parejas publicadas." + extra + ranked, "ok");
+        const unranked = dropped.length
+          ? ` Se ${dropped.length === 1 ? "quitó 1 pareja" : `quitaron ${dropped.length} parejas`} del ranking.`
+          : "";
+        setMsg($("pairs-msg"), "Parejas publicadas." + extra + ranked + unranked, "ok");
         toast("Parejas publicadas", "ok");
       } catch (err) {
         const m = api.publishError(err);
