@@ -22,6 +22,23 @@ const seasonCounts = Object.fromEntries(temps.map((t) => [t, rows.filter((p) => 
       <p>Escribí un apellido y filtrá por categoría. Elegí la temporada abajo.</p>
     </header>
 
+    <aside class="rank-rules" aria-labelledby="rank-rules-title">
+      <h2 id="rank-rules-title">Cómo se suman los puntos</h2>
+      <p>Cada partido suma puntos a la pareja. <strong>La ganadora siempre suma 3 puntos</strong>. La perdedora suma según cómo se jugó:</p>
+      <ul>
+        <li>
+          <strong>Ganás 2-0</strong> (ej. <b>6-4 6-2</b>): ganadora <b>3 pts</b>, perdedora <b>0 pts</b>.
+        </li>
+        <li>
+          <strong>Ganás 2-1</strong> (ej. <b>6-4 3-6 6-2</b>): ganadora <b>3 pts</b>, perdedora <b>1 pt</b> (porque ganó un set).
+        </li>
+      </ul>
+      <p>
+        En la tabla, <b>PJ</b> son los partidos jugados y <b>Dif. sets</b> es la diferencia de sets a favor y en contra.
+        El orden es por puntos; si empatan, decide la diferencia de sets.
+      </p>
+    </aside>
+
     <div class="season-bar">
       <span class="filter-kicker">Temporada</span>
       <div class="seg" id="temps">

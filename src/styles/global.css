@@ -610,6 +610,37 @@ footer a:hover { color: var(--lime); }
 
 .page-hero { padding: 56px 0 32px; border-bottom: 1px solid var(--line); }
 .page-hero p { color: var(--muted); margin-top: 12px; max-width: 60ch; }
+.rank-rules {
+  margin: 24px 0 8px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--lime);
+  background: rgba(214, 255, 47, 0.05);
+  max-width: 72ch;
+}
+.rank-rules h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+  letter-spacing: 0.06em;
+}
+.rank-rules p,
+.rank-rules li {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+.rank-rules p { margin: 0 0 10px; }
+.rank-rules ul {
+  margin: 0 0 10px;
+  padding-left: 1.2em;
+  display: grid;
+  gap: 8px;
+}
+.rank-rules li strong,
+.rank-rules p strong,
+.rank-rules b {
+  color: var(--cream);
+}
 
 .filters {
   display: flex;
