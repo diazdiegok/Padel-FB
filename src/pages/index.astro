@@ -2,7 +2,8 @@
 import Layout from "../layouts/Layout.astro";
 import { site } from "../data/site";
 import ranking from "../data/ranking.json";
-import { playoffSlug } from "../lib/playoff.js";
+import playoffJson from "../data/playoff.json";
+import { normalizePlayoffs, playoffSlug, resolveCategory } from "../lib/playoff.js";
 import { listSeasons, seasonLabel } from "../lib/liga.js";
 import { asset, page } from "../lib/paths";
 
@@ -19,6 +20,14 @@ const cats = [...new Set(live.map((p) => p.cat))];
 const leaders = cats
   .map((cat) => live.filter((p) => p.cat === cat).sort((a, b) => a.pos - b.pos || b.pts - a.pts)[0])
   .filter(Boolean);
+const currentPlayoff = normalizePlayoffs(playoffJson).find((p) => p.temp === current && p.categories.length);
+const champions = currentPlayoff
+  ? currentPlayoff.categories.map(resolveCategory).filter((c) => c.champion)
+  : [];
+const playoffDone = Boolean(currentPlayoff && champions.length > 0 && champions.length === currentPlayoff.categories.length);
+const boardRows = playoffDone
+  ? champions.map((c) => ({ name: c.champion, cat: c.cat }))
+  : leaders.map((p) => ({ name: p.name, cat: `${p.cat} · ${p.pts} pts`, pts: p.pts, pos: p.pos }));
 const countedVenues = (site.venues || []).filter((v) => v.liga !== false).length;
 const savedVenues = site.seasonVenues && typeof site.seasonVenues === "object" ? site.seasonVenues : {};
 const seasonVenues = Object.fromEntries(
@@ -40,30 +49,32 @@ const seasonVenues = Object.fromEntries(
           <span class="home-sweep" aria-hidden="true"></span>
           <h1>Sin esfuerzo<br />no hay gloria</h1>
           <p class="lead">{site.ligaIntro}</p>
-          {upcoming && <p class="home-soon">Próximamente {seasonLabel(upcoming)}</p>}
           <div class="actions">
             {showPlayoff && <a class="btn btn-lime" href={page(`playoff/${playoffSlug(current)}/`)}>Ver playoff</a>}
             <a class:list={["btn", showPlayoff ? "btn-ghost" : "btn-lime"]} href={page("liga/")}>Entrar a la liga</a>
             <a class="btn btn-ghost" href={page("academia/")}>Ver academia</a>
           </div>
         </div>
-        <aside class:list={["scoreboard", { "is-empty": leaders.length === 0 }]}>
-          <header>
-            <span>Líderes {current}</span>
-            <span class="live">En juego</span>
-          </header>
-          {leaders.length === 0 && <p class="empty-season">La tabla de esta temporada todavía no está publicada.</p>}
-          {leaders.map((p) => p && (
-            <div class="row-player">
-              <span class="pos">{p.pos}</span>
-              <div>
-                {p.name}
-                <div class="cat">{p.cat} · {p.pts} pts</div>
+        <div class="home-board">
+          {upcoming && <p class="home-soon">Próximamente {seasonLabel(upcoming)}</p>}
+          <aside class:list={["scoreboard", { "is-empty": boardRows.length === 0, done: playoffDone }]}>
+            <header>
+              <span>{playoffDone ? `Campeones ${current}` : `Líderes ${current}`}</span>
+              {playoffDone ? <span class="done">Finalizado</span> : <span class="live">En juego</span>}
+            </header>
+            {boardRows.length === 0 && <p class="empty-season">La tabla de esta temporada todavía no está publicada.</p>}
+            {boardRows.map((p) => (
+              <div class="row-player">
+                <span class="pos">{playoffDone ? "🥇" : p.pos}</span>
+                <div>
+                  {p.name}
+                  <div class="cat">{p.cat}</div>
+                </div>
+                {!playoffDone && <span class="pts">{p.pts}</span>}
               </div>
-              <span class="pts">{p.pts}</span>
-            </div>
-          ))}
-        </aside>
+            ))}
+          </aside>
+        </div>
       </header>
     </div>
   </div>
