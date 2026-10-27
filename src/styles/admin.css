@@ -1192,12 +1192,15 @@ body.is-admin main > .wrap {
   color: var(--cream);
 }
 
-#pairs-cats {
-  margin-bottom: 8px;
+.pairs-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 4px 0 20px;
 }
 
 #pairs-search {
-  margin-top: 14px;
+  margin-top: 0;
 }
 
 .admin-disp-card.is-bye {

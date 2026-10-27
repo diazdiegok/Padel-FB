@@ -371,10 +371,12 @@ import "../styles/admin.css";
             <button class="btn btn-ghost" type="button" id="pairs-export">Exportar con WhatsApp</button>
             <span class="tag" id="pairs-count"></span>
           </div>
-          <div class="pills" id="pairs-cats"></div>
-          <div class="pills" id="pairs-origins"></div>
+          <div class="pairs-filters">
+            <div class="pills" id="pairs-cats"></div>
+            <div class="pills" id="pairs-origins"></div>
+          </div>
           <input class="admin-search" id="pairs-search" type="search" placeholder="Buscar jugador…" autocomplete="off" />
-          <p class="admin-help">Filtrá por categoría u origen (Web, Admin, Del ranking, Repetida) o buscá por nombre. Corregí nombres, mails, categoría o disponibilidad si se equivocaron. Las marcadas como Repetida están inscriptas dos veces: quitá una. WhatsApp y mails no se publican en la web: solo los ves acá.</p>
+          <p class="admin-help">Filtrá por categoría u origen, o buscá por nombre. Corregí nombres, mails, categoría o disponibilidad si se equivocaron. En Repetida quitá el duplicado. WhatsApp y mails no se publican en la web: solo los ves acá.</p>
           <p class="admin-msg" id="pairs-msg"></p>
           <div id="pairs-list"></div>
           <div class="admin-sticky-bar">

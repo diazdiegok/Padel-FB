@@ -85,10 +85,10 @@ function syncCardDays(card) {
 }
 
 const ORIGINS = [
-  { id: "web", label: "Web" },
-  { id: "admin", label: "Admin" },
-  { id: "ranking", label: "Del ranking" },
-  { id: "dup", label: "Repetida" },
+  { id: "web", label: "Web", hint: "Se anotaron desde /inscribir-pareja/" },
+  { id: "admin", label: "Admin", hint: "Las cargaste vos desde el panel" },
+  { id: "ranking", label: "Del ranking", hint: "Vinieron del ranking" },
+  { id: "dup", label: "Repetida", hint: "Misma pareja cargada más de una vez" },
 ];
 
 function pairOrigin(p, dupKeys) {
@@ -155,12 +155,12 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
     base.forEach(({ p }) => {
       counts[pairOrigin(p, dupKeys)] += 1;
     });
-    if (filterOrigin && !counts[filterOrigin]) filterOrigin = "";
+    if (filterOrigin && !(filterOrigin in counts)) filterOrigin = "";
     box.innerHTML = [
       `<button class="pill${filterOrigin === "" ? " on" : ""}" type="button" data-pairs-origin="">Todos <small>${base.length}</small></button>`,
-      ...ORIGINS.filter((o) => counts[o.id] > 0 || filterOrigin === o.id).map(
+      ...ORIGINS.map(
         (o) =>
-          `<button class="pill${filterOrigin === o.id ? " on" : ""}" type="button" data-pairs-origin="${o.id}">${esc(o.label)} <small>${counts[o.id]}</small></button>`
+          `<button class="pill${filterOrigin === o.id ? " on" : ""}" type="button" data-pairs-origin="${o.id}" title="${esc(o.hint)}">${esc(o.label)} <small>${counts[o.id] || 0}</small></button>`
       ),
     ].join("");
   }
