@@ -40,11 +40,11 @@ import "../styles/admin.css";
         <div class="admin-brand-mark">FB</div>
         <div class="admin-brand-text">
           <strong>PADEL FB</strong>
-          <span>Admin</span>
-        </div>
-        <div class="admin-brand-actions">
-          <button class="admin-brand-btn admin-brand-btn-visitas" type="button" data-nav="visitas">Visitas</button>
-          <button class="admin-brand-btn admin-brand-btn-salir" type="button" id="admin-logout">Salir</button>
+          <div class="admin-brand-row">
+            <span>Admin</span>
+            <button class="admin-brand-btn admin-brand-btn-visitas" type="button" data-nav="visitas">Visitas</button>
+            <button class="admin-brand-btn admin-brand-btn-salir" type="button" id="admin-logout">Salir</button>
+          </div>
         </div>
       </div>
 
@@ -556,7 +556,7 @@ import "../styles/admin.css";
             <button class="btn btn-ghost" type="button" id="visitas-reload">Actualizar</button>
             <span class="tag" id="visitas-range"></span>
           </div>
-          <p class="admin-help">Totales de la web pública (país, dispositivo, página y origen). El panel mira 14 días; en el servidor se borran solos a los ~45. No se guardan IPs.</p>
+          <p class="admin-help">Totales de 14 días más las últimas visitas con IP (solo acá en el admin). Los agregados se borran solos a los ~45 días.</p>
           <p class="admin-msg" id="visitas-msg"></p>
           <div id="visitas-board"></div>
         </section>

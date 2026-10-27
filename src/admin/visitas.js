@@ -16,7 +16,7 @@ function bars(map, empty) {
     .map(
       ([label, n]) => `<div class="visitas-row">
         <span class="visitas-label" title="${esc(label)}">${esc(label)}</span>
-        <span class="visitas-bar" aria-hidden="true"><i style="width:${Math.max(4, Math.round((n / max) * 100))}%"></i></span>
+        <span class="visitas-bar" aria-hidden="true"><i style="width:${Math.max(6, Math.round((n / max) * 100))}%"></i></span>
         <span class="visitas-n">${n}</span>
       </div>`
     )
@@ -25,20 +25,65 @@ function bars(map, empty) {
 
 function dailyChart(daily) {
   const rows = Array.isArray(daily) ? daily : [];
-  if (!rows.some((d) => d.total > 0)) return `<p class="muted">Todavía no hay visitas registradas.</p>`;
+  if (!rows.length) return `<p class="muted">Todavía no hay visitas registradas.</p>`;
   const max = Math.max(1, ...rows.map((d) => Number(d.total) || 0));
-  return `<div class="visitas-daily">${rows
+  const chartH = 180;
+  return `<div class="visitas-daily visitas-daily-lg">${rows
     .map((d) => {
       const n = Number(d.total) || 0;
-      const h = Math.max(n ? 8 : 2, Math.round((n / max) * 72));
+      const h = n ? Math.max(28, Math.round((n / max) * chartH)) : 6;
       const label = String(d.day || "").slice(5);
       return `<div class="visitas-day" title="${esc(d.day)}: ${n}">
+        <span class="visitas-day-n">${n || "·"}</span>
         <span class="visitas-col" style="height:${h}px"></span>
-        <span class="visitas-day-n">${n || ""}</span>
         <span class="visitas-day-l">${esc(label)}</span>
       </div>`;
     })
     .join("")}</div>`;
+}
+
+function formatWhen(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function recentTable(recent) {
+  const rows = Array.isArray(recent) ? recent : [];
+  if (!rows.length) {
+    return `<p class="muted">Todavía no hay visitas con IP. Entrá a la web pública y volvé a Actualizar.</p>`;
+  }
+  return `<div class="visitas-table-wrap"><table class="visitas-table">
+    <thead>
+      <tr>
+        <th>Cuándo</th>
+        <th>IP</th>
+        <th>Página</th>
+        <th>País</th>
+        <th>Dispositivo</th>
+        <th>Origen</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows
+        .map(
+          (r) => `<tr>
+          <td>${esc(formatWhen(r.at))}</td>
+          <td class="visitas-ip">${esc(r.ip || "—")}</td>
+          <td>${esc(r.path || "/")}</td>
+          <td>${esc(r.country || "—")}</td>
+          <td>${esc(r.device || "—")}</td>
+          <td>${esc(r.ref || "Directo")}</td>
+        </tr>`
+        )
+        .join("")}
+    </tbody>
+  </table></div>`;
 }
 
 export function createVisitas(ctx, api) {
@@ -56,13 +101,13 @@ export function createVisitas(ctx, api) {
       <div class="visitas-hero admin-result-card">
         <div class="admin-result-meta"><span>Totales</span><span>UTC</span></div>
         <strong>${data.total || 0}</strong>
-        <p class="muted">Últimos ${data.days || 14} días · sin IPs ni datos personales</p>
+        <p class="muted">Últimos ${data.days || 14} días · abajo las últimas ${Math.min(50, (data.recent || []).length)} con IP</p>
       </div>
+      <article class="admin-result-card visitas-chart-wide">
+        <h3>Por día</h3>
+        ${dailyChart(data.daily)}
+      </article>
       <div class="visitas-grid">
-        <article class="admin-result-card">
-          <h3>Por día</h3>
-          ${dailyChart(data.daily)}
-        </article>
         <article class="admin-result-card">
           <h3>Países</h3>
           ${bars(data.countries, "Sin datos de país todavía.")}
@@ -79,7 +124,11 @@ export function createVisitas(ctx, api) {
           <h3>Orígenes</h3>
           ${bars(data.refs, "Sin orígenes externos todavía.")}
         </article>
-      </div>`;
+      </div>
+      <article class="admin-result-card visitas-recent">
+        <h3>Últimas visitas (con IP)</h3>
+        ${recentTable(data.recent)}
+      </article>`;
   }
 
   async function reload() {

@@ -62,6 +62,6 @@ export const SECTIONS = {
   visitas: {
     group: "Torneos",
     title: "Visitas",
-    help: "Tráfico agregado de la web (últimos 14 días). Solo totales por país, dispositivo, página y origen: no se guardan IPs.",
+    help: "Tráfico de la web: totales de 14 días y últimas visitas con IP (solo visibles en el admin).",
   },
 };

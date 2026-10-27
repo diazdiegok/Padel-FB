@@ -587,6 +587,7 @@ async function recordHit(env, request, raw) {
   const device = deviceOf(request.headers.get("user-agent"));
   const path = cleanHitPath(raw?.path || "/");
   const ref = referrerHost(raw?.ref || request.headers.get("Referer"), env);
+  const ip = String(clientIp(request) || "anon").slice(0, 45);
   const cur = (await env.AUTH_KV.get(key, "json")) || {
     total: 0,
     countries: {},
@@ -599,7 +600,20 @@ async function recordHit(env, request, raw) {
   bump(cur.devices, device);
   bump(cur.paths, path);
   bump(cur.refs, ref);
-  await env.AUTH_KV.put(key, JSON.stringify(cur), { expirationTtl: STATS_TTL });
+  const recentRaw = await env.AUTH_KV.get("stats:recent", "json");
+  const recentList = Array.isArray(recentRaw) ? recentRaw : [];
+  recentList.unshift({
+    at: new Date().toISOString(),
+    ip,
+    path,
+    country: COUNTRY_NAMES[country] || country,
+    device,
+    ref,
+  });
+  await Promise.all([
+    env.AUTH_KV.put(key, JSON.stringify(cur), { expirationTtl: STATS_TTL }),
+    env.AUTH_KV.put("stats:recent", JSON.stringify(recentList.slice(0, 50)), { expirationTtl: STATS_TTL }),
+  ]);
   return { ok: true };
 }
 
@@ -631,7 +645,9 @@ async function readStats(env, days = 14) {
   for (const [code, count] of Object.entries(countries)) {
     namedCountries[COUNTRY_NAMES[code] || code] = count;
   }
-  return { days: n, total, daily, countries: namedCountries, devices, paths, refs };
+  const recentRaw = (await env.AUTH_KV?.get("stats:recent", "json")) || [];
+  const recent = Array.isArray(recentRaw) ? recentRaw.slice(0, 50) : [];
+  return { days: n, total, daily, countries: namedCountries, devices, paths, refs, recent };
 }
 
 function fold(value) {

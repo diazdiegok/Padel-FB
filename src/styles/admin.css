@@ -128,21 +128,14 @@ body.is-admin main > .wrap {
 }
 
 .admin-brand {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-areas:
-    "mark text"
-    "mark actions";
-  column-gap: 12px;
-  row-gap: 8px;
-  align-items: center;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
   padding: 4px 4px 14px;
   border-bottom: 1px solid var(--line);
 }
 
 .admin-brand-mark {
-  grid-area: mark;
-  align-self: start;
   width: 36px;
   height: 36px;
   border: 2px solid var(--lime);
@@ -152,11 +145,12 @@ body.is-admin main > .wrap {
   color: var(--lime);
   font-family: var(--display);
   font-size: 13px;
+  flex-shrink: 0;
 }
 
 .admin-brand-text {
-  grid-area: text;
   min-width: 0;
+  flex: 1;
 }
 
 .admin-brand strong {
@@ -164,20 +158,23 @@ body.is-admin main > .wrap {
   letter-spacing: 0.1em;
   font-size: 18px;
   display: block;
+  line-height: 1.1;
 }
 
-.admin-brand span {
+.admin-brand-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.admin-brand-row > span {
   color: var(--muted);
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-.admin-brand-actions {
-  grid-area: actions;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  margin-right: 2px;
 }
 
 .admin-brand-btn {
@@ -880,24 +877,30 @@ body.is-admin main > .wrap {
   line-height: 1;
   margin: 6px 0 8px;
 }
-.visitas-grid {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+.visitas-chart-wide {
   margin-top: 14px;
+  padding: 18px 18px 20px;
 }
-.visitas-grid .admin-result-card h3 {
-  margin: 0 0 12px;
+.visitas-chart-wide h3,
+.visitas-grid .admin-result-card h3,
+.visitas-recent h3 {
+  margin: 0 0 14px;
   font-size: 14px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
 }
-.visitas-bars { display: grid; gap: 8px; }
+.visitas-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  margin-top: 14px;
+}
+.visitas-bars { display: grid; gap: 10px; }
 .visitas-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(48px, 1.4fr) auto;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(64px, 1.6fr) auto;
+  gap: 10px;
   align-items: center;
 }
 .visitas-label {
@@ -908,7 +911,7 @@ body.is-admin main > .wrap {
 }
 .visitas-bar {
   display: block;
-  height: 8px;
+  height: 10px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--cream) 12%, transparent);
   overflow: hidden;
@@ -929,31 +932,67 @@ body.is-admin main > .wrap {
 .visitas-daily {
   display: flex;
   align-items: flex-end;
-  gap: 6px;
-  min-height: 96px;
+  gap: 8px;
+  min-height: 120px;
   overflow-x: auto;
-  padding-bottom: 2px;
+  padding: 4px 2px 2px;
+}
+.visitas-daily-lg {
+  min-height: 220px;
+  gap: 10px;
 }
 .visitas-day {
-  flex: 1 0 28px;
-  display: grid;
-  justify-items: center;
-  gap: 4px;
+  flex: 1 0 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-height: 200px;
 }
 .visitas-col {
   width: 100%;
-  max-width: 18px;
-  border-radius: 6px 6px 2px 2px;
+  max-width: 28px;
+  border-radius: 8px 8px 3px 3px;
   background: var(--lime, #d6ff2f);
-  align-self: end;
 }
 .visitas-day-n,
 .visitas-day-l {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--muted);
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
-.visitas-day-n { min-height: 12px; }
+.visitas-day-n { min-height: 14px; font-weight: 700; color: var(--cream); }
+.visitas-recent { margin-top: 14px; }
+.visitas-table-wrap {
+  overflow-x: auto;
+  margin: 0 -4px;
+}
+.visitas-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.visitas-table th,
+.visitas-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.visitas-table th {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.visitas-ip {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--lime, #d6ff2f);
+}
 .pairs-copy { padding-top: 4px; }
 
 .admin-season-head {
