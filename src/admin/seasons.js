@@ -78,14 +78,14 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
           <p>${count} pareja${count === 1 ? "" : "s"} en el ranking.</p>
           <div class="admin-season-venues">
             <div class="admin-season-field">
-              <span>Sedes de la liga</span>
+              <span>Sedes de la liga:</span>
               <span class="admin-stepper">
                 <button type="button" data-season-step="${escAttr(temp)}" data-dir="-1" aria-label="Una sede menos">−</button>
                 <input type="number" min="0" step="1" inputmode="numeric" aria-label="Sedes de la liga" data-season-venues="${escAttr(temp)}" value="${venuesFor(temp)}" />
                 <button type="button" data-season-step="${escAttr(temp)}" data-dir="1" aria-label="Una sede más">+</button>
               </span>
             </div>
-            <button class="btn btn-ghost" type="button" data-season-venues-save="${escAttr(temp)}">Guardar</button>
+            <button class="btn btn-lime" type="button" data-season-venues-save="${escAttr(temp)}">Publicar</button>
           </div>
         </article>`;
       })
@@ -164,7 +164,7 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
         ok: `${seasonLabel(temp)} quedó como próximamente en el inicio.`,
         toast: "Próximamente actualizado",
       },
-      { button, busyLabel: "Guardando…" }
+      { button, busyLabel: "Publicando…" }
     );
   }
 
@@ -177,7 +177,7 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
         ok: "Se quitó el aviso de próximamente del inicio.",
         toast: "Próximamente quitado",
       },
-      { button, busyLabel: "Guardando…" }
+      { button, busyLabel: "Publicando…" }
     );
   }
 
@@ -238,8 +238,8 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
       }
       const input = document.querySelector(`[data-season-venues="${temp}"]`);
       const count = Math.max(0, Math.round(Number(input?.value) || 0));
-      setBusy(btn, true, "Guardando…");
-      setMsg($("season-msg"), `Guardando sedes de ${seasonLabel(temp)}…`);
+      setBusy(btn, true, "Publicando…");
+      setMsg($("season-msg"), `Publicando sedes de ${seasonLabel(temp)}…`);
       try {
         const remote = await api.readRemoteJson(SITE_PATH, ctx.siteData);
         const prev = Number(remote.seasonVenues?.[temp]);
@@ -250,7 +250,7 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
             `${seasonLabel(temp)} ya tiene ${count} sedes. En el inicio elegí ${temp} para verlas. La página abre en la temporada en juego.`,
             "ok"
           );
-          toast("Ya estaba guardado", "ok");
+          toast("Ya estaba publicado", "ok");
           return;
         }
         const seasonVenues = { ...(remote.seasonVenues || {}), [temp]: count };
@@ -264,10 +264,10 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
         render();
         setMsg(
           $("season-msg"),
-          `${seasonLabel(temp)} guardada con ${count} sedes. En el inicio elegí ${temp} para ver ese número.`,
-          "ok"
-        );
-        toast("Sedes guardadas", "ok");
+          `${seasonLabel(temp)} publicada con ${count} sedes. En el inicio elegí ${temp} para ver ese número.`,
+            "ok"
+          );
+        toast("Sedes publicadas", "ok");
       } catch (err) {
         const message = api.publishError(err);
         setMsg($("season-msg"), message, "err");

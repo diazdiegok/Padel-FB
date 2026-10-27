@@ -37,13 +37,13 @@ const TO_HOURS = HOURS.slice(3);
       <fieldset class="form-set">
         <legend>Primer integrante</legend>
         <div class="form-grid">
-          <label>Nombre
+          <label>Nombre:
             <input name="p1" required maxlength="80" placeholder="Apellido y nombre" autocomplete="name" />
           </label>
-          <label>WhatsApp
+          <label>WhatsApp:
             <input name="tel1" required inputmode="tel" maxlength="20" placeholder="Ej. 343 555 0000" autocomplete="tel" />
           </label>
-          <label class="form-span">Mail
+          <label class="form-span">Mail:
             <span class="mail-split">
               <input name="mail1local" required maxlength="64" placeholder="usuario" autocomplete="email" inputmode="email" />
               <select name="mail1domain" required aria-label="Dominio del mail del primer integrante">
@@ -56,13 +56,13 @@ const TO_HOURS = HOURS.slice(3);
       <fieldset class="form-set">
         <legend>Segundo integrante</legend>
         <div class="form-grid">
-          <label>Nombre
+          <label>Nombre:
             <input name="p2" required maxlength="80" placeholder="Apellido y nombre" autocomplete="off" />
           </label>
-          <label>WhatsApp
+          <label>WhatsApp:
             <input name="tel2" required inputmode="tel" maxlength="20" placeholder="Ej. 343 555 0000" autocomplete="off" />
           </label>
-          <label class="form-span">Mail
+          <label class="form-span">Mail:
             <span class="mail-split">
               <input name="mail2local" required maxlength="64" placeholder="usuario" autocomplete="off" inputmode="email" />
               <select name="mail2domain" required aria-label="Dominio del mail del segundo integrante">
@@ -72,7 +72,7 @@ const TO_HOURS = HOURS.slice(3);
           </label>
         </div>
       </fieldset>
-      <label>Categoría de la pareja
+      <label>Categoría de la pareja:
         <select name="cat" required>
           <option value="">Elegí la categoría</option>
           {CATS.map((c) => <option value={c}>{c}</option>)}
@@ -102,8 +102,8 @@ const TO_HOURS = HOURS.slice(3);
           <p class="form-hint">Cada partido dura 1:30. Marcá la disponibilidad de la temporada: se usa para armar Fecha 1, Fecha 2, etc. Cuanto más amplio el horario, más fácil es encontrarles rival.</p>
         </div>
       </fieldset>
-      <label>Nota adicional
-        <textarea name="note" rows="3" maxlength="500" placeholder="Sede preferida, restricciones, o cualquier dato extra…"></textarea>
+      <label>Nota adicional:
+        <textarea name="note" rows="3" maxlength="500"></textarea>
       </label>
       <p class="form-hint" id="insc-hint">{copy.hint}</p>
       <p class="form-notice">Una vez publicados los partidos del fixture tienen <strong>24 hs</strong> para avisar si no pueden jugar; si no, el partido se da por perdido.</p>

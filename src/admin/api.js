@@ -21,7 +21,7 @@ export function createApi(ctx) {
   function publishError(err) {
     const m = String(err?.message || err);
     if (/does not match/i.test(m)) {
-      return "El sitio se actualizó en otro lado. Tocá Guardar de nuevo.";
+      return "El sitio se actualizó en otro lado. Tocá Publicar de nuevo.";
     }
     if (/bad credentials/i.test(m) || /\b401\b/.test(m)) {
       return "No se pudo guardar. Volvé a iniciar sesión en el admin.";

@@ -47,10 +47,11 @@ function hoursSelect(name, value, options, label) {
 function mailField(prefix, value, label) {
   const { local, domain } = splitMail(value);
   const selected = domain || MAIL_DOMAINS[0];
-  return `<label class="pairs-mail">${esc(label)}
+  const titled = /:$/.test(label) ? label : `${label}:`;
+  return `<label class="pairs-mail">${esc(titled)}
     <span class="mail-split">
-      <input data-k="${prefix}local" value="${esc(local)}" placeholder="usuario" aria-label="${esc(label)} usuario" />
-      <select data-k="${prefix}domain" aria-label="${esc(label)} dominio">
+      <input data-k="${prefix}local" value="${esc(local)}" placeholder="usuario" aria-label="${esc(titled)} usuario" />
+      <select data-k="${prefix}domain" aria-label="${esc(titled)} dominio">
         ${MAIL_DOMAINS.map((d) => `<option value="${esc(d)}"${d === selected ? " selected" : ""}>@${esc(d)}</option>`).join("")}
       </select>
     </span>
@@ -190,8 +191,8 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
                             </div>`;
                           }).join("")}
                         </div>
-                        <label class="pairs-note">Nota
-                          <textarea data-k="note" rows="2" maxlength="500" placeholder="Nota adicional…">${esc(p.note || "")}</textarea>
+                        <label class="pairs-note">Nota:
+                          <textarea data-k="note" rows="2" maxlength="500">${esc(p.note || "")}</textarea>
                         </label>
                       </details>
                     </article>`;
@@ -366,7 +367,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       const pair = ctx.pairs[Number(btn.dataset.pairDel)];
       const ok = await confirmModal({
         title: "Quitar pareja",
-        body: `${pair.p1 || "?"} / ${pair.p2 || "?"} deja de aparecer en las inscripciones. Guardá para publicarlo.`,
+        body: `${pair.p1 || "?"} / ${pair.p2 || "?"} deja de aparecer en las inscripciones. Publicá para confirmarlo.`,
         confirmLabel: "Quitar",
         danger: true,
       });
@@ -402,7 +403,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         }
       }
       const config = readConfig();
-      setBusy($("pairs-publish"), true, "Guardando…");
+      setBusy($("pairs-publish"), true, "Publicando…");
       try {
         const remote = await api.readRemoteJson(PAIRS_PATH, []);
         const fresh = (Array.isArray(remote) ? remote : []).filter((p) => !knownIds.has(p.id) && !deleted.has(p.id));
@@ -442,8 +443,8 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         const ranked = toRanking.length
           ? ` ${toRanking.length === 1 ? "1 pareja nueva quedó" : `${toRanking.length} parejas nuevas quedaron`} en el ranking con 0 puntos.`
           : "";
-        setMsg($("pairs-msg"), "Parejas guardadas." + extra + ranked, "ok");
-        toast("Parejas guardadas", "ok");
+        setMsg($("pairs-msg"), "Parejas publicadas." + extra + ranked, "ok");
+        toast("Parejas publicadas", "ok");
       } catch (err) {
         const m = api.publishError(err);
         setMsg($("pairs-msg"), m, "err");

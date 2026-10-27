@@ -95,25 +95,25 @@ import "../styles/admin.css";
             <div class="admin-site-grid">
               <div class="admin-site-block">
                 <h3>Contacto</h3>
-                <label>WhatsApp (549…)
+                <label>WhatsApp (549…):
                   <input name="whatsapp" />
                 </label>
-                <label>Instagram
+                <label>Instagram:
                   <input name="instagram" />
                 </label>
               </div>
               <div class="admin-site-block">
                 <h3>Ubicación</h3>
-                <label>Ciudad
+                <label>Ciudad:
                   <input name="city" />
                 </label>
-                <label>Provincia
+                <label>Provincia:
                   <input name="province" />
                 </label>
               </div>
               <div class="admin-site-block span-2">
                 <h3>Inicio</h3>
-                <label>Texto de inicio
+                <label>Texto de inicio:
                   <textarea name="ligaIntro" rows="6"></textarea>
                 </label>
                 <label class="chk"><input name="showPlayoff" type="checkbox" /> Mostrar botón Ver playoff</label>
@@ -124,7 +124,7 @@ import "../styles/admin.css";
             <div class="admin-sticky-bar">
               <p class="admin-sticky-note">Estos datos alimentan el sitio público.</p>
               <div class="admin-sticky-actions">
-                <button class="btn btn-lime" type="submit" id="site-save">Guardar inicio</button>
+                <button class="btn btn-lime" type="submit" id="site-save">Publicar inicio</button>
               </div>
             </div>
           </form>
@@ -140,7 +140,7 @@ import "../styles/admin.css";
             <button class="btn btn-lime" type="button" id="season-create">Nueva temporada</button>
             <span class="tag" id="season-current"></span>
           </div>
-          <p class="admin-help">En juego es la actual. Próximamente avisa en el inicio la que viene. En cada una cargás las sedes: ese número aparece en el inicio al elegirla.</p>
+          <p class="admin-help">En juego es la actual. Próximamente avisa en el inicio la que viene. En cada una cargás las sedes: ese número aparece en el inicio al elegirla. Tocá Publicar en la tarjeta para subir el cambio de sedes.</p>
           <p class="admin-msg" id="season-msg"></p>
           <div id="season-list"></div>
         </section>
@@ -338,23 +338,23 @@ import "../styles/admin.css";
           <div class="admin-panel">
             <div class="admin-toolbar">
               <label class="chk"><input id="pairs-open" type="checkbox" checked /> Inscripción abierta</label>
-              <label class="admin-week">Cierra el
+              <label class="admin-week">Cierra el:
                 <input id="pairs-deadline" type="datetime-local" />
               </label>
               <span class="admin-status-pill open" id="pairs-status">Inscripción abierta</span>
             </div>
-            <p class="admin-help">Si ponés fecha y hora, a esa hora se destilda sola y la web deja de aceptar inscripciones. Destildá para cerrarla ya. Los textos de abajo son los de la página pública. Se aplica al tocar Guardar parejas.</p>
+            <p class="admin-help">Si ponés fecha y hora, a esa hora se destilda sola y la web deja de aceptar inscripciones. Destildá para cerrarla ya. Los textos de abajo son los de la página pública. Se aplica al tocar Publicar parejas.</p>
             <div class="form cms-form pairs-copy">
-              <label>Título
+              <label>Título:
                 <input id="pairs-title" maxlength="80" />
               </label>
-              <label>Texto
+              <label>Texto:
                 <textarea id="pairs-intro" rows="3" maxlength="400"></textarea>
               </label>
-              <label>Aclaración del formulario
+              <label>Aclaración del formulario:
                 <textarea id="pairs-hint" rows="2" maxlength="300"></textarea>
               </label>
-              <label>Texto del botón
+              <label>Texto del botón:
                 <input id="pairs-cta" maxlength="40" />
               </label>
             </div>
@@ -370,9 +370,9 @@ import "../styles/admin.css";
           <p class="admin-msg" id="pairs-msg"></p>
           <div id="pairs-list"></div>
           <div class="admin-sticky-bar">
-            <p class="admin-sticky-note">Guardá para publicar textos, parejas y disponibilidad.</p>
+            <p class="admin-sticky-note">Publicá para subir textos, parejas y disponibilidad.</p>
             <div class="admin-sticky-actions">
-              <button class="btn btn-lime" type="button" id="pairs-publish">Guardar parejas</button>
+              <button class="btn btn-lime" type="button" id="pairs-publish">Publicar parejas</button>
             </div>
           </div>
         </section>
@@ -393,16 +393,16 @@ import "../styles/admin.css";
         <!-- Academia -->
         <section data-section="academia" hidden>
           <form class="form cms-form" id="ac-copy">
-            <label>Título (un renglón = un corte)
+            <label>Título (un renglón = un corte):
               <textarea name="title" rows="2"></textarea>
             </label>
-            <label>Texto de arriba
+            <label>Texto de arriba:
               <textarea name="intro" rows="3"></textarea>
             </label>
-            <label>Texto del equipo
+            <label>Texto del equipo:
               <input name="teamNote" />
             </label>
-            <label>Texto del botón
+            <label>Texto del botón:
               <input name="cta" placeholder="Inscripción" />
             </label>
           </form>
@@ -420,9 +420,9 @@ import "../styles/admin.css";
           <div class="cms-list" id="prog-list"></div>
           <p class="admin-msg" id="ac-msg"></p>
           <div class="admin-sticky-bar">
-            <p class="admin-sticky-note">Se guardan textos, orden y fotos pendientes.</p>
+            <p class="admin-sticky-note">Se publican textos, orden y fotos pendientes.</p>
             <div class="admin-sticky-actions">
-              <button class="btn btn-lime" type="button" id="ac-save">Guardar academia</button>
+              <button class="btn btn-lime" type="button" id="ac-save">Publicar academia</button>
             </div>
           </div>
         </section>
@@ -430,25 +430,25 @@ import "../styles/admin.css";
         <!-- Infantiles -->
         <section data-section="infantiles" hidden>
           <form class="form cms-form" id="kids-copy">
-            <label>Título (un renglón = un corte)
+            <label>Título (un renglón = un corte):
               <textarea name="title" rows="2"></textarea>
             </label>
-            <label>Edades
+            <label>Edades:
               <input name="age" placeholder="De 7 a 13 años" />
             </label>
-            <label>Texto de arriba
+            <label>Texto de arriba:
               <textarea name="intro" rows="2"></textarea>
             </label>
-            <label>Viñetas (un renglón cada una)
+            <label>Viñetas (un renglón cada una):
               <textarea name="features" rows="4"></textarea>
             </label>
-            <label>Profe
+            <label>Profe:
               <select name="profeId"></select>
             </label>
-            <label>Rol en esta página
+            <label>Rol en esta página:
               <input name="profeRole" placeholder="Profe · Academia infantil" />
             </label>
-            <label>Texto del botón
+            <label>Texto del botón:
               <input name="cta" />
             </label>
           </form>
@@ -466,7 +466,7 @@ import "../styles/admin.css";
           <div class="admin-sticky-bar">
             <p class="admin-sticky-note">El profe se elige de la lista de Adultos.</p>
             <div class="admin-sticky-actions">
-              <button class="btn btn-lime" type="button" id="kids-save">Guardar infantiles</button>
+              <button class="btn btn-lime" type="button" id="kids-save">Publicar infantiles</button>
             </div>
           </div>
         </section>
@@ -490,7 +490,7 @@ import "../styles/admin.css";
           <div class="admin-sticky-bar">
             <p class="admin-sticky-note">Marcá Liga / Academia / Infantiles en cada sede para controlar dónde se muestra. Al tildar Infantiles, la sede aparece sola en Infantiles para cargarle horarios.</p>
             <div class="admin-sticky-actions">
-              <button class="btn btn-lime" type="button" id="venue-save">Guardar sedes</button>
+              <button class="btn btn-lime" type="button" id="venue-save">Publicar sedes</button>
             </div>
           </div>
         </section>
@@ -498,16 +498,16 @@ import "../styles/admin.css";
         <!-- Torneos -->
         <section data-section="torneos" hidden>
           <form class="form cms-form" id="tn-copy">
-            <label>Título
+            <label>Título:
               <input name="title" />
             </label>
-            <label>Texto de arriba
+            <label>Texto de arriba:
               <textarea name="intro" rows="3"></textarea>
             </label>
-            <label>Aviso si no hay torneos
+            <label>Aviso si no hay torneos:
               <input name="emptyTitle" />
             </label>
-            <label>Texto del aviso
+            <label>Texto del aviso:
               <textarea name="emptyText" rows="3"></textarea>
             </label>
           </form>
@@ -523,7 +523,7 @@ import "../styles/admin.css";
           <div class="admin-sticky-bar">
             <p class="admin-sticky-note">Con Subir / Bajar ordenás cómo se listan en la web.</p>
             <div class="admin-sticky-actions">
-              <button class="btn btn-lime" type="button" id="tn-save">Guardar torneos</button>
+              <button class="btn btn-lime" type="button" id="tn-save">Publicar torneos</button>
             </div>
           </div>
         </section>

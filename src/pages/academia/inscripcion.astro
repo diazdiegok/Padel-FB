@@ -26,18 +26,18 @@ const kidsVenues = venues.filter((v: any) => v.infantiles === true).map((v: any)
         </div>
       </fieldset>
       <div class="form-grid">
-        <label><span data-name-label>Nombre y apellido</span>
+        <label><span data-name-label>Nombre y apellido:</span>
           <input name="nombre" required maxlength="80" placeholder="Nombre y apellido" autocomplete="name" />
         </label>
-        <label>WhatsApp
+        <label>WhatsApp:
           <input name="tel" required maxlength="30" inputmode="tel" placeholder="Ej. 343 555 0000" autocomplete="tel" />
         </label>
       </div>
       <div class="form-grid">
-        <label data-kids hidden>Edad
+        <label data-kids hidden>Edad:
           <input name="edad" inputmode="numeric" maxlength="3" placeholder="Ej. 9" />
         </label>
-        <label>Nivel
+        <label>Nivel:
           <select name="nivel">
             <option>Nunca jugué</option>
             <option>Inicial</option>
@@ -46,15 +46,15 @@ const kidsVenues = venues.filter((v: any) => v.infantiles === true).map((v: any)
             <option>No sé, me orientan</option>
           </select>
         </label>
-        <label>Sede preferida
+        <label>Sede preferida:
           <select name="sede" data-sede></select>
         </label>
       </div>
-      <label>Días y horarios que te quedan cómodos
+      <label>Días y horarios que te quedan cómodos:
         <input name="horario" maxlength="120" placeholder="Ej. martes y jueves después de las 18" />
       </label>
-      <label>Comentario
-        <textarea name="nota" rows="3" maxlength="500" placeholder="Clase individual o grupal, alguna consulta…"></textarea>
+      <label>Comentario:
+        <textarea name="nota" rows="3" maxlength="500"></textarea>
       </label>
       <input class="hp" name="website" tabindex="-1" autocomplete="off" />
       <button class="btn btn-lime" type="submit">Enviar inscripción</button>
@@ -72,7 +72,7 @@ const kidsVenues = venues.filter((v: any) => v.infantiles === true).map((v: any)
       const isKids = form.para.value === "Infantiles";
       kids.hidden = !isKids;
       form.edad.required = isKids;
-      nameLabel.textContent = isKids ? "Nombre del chico/a" : "Nombre y apellido";
+      nameLabel.textContent = isKids ? "Nombre del chico/a:" : "Nombre y apellido:";
       form.querySelectorAll(".seg-item").forEach((el) => el.classList.toggle("on", el.querySelector("input").checked));
       const list = isKids ? kidsVenues : adultVenues;
       sede.replaceChildren(

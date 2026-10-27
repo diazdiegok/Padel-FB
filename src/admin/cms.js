@@ -485,7 +485,7 @@ export function createCms(ctx, api, shell) {
       if (!del) return;
       const ok = await confirmModal({
         title: "Quitar profe",
-        body: "Se elimina de la lista local. Guardá academia para publicar.",
+        body: "Se elimina de la lista local. Publicá academia para confirmarlo.",
         confirmLabel: "Quitar",
         danger: true,
       });
@@ -545,7 +545,7 @@ export function createCms(ctx, api, shell) {
       if (!del) return;
       const ok = await confirmModal({
         title: "Quitar sede",
-        body: "Se elimina de la lista local. Guardá sedes para publicar.",
+        body: "Se elimina de la lista local. Publicá sedes para confirmarlo.",
         confirmLabel: "Quitar",
         danger: true,
       });
@@ -674,15 +674,15 @@ export function createCms(ctx, api, shell) {
       const gate = api.usePublishToken();
       if (!gate.ok) return toast(gate.message, "err");
       readKidsFromDom();
-      setBusy($("kids-save"), true, "Guardando…");
-      setMsg($("kids-msg"), "Guardando infantiles…");
+      setBusy($("kids-save"), true, "Publicando…");
+      setMsg($("kids-msg"), "Publicando infantiles…");
       try {
         const local = cleanSiteForSave();
         await publishSiteFields({ kids: local.kids }, "Actualiza clases infantiles desde el admin.");
         shell.clearDirty("infantiles");
         fillKidsForm();
         setMsg($("kids-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
-        toast("Infantiles guardados", "ok");
+        toast("Infantiles publicados", "ok");
       } catch (err) {
         const m = api.publishError(err);
         setMsg($("kids-msg"), m, "err");
@@ -696,8 +696,8 @@ export function createCms(ctx, api, shell) {
       const gate = api.usePublishToken();
       if (!gate.ok) return toast(gate.message, "err");
       readAcademiaFromDom();
-      setBusy($("ac-save"), true, "Guardando…");
-      setMsg($("ac-msg"), "Guardando academia…");
+      setBusy($("ac-save"), true, "Publicando…");
+      setMsg($("ac-msg"), "Publicando academia…");
       try {
         await uploadPending(ctx.siteData.staff, "staff");
         const local = cleanSiteForSave();
@@ -708,7 +708,7 @@ export function createCms(ctx, api, shell) {
         shell.clearDirty("academia");
         fillAcademiaForm();
         setMsg($("ac-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
-        toast("Academia guardada", "ok");
+        toast("Academia publicada", "ok");
       } catch (err) {
         const m = api.publishError(err);
         setMsg($("ac-msg"), m, "err");
@@ -724,8 +724,8 @@ export function createCms(ctx, api, shell) {
       readVenuesFromDom();
       readKidsFromDom();
       fillKidsForm();
-      setBusy($("venue-save"), true, "Guardando…");
-      setMsg($("venue-msg"), "Guardando sedes…");
+      setBusy($("venue-save"), true, "Publicando…");
+      setMsg($("venue-msg"), "Publicando sedes…");
       try {
         await uploadPending(ctx.siteData.venues, "venue");
         await uploadPending(ctx.siteData.moreVenues, "more");
@@ -738,7 +738,7 @@ export function createCms(ctx, api, shell) {
         shell.clearDirty("infantiles");
         fillVenueForm();
         setMsg($("venue-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
-        toast("Sedes guardadas", "ok");
+        toast("Sedes publicadas", "ok");
       } catch (err) {
         const m = api.publishError(err);
         setMsg($("venue-msg"), m, "err");
@@ -755,15 +755,15 @@ export function createCms(ctx, api, shell) {
       ctx.siteData.torneos.items = (ctx.siteData.torneos.items || []).filter(
         (item) => item.title || item.text || item.when
       );
-      setBusy($("tn-save"), true, "Guardando…");
-      setMsg($("tn-msg"), "Guardando torneos…");
+      setBusy($("tn-save"), true, "Publicando…");
+      setMsg($("tn-msg"), "Publicando torneos…");
       try {
         const local = cleanSiteForSave();
         await publishSiteFields({ torneos: local.torneos }, "Actualiza torneos desde el admin.");
         shell.clearDirty("torneos");
         fillTorneosForm();
         setMsg($("tn-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
-        toast("Torneos guardados", "ok");
+        toast("Torneos publicados", "ok");
       } catch (err) {
         const m = api.publishError(err);
         setMsg($("tn-msg"), m, "err");
@@ -787,8 +787,8 @@ export function createCms(ctx, api, shell) {
         ligaIntro: form.ligaIntro.value.trim(),
         showPlayoff: Boolean(form.showPlayoff?.checked),
       };
-      setBusy($("site-save"), true, "Guardando…");
-      setMsg($("site-msg"), "Guardando inicio…");
+      setBusy($("site-save"), true, "Publicando…");
+      setMsg($("site-msg"), "Publicando inicio…");
       try {
         const local = cleanSiteForSave();
         await publishSiteFields(
@@ -804,7 +804,7 @@ export function createCms(ctx, api, shell) {
         );
         shell.clearDirty("sitio");
         setMsg($("site-msg"), "Inicio publicado. El sitio se actualiza en ~1 minuto.", "ok");
-        toast("Inicio guardado", "ok");
+        toast("Inicio publicado", "ok");
       } catch (err) {
         const m = api.publishError(err);
         setMsg($("site-msg"), m, "err");
