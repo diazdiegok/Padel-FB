@@ -14,7 +14,6 @@ const routes = [
   "resultados/",
   "playoff/",
   ...playoffRoutes,
-  "fecha/",
   "inscribir-pareja/",
   "sedes/",
   "academia/",

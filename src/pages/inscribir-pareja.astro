@@ -2,7 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import { site } from "../data/site";
 import config from "../data/inscripcion-parejas.json";
-import { CATS } from "../lib/disponibilidad.js";
+import { CATS, DAYS, MAIL_DOMAINS } from "../lib/disponibilidad.js";
 import { seasonLabel } from "../lib/liga.js";
 
 const base = import.meta.env.BASE_URL;
@@ -10,10 +10,16 @@ const deadline = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(config.deadline || "") ?
 const closedAtBuild = config.open === false || (Boolean(deadline) && Date.now() > Date.parse(`${deadline}:00-03:00`));
 const copy = {
   title: config.title || "Inscribí tu pareja",
-  intro: config.intro || "Se hace una sola vez por temporada. Después, cada semana solo entran a Fecha, buscan su pareja y marcan los días que pueden jugar.",
-  hint: config.hint || "Escriban los nombres completos y bien: así aparecen en el fixture, los resultados y el ranking. Los WhatsApp solo los ve la organización.",
+  intro: config.intro || "Se hace una sola vez por temporada. Completá contactos, categoría y los días en los que pueden jugar; con eso se arman las fechas del fixture.",
+  hint: config.hint || "Escriban los nombres completos y bien: así aparecen en el fixture, los resultados y el ranking. WhatsApp y mails solo los ve la organización.",
   cta: config.cta || "Inscribir pareja",
 };
+
+const pad = (n: number) => String(n).padStart(2, "0");
+const HOURS: string[] = [];
+for (let m = 8 * 60; m <= 24 * 60; m += 30) HOURS.push(`${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`);
+const FROM_HOURS = HOURS.slice(0, -3);
+const TO_HOURS = HOURS.slice(3);
 ---
 <Layout
   title="Inscripciones de parejas | Padel FB"
@@ -28,53 +34,103 @@ const copy = {
     </header>
 
     <form class="form form-fecha" id="insc-form" hidden={closedAtBuild}>
-      <div class="form-grid">
-        <label>Primer integrante
-          <input name="p1" required maxlength="80" placeholder="Apellido y nombre" autocomplete="name" />
-        </label>
-        <label>WhatsApp
-          <input name="tel1" required inputmode="tel" maxlength="20" placeholder="Ej. 343 555 0000" autocomplete="tel" />
-        </label>
-        <label>Segundo integrante
-          <input name="p2" required maxlength="80" placeholder="Apellido y nombre" autocomplete="off" />
-        </label>
-        <label>WhatsApp
-          <input name="tel2" required inputmode="tel" maxlength="20" placeholder="Ej. 343 555 0000" autocomplete="off" />
-        </label>
-      </div>
+      <fieldset class="form-set">
+        <legend>Primer integrante</legend>
+        <div class="form-grid">
+          <label>Nombre
+            <input name="p1" required maxlength="80" placeholder="Apellido y nombre" autocomplete="name" />
+          </label>
+          <label>WhatsApp
+            <input name="tel1" required inputmode="tel" maxlength="20" placeholder="Ej. 343 555 0000" autocomplete="tel" />
+          </label>
+          <label class="form-span">Mail
+            <span class="mail-split">
+              <input name="mail1local" required maxlength="64" placeholder="usuario" autocomplete="email" inputmode="email" />
+              <select name="mail1domain" required aria-label="Dominio del mail del primer integrante">
+                {MAIL_DOMAINS.map((d) => <option value={d}>@{d}</option>)}
+              </select>
+            </span>
+          </label>
+        </div>
+      </fieldset>
+      <fieldset class="form-set">
+        <legend>Segundo integrante</legend>
+        <div class="form-grid">
+          <label>Nombre
+            <input name="p2" required maxlength="80" placeholder="Apellido y nombre" autocomplete="off" />
+          </label>
+          <label>WhatsApp
+            <input name="tel2" required inputmode="tel" maxlength="20" placeholder="Ej. 343 555 0000" autocomplete="off" />
+          </label>
+          <label class="form-span">Mail
+            <span class="mail-split">
+              <input name="mail2local" required maxlength="64" placeholder="usuario" autocomplete="off" inputmode="email" />
+              <select name="mail2domain" required aria-label="Dominio del mail del segundo integrante">
+                {MAIL_DOMAINS.map((d) => <option value={d}>@{d}</option>)}
+              </select>
+            </span>
+          </label>
+        </div>
+      </fieldset>
       <label>Categoría de la pareja
         <select name="cat" required>
           <option value="">Elegí la categoría</option>
           {CATS.map((c) => <option value={c}>{c}</option>)}
         </select>
       </label>
+      <fieldset class="form-set">
+        <legend>Días que pueden jugar</legend>
+        <div class="day-list">
+          {DAYS.map((d) => (
+            <div class="day-row">
+              <label class="day-check">
+                <input type="checkbox" name="day" value={d} />
+                <span>{d}</span>
+              </label>
+              <span class="day-hours">
+                <select data-from={d} aria-label={`${d} desde`} disabled>
+                  <option value="">Desde</option>
+                  {FROM_HOURS.map((h) => <option value={h}>{h}</option>)}
+                </select>
+                <select data-to={d} aria-label={`${d} hasta`} disabled>
+                  <option value="">Hasta</option>
+                  {TO_HOURS.map((h) => <option value={h}>{h}</option>)}
+                </select>
+              </span>
+            </div>
+          ))}
+          <p class="form-hint">Cada partido dura 1:30. Marcá la disponibilidad de la temporada: se usa para armar Fecha 1, Fecha 2, etc. Cuanto más amplio el horario, más fácil es encontrarles rival.</p>
+        </div>
+      </fieldset>
+      <label>Nota adicional
+        <textarea name="note" rows="3" maxlength="500" placeholder="Sede preferida, restricciones, o cualquier dato extra…"></textarea>
+      </label>
       <p class="form-hint" id="insc-hint">{copy.hint}</p>
+      <p class="form-notice">Una vez publicados los partidos del fixture tienen <strong>24 hs</strong> para avisar si no pueden jugar; si no, el partido se da por perdido.</p>
       <input class="hp" name="website" tabindex="-1" autocomplete="off" />
       <button class="btn btn-lime" type="submit" id="insc-send">{copy.cta}</button>
       <p class="admin-msg" id="insc-msg" aria-live="polite"></p>
-      <a class="btn btn-ghost" id="insc-go-fecha" href={`${base}fecha/`} hidden>Ir a Fecha</a>
     </form>
 
     <div class="empty insc-done" id="insc-closed" hidden={!closedAtBuild}>
       <p><strong>Inscripción cerrada.</strong> <span id="insc-closed-text">Por ahora no se toman parejas nuevas. Consultá a la organización por WhatsApp.</span></p>
-      <a class="btn btn-ghost" href={`${base}fecha/`}>Ya estamos inscriptos: ir a Fecha</a>
+      <a class="btn btn-ghost" href={`${base}liga/`}>Volver a Liga</a>
     </div>
 
     <div class="empty insc-done" id="insc-done" hidden>
       <p><strong>Listo.</strong> <span id="insc-done-text"></span></p>
-      <a class="btn btn-lime" href={`${base}fecha/`}>Ir a Fecha</a>
+      <a class="btn btn-ghost" href={`${base}liga/`}>Volver a Liga</a>
     </div>
   </div>
 
   <script>
     import site from "../data/site.json";
-    import { fold } from "../lib/disponibilidad.js";
+    import { DAYS, fold, validateDays, validateMail, buildMail } from "../lib/disponibilidad.js";
     import { closeStatus } from "../lib/cierre.js";
 
     const apiUrl = String(site.apiUrl || "").replace(/\/$/, "");
     const form = document.querySelector("#insc-form");
     const msg = document.querySelector("#insc-msg");
-    const goFecha = document.querySelector("#insc-go-fecha");
     const personKey = (name) => fold(name).split(" ").filter(Boolean).sort().join(" ");
     const pairKey = (p) => [personKey(p.p1), personKey(p.p2)].sort().join("|");
     let registered = [];
@@ -92,8 +148,21 @@ const copy = {
     }
 
     function repeatedText(same) {
-      return `${same.p1} / ${same.p2} ya está inscripta en ${same.cat}. Está repetida: no hace falta inscribirla de nuevo, búsquenla directo en Fecha.`;
+      return `${same.p1} / ${same.p2} ya está inscrita en ${same.cat}. No hace falta inscribirla de nuevo.`;
     }
+
+    function syncDays() {
+      form?.querySelectorAll("[name=day]").forEach((box) => {
+        form.querySelectorAll(`[data-from="${box.value}"], [data-to="${box.value}"]`).forEach((sel) => {
+          sel.disabled = !box.checked;
+          if (sel.disabled) sel.value = "";
+        });
+      });
+    }
+
+    form?.querySelectorAll("[name=day]").forEach((box) => {
+      box.addEventListener("change", syncDays);
+    });
 
     if (apiUrl) {
       fetch(`${apiUrl}/pairs/status`)
@@ -125,23 +194,33 @@ const copy = {
     form?.addEventListener("submit", async (e) => {
       e.preventDefault();
       if (form.website.value) return;
-      goFecha.hidden = true;
       const p1 = form.p1.value.trim();
       const p2 = form.p2.value.trim();
       const tel1 = form.tel1.value.trim();
       const tel2 = form.tel2.value.trim();
+      const mail1 = buildMail(form.mail1local.value, form.mail1domain.value);
+      const mail2 = buildMail(form.mail2local.value, form.mail2domain.value);
       const cat = form.cat.value;
+      const note = form.note.value.trim();
       const digits = (v) => v.replace(/\D/g, "").length;
+      const days = {};
+      DAYS.forEach((day) => {
+        const on = form.querySelector(`[name=day][value="${day}"]`)?.checked;
+        const from = form.querySelector(`[data-from="${day}"]`)?.value || "";
+        const to = form.querySelector(`[data-to="${day}"]`)?.value || "";
+        if (on) days[day] = from && to ? `${from} - ${to}` : "";
+      });
       if (!p1 || !p2) return setMsg("Completá los dos integrantes de la pareja.", "err");
       if (digits(tel1) < 8 || digits(tel2) < 8) {
         return setMsg("Dejá el WhatsApp de cada integrante, con característica (ej. 343 555 0000).", "err");
       }
+      const mailErr = validateMail(mail1) || validateMail(mail2);
+      if (mailErr) return setMsg(mailErr === "Completá el mail." ? "Completá el mail de cada integrante." : mailErr, "err");
       if (!cat) return setMsg("Elegí la categoría.", "err");
+      const dayErr = validateDays(days);
+      if (dayErr) return setMsg(dayErr, "err");
       const same = registered.find((p) => pairKey(p) === pairKey({ p1, p2 }));
-      if (same) {
-        goFecha.hidden = false;
-        return setMsg(repeatedText(same), "err");
-      }
+      if (same) return setMsg(repeatedText(same), "err");
       if (!apiUrl) return setMsg("La inscripción todavía no está configurada.", "err");
       const btn = document.querySelector("#insc-send");
       btn.disabled = true;
@@ -150,17 +229,30 @@ const copy = {
         const res = await fetch(`${apiUrl}/pairs`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ p1, p2, tel1, tel2, cat, temp: site.currentSeason, website: form.website.value }),
+          body: JSON.stringify({
+            p1,
+            p2,
+            tel1,
+            tel2,
+            mail1local: form.mail1local.value,
+            mail1domain: form.mail1domain.value,
+            mail2local: form.mail2local.value,
+            mail2domain: form.mail2domain.value,
+            cat,
+            days,
+            note,
+            temp: site.currentSeason,
+            website: form.website.value,
+          }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          if (/ya está inscripta/.test(data.message || "")) goFecha.hidden = false;
           if (/cerrada|cerró/.test(data.message || "")) return showClosed(data.message);
           throw new Error(data.message || "No se pudo inscribir.");
         }
         form.hidden = true;
         document.querySelector("#insc-done-text").textContent =
-          `${p1} / ${p2} quedó inscripta en ${cat}. Cada semana entren a Fecha, busquen su pareja y marquen los días.`;
+          `${p1} / ${p2} quedó inscrita en ${cat}. Cuando se publiquen los partidos del fixture, tienen 24 hs para avisar si no pueden jugar.`;
         document.querySelector("#insc-done").hidden = false;
       } catch (ex) {
         setMsg(ex.message || "No se pudo inscribir.", "err");

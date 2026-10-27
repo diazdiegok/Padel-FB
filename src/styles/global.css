@@ -657,6 +657,7 @@ footer a:hover { color: var(--lime); }
   grid-template-columns: 1fr 1fr;
   gap: 22px;
 }
+.form-span { grid-column: 1 / -1; }
 .form-set { border: 0; display: grid; gap: 12px; }
 .form-set legend {
   font-size: 12px;
@@ -749,6 +750,32 @@ footer a:hover { color: var(--lime); }
 .form[hidden], .form .btn[hidden], .tag[hidden], .empty[hidden], .deadline[hidden] { display: none; }
 #insc-go-fecha { justify-self: start; }
 .form-hint { display: block; color: var(--muted); font-size: 13px; font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+.mail-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: stretch;
+}
+.mail-split input,
+.mail-split select {
+  min-width: 0;
+}
+.mail-split select {
+  width: max-content;
+  max-width: 100%;
+}
+
+.form-notice {
+  margin: 8px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--lime) 12%, var(--bg-2));
+  color: var(--cream);
+  font-size: 14px;
+  line-height: 1.45;
+}
 .hp { position: absolute; left: -9999px; height: 0; width: 0; opacity: 0; }
 .join-liga {
   padding: 48px 0 80px;

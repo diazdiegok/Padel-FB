@@ -198,7 +198,7 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
         const temp = play.dataset.seasonPlay;
         const ok = await confirmModal({
           title: `Poner ${seasonLabel(temp)} en juego`,
-          body: `El inicio, el ranking, el fixture y la fecha pasan a ${seasonLabel(temp)}. El ranking de las otras temporadas queda guardado.`,
+          body: `El inicio, el ranking, el fixture y las inscripciones pasan a ${seasonLabel(temp)}. El ranking de las otras temporadas queda guardado.`,
           confirmLabel: "Poner en juego",
         });
         if (!ok) return;

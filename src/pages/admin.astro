@@ -52,7 +52,6 @@ import "../styles/admin.css";
         <div class="admin-nav-label">Liga</div>
         <button class="admin-nav-btn" type="button" data-nav="temporadas">Temporadas</button>
         <button class="admin-nav-btn" type="button" data-nav="parejas">Inscripciones de parejas</button>
-        <button class="admin-nav-btn" type="button" data-nav="fecha">Fecha</button>
         <button class="admin-nav-btn" type="button" data-nav="fixture">Fixture</button>
         <button class="admin-nav-btn" type="button" data-nav="resultados">Resultados</button>
         <button class="admin-nav-btn" type="button" data-nav="ranking">Ranking</button>
@@ -135,7 +134,7 @@ import "../styles/admin.css";
         <section data-section="temporadas" hidden>
           <div class="admin-callout">
             <strong>En juego y próximamente</strong>
-            La temporada en juego es la que usan el inicio, el ranking, el fixture y la fecha. La marcada Próximamente aparece en el inicio hasta que la pongas en juego.
+            La temporada en juego es la que usan el inicio, el ranking, el fixture y las inscripciones. La marcada Próximamente aparece en el inicio hasta que la pongas en juego.
           </div>
           <div class="admin-section-tools">
             <button class="btn btn-lime" type="button" id="season-create">Nueva temporada</button>
@@ -196,7 +195,7 @@ import "../styles/admin.css";
           <div class="admin-stepper">
             <div class="admin-step-card">
               <span>1 · Armar</span>
-              <p>Armar desde Fecha cruza las parejas anotadas según día y horario. Las que no coinciden quedan pendientes.</p>
+              <p>Armar fixture cruza las parejas inscriptas según su disponibilidad. Las que no coinciden quedan pendientes.</p>
             </div>
             <div class="admin-step-card">
               <span>2 · Revisar</span>
@@ -210,10 +209,10 @@ import "../styles/admin.css";
 
           <div class="admin-panel">
             <div class="admin-toolbar">
-              <label class="admin-week">Fecha en juego
+              <label class="admin-week">Jornada
                 <input id="fx-week" value="Fecha 1" placeholder="Fecha 1" />
               </label>
-              <button class="btn btn-lime" type="button" id="fx-build">Armar desde Fecha</button>
+              <button class="btn btn-lime" type="button" id="fx-build">Armar fixture</button>
               <button class="btn btn-ghost" type="button" id="fx-add">+ Partido</button>
               <span class="admin-summary" id="fx-summary">Sin partidos cargados</span>
             </div>
@@ -222,7 +221,7 @@ import "../styles/admin.css";
           <p class="admin-msg" id="fx-msg"></p>
           <datalist id="fx-venues"></datalist>
           <div class="admin-empty" id="fx-empty" hidden>
-            <p>Todavía no hay partidos. Usá Armar desde Fecha o + Partido.</p>
+            <p>Todavía no hay partidos. Usá Armar fixture o + Partido.</p>
           </div>
           <div class="fx-warnings" id="fx-warnings" role="status" hidden></div>
           <div class="fx-pending" id="fx-pending" hidden></div>
@@ -334,42 +333,6 @@ import "../styles/admin.css";
           </div>
         </section>
 
-        <!-- Fecha -->
-        <section data-section="fecha" hidden>
-          <div class="admin-panel">
-            <div class="admin-toolbar">
-              <label class="chk"><input id="disp-open" type="checkbox" checked /> Fecha abierta</label>
-              <label class="admin-week">Cierra el
-                <input id="disp-deadline" type="datetime-local" />
-              </label>
-              <span class="admin-status-pill open" id="disp-status">Fecha abierta</span>
-            </div>
-            <p class="admin-help">Si ponés fecha y hora, a esa hora se destilda sola y la web deja de aceptar la fecha. Destildá para cerrarla ya. Se aplica al tocar Guardar fecha.</p>
-            <div class="admin-toolbar">
-              <label class="admin-week">Fecha
-                <input id="disp-week" placeholder="Fecha 6" />
-              </label>
-            </div>
-          </div>
-          <div class="admin-section-tools">
-            <button class="btn btn-ghost" type="button" id="disp-reload">Actualizar lista</button>
-            <button class="btn btn-ghost" type="button" id="disp-next">Abrir próxima fecha</button>
-            <button class="btn btn-ghost" type="button" id="disp-export">Exportar CSV</button>
-            <span class="tag" id="disp-count"></span>
-          </div>
-          <div class="disp-summary" id="disp-summary"></div>
-          <input class="admin-search" id="disp-search" type="search" placeholder="Buscar jugador…" autocomplete="off" />
-          <p class="admin-help">Circuito de cada semana: las parejas inscriptas eligen su nombre y marcan días en /fecha/ → cerrás la fecha → en Fixture tocás Armar desde Fecha → publicás → abrís la próxima fecha.</p>
-          <p class="admin-msg" id="disp-msg"></p>
-          <div id="disp-list"></div>
-          <div class="admin-sticky-bar">
-            <p class="admin-sticky-note">Guardá para publicar el nombre de la fecha, la hora de cierre y si queda abierta.</p>
-            <div class="admin-sticky-actions">
-              <button class="btn btn-lime" type="button" id="disp-publish">Guardar fecha</button>
-            </div>
-          </div>
-        </section>
-
         <!-- Parejas -->
         <section data-section="parejas" hidden>
           <div class="admin-panel">
@@ -403,11 +366,11 @@ import "../styles/admin.css";
             <span class="tag" id="pairs-count"></span>
           </div>
           <input class="admin-search" id="pairs-search" type="search" placeholder="Buscar jugador…" autocomplete="off" />
-          <p class="admin-help">Corregí nombres o categoría si se equivocaron. Las marcadas como Repetida están inscriptas dos veces: quitá una. Los WhatsApp no se publican en la web: solo los ves acá.</p>
+          <p class="admin-help">Corregí nombres, mails, categoría o disponibilidad si se equivocaron. Las marcadas como Repetida están inscriptas dos veces: quitá una. WhatsApp y mails no se publican en la web: solo los ves acá. El próximo Armar fixture usa estos días y horarios.</p>
           <p class="admin-msg" id="pairs-msg"></p>
           <div id="pairs-list"></div>
           <div class="admin-sticky-bar">
-            <p class="admin-sticky-note">Guardá para que los cambios aparezcan en el buscador de Fecha.</p>
+            <p class="admin-sticky-note">Guardá para publicar textos, parejas y disponibilidad.</p>
             <div class="admin-sticky-actions">
               <button class="btn btn-lime" type="button" id="pairs-publish">Guardar parejas</button>
             </div>

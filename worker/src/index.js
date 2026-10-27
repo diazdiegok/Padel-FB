@@ -1,5 +1,6 @@
 import { addPairsToRanking } from "../../src/lib/scoring.js";
 import { closeStatus, deadlinePassed, validDeadline } from "../../src/lib/cierre.js";
+import { buildMail, cleanDays, validateDays, validateMail } from "../../src/lib/disponibilidad.js";
 
 const PASS_SALT = "liga-fb-admin-v1";
 const RANK_PATH = "src/data/ranking.json";
@@ -322,6 +323,8 @@ async function registrationState(env) {
 }
 
 async function registerPair(env, raw) {
+  const days = cleanDays(raw.days);
+  const note = clip(raw.note, 500);
   const pair = {
     id: `p${Date.now().toString(36)}${crypto.randomUUID().slice(0, 4)}`,
     createdAt: new Date().toISOString(),
@@ -329,22 +332,38 @@ async function registerPair(env, raw) {
     cat: String(raw.cat || "").trim(),
     p1: cleanName(raw.p1),
     p2: cleanName(raw.p2),
+    days,
+    note,
   };
-  const contact = { tel1: cleanPhone(raw.tel1), tel2: cleanPhone(raw.tel2) };
+  const mail1 = buildMail(raw.mail1local ?? String(raw.mail1 || "").split("@")[0], raw.mail1domain ?? String(raw.mail1 || "").split("@")[1]);
+  const mail2 = buildMail(raw.mail2local ?? String(raw.mail2 || "").split("@")[0], raw.mail2domain ?? String(raw.mail2 || "").split("@")[1]);
+  const contact = {
+    tel1: cleanPhone(raw.tel1),
+    tel2: cleanPhone(raw.tel2),
+    mail1,
+    mail2,
+  };
   if (!pair.p1 || !pair.p2) throw new Error("Completá los dos integrantes de la pareja.");
   if (fold(pair.p1) === fold(pair.p2)) throw new Error("Los dos integrantes no pueden ser la misma persona.");
   if (contact.tel1.length < 8 || contact.tel2.length < 8) {
     throw new Error("Dejá el WhatsApp de cada integrante, con característica (ej. 343 555 0000).");
   }
+  if (!mail1 || !mail2) throw new Error("Completá el mail de cada integrante.");
+  const mail1Error = validateMail(mail1);
+  if (mail1Error) throw new Error(`Mail del primer integrante: ${mail1Error}`);
+  const mail2Error = validateMail(mail2);
+  if (mail2Error) throw new Error(`Mail del segundo integrante: ${mail2Error}`);
   if (!CATS.includes(pair.cat)) throw new Error("Elegí la categoría.");
   if (!/^T\d{1,3}$/.test(pair.temp)) throw new Error("Temporada inválida.");
+  const dayError = validateDays(days);
+  if (dayError) throw new Error(dayError);
   const state = await registrationState(env);
   if (!state.open) throw new Error(state.message);
   for (let attempt = 0; attempt < 4; attempt++) {
     const file = await readPairs(env);
     const same = file.json.find((row) => row.temp === pair.temp && pairKey(row) === pairKey(pair));
     if (same) {
-      throw new Error(`Esta pareja ya está inscripta en ${same.cat}: no hace falta inscribirla de nuevo. Busquenla directo en Fecha.`);
+      throw new Error(`Esta pareja ya está inscrita en ${same.cat}: no hace falta inscribirla de nuevo.`);
     }
     const saved = await writeData(env, PAIRS_PATH, [...file.json, pair], file.sha, `Inscribe a ${pair.p1} / ${pair.p2} en ${pair.cat}.`);
     if (saved) {
@@ -372,7 +391,15 @@ async function listPairs(env) {
   const cached = await caches.default.match(PAIRS_CACHE);
   if (cached) return cached.json();
   const file = await readPairs(env);
-  const list = file.json.map((p) => ({ id: p.id, temp: p.temp, cat: p.cat, p1: p.p1, p2: p.p2 }));
+  const list = file.json.map((p) => ({
+    id: p.id,
+    temp: p.temp,
+    cat: p.cat,
+    p1: p.p1,
+    p2: p.p2,
+    days: p.days && typeof p.days === "object" ? p.days : {},
+    note: p.note || "",
+  }));
   await caches.default.put(
     PAIRS_CACHE,
     new Response(JSON.stringify(list), { headers: { "Content-Type": "application/json", "Cache-Control": "max-age=30" } })
@@ -450,9 +477,25 @@ async function saveContacts(env, raw) {
   if (entries.length > 500) throw new Error("Demasiados contactos juntos.");
   for (const [id, value] of entries) {
     if (!/^p[a-z0-9]{4,30}$/.test(id)) continue;
-    const contact = { tel1: cleanPhone(value?.tel1), tel2: cleanPhone(value?.tel2) };
-    if (!value || (!contact.tel1 && !contact.tel2)) await env.AUTH_KV.delete(`contact:${id}`);
-    else await env.AUTH_KV.put(`contact:${id}`, "", { metadata: contact });
+    const mail1 = buildMail(
+      value?.mail1local ?? String(value?.mail1 || "").split("@")[0],
+      value?.mail1domain ?? String(value?.mail1 || "").split("@")[1]
+    );
+    const mail2 = buildMail(
+      value?.mail2local ?? String(value?.mail2 || "").split("@")[0],
+      value?.mail2domain ?? String(value?.mail2 || "").split("@")[1]
+    );
+    const contact = {
+      tel1: cleanPhone(value?.tel1),
+      tel2: cleanPhone(value?.tel2),
+      mail1,
+      mail2,
+    };
+    if (!value || (!contact.tel1 && !contact.tel2 && !contact.mail1 && !contact.mail2)) {
+      await env.AUTH_KV.delete(`contact:${id}`);
+    } else {
+      await env.AUTH_KV.put(`contact:${id}`, "", { metadata: contact });
+    }
   }
   return { ok: true };
 }

@@ -943,7 +943,22 @@ body.is-admin main > .wrap {
 
 .pairs-rows {
   display: grid;
-  gap: 8px;
+  gap: 12px;
+}
+
+.pairs-card {
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-2);
+}
+
+.pairs-card.is-dup {
+  border-color: #ff7a59;
+}
+
+.pairs-card.is-dup .pairs-origin {
+  color: #ff7a59;
 }
 
 .pairs-row {
@@ -951,10 +966,128 @@ body.is-admin main > .wrap {
   grid-template-columns: minmax(0, 1fr) 128px minmax(0, 1fr) 128px 150px 84px 36px;
   gap: 8px;
   align-items: center;
-  padding: 8px;
+}
+
+.pairs-mail-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pairs-mail {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pairs-avail {
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+
+.pairs-avail summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--muted);
+  user-select: none;
+}
+
+.pairs-day-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pairs-day-list .day-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.pairs-day-list .day-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: var(--cream);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pairs-day-list .day-check input {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  padding: 0;
+}
+
+.pairs-day-list .day-hours {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pairs-day-list .day-hours select {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
   background: var(--bg-2);
+  color: var(--cream);
+}
+
+.pairs-day-list .day-hours select:disabled {
+  opacity: 0.4;
+}
+
+.pairs-mail input,
+.pairs-mail select {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--cream);
+}
+
+.pairs-mail .mail-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.pairs-note {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pairs-note textarea {
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--cream);
+  resize: vertical;
+}
+
+@media (max-width: 760px) {
+  .pairs-day-list .day-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .pairs-row input,
@@ -965,14 +1098,6 @@ body.is-admin main > .wrap {
   border-radius: 10px;
   background: var(--bg);
   color: var(--cream);
-}
-
-.pairs-row.is-dup {
-  border-color: #ff7a59;
-}
-
-.pairs-row.is-dup .pairs-origin {
-  color: #ff7a59;
 }
 
 .pairs-origin {
@@ -990,6 +1115,9 @@ body.is-admin main > .wrap {
   }
   .pairs-row select { grid-column: 1; }
   .pairs-row .pairs-origin { grid-column: 2 / span 3; }
+  .pairs-mail-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 760px) {

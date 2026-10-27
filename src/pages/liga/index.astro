@@ -7,8 +7,7 @@ import { normalizePlayoffs } from "../../lib/playoff.js";
 
 const playoffOn = normalizePlayoffs(playoffJson).some((p) => p.categories.length);
 const links = [
-  { href: "inscribir-pareja/", title: "Inscripciones de parejas", text: "Se hace una vez por temporada." },
-  { href: "fecha/", title: "Fecha", text: "Disponibilidad y carga de la semana." },
+  { href: "inscribir-pareja/", title: "Inscripciones de parejas", text: "Contactos, categoría y disponibilidad de la temporada." },
   { href: "fixture/", title: "Fixture", text: "Partidos semanales de la temporada." },
   { href: "resultados/", title: "Resultados", text: "Resultados cargados de cada fecha." },
   { href: "ranking/", title: "Ranking", text: "Tabla por categoría y temporada." },
@@ -18,13 +17,13 @@ const links = [
 ---
 <Layout
   title={`Padel FB | Competí en ${site.city}`}
-  description="Ranking, fixture, resultados, fecha y sedes de Padel FB en Paraná."
+  description="Ranking, fixture, resultados e inscripciones de Padel FB en Paraná."
 >
   <div class="wrap">
     <header class="page-hero">
       <p class="kicker">Liga · temporada {site.currentSeason}</p>
       <h1>Liga</h1>
-      <p>Todo lo de la competencia: ranking, partidos, resultados, fecha y sedes.</p>
+      <p>Todo lo de la competencia: ranking, partidos, resultados e inscripciones.</p>
     </header>
 
     <div class="hub-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">

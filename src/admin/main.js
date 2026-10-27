@@ -3,7 +3,6 @@ import { createApi } from "./api.js";
 import { createAuth } from "./auth.js";
 import { HIDDEN_CATS } from "./constants.js";
 import { createCms } from "./cms.js";
-import { createFecha } from "./fecha.js";
 import { createFixture } from "./fixture.js";
 import { createParejas } from "./parejas.js";
 import { createPlayoff } from "./playoff.js";
@@ -40,7 +39,6 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   let fixture;
   let results;
   let seasons;
-  let fecha;
   let cms;
   let playoff;
   let parejas;
@@ -48,7 +46,6 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
 
   const shell = createShell(ctx, {
     onEnterSection(id) {
-      if (id === "fecha") fecha?.reload();
       if (id === "resultados") results?.reload();
       if (id === "playoff") playoff?.reload();
       if (id === "parejas") parejas?.reload();
@@ -87,10 +84,8 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   seasons = createSeasons(ctx, api, shell, {
     onSeasonChanged() {
       ranking.refresh();
-      fecha?.fill();
     },
   });
-  fecha = createFecha(ctx, api, shell);
   cms = createCms(ctx, api, shell);
   playoff = createPlayoff(ctx, api, shell);
   acadinsc = createAcademiaInscripciones(ctx, api);
@@ -120,8 +115,6 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
     playoff.render();
     parejas.render();
     cms.refreshAll();
-    fecha.fill();
-    fecha.reload();
     shell.setSection(shell.initialSection(), { force: true });
   }
 
@@ -133,7 +126,6 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   fixture.bind();
   results.bind();
   seasons.bind();
-  fecha.bind();
   cms.bind();
   playoff.bind();
   parejas.bind();

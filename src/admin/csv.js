@@ -78,6 +78,7 @@ export function cleanMatch(m, defaults = {}, currentSeason = "T4") {
     extra.pending = true;
     if (m.reason) extra.reason = String(m.reason).trim();
     if (m.avail) extra.avail = String(m.avail).trim();
+    if (m.note) extra.note = String(m.note).trim();
   }
   return {
     ...extra,

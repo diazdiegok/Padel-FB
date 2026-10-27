@@ -1,6 +1,6 @@
-import { FIXTURE_PATH, RESULTS_PATH } from "./constants.js";
+import { FIXTURE_PATH, PAIRS_PATH, RESULTS_PATH } from "./constants.js";
 import { cleanMatch } from "./csv.js";
-import { DISP_PATH } from "../lib/disponibilidad.js";
+import { validateDays } from "../lib/disponibilidad.js";
 import { buildFixture } from "../lib/fixturer.js";
 import { latestWeek, mergeArchivedMatches, weekKey, weekNumber } from "../lib/liga.js";
 import { pairsMatch } from "../lib/scoring.js";
@@ -95,7 +95,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
                 const others = rows.filter((o) => o.i !== i);
                 return `<article class="fx-pending-card" data-i="${i}">
                   <strong>${escAttr(m.home)}</strong>
-                  <span class="admin-help">${escAttr(m.reason || "Sin rival")}${m.avail ? ` · ${escAttr(m.avail)}` : ""}</span>
+                  <span class="admin-help">${escAttr(m.reason || "Sin rival")}${m.avail ? ` · ${escAttr(m.avail)}` : ""}${m.note ? ` · ${escAttr(m.note)}` : ""}</span>
                   <div class="fx-pending-actions">
                     ${
                       others.length
@@ -156,11 +156,49 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     }
   }
 
-  async function readDisp() {
-    if (!ctx.token) return ctx.disp;
-    const file = await api.api(`/repos/${ctx.owner}/${ctx.repo}/contents/${DISP_PATH}?ref=main`);
-    ctx.disp = JSON.parse(api.fromB64(String(file.content || "").replace(/\n/g, "")));
-    return ctx.disp;
+  function seasonMatches(season) {
+    return [...(ctx.results || []), ...(ctx.fixturePublished || []), ...(ctx.fixture || [])].filter(
+      (m) => String(m.temp || "").toUpperCase() === String(season).toUpperCase()
+    );
+  }
+
+  function nextBuildWeek(season) {
+    const all = seasonMatches(season);
+    const max = all.reduce((n, m) => Math.max(n, weekNumber(m.week)), 0);
+    if (!max) return "Fecha 1";
+    const label = `Fecha ${max}`;
+    const inDraft = (ctx.fixture || []).filter((m) => m.week === label && String(m.temp || "").toUpperCase() === String(season).toUpperCase());
+    const hasResults =
+      inDraft.some((m) => String(m.result || m.appliedResult || "").trim()) ||
+      (ctx.results || []).some(
+        (m) => m.week === label && String(m.temp || "").toUpperCase() === String(season).toUpperCase() && String(m.result || "").trim()
+      ) ||
+      (ctx.fixturePublished || []).some(
+        (m) =>
+          m.week === label &&
+          String(m.temp || "").toUpperCase() === String(season).toUpperCase() &&
+          String(m.appliedResult || m.result || "").trim()
+      );
+    if (inDraft.length && !hasResults) return label;
+    return `Fecha ${max + 1}`;
+  }
+
+  function pairEntries(season) {
+    return (ctx.pairs || [])
+      .filter((p) => String(p.temp || "").toUpperCase() === String(season).toUpperCase() && p.p1 && p.p2 && p.cat)
+      .map((p) => {
+        const days = p.days && typeof p.days === "object" ? p.days : {};
+        const valid = !validateDays(days);
+        return {
+          p1: p.p1,
+          p2: p.p2,
+          cat: p.cat,
+          days: valid ? days : {},
+          note: p.note || "",
+          bye: !valid,
+          recover: false,
+        };
+      });
   }
 
   async function buildFromFecha() {
@@ -168,22 +206,27 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const btn = $("fx-build");
     setBusy(btn, true, "Armando…");
     try {
-      const disp = await readDisp();
+      if (!ctx.dirty.has("parejas")) {
+        try {
+          const remote = await api.readRemoteJson(PAIRS_PATH, []);
+          if (Array.isArray(remote)) ctx.pairs = remote;
+        } catch {
+          /* se usan las parejas ya cargadas en el admin */
+        }
+      }
       const season = ctx.siteData.currentSeason || "T4";
-      const temp = disp.temp || season;
-      const week = String(disp.week || fallbackWeek()).trim();
-      const entries = disp.entries || [];
-      if (!entries.some((e) => !e.bye)) {
-        setMsg($("fx-msg"), `No hay parejas anotadas para jugar en ${week}.`, "err");
+      const temp = season;
+      const week = nextBuildWeek(season);
+      const entries = pairEntries(season);
+      const playable = entries.filter((e) => !e.bye);
+      if (!playable.length) {
+        setMsg($("fx-msg"), "No hay parejas inscriptas con disponibilidad válida para armar el fixture.", "err");
         toast("No hay inscripciones para armar", "err");
         return;
       }
-      if (temp !== season) {
-        setMsg($("fx-msg"), `La fecha anotada es de ${temp} y la temporada en juego es ${season}. Abrí una fecha nueva en Fecha.`, "err");
-        return;
-      }
       const warnings = [];
-      if (disp.open !== false) warnings.push("La fecha sigue abierta: si alguien se anota después, va a faltar en el fixture.");
+      const withoutDays = entries.filter((e) => e.bye).length;
+      if (withoutDays) warnings.push(`${withoutDays} pareja${withoutDays === 1 ? "" : "s"} sin disponibilidad quedan afuera.`);
       const unsaved = ctx.fixture.filter((m) => String(m.result || "").trim() !== String(m.appliedResult || "").trim());
       if (unsaved.length) {
         setMsg($("fx-msg"), `Hay ${unsaved.length} resultado${unsaved.length === 1 ? "" : "s"} sin publicar. Publicalos en Resultados antes de armar la fecha nueva.`, "err");
@@ -198,7 +241,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       const ok = await confirmModal({
         title: `Armar ${week}`,
         body:
-          `Armo los cruces con ${entries.filter((e) => !e.bye).length} parejas anotadas. ` +
+          `Se arma ${week} con ${playable.length} pareja${playable.length === 1 ? "" : "s"} inscriptas. ` +
           (warnings.length ? warnings.join(" ") + " " : "") +
           "Nada se publica hasta que toques Publicar fixture.",
         confirmLabel: "Armar fixture",
@@ -222,6 +265,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
             avail: Object.entries(p.days || {})
               .map(([d, h]) => `${d} ${h}`)
               .join(" · "),
+            note: p.note || "",
           },
           {},
           season
@@ -236,7 +280,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         `${matches.length} partido${matches.length === 1 ? "" : "s"}`,
         pending.length ? `${pending.length} pendiente${pending.length === 1 ? "" : "s"}` : "sin pendientes",
       ];
-      if (out.byes.length) parts.push(`${out.byes.length} no juega${out.byes.length === 1 ? "" : "n"}`);
+      if (out.byes.length) parts.push(`${out.byes.length} sin disponibilidad`);
       if (rematches) parts.push(`${rematches} repite rival, mirá el aviso Revisar`);
       setMsg($("fx-msg"), `${week} armada: ${parts.join(" · ")}. Completá complejo y cancha, revisá y publicá.`, "ok");
       toast(`${week} armada`, "ok");
