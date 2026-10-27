@@ -117,7 +117,7 @@ const seasonVenues = Object.fromEntries(
       </div>
       <div class="home-cell">
         <b id="home-players">{seasonCounts[current] || 0}</b>
-        <span id="home-players-label">Jugadores en {current}</span>
+        <span id="home-players-label">Parejas en {current}</span>
       </div>
       <div class="home-cell">
         <b id="home-venues">{seasonVenues[current] ?? countedVenues}</b>
@@ -141,7 +141,7 @@ const seasonVenues = Object.fromEntries(
     }
     function paint(temp) {
       num.textContent = String(counts[temp] || 0);
-      label.textContent = "Jugadores en " + temp;
+      label.textContent = "Parejas en " + temp;
       venueNum.textContent = String(venues[temp] ?? 0);
       venueLabel.textContent = "Sedes en " + temp;
     }
