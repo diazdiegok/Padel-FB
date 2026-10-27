@@ -84,9 +84,28 @@ function syncCardDays(card) {
   });
 }
 
+const ORIGINS = [
+  { id: "web", label: "Web" },
+  { id: "admin", label: "Admin" },
+  { id: "ranking", label: "Del ranking" },
+  { id: "dup", label: "Repetida" },
+];
+
+function pairOrigin(p, dupKeys) {
+  if (dupKeys.get(pairKey(p)) > 1) return "dup";
+  if (p.source === "ranking") return "ranking";
+  if (p.source === "admin") return "admin";
+  return "web";
+}
+
+function originLabel(id) {
+  return ORIGINS.find((o) => o.id === id)?.label || id;
+}
+
 export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
   let term = "";
   let filterCat = "";
+  let filterOrigin = "";
   let knownIds = new Set((ctx.pairs || []).map((p) => p.id));
   const deleted = new Set();
   const contactsDirty = new Set();
@@ -101,22 +120,48 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
     return ctx.pairs.map((p, i) => ({ p, i })).filter(({ p }) => p.temp === temp);
   }
 
-  function catCount(list, cat) {
-    return cat ? list.filter(({ p }) => p.cat === cat).length : list.length;
+  function dupMap(list) {
+    const map = new Map();
+    list.forEach(({ p }) => map.set(pairKey(p), (map.get(pairKey(p)) || 0) + 1));
+    return map;
   }
 
-  function renderCats(list) {
+  function matchesFilters(p, dupKeys) {
+    if (filterCat && p.cat !== filterCat) return false;
+    if (filterOrigin && pairOrigin(p, dupKeys) !== filterOrigin) return false;
+    return true;
+  }
+
+  function renderCats(list, dupKeys) {
     const box = $("pairs-cats");
     if (!box) return;
-    const used = [...new Set([...CATS, ...list.map(({ p }) => p.cat)].filter(Boolean))];
-    if (filterCat && !used.includes(filterCat) && filterCat !== "") filterCat = "";
-    const total = list.length;
+    const base = filterOrigin ? list.filter(({ p }) => pairOrigin(p, dupKeys) === filterOrigin) : list;
+    const used = [...new Set([...CATS, ...base.map(({ p }) => p.cat)].filter(Boolean))];
+    if (filterCat && !used.includes(filterCat)) filterCat = "";
     box.innerHTML = [
-      `<button class="pill${filterCat === "" ? " on" : ""}" type="button" data-pairs-cat="">Todas <small>${total}</small></button>`,
+      `<button class="pill${filterCat === "" ? " on" : ""}" type="button" data-pairs-cat="">Todas <small>${base.length}</small></button>`,
       ...used.map((c) => {
-        const n = catCount(list, c);
+        const n = base.filter(({ p }) => p.cat === c).length;
         return `<button class="pill${filterCat === c ? " on" : ""}" type="button" data-pairs-cat="${esc(c)}">${esc(c)} <small>${n}</small></button>`;
       }),
+    ].join("");
+  }
+
+  function renderOrigins(list, dupKeys) {
+    const box = $("pairs-origins");
+    if (!box) return;
+    const base = filterCat ? list.filter(({ p }) => p.cat === filterCat) : list;
+    const counts = Object.fromEntries(ORIGINS.map((o) => [o.id, 0]));
+    base.forEach(({ p }) => {
+      counts[pairOrigin(p, dupKeys)] += 1;
+    });
+    if (filterOrigin && !counts[filterOrigin]) filterOrigin = "";
+    box.innerHTML = [
+      `<button class="pill${filterOrigin === "" ? " on" : ""}" type="button" data-pairs-origin="">Todos <small>${base.length}</small></button>`,
+      ...ORIGINS.filter((o) => counts[o.id] > 0 || filterOrigin === o.id).map(
+        (o) =>
+          `<button class="pill${filterOrigin === o.id ? " on" : ""}" type="button" data-pairs-origin="${o.id}">${esc(o.label)} <small>${counts[o.id]}</small></button>`
+      ),
     ].join("");
   }
 
@@ -160,23 +205,24 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
   function render() {
     const temp = season();
     const list = seasonPairs();
-    renderCats(list);
+    const dupKeys = dupMap(list);
+    renderCats(list, dupKeys);
+    renderOrigins(list, dupKeys);
     const q = fold(term);
-    let shown = filterCat ? list.filter(({ p }) => p.cat === filterCat) : list;
+    let shown = list.filter(({ p }) => matchesFilters(p, dupKeys));
     if (q) {
       shown = shown.filter(({ p }) => {
         const c = contact(p.id);
         return fold(`${p.p1} ${p.p2} ${c.tel1 || ""} ${c.tel2 || ""} ${c.mail1 || ""} ${c.mail2 || ""} ${p.note || ""}`).includes(q);
       });
     }
-    const filterTotal = catCount(list, filterCat);
-    const totalLabel = filterCat || seasonLabel(temp);
+    const filterTotal = list.filter(({ p }) => matchesFilters(p, dupKeys)).length;
+    const parts = [filterCat, filterOrigin ? originLabel(filterOrigin)].filter(Boolean);
+    const totalLabel = parts.length ? parts.join(" · ") : seasonLabel(temp);
     $("pairs-count").textContent =
       q && shown.length !== filterTotal
         ? `${shown.length} de ${filterTotal} pareja${filterTotal === 1 ? "" : "s"} en ${totalLabel}`
         : `${filterTotal} pareja${filterTotal === 1 ? "" : "s"} en ${totalLabel}`;
-    const dupKeys = new Map();
-    list.forEach(({ p }) => dupKeys.set(pairKey(p), (dupKeys.get(pairKey(p)) || 0) + 1));
     const cats = filterCat
       ? shown.length
         ? [filterCat]
@@ -203,7 +249,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
                         <select data-k="cat" aria-label="Categoría">
                           ${CATS.map((opt) => `<option${opt === p.cat ? " selected" : ""}>${esc(opt)}</option>`).join("")}
                         </select>
-                        <span class="pairs-origin">${dupKeys.get(pairKey(p)) > 1 ? "Repetida" : p.source === "ranking" ? "Del ranking" : p.source === "admin" ? "Admin" : "Web"}</span>
+                        <span class="pairs-origin">${esc(originLabel(pairOrigin(p, dupKeys)))}</span>
                         <button class="admin-del" type="button" data-pair-del="${i}" aria-label="Eliminar">×</button>
                       </div>
                       <div class="pairs-mail-row">
@@ -240,7 +286,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
           .join("")
       : `<div class="admin-empty"><p>${
           list.length
-            ? filterCat || q
+            ? filterCat || filterOrigin || q
               ? "Nadie coincide con el filtro o la búsqueda."
               : "Nadie coincide con la búsqueda."
             : `Todavía no hay parejas inscriptas en ${esc(seasonLabel(temp))}. Compartí el link /inscribir-pareja/.`
@@ -313,6 +359,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       return;
     }
     const cols = ["categoria", "jugador1", "whatsapp1", "mail1", "jugador2", "whatsapp2", "mail2", "disponibilidad", "nota", "origen"];
+    const dups = dupMap(list.map((p) => ({ p })));
     downloadCsv(
       `parejas-${temp.toLowerCase()}.csv`,
       cols,
@@ -331,7 +378,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
             .map(([d, h]) => `${d} ${h}`)
             .join(" | "),
           nota: p.note || "",
-          origen: p.source === "ranking" ? "Ranking" : p.source === "admin" ? "Admin" : "Web",
+          origen: originLabel(pairOrigin(p, dups)),
         }))
     );
     toast("Parejas exportadas", "ok");
@@ -356,6 +403,12 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       const btn = e.target.closest("[data-pairs-cat]");
       if (!btn) return;
       filterCat = btn.dataset.pairsCat || "";
+      render();
+    });
+    $("pairs-origins")?.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-pairs-origin]");
+      if (!btn) return;
+      filterOrigin = btn.dataset.pairsOrigin || "";
       render();
     });
     $("pairs-reload")?.addEventListener("click", () => reload({ quiet: false }));
