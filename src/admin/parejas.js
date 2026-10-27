@@ -217,7 +217,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       });
     }
     const filterTotal = list.filter(({ p }) => matchesFilters(p, dupKeys)).length;
-    const parts = [filterCat, filterOrigin ? originLabel(filterOrigin)].filter(Boolean);
+    const parts = [filterCat, filterOrigin ? originLabel(filterOrigin) : ""].filter(Boolean);
     const totalLabel = parts.length ? parts.join(" · ") : seasonLabel(temp);
     $("pairs-count").textContent =
       q && shown.length !== filterTotal
