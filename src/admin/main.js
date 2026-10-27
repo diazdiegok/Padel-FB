@@ -66,8 +66,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
         parejas?.reload();
       }
       if (id === "temporadas") {
-        ctx.dirty.delete("temporadas");
-        seasons?.reload();
+        seasons?.discard();
       }
     },
   });
