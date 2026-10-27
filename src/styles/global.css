@@ -285,6 +285,10 @@ h3 { font-size: 22px; }
   padding: 20px;
 }
 .scoreboard.is-empty { align-self: start; }
+.scoreboard.is-inscribe {
+  animation: scoreboard-float 4.8s ease-in-out infinite;
+  will-change: transform;
+}
 .scoreboard header {
   display: flex;
   justify-content: space-between;
@@ -947,6 +951,11 @@ footer strong { color: var(--cream); }
 .home-open.home-play .scoreboard {
   animation: home-board 0.8s cubic-bezier(0.16, 0.84, 0.32, 1) 0.22s both;
 }
+.home-open.home-play .scoreboard.is-inscribe {
+  animation:
+    home-board 0.8s cubic-bezier(0.16, 0.84, 0.32, 1) 0.22s both,
+    scoreboard-float 4.8s ease-in-out 1.1s infinite;
+}
 .home-open.home-play .row-player {
   animation: home-row 0.5s cubic-bezier(0.16, 0.84, 0.32, 1) both;
 }
@@ -990,6 +999,10 @@ footer strong { color: var(--cream); }
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.25; transform: scale(0.65); }
 }
+@keyframes scoreboard-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
 @media (prefers-reduced-motion: reduce) {
   .home-open.home-play::before,
   .home-open.home-play .home-sweep,
@@ -1000,7 +1013,8 @@ footer strong { color: var(--cream); }
   .home-open.home-play .scoreboard,
   .home-open.home-play .row-player,
   .home-open.home-play .live::before,
-  .home-open.home-play + .wrap .home-stats {
+  .home-open.home-play + .wrap .home-stats,
+  .scoreboard.is-inscribe {
     animation: none;
   }
 }

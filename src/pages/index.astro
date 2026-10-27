@@ -65,7 +65,7 @@ const seasonVenues = Object.fromEntries(
         </div>
         <div class="home-board">
           {upcoming && <p class="home-soon">Próximamente {seasonLabel(upcoming)}</p>}
-          <aside class:list={["scoreboard", { "is-empty": boardRows.length === 0, "is-finished": playoffDone }]}>
+          <aside class:list={["scoreboard", { "is-empty": boardRows.length === 0, "is-finished": playoffDone, "is-inscribe": !seasonStarted && !playoffDone }]}>
             <header>
               {playoffDone || seasonStarted ? (
                 <span class="live">{boardTitle}</span>
