@@ -727,17 +727,20 @@ footer a:hover { color: var(--lime); }
 .insc-actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
   gap: 8px;
   margin-top: 4px;
+  width: 100%;
 }
 .insc-actions .btn {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
-  max-width: 220px;
   justify-content: center;
   text-align: center;
-  padding: 8px 12px;
-  font-size: 11px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 800;
   letter-spacing: 0.04em;
 }
 .btn-clear {
