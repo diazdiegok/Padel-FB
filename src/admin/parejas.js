@@ -86,6 +86,7 @@ function syncCardDays(card) {
 
 export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
   let term = "";
+  let filterCat = "";
   let knownIds = new Set((ctx.pairs || []).map((p) => p.id));
   const deleted = new Set();
   const contactsDirty = new Set();
@@ -94,6 +95,30 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
 
   const season = () => ctx.siteData.currentSeason || "T4";
   const contact = (id) => ctx.contacts[id] || {};
+
+  function seasonPairs() {
+    const temp = season();
+    return ctx.pairs.map((p, i) => ({ p, i })).filter(({ p }) => p.temp === temp);
+  }
+
+  function catCount(list, cat) {
+    return cat ? list.filter(({ p }) => p.cat === cat).length : list.length;
+  }
+
+  function renderCats(list) {
+    const box = $("pairs-cats");
+    if (!box) return;
+    const used = [...new Set([...CATS, ...list.map(({ p }) => p.cat)].filter(Boolean))];
+    if (filterCat && !used.includes(filterCat) && filterCat !== "") filterCat = "";
+    const total = list.length;
+    box.innerHTML = [
+      `<button class="pill${filterCat === "" ? " on" : ""}" type="button" data-pairs-cat="">Todas <small>${total}</small></button>`,
+      ...used.map((c) => {
+        const n = catCount(list, c);
+        return `<button class="pill${filterCat === c ? " on" : ""}" type="button" data-pairs-cat="${esc(c)}">${esc(c)} <small>${n}</small></button>`;
+      }),
+    ].join("");
+  }
 
   function fillConfig() {
     const cfg = ctx.pairsConfig;
@@ -134,18 +159,29 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
 
   function render() {
     const temp = season();
-    const list = ctx.pairs.map((p, i) => ({ p, i })).filter(({ p }) => p.temp === temp);
+    const list = seasonPairs();
+    renderCats(list);
     const q = fold(term);
-    const shown = q
-      ? list.filter(({ p }) => {
-          const c = contact(p.id);
-          return fold(`${p.p1} ${p.p2} ${c.tel1 || ""} ${c.tel2 || ""} ${c.mail1 || ""} ${c.mail2 || ""} ${p.note || ""}`).includes(q);
-        })
-      : list;
-    $("pairs-count").textContent = `${list.length} pareja${list.length === 1 ? "" : "s"} en ${seasonLabel(temp)}`;
+    let shown = filterCat ? list.filter(({ p }) => p.cat === filterCat) : list;
+    if (q) {
+      shown = shown.filter(({ p }) => {
+        const c = contact(p.id);
+        return fold(`${p.p1} ${p.p2} ${c.tel1 || ""} ${c.tel2 || ""} ${c.mail1 || ""} ${c.mail2 || ""} ${p.note || ""}`).includes(q);
+      });
+    }
+    const filterTotal = catCount(list, filterCat);
+    const totalLabel = filterCat || seasonLabel(temp);
+    $("pairs-count").textContent =
+      q && shown.length !== filterTotal
+        ? `${shown.length} de ${filterTotal} pareja${filterTotal === 1 ? "" : "s"} en ${totalLabel}`
+        : `${filterTotal} pareja${filterTotal === 1 ? "" : "s"} en ${totalLabel}`;
     const dupKeys = new Map();
     list.forEach(({ p }) => dupKeys.set(pairKey(p), (dupKeys.get(pairKey(p)) || 0) + 1));
-    const cats = [...new Set([...CATS, ...shown.map(({ p }) => p.cat)])].filter((c) => shown.some(({ p }) => p.cat === c));
+    const cats = filterCat
+      ? shown.length
+        ? [filterCat]
+        : []
+      : [...new Set([...CATS, ...shown.map(({ p }) => p.cat)])].filter((c) => shown.some(({ p }) => p.cat === c));
     $("pairs-list").innerHTML = cats.length
       ? cats
           .map((cat) => {
@@ -204,7 +240,9 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
           .join("")
       : `<div class="admin-empty"><p>${
           list.length
-            ? "Nadie coincide con la búsqueda."
+            ? filterCat || q
+              ? "Nadie coincide con el filtro o la búsqueda."
+              : "Nadie coincide con la búsqueda."
             : `Todavía no hay parejas inscriptas en ${esc(seasonLabel(temp))}. Compartí el link /inscribir-pareja/.`
         }</p></div>`;
     document.querySelectorAll("#pairs-list .pairs-card").forEach(syncCardDays);
@@ -314,14 +352,21 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       term = e.target.value;
       render();
     });
+    $("pairs-cats")?.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-pairs-cat]");
+      if (!btn) return;
+      filterCat = btn.dataset.pairsCat || "";
+      render();
+    });
     $("pairs-reload")?.addEventListener("click", () => reload({ quiet: false }));
     $("pairs-export")?.addEventListener("click", exportCsv);
     $("pairs-add")?.addEventListener("click", () => {
+      const cat = filterCat || CATS[0];
       ctx.pairs.push({
         id: newId(),
         createdAt: new Date().toISOString(),
         temp: season(),
-        cat: CATS[0],
+        cat,
         p1: "",
         p2: "",
         days: {},
