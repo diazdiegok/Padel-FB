@@ -105,6 +105,7 @@ export function createCms(ctx, api, shell) {
     ensureCms();
     const ac = ctx.siteData.academia;
     const form = $("ac-copy");
+    if (form.kicker) form.kicker.value = ac.kicker || "Clases adultos";
     form.title.value = ac.title || "";
     form.intro.value = ac.intro || "";
     form.teamNote.value = ac.teamNote || "";
@@ -289,6 +290,7 @@ export function createCms(ctx, api, shell) {
     const form = $("ac-copy");
     ctx.siteData.academia = {
       ...ctx.siteData.academia,
+      kicker: form.kicker?.value.trim() || "Clases adultos",
       title: form.title.value.trim(),
       intro: form.intro.value.trim(),
       teamNote: form.teamNote.value.trim(),
@@ -697,18 +699,18 @@ export function createCms(ctx, api, shell) {
       if (!gate.ok) return toast(gate.message, "err");
       readAcademiaFromDom();
       setBusy($("ac-save"), true, "Publicando…");
-      setMsg($("ac-msg"), "Publicando academia…");
+      setMsg($("ac-msg"), "Publicando adultos…");
       try {
         await uploadPending(ctx.siteData.staff, "staff");
         const local = cleanSiteForSave();
         await publishSiteFields(
           { academia: local.academia, staff: local.staff },
-          "Actualiza academia desde el admin."
+          "Actualiza clases de adultos desde el admin."
         );
         shell.clearDirty("academia");
         fillAcademiaForm();
         setMsg($("ac-msg"), "Listo. En ~1 minuto se ve en la web.", "ok");
-        toast("Academia publicada", "ok");
+        toast("Adultos publicados", "ok");
       } catch (err) {
         const m = api.publishError(err);
         setMsg($("ac-msg"), m, "err");

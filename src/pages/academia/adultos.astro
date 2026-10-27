@@ -11,11 +11,11 @@ const names = staff.map((p) => p.name).filter(Boolean).join(", ");
 ---
 <Layout
   title="Clases adultos | Padel FB"
-  description={`Clases de pádel para adultos de la Academia FB en ${site.city}.${names ? " " + names + "." : ""}`}
+  description={`Clases de pádel para adultos de Padel FB en ${site.city}.${names ? " " + names + "." : ""}`}
 >
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker">{ac.kicker || "Academia FB"}</p>
+      <p class="kicker">{ac.kicker || "Clases adultos"}</p>
       <h1>
         {titleLines.map((line, i) => (
           <>{i > 0 && <br />}{line}</>
