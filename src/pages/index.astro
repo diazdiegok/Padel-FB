@@ -77,15 +77,18 @@ const seasonVenues = Object.fromEntries(
               ) : seasonStarted ? (
                 <span class="live">En juego</span>
               ) : (
-                <span class="status-soon">Próximamente</span>
+                <span class="status-soon">Por arrancar</span>
               )}
             </header>
             {boardRows.length === 0 && (
-              <p class="empty-season">
-                {seasonStarted
-                  ? "La tabla de esta temporada todavía no está publicada."
-                  : `${seasonLabel(current)} todavía no comenzó. Cuando haya resultados aparecen los líderes.`}
-              </p>
+              seasonStarted ? (
+                <p class="empty-season">La tabla de esta temporada todavía no está publicada.</p>
+              ) : (
+                <p class="empty-season empty-season-cta">
+                  <a class="home-inscribe" href={page("inscribir-pareja/")}>¡Inscribite YA!</a>
+                  <span>{seasonLabel(current)} está por arrancar. Anotá tu pareja.</span>
+                </p>
+              )
             )}
             {boardRows.map((p) => (
               <div class="row-player">

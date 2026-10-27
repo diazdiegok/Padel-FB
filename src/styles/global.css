@@ -300,6 +300,22 @@ h3 { font-size: 22px; }
   color: var(--muted);
   font-size: 14px;
 }
+.scoreboard .empty-season-cta {
+  display: grid;
+  gap: 8px;
+}
+.scoreboard .home-inscribe {
+  color: var(--lime);
+  font-family: var(--display);
+  font-size: 28px;
+  line-height: 1.05;
+  text-transform: uppercase;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+.scoreboard .home-inscribe:hover {
+  text-decoration: underline;
+}
 .home-board {
   display: grid;
   gap: 10px;
