@@ -5486,7 +5486,7 @@
     "pts": 9,
     "pj": 8,
     "dif": -4,
-    "pos": 49,
+    "pos": 50,
     "temp": "T2"
   },
   {
@@ -5495,7 +5495,7 @@
     "pts": 9,
     "pj": 8,
     "dif": -4,
-    "pos": 50,
+    "pos": 51,
     "temp": "T2"
   },
   {
@@ -5504,7 +5504,7 @@
     "pts": 9,
     "pj": 7,
     "dif": -4,
-    "pos": 51,
+    "pos": 49,
     "temp": "T2"
   },
   {
@@ -8782,23 +8782,5 @@
     "dif": 0,
     "pos": 11,
     "temp": "T4"
-  },
-  {
-    "name": "sadsdasda / asdasdaa",
-    "cat": "A Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 1,
-    "temp": "T5"
-  },
-  {
-    "name": "rrrrrrrrr / fffffffffffffff",
-    "cat": "A Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 2,
-    "temp": "T5"
   }
 ]
