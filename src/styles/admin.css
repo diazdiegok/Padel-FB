@@ -128,15 +128,21 @@ body.is-admin main > .wrap {
 }
 
 .admin-brand {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "mark text"
+    "mark actions";
+  column-gap: 12px;
+  row-gap: 8px;
   align-items: center;
-  gap: 10px;
   padding: 4px 4px 14px;
   border-bottom: 1px solid var(--line);
-  flex-wrap: wrap;
 }
 
 .admin-brand-mark {
+  grid-area: mark;
+  align-self: start;
   width: 36px;
   height: 36px;
   border: 2px solid var(--lime);
@@ -146,12 +152,11 @@ body.is-admin main > .wrap {
   color: var(--lime);
   font-family: var(--display);
   font-size: 13px;
-  flex-shrink: 0;
 }
 
 .admin-brand-text {
+  grid-area: text;
   min-width: 0;
-  flex: 1 1 auto;
 }
 
 .admin-brand strong {
@@ -169,11 +174,10 @@ body.is-admin main > .wrap {
 }
 
 .admin-brand-actions {
+  grid-area: actions;
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-left: auto;
-  flex-shrink: 0;
 }
 
 .admin-brand-btn {
