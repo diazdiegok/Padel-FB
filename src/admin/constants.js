@@ -59,4 +59,9 @@ export const SECTIONS = {
   academia: { group: "Academia", title: "Adultos", help: "Profes, programas y textos de las clases de adultos." },
   infantiles: { group: "Academia", title: "Infantiles", help: "Textos, sedes y horarios de las clases infantiles." },
   torneos: { group: "Torneos", title: "Torneos", help: "Listado de torneos. Si está vacío, la web muestra el aviso." },
+  visitas: {
+    group: "Torneos",
+    title: "Visitas",
+    help: "Tráfico agregado de la web (últimos 14 días). Solo totales por país, dispositivo, página y origen: no se guardan IPs.",
+  },
 };

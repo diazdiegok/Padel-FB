@@ -11,6 +11,7 @@ import { createRanking } from "./ranking.js";
 import { createResults } from "./results.js";
 import { createSeasons } from "./seasons.js";
 import { createShell } from "./shell.js";
+import { createVisitas } from "./visitas.js";
 import { $ } from "./ui.js";
 
 export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson, pairsJson, pairsConfigJson }) {
@@ -43,6 +44,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   let playoff;
   let parejas;
   let acadinsc;
+  let visitas;
 
   const shell = createShell(ctx, {
     onEnterSection(id) {
@@ -51,6 +53,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
       if (id === "parejas") parejas?.reload();
       if (id === "temporadas") seasons?.reload();
       if (id === "acadinsc") acadinsc?.reload();
+      if (id === "visitas") visitas?.reload();
     },
     onDiscardSection(id) {
       if (id === "fixture") {
@@ -93,6 +96,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   cms = createCms(ctx, api, shell);
   playoff = createPlayoff(ctx, api, shell);
   acadinsc = createAcademiaInscripciones(ctx, api);
+  visitas = createVisitas(ctx, api);
   parejas = createParejas(ctx, api, shell, {
     onRankingChanged() {
       ranking.refresh();
@@ -134,6 +138,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   playoff.bind();
   parejas.bind();
   acadinsc.bind();
+  visitas.bind();
 
   if (auth.isLoggedIn()) showApp();
 }

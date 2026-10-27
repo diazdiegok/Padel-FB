@@ -246,5 +246,36 @@ const inTorneos = path.includes("/torneos");
         splash?.remove();
       }
     </script>
+    {!noindex && site.apiUrl && (
+      <script define:vars={{ apiUrl: String(site.apiUrl || "").replace(/\/$/, ""), basePath }}>
+        (() => {
+          if (!apiUrl || typeof navigator === "undefined") return;
+          const path = (location.pathname.replace(new RegExp("^" + basePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), "") || "/") || "/";
+          const day = new Date().toISOString().slice(0, 10);
+          const key = `liga-fb-hit:${day}:${path}`;
+          try {
+            if (sessionStorage.getItem(key)) return;
+            sessionStorage.setItem(key, "1");
+          } catch {
+            /* private mode */
+          }
+          const body = JSON.stringify({ path, ref: document.referrer || "" });
+          const url = `${apiUrl}/hit`;
+          // text/plain evita preflight; el worker parsea JSON igual
+          try {
+            if (navigator.sendBeacon?.(url, new Blob([body], { type: "text/plain" }))) return;
+          } catch {
+            /* fallback abajo */
+          }
+          fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body,
+            keepalive: true,
+            mode: "cors",
+          }).catch(() => {});
+        })();
+      </script>
+    )}
   </body>
 </html>

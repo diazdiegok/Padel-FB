@@ -500,6 +500,140 @@ async function saveContacts(env, raw) {
   return { ok: true };
 }
 
+const STATS_TTL = 60 * 60 * 24 * 45;
+const COUNTRY_NAMES = {
+  AR: "Argentina",
+  UY: "Uruguay",
+  CL: "Chile",
+  BR: "Brasil",
+  PY: "Paraguay",
+  BO: "Bolivia",
+  PE: "Perú",
+  ES: "España",
+  US: "Estados Unidos",
+  MX: "México",
+  XX: "Desconocido",
+  T1: "Tor / proxy",
+};
+
+function utcDay(offset = 0) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + offset);
+  return d.toISOString().slice(0, 10);
+}
+
+function deviceOf(ua) {
+  const s = String(ua || "").toLowerCase();
+  if (/bot|crawl|spider|slurp|facebookexternalhit|preview/i.test(s)) return "Bot";
+  if (/ipad|tablet|kindle|playbook/i.test(s)) return "Tablet";
+  if (/mobi|iphone|ipod|android|webos|opera mini|iemobile/i.test(s)) return "Móvil";
+  return "Desktop";
+}
+
+function cleanHitPath(raw) {
+  let p = String(raw || "/")
+    .split("?")[0]
+    .split("#")[0]
+    .replace(/\\/g, "/")
+    .replace(/^\/Padel-FB/i, "")
+    .replace(/\/{2,}/g, "/");
+  if (!p.startsWith("/")) p = `/${p}`;
+  if (p.length > 1 && p.endsWith("/")) p = p.slice(0, -1);
+  return (p || "/").slice(0, 120);
+}
+
+function bump(map, key) {
+  const k = String(key || "").slice(0, 80) || "—";
+  map[k] = (map[k] || 0) + 1;
+}
+
+function referrerHost(raw, env) {
+  const value = String(raw || "").trim();
+  if (!value) return "Directo";
+  try {
+    const host = new URL(value).hostname.replace(/^www\./i, "").toLowerCase();
+    if (!host) return "Directo";
+    const own = siteOrigins(env).map((o) => {
+      try {
+        return new URL(o).hostname.replace(/^www\./i, "").toLowerCase();
+      } catch {
+        return "";
+      }
+    });
+    if (own.includes(host) || host === "localhost" || host.endsWith(".workers.dev")) return "Directo";
+    return host.slice(0, 80);
+  } catch {
+    return "Directo";
+  }
+}
+
+async function hitRateOk(env, request) {
+  if (!env.AUTH_KV) return true;
+  const hash = (await sha256hex(clientIp(request))).slice(0, 16);
+  const key = `hitrl:${hash}`;
+  const n = Number((await env.AUTH_KV.get(key)) || 0);
+  if (n >= 40) return false;
+  await env.AUTH_KV.put(key, String(n + 1), { expirationTtl: 60 });
+  return true;
+}
+
+async function recordHit(env, request, raw) {
+  if (!env.AUTH_KV) return { ok: true };
+  const day = utcDay(0);
+  const key = `stats:day:${day}`;
+  const country = String(request.cf?.country || "XX")
+    .toUpperCase()
+    .slice(0, 3);
+  const device = deviceOf(request.headers.get("user-agent"));
+  const path = cleanHitPath(raw?.path || "/");
+  const ref = referrerHost(raw?.ref || request.headers.get("Referer"), env);
+  const cur = (await env.AUTH_KV.get(key, "json")) || {
+    total: 0,
+    countries: {},
+    devices: {},
+    paths: {},
+    refs: {},
+  };
+  cur.total = Number(cur.total || 0) + 1;
+  bump(cur.countries, country);
+  bump(cur.devices, device);
+  bump(cur.paths, path);
+  bump(cur.refs, ref);
+  await env.AUTH_KV.put(key, JSON.stringify(cur), { expirationTtl: STATS_TTL });
+  return { ok: true };
+}
+
+function mergeMaps(into, from) {
+  for (const [k, v] of Object.entries(from || {})) into[k] = (into[k] || 0) + Number(v || 0);
+}
+
+async function readStats(env, days = 14) {
+  const n = Math.min(Math.max(Number(days) || 14, 1), 30);
+  const daily = [];
+  const countries = {};
+  const devices = {};
+  const paths = {};
+  const refs = {};
+  let total = 0;
+  for (let i = n - 1; i >= 0; i--) {
+    const day = utcDay(-i);
+    const cur = (await env.AUTH_KV?.get(`stats:day:${day}`, "json")) || null;
+    const dayTotal = Number(cur?.total || 0);
+    daily.push({ day, total: dayTotal });
+    total += dayTotal;
+    if (!cur) continue;
+    mergeMaps(countries, cur.countries);
+    mergeMaps(devices, cur.devices);
+    mergeMaps(paths, cur.paths);
+    mergeMaps(refs, cur.refs);
+  }
+  const namedCountries = {};
+  for (const [code, count] of Object.entries(countries)) {
+    namedCountries[COUNTRY_NAMES[code] || code] = count;
+  }
+  return { days: n, total, daily, countries: namedCountries, devices, paths, refs };
+}
+
 function fold(value) {
   return String(value || "")
     .toLowerCase()
@@ -680,6 +814,25 @@ export default {
           return response(request, env, { message: "Muchos envíos seguidos. Esperá un minuto y probá de nuevo." }, 429);
         }
         return response(request, env, await registerPair(env, body));
+      }
+
+      if (url.pathname === "/hit" && request.method === "POST") {
+        if (!(await hitRateOk(env, request))) return response(request, env, { ok: true });
+        let body = {};
+        const ct = request.headers.get("Content-Type") || "";
+        if (ct.includes("application/json")) {
+          body = await request.json().catch(() => ({}));
+        } else {
+          const text = await request.text().catch(() => "");
+          body = parseBody(text) || {};
+        }
+        return response(request, env, await recordHit(env, request, body));
+      }
+
+      if (url.pathname === "/stats" && request.method === "GET") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        const days = Number(url.searchParams.get("days") || 14);
+        return response(request, env, await readStats(env, days));
       }
 
       return response(request, env, { message: "No encontrado." }, 404);

@@ -130,9 +130,10 @@ body.is-admin main > .wrap {
 .admin-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 4px 8px 12px;
+  gap: 10px;
+  padding: 4px 4px 14px;
   border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
 }
 
 .admin-brand-mark {
@@ -148,6 +149,11 @@ body.is-admin main > .wrap {
   flex-shrink: 0;
 }
 
+.admin-brand-text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .admin-brand strong {
   font-family: var(--display);
   letter-spacing: 0.1em;
@@ -160,6 +166,54 @@ body.is-admin main > .wrap {
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.admin-brand-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.admin-brand-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 7px 11px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.admin-brand-btn-visitas {
+  color: #8ec8ff;
+  background: rgba(74, 163, 240, 0.12);
+  border-color: rgba(74, 163, 240, 0.35);
+}
+
+.admin-brand-btn-visitas:hover,
+.admin-brand-btn-visitas.on {
+  color: #d6ebff;
+  background: rgba(74, 163, 240, 0.22);
+  border-color: rgba(74, 163, 240, 0.55);
+}
+
+.admin-brand-btn-salir {
+  color: #ff8b8b;
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.admin-brand-btn-salir:hover {
+  color: #ffd0d0;
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.55);
 }
 
 .admin-nav-group {
@@ -198,14 +252,6 @@ body.is-admin main > .wrap {
 .admin-nav-btn.on {
   background: rgba(214, 255, 47, 0.14);
   color: var(--lime);
-}
-
-.admin-sidebar-foot {
-  margin-top: auto;
-  padding-top: 16px;
-  border-top: 1px solid var(--line);
-  display: grid;
-  gap: 8px;
 }
 
 .admin-main {
@@ -823,6 +869,87 @@ body.is-admin main > .wrap {
 .acad-lead p { margin: 0; color: var(--muted); }
 .acad-lead a { color: var(--cream); }
 .acad-note { color: var(--cream); }
+
+.visitas-hero strong {
+  display: block;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  line-height: 1;
+  margin: 6px 0 8px;
+}
+.visitas-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin-top: 14px;
+}
+.visitas-grid .admin-result-card h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.visitas-bars { display: grid; gap: 8px; }
+.visitas-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(48px, 1.4fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+.visitas-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.visitas-bar {
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cream) 12%, transparent);
+  overflow: hidden;
+}
+.visitas-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--lime, #d6ff2f);
+}
+.visitas-n {
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 1.5ch;
+  text-align: right;
+}
+.visitas-daily {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  min-height: 96px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.visitas-day {
+  flex: 1 0 28px;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+.visitas-col {
+  width: 100%;
+  max-width: 18px;
+  border-radius: 6px 6px 2px 2px;
+  background: var(--lime, #d6ff2f);
+  align-self: end;
+}
+.visitas-day-n,
+.visitas-day-l {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1;
+}
+.visitas-day-n { min-height: 12px; }
 .pairs-copy { padding-top: 4px; }
 
 .admin-season-head {
