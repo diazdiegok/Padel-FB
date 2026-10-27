@@ -49,6 +49,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
       if (id === "resultados") results?.reload();
       if (id === "playoff") playoff?.reload();
       if (id === "parejas") parejas?.reload();
+      if (id === "temporadas") seasons?.reload();
       if (id === "acadinsc") acadinsc?.reload();
     },
     onDiscardSection(id) {
@@ -63,6 +64,10 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
       if (id === "parejas") {
         ctx.dirty.delete("parejas");
         parejas?.reload();
+      }
+      if (id === "temporadas") {
+        ctx.dirty.delete("temporadas");
+        seasons?.reload();
       }
     },
   });

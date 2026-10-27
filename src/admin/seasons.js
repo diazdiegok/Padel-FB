@@ -17,6 +17,30 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
     return Number.isFinite(saved) ? saved : fallbackVenues();
   }
 
+  function ensureVenues() {
+    if (!ctx.siteData.seasonVenues || typeof ctx.siteData.seasonVenues !== "object") {
+      ctx.siteData.seasonVenues = {};
+    }
+    return ctx.siteData.seasonVenues;
+  }
+
+  function readVenuesFromDom() {
+    const next = { ...ensureVenues() };
+    document.querySelectorAll("[data-season-venues]").forEach((input) => {
+      const temp = input.dataset.seasonVenues;
+      if (!temp) return;
+      next[temp] = Math.max(0, Math.round(Number(input.value) || 0));
+    });
+    ctx.siteData.seasonVenues = next;
+    return next;
+  }
+
+  function setVenueCount(temp, count) {
+    const venues = ensureVenues();
+    venues[temp] = Math.max(0, Math.round(Number(count) || 0));
+    shell.markDirty("temporadas");
+  }
+
   function upcoming() {
     const value = normalizeSeason(ctx.siteData.upcomingSeason);
     const current = normalizeSeason(ctx.siteData.currentSeason);
@@ -32,6 +56,19 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
     if ("showPlayoff" in remote) ctx.siteData.showPlayoff = Boolean(remote.showPlayoff);
     if (remote.seasonVenues && typeof remote.seasonVenues === "object") {
       ctx.siteData.seasonVenues = { ...remote.seasonVenues };
+    }
+  }
+
+  async function reload() {
+    if (!ctx.token || ctx.dirty.has("temporadas")) {
+      render();
+      return;
+    }
+    try {
+      await load();
+      render();
+    } catch (err) {
+      setMsg($("season-msg"), err.message, "err");
     }
   }
 
@@ -85,7 +122,6 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
                 <button type="button" data-season-step="${escAttr(temp)}" data-dir="1" aria-label="Una sede más">+</button>
               </span>
             </div>
-            <button class="btn btn-lime" type="button" data-season-venues-save="${escAttr(temp)}">Publicar temporada</button>
           </div>
         </article>`;
       })
@@ -99,12 +135,17 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
       toast(gate.message, "err");
       return false;
     }
-    const busyBtn = button || $("season-create");
+    const busyBtn = button || $("season-publish") || $("season-create");
     setBusy(busyBtn, true, busyLabel);
     setMsg($("season-msg"), message.loading || "Publicando…");
     try {
       const remote = await api.readRemoteJson(SITE_PATH, ctx.siteData);
-      const nextSite = { ...remote, ...fields };
+      const seasonVenues = readVenuesFromDom();
+      const nextSite = {
+        ...remote,
+        ...fields,
+        seasonVenues: { ...(remote.seasonVenues || {}), ...seasonVenues, ...(fields.seasonVenues || {}) },
+      };
       if (fields.currentSeason) {
         ctx.disp.temp = fields.currentSeason;
         await api.publishFiles(
@@ -132,6 +173,20 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
     } finally {
       setBusy(busyBtn, false);
     }
+  }
+
+  async function publishSection() {
+    const seasonVenues = readVenuesFromDom();
+    await publishSitePatch(
+      { seasonVenues },
+      {
+        loading: "Publicando temporadas…",
+        commit: "Actualiza sedes por temporada desde el admin.",
+        ok: "Temporadas publicadas. El sitio se actualiza en ~1 minuto.",
+        toast: "Temporadas publicadas",
+      },
+      { button: $("season-publish") }
+    );
   }
 
   async function activate(temp, { created = false, button } = {}) {
@@ -192,6 +247,19 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
       if (!ok) return;
       await activate(created, { created: true });
     });
+    $("season-publish")?.addEventListener("click", () => publishSection());
+    $("season-list")?.addEventListener("input", (e) => {
+      const input = e.target.closest("[data-season-venues]");
+      if (!input) return;
+      setVenueCount(input.dataset.seasonVenues, input.value);
+    });
+    $("season-list")?.addEventListener("change", (e) => {
+      const input = e.target.closest("[data-season-venues]");
+      if (!input) return;
+      const value = Math.max(0, Math.round(Number(input.value) || 0));
+      input.value = String(value);
+      setVenueCount(input.dataset.seasonVenues, value);
+    });
     $("season-list")?.addEventListener("click", async (e) => {
       const play = e.target.closest("[data-season-play]");
       if (play) {
@@ -223,60 +291,14 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
         return;
       }
       const step = e.target.closest("[data-season-step]");
-      if (step) {
-        const input = document.querySelector(`[data-season-venues="${step.dataset.seasonStep}"]`);
-        if (input) input.value = Math.max(0, (Math.round(Number(input.value)) || 0) + Number(step.dataset.dir));
-        return;
-      }
-      const btn = e.target.closest("[data-season-venues-save]");
-      if (!btn) return;
-      const temp = btn.dataset.seasonVenuesSave;
-      const gate = api.usePublishToken();
-      if (!gate.ok) {
-        toast(gate.message, "err");
-        return;
-      }
-      const input = document.querySelector(`[data-season-venues="${temp}"]`);
-      const count = Math.max(0, Math.round(Number(input?.value) || 0));
-      setBusy(btn, true, "Publicando…");
-      setMsg($("season-msg"), `Publicando sedes de ${seasonLabel(temp)}…`);
-      try {
-        const remote = await api.readRemoteJson(SITE_PATH, ctx.siteData);
-        const prev = Number(remote.seasonVenues?.[temp]);
-        if (prev === count) {
-          if (remote.seasonVenues) ctx.siteData.seasonVenues = { ...remote.seasonVenues };
-          setMsg(
-            $("season-msg"),
-            `${seasonLabel(temp)} ya tiene ${count} sedes. En el inicio elegí ${temp} para verlas. La página abre en la temporada en juego.`,
-            "ok"
-          );
-          toast("Ya estaba publicado", "ok");
-          return;
-        }
-        const seasonVenues = { ...(remote.seasonVenues || {}), [temp]: count };
-        const nextSite = { ...remote, seasonVenues };
-        await api.publishFile(
-          SITE_PATH,
-          JSON.stringify(nextSite, null, 2) + "\n",
-          `Actualiza las sedes de ${seasonLabel(temp)} a ${count}.`
-        );
-        Object.assign(ctx.siteData, nextSite);
-        render();
-        setMsg(
-          $("season-msg"),
-          `${seasonLabel(temp)} publicada con ${count} sedes. En el inicio elegí ${temp} para ver ese número.`,
-            "ok"
-          );
-        toast("Sedes publicadas", "ok");
-      } catch (err) {
-        const message = api.publishError(err);
-        setMsg($("season-msg"), message, "err");
-        toast(message, "err");
-      } finally {
-        setBusy(btn, false);
-      }
+      if (!step) return;
+      const input = document.querySelector(`[data-season-venues="${step.dataset.seasonStep}"]`);
+      if (!input) return;
+      const value = Math.max(0, (Math.round(Number(input.value)) || 0) + Number(step.dataset.dir));
+      input.value = String(value);
+      setVenueCount(step.dataset.seasonStep, value);
     });
   }
 
-  return { bind, render, load };
+  return { bind, render, load, reload };
 }
