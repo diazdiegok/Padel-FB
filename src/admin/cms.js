@@ -95,9 +95,9 @@ export function createCms(ctx, api, shell) {
     form.ligaIntro.value = ctx.siteData.ligaIntro || "";
     if (form.showPlayoff) form.showPlayoff.checked = Boolean(ctx.siteData.showPlayoff);
     const help = $("site-playoff-help");
-    const season = ctx.siteData.currentSeason || "";
-    if (help && season) {
-      help.textContent = `Si está tildado, el inicio muestra Ver playoff y lleva al cuadro de ${season}. Destildalo mientras se juega la fase regular; cuando armes el playoff, volvé a tildarlo.`;
+    if (help) {
+      help.textContent =
+        "Si está tildado, el inicio muestra Ver playoff y lleva al cuadro de la temporada en juego. Destildalo mientras se juega la fase regular; cuando armes el playoff, volvé a tildarlo.";
     }
   }
 
