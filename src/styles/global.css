@@ -727,13 +727,15 @@ footer a:hover { color: var(--lime); }
 .insc-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
   margin-top: 4px;
 }
 .insc-actions .btn {
   width: 100%;
   justify-content: center;
   text-align: center;
+  padding: 10px 14px;
+  font-size: 12px;
 }
 .btn-clear {
   background: #ff5a3c;
