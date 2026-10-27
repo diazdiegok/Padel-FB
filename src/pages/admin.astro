@@ -45,8 +45,12 @@ import "../styles/admin.css";
       </div>
 
       <div class="admin-nav-group">
+        <div class="admin-nav-label">Inicio</div>
+        <button class="admin-nav-btn on" type="button" data-nav="sitio">Inicio</button>
+      </div>
+      <div class="admin-nav-group">
         <div class="admin-nav-label">Liga</div>
-        <button class="admin-nav-btn on" type="button" data-nav="temporadas">Temporadas</button>
+        <button class="admin-nav-btn" type="button" data-nav="temporadas">Temporadas</button>
         <button class="admin-nav-btn" type="button" data-nav="parejas">Inscripciones de parejas</button>
         <button class="admin-nav-btn" type="button" data-nav="fecha">Fecha</button>
         <button class="admin-nav-btn" type="button" data-nav="fixture">Fixture</button>
@@ -60,10 +64,6 @@ import "../styles/admin.css";
         <button class="admin-nav-btn" type="button" data-nav="acadinsc">Inscripciones</button>
         <button class="admin-nav-btn" type="button" data-nav="academia">Adultos</button>
         <button class="admin-nav-btn" type="button" data-nav="infantiles">Infantiles</button>
-      </div>
-      <div class="admin-nav-group">
-        <div class="admin-nav-label">Sitio</div>
-        <button class="admin-nav-btn" type="button" data-nav="sitio">Datos</button>
       </div>
       <div class="admin-nav-group">
         <div class="admin-nav-label">Torneos</div>
@@ -80,8 +80,8 @@ import "../styles/admin.css";
         <div class="admin-topbar-left">
           <button class="admin-menu-btn" type="button" id="admin-menu-btn" aria-label="Menú">☰</button>
           <div>
-            <h1 id="admin-page-title">Temporadas</h1>
-            <p class="admin-page-help" id="admin-page-help">Creá una temporada y dejala en juego. Ranking, fixture y fecha pasan a usar esa.</p>
+            <h1 id="admin-page-title">Inicio</h1>
+            <p class="admin-page-help" id="admin-page-help">Contacto, ciudad, texto de inicio y si se muestra el botón Ver playoff.</p>
           </div>
         </div>
         <div class="admin-topbar-right">
@@ -90,17 +90,58 @@ import "../styles/admin.css";
       </header>
 
       <div class="admin-content">
+        <!-- Inicio -->
+        <section data-section="sitio">
+          <form class="form" id="site-form">
+            <div class="admin-site-grid">
+              <div class="admin-site-block">
+                <h3>Contacto</h3>
+                <label>WhatsApp (549…)
+                  <input name="whatsapp" />
+                </label>
+                <label>Instagram
+                  <input name="instagram" />
+                </label>
+              </div>
+              <div class="admin-site-block">
+                <h3>Ubicación</h3>
+                <label>Ciudad
+                  <input name="city" />
+                </label>
+                <label>Provincia
+                  <input name="province" />
+                </label>
+              </div>
+              <div class="admin-site-block span-2">
+                <h3>Inicio</h3>
+                <label>Texto de inicio
+                  <textarea name="ligaIntro" rows="6"></textarea>
+                </label>
+                <label class="chk"><input name="showPlayoff" type="checkbox" /> Mostrar botón Ver playoff</label>
+                <p class="admin-help" id="site-playoff-help">Si está tildado, el inicio muestra Ver playoff y lleva al cuadro de la temporada en juego. Destildalo mientras se juega la fase regular; cuando armes el playoff, volvé a tildarlo.</p>
+              </div>
+            </div>
+            <p class="admin-msg" id="site-msg"></p>
+            <div class="admin-sticky-bar">
+              <p class="admin-sticky-note">Estos datos alimentan el sitio público.</p>
+              <div class="admin-sticky-actions">
+                <button class="btn btn-lime" type="submit" id="site-save">Guardar inicio</button>
+              </div>
+            </div>
+          </form>
+        </section>
+
         <!-- Temporadas -->
-        <section data-section="temporadas">
+        <section data-section="temporadas" hidden>
           <div class="admin-callout">
-            <strong>En juego</strong>
-            La temporada activa es la que usan el inicio, el ranking, el fixture y la fecha.
+            <strong>En juego y próximamente</strong>
+            La temporada en juego es la que usan el inicio, el ranking, el fixture y la fecha. La marcada Próximamente aparece en el inicio hasta que la pongas en juego.
           </div>
           <div class="admin-section-tools">
             <button class="btn btn-lime" type="button" id="season-create">Nueva temporada</button>
             <span class="tag" id="season-current"></span>
           </div>
-          <p class="admin-help">La que dice En juego es la que usa el sitio. En las demás, Poner en juego la deja como la actual. En cada una cargás las sedes: ese número aparece en el inicio al elegirla.</p>
+          <p class="admin-help">En juego es la actual. Próximamente avisa en el inicio la que viene. En cada una cargás las sedes: ese número aparece en el inicio al elegirla.</p>
           <p class="admin-msg" id="season-msg"></p>
           <div id="season-list"></div>
         </section>
@@ -524,44 +565,6 @@ import "../styles/admin.css";
           </div>
         </section>
 
-        <!-- Sitio -->
-        <section data-section="sitio" hidden>
-          <form class="form" id="site-form">
-            <div class="admin-site-grid">
-              <div class="admin-site-block">
-                <h3>Contacto</h3>
-                <label>WhatsApp (549…)
-                  <input name="whatsapp" />
-                </label>
-                <label>Instagram
-                  <input name="instagram" />
-                </label>
-              </div>
-              <div class="admin-site-block">
-                <h3>Ubicación</h3>
-                <label>Ciudad
-                  <input name="city" />
-                </label>
-                <label>Provincia
-                  <input name="province" />
-                </label>
-              </div>
-              <div class="admin-site-block span-2">
-                <h3>Inicio</h3>
-                <label>Texto de inicio
-                  <textarea name="ligaIntro" rows="6"></textarea>
-                </label>
-              </div>
-            </div>
-            <p class="admin-msg" id="site-msg"></p>
-            <div class="admin-sticky-bar">
-              <p class="admin-sticky-note">Estos datos alimentan el sitio público.</p>
-              <div class="admin-sticky-actions">
-                <button class="btn btn-lime" type="submit" id="site-save">Guardar sitio</button>
-              </div>
-            </div>
-          </form>
-        </section>
       </div>
     </div>
 

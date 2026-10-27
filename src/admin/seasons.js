@@ -1,6 +1,6 @@
 import { SITE_PATH } from "./constants.js";
 import { DISP_PATH } from "../lib/disponibilidad.js";
-import { listSeasons, nextSeason, seasonLabel } from "../lib/liga.js";
+import { listSeasons, nextSeason, normalizeSeason, seasonLabel } from "../lib/liga.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
 export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
@@ -17,11 +17,19 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
     return Number.isFinite(saved) ? saved : fallbackVenues();
   }
 
+  function upcoming() {
+    const value = normalizeSeason(ctx.siteData.upcomingSeason);
+    const current = normalizeSeason(ctx.siteData.currentSeason);
+    return value && value !== current ? value : "";
+  }
+
   async function load() {
     const remote = await api.readRemoteJson(SITE_PATH, null);
     if (!remote || typeof remote !== "object") return;
     if (remote.currentSeason) ctx.siteData.currentSeason = remote.currentSeason;
     if (Array.isArray(remote.seasons)) ctx.siteData.seasons = remote.seasons;
+    if ("upcomingSeason" in remote) ctx.siteData.upcomingSeason = remote.upcomingSeason || "";
+    if ("showPlayoff" in remote) ctx.siteData.showPlayoff = Boolean(remote.showPlayoff);
     if (remote.seasonVenues && typeof remote.seasonVenues === "object") {
       ctx.siteData.seasonVenues = { ...remote.seasonVenues };
     }
@@ -29,25 +37,43 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
 
   function render() {
     const current = ctx.siteData.currentSeason || "";
+    const soon = upcoming();
     const list = seasons();
     const tag = $("season-current");
-    if (tag) tag.textContent = current ? `${seasonLabel(current)} en juego` : "Sin temporada activa";
+    if (tag) {
+      const parts = [];
+      if (current) parts.push(`${seasonLabel(current)} en juego`);
+      if (soon) parts.push(`${seasonLabel(soon)} próximamente`);
+      tag.textContent = parts.join(" · ") || "Sin temporada activa";
+    }
     const focused = document.activeElement?.dataset?.seasonVenues || "";
     $("season-list").innerHTML = list
       .map((temp) => {
         const count = ctx.rows.filter((row) => row.temp === temp).length;
         const active = temp === current;
+        const isSoon = temp === soon;
+        let badge = "";
+        if (active) {
+          badge = `<span class="admin-chip-live">En juego</span>`;
+        } else if (isSoon) {
+          badge = `<div class="admin-season-actions">
+            <span class="admin-chip-soon">Próximamente</span>
+            <button class="btn btn-ghost admin-season-play" type="button" data-season-play="${escAttr(temp)}">Poner en juego</button>
+            <button class="btn btn-ghost" type="button" data-season-soon-clear="${escAttr(temp)}">Quitar</button>
+          </div>`;
+        } else {
+          badge = `<div class="admin-season-actions">
+            <button class="btn btn-ghost admin-season-play" type="button" data-season-play="${escAttr(temp)}">Poner en juego</button>
+            <button class="btn btn-ghost" type="button" data-season-soon="${escAttr(temp)}">Próximamente</button>
+          </div>`;
+        }
         return `<article class="admin-result-card">
           <div class="admin-season-head">
             <div>
               <div class="admin-result-meta"><span>${escAttr(temp)}</span></div>
               <strong>${escAttr(seasonLabel(temp))}</strong>
             </div>
-            ${
-              active
-                ? `<span class="admin-chip-live">En juego</span>`
-                : `<button class="btn btn-ghost admin-season-play" type="button" data-season-play="${escAttr(temp)}">Poner en juego</button>`
-            }
+            ${badge}
           </div>
           <p>${count} pareja${count === 1 ? "" : "s"} en el ranking.</p>
           <div class="admin-season-venues">
@@ -67,44 +93,92 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
     if (focused) document.querySelector(`[data-season-venues="${focused}"]`)?.focus();
   }
 
-  async function activate(temp, { created = false, button } = {}) {
+  async function publishSitePatch(fields, message, { button, busyLabel = "Publicando…" } = {}) {
     const gate = api.usePublishToken();
     if (!gate.ok) {
       toast(gate.message, "err");
-      return;
+      return false;
     }
-    const list = seasons();
-    const nextList = list.includes(temp) ? list : [...list, temp];
     const busyBtn = button || $("season-create");
-    setBusy(busyBtn, true, "Publicando…");
-    setMsg($("season-msg"), `Publicando ${seasonLabel(temp)}…`);
+    setBusy(busyBtn, true, busyLabel);
+    setMsg($("season-msg"), message.loading || "Publicando…");
     try {
       const remote = await api.readRemoteJson(SITE_PATH, ctx.siteData);
-      const nextSite = { ...remote, seasons: nextList, currentSeason: temp };
-      ctx.disp.temp = temp;
-      await api.publishFiles(
-        [
-          { path: SITE_PATH, content: JSON.stringify(nextSite, null, 2) + "\n" },
-          { path: DISP_PATH, content: JSON.stringify(ctx.disp, null, 2) + "\n" },
-        ],
-        created ? `Crea ${seasonLabel(temp)} y la deja en juego.` : `Pone ${seasonLabel(temp)} en juego.`
-      );
+      const nextSite = { ...remote, ...fields };
+      if (fields.currentSeason) {
+        ctx.disp.temp = fields.currentSeason;
+        await api.publishFiles(
+          [
+            { path: SITE_PATH, content: JSON.stringify(nextSite, null, 2) + "\n" },
+            { path: DISP_PATH, content: JSON.stringify(ctx.disp, null, 2) + "\n" },
+          ],
+          message.commit
+        );
+      } else {
+        await api.publishFile(SITE_PATH, JSON.stringify(nextSite, null, 2) + "\n", message.commit);
+      }
       Object.assign(ctx.siteData, nextSite);
       shell.clearDirty("temporadas");
       onSeasonChanged?.();
       render();
-      const text = created
-        ? `${seasonLabel(temp)} creada y en juego. El sitio se actualiza en ~1 minuto.`
-        : `${seasonLabel(temp)} quedó en juego. El sitio se actualiza en ~1 minuto.`;
-      setMsg($("season-msg"), text, "ok");
-      toast(text, "ok");
+      setMsg($("season-msg"), message.ok, "ok");
+      toast(message.toast || message.ok, "ok");
+      return true;
     } catch (err) {
-      const message = api.publishError(err);
-      setMsg($("season-msg"), message, "err");
-      toast(message, "err");
+      const text = api.publishError(err);
+      setMsg($("season-msg"), text, "err");
+      toast(text, "err");
+      return false;
     } finally {
       setBusy(busyBtn, false);
     }
+  }
+
+  async function activate(temp, { created = false, button } = {}) {
+    const list = seasons();
+    const nextList = list.includes(temp) ? list : [...list, temp];
+    const soon = upcoming() === temp ? "" : upcoming();
+    await publishSitePatch(
+      { seasons: nextList, currentSeason: temp, upcomingSeason: soon },
+      {
+        loading: `Publicando ${seasonLabel(temp)}…`,
+        commit: created ? `Crea ${seasonLabel(temp)} y la deja en juego.` : `Pone ${seasonLabel(temp)} en juego.`,
+        ok: created
+          ? `${seasonLabel(temp)} creada y en juego. El sitio se actualiza en ~1 minuto.`
+          : `${seasonLabel(temp)} quedó en juego. El sitio se actualiza en ~1 minuto.`,
+      },
+      { button: button || $("season-create") }
+    );
+  }
+
+  async function markUpcoming(temp, { button } = {}) {
+    if (temp === ctx.siteData.currentSeason) {
+      toast("Esa temporada ya está en juego.", "err");
+      return;
+    }
+    await publishSitePatch(
+      { upcomingSeason: temp },
+      {
+        loading: `Marcando ${seasonLabel(temp)}…`,
+        commit: `Marca ${seasonLabel(temp)} como próximamente.`,
+        ok: `${seasonLabel(temp)} quedó como próximamente en el inicio.`,
+        toast: "Próximamente actualizado",
+      },
+      { button, busyLabel: "Guardando…" }
+    );
+  }
+
+  async function clearUpcoming({ button } = {}) {
+    await publishSitePatch(
+      { upcomingSeason: "" },
+      {
+        loading: "Quitando próximamente…",
+        commit: "Quita la temporada próximamente del inicio.",
+        ok: "Se quitó el aviso de próximamente del inicio.",
+        toast: "Próximamente quitado",
+      },
+      { button, busyLabel: "Guardando…" }
+    );
   }
 
   function bind() {
@@ -129,6 +203,23 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
         });
         if (!ok) return;
         await activate(temp, { button: play });
+        return;
+      }
+      const soonBtn = e.target.closest("[data-season-soon]");
+      if (soonBtn) {
+        const temp = soonBtn.dataset.seasonSoon;
+        const ok = await confirmModal({
+          title: `Próximamente ${seasonLabel(temp)}`,
+          body: `En el inicio se va a ver “Próximamente ${seasonLabel(temp)}”. La temporada en juego no cambia.`,
+          confirmLabel: "Marcar próximamente",
+        });
+        if (!ok) return;
+        await markUpcoming(temp, { button: soonBtn });
+        return;
+      }
+      const clearBtn = e.target.closest("[data-season-soon-clear]");
+      if (clearBtn) {
+        await clearUpcoming({ button: clearBtn });
         return;
       }
       const step = e.target.closest("[data-season-step]");

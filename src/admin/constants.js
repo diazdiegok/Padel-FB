@@ -47,7 +47,8 @@ export const VENUE_MAP = {
 };
 
 export const SECTIONS = {
-  temporadas: { group: "Liga", title: "Temporadas", help: "Creá una temporada y dejala en juego. Ranking, fixture y fecha pasan a usar esa." },
+  sitio: { group: "Inicio", title: "Inicio", help: "Contacto, ciudad, texto de inicio y si se muestra el botón Ver playoff." },
+  temporadas: { group: "Liga", title: "Temporadas", help: "Creá una temporada, dejala en juego o marcá la que viene próximamente." },
   ranking: { group: "Liga", title: "Ranking", help: "La tabla se arma con las parejas inscriptas y los resultados. Acá corregís a mano y publicás." },
   fixture: { group: "Liga", title: "Fixture", help: "Cargá la fecha, revisá partidos y publicá. Los resultados se cargan en Resultados." },
   resultados: { group: "Liga", title: "Resultados", help: "Cargá el score de cada partido. Al publicar se actualiza el ranking." },
@@ -58,6 +59,5 @@ export const SECTIONS = {
   acadinsc: { group: "Academia", title: "Inscripciones", help: "Quienes se anotaron a las clases desde la web. El teléfono solo se ve acá." },
   academia: { group: "Academia", title: "Adultos", help: "Profes, programas y textos de las clases de adultos." },
   infantiles: { group: "Academia", title: "Infantiles", help: "Textos, sedes y horarios de las clases infantiles." },
-  sitio: { group: "Sitio", title: "Datos del sitio", help: "Contacto, ciudad y texto de inicio." },
   torneos: { group: "Torneos", title: "Torneos", help: "Listado de torneos. Si está vacío, la web muestra el aviso." },
 };

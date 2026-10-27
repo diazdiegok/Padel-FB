@@ -2,16 +2,16 @@
 import Layout from "../layouts/Layout.astro";
 import { site } from "../data/site";
 import ranking from "../data/ranking.json";
-import playoffJson from "../data/playoff.json";
-import { normalizePlayoffs, playoffSlug } from "../lib/playoff.js";
-import { listSeasons } from "../lib/liga.js";
+import { playoffSlug } from "../lib/playoff.js";
+import { listSeasons, seasonLabel } from "../lib/liga.js";
 import { asset, page } from "../lib/paths";
 
 const HIDDEN_CATS = new Set(["S Masculina"]);
-const latestPlayoff = normalizePlayoffs(playoffJson).find((p) => p.categories.length);
-const playoffOn = Boolean(latestPlayoff);
 const rows = ranking.filter((p) => !HIDDEN_CATS.has(p.cat));
 const current = site.currentSeason || "T4";
+const showPlayoff = Boolean(site.showPlayoff);
+const upcomingRaw = String(site.upcomingSeason || "").trim().toUpperCase();
+const upcoming = upcomingRaw && upcomingRaw !== current ? upcomingRaw : "";
 const seasons = listSeasons(site, rows.map((p) => p.temp));
 const seasonCounts = Object.fromEntries(seasons.map((t) => [t, rows.filter((p) => p.temp === t).length]));
 const live = rows.filter((p) => p.temp === current);
@@ -40,9 +40,10 @@ const seasonVenues = Object.fromEntries(
           <span class="home-sweep" aria-hidden="true"></span>
           <h1>Sin esfuerzo<br />no hay gloria</h1>
           <p class="lead">{site.ligaIntro}</p>
+          {upcoming && <p class="home-soon">Próximamente {seasonLabel(upcoming)}</p>}
           <div class="actions">
-            {latestPlayoff && <a class="btn btn-lime" href={page(`playoff/${playoffSlug(latestPlayoff.temp)}/`)}>Ver playoff</a>}
-            <a class:list={["btn", playoffOn ? "btn-ghost" : "btn-lime"]} href={page("liga/")}>Entrar a la liga</a>
+            {showPlayoff && <a class="btn btn-lime" href={page(`playoff/${playoffSlug(current)}/`)}>Ver playoff</a>}
+            <a class:list={["btn", showPlayoff ? "btn-ghost" : "btn-lime"]} href={page("liga/")}>Entrar a la liga</a>
             <a class="btn btn-ghost" href={page("academia/")}>Ver academia</a>
           </div>
         </div>

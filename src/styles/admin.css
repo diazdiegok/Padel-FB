@@ -843,6 +843,29 @@ body.is-admin main > .wrap {
   color: var(--lime);
 }
 
+.admin-chip-soon {
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.06em;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--cream);
+  border: 1px solid var(--line);
+}
+
+.admin-season-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+.admin-season-actions .btn {
+  width: auto;
+  flex: none;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
 .admin-chip-arch {
   background: rgba(255, 255, 255, 0.06);
   color: var(--muted);

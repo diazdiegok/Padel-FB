@@ -93,6 +93,12 @@ export function createCms(ctx, api, shell) {
     form.city.value = ctx.siteData.city || "";
     form.province.value = ctx.siteData.province || "";
     form.ligaIntro.value = ctx.siteData.ligaIntro || "";
+    if (form.showPlayoff) form.showPlayoff.checked = Boolean(ctx.siteData.showPlayoff);
+    const help = $("site-playoff-help");
+    const season = ctx.siteData.currentSeason || "";
+    if (help && season) {
+      help.textContent = `Si está tildado, el inicio muestra Ver playoff y lleva al cuadro de ${season}. Destildalo mientras se juega la fase regular; cuando armes el playoff, volvé a tildarlo.`;
+    }
   }
 
   function fillAcademiaForm() {
@@ -779,9 +785,10 @@ export function createCms(ctx, api, shell) {
         city: form.city.value.trim(),
         province: form.province.value.trim(),
         ligaIntro: form.ligaIntro.value.trim(),
+        showPlayoff: Boolean(form.showPlayoff?.checked),
       };
       setBusy($("site-save"), true, "Guardando…");
-      setMsg($("site-msg"), "Guardando sitio…");
+      setMsg($("site-msg"), "Guardando inicio…");
       try {
         const local = cleanSiteForSave();
         await publishSiteFields(
@@ -791,12 +798,13 @@ export function createCms(ctx, api, shell) {
             city: local.city,
             province: local.province,
             ligaIntro: local.ligaIntro,
+            showPlayoff: Boolean(local.showPlayoff),
           },
-          "Actualiza datos del sitio desde el admin."
+          "Actualiza el inicio desde el admin."
         );
         shell.clearDirty("sitio");
-        setMsg($("site-msg"), "Datos publicados. El sitio se actualiza en ~1 minuto.", "ok");
-        toast("Sitio guardado", "ok");
+        setMsg($("site-msg"), "Inicio publicado. El sitio se actualiza en ~1 minuto.", "ok");
+        toast("Inicio guardado", "ok");
       } catch (err) {
         const m = api.publishError(err);
         setMsg($("site-msg"), m, "err");
