@@ -3,28 +3,61 @@ import Layout from "../../layouts/Layout.astro";
 import playoffJson from "../../data/playoff.json";
 import { site } from "../../data/site";
 import { seasonLabel } from "../../lib/liga.js";
-import { normalizePlayoffs, playoffSlug } from "../../lib/playoff.js";
+import { normalizePlayoffs, playoffSlug, resolveCategory } from "../../lib/playoff.js";
 import { page } from "../../lib/paths";
 
-const playoffs = normalizePlayoffs(playoffJson).filter((p) => p.categories.length);
+const current = String(site.currentSeason || "").trim().toUpperCase();
+const playoffs = normalizePlayoffs(playoffJson)
+  .filter((p) => p.categories.length)
+  .map((p) => {
+    const categories = p.categories.map(resolveCategory);
+    const champions = categories.filter((c) => c.champion);
+    const live = p.temp === current;
+    return {
+      ...p,
+      categories,
+      champions,
+      live,
+      label: live ? "En juego" : "Histórico",
+      href: page(`playoff/${playoffSlug(p.temp)}/`),
+      heading: p.title || `Playoff ${seasonLabel(p.temp)}`,
+    };
+  });
 ---
-<Layout title="Playoff | Padel FB" description={`Cuadros y resultados de los playoff de cada temporada de Padel FB en ${site.city}.`}>
+<Layout title="Playoff | Padel FB" description={`Cuadros e historial de playoff de cada temporada de Padel FB en ${site.city}.`}>
   <div class="wrap">
     <header class="page-hero">
       <p class="kicker">Liga</p>
       <h1>Playoff</h1>
-      <p>El cierre de cada temporada: cruces, horarios, resultados y campeones por categoría.</p>
+      <p>Historial de cuadros. Cada temporada queda guardada con su fecha, cruces, resultados y campeones.</p>
     </header>
 
     {playoffs.length === 0 ? (
       <p class="empty" style="display:block;padding:48px 0">Todavía no hay playoff publicados.</p>
     ) : (
-      <div class="hub-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+      <div class="po-archive">
         {playoffs.map((p) => (
-          <a class="hub-card" href={page(`playoff/${playoffSlug(p.temp)}/`)}>
-            <p class="kicker" style="margin:0">Playoff</p>
-            <h2>{seasonLabel(p.temp)}</h2>
-            <p>{p.dates || `${p.categories.length} categorías`}</p>
+          <a class="po-archive-card" href={p.href}>
+            <div class="po-archive-top">
+              <span class="po-archive-date">{p.dates || seasonLabel(p.temp)}</span>
+              <span class:list={["po-archive-tag", { live: p.live }]}>{p.label}</span>
+            </div>
+            <h2>{p.heading}</h2>
+            <p class="po-archive-meta">
+              {p.categories.length} categorí{p.categories.length === 1 ? "a" : "as"}
+              {p.champions.length ? ` · ${p.champions.length} campeon${p.champions.length === 1 ? "a" : "as"}` : ""}
+            </p>
+            {p.champions.length > 0 && (
+              <ul class="po-archive-champs">
+                {p.champions.map((c) => (
+                  <li>
+                    <span>{c.cat}</span>
+                    <strong>{c.champion}</strong>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <span class="po-archive-cta">Ver cuadro completo</span>
           </a>
         ))}
       </div>
