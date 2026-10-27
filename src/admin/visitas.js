@@ -56,7 +56,7 @@ function formatWhen(iso) {
 function recentTable(recent) {
   const rows = Array.isArray(recent) ? recent : [];
   if (!rows.length) {
-    return `<p class="muted">Todavía no hay visitas con IP. Entrá a la web pública y volvé a Actualizar.</p>`;
+    return `<p class="muted">Todavía no hay filas con IP (las de antes del cambio no la tenían). Entrá a la web pública y tocá Actualizar.</p>`;
   }
   return `<div class="visitas-table-wrap"><table class="visitas-table">
     <thead>
