@@ -59,7 +59,11 @@ const seasonVenues = Object.fromEntries(
           {upcoming && <p class="home-soon">Próximamente {seasonLabel(upcoming)}</p>}
           <aside class:list={["scoreboard", { "is-empty": boardRows.length === 0, done: playoffDone }]}>
             <header>
-              <span>{playoffDone ? `Campeones ${current}` : `Líderes ${current}`}</span>
+              {playoffDone ? (
+                <span class="live">Campeones {seasonLabel(current)}</span>
+              ) : (
+                <span>Líderes {current}</span>
+              )}
               {playoffDone ? <span class="done">Finalizado</span> : <span class="live">En juego</span>}
             </header>
             {boardRows.length === 0 && <p class="empty-season">La tabla de esta temporada todavía no está publicada.</p>}
