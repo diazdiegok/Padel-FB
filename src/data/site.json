@@ -6,7 +6,7 @@
   "whatsapp": "5493434767996",
   "currentSeason": "T4",
   "upcomingSeason": "",
-  "showPlayoff": false,
+  "showPlayoff": true,
   "seasons": [
     "T1",
     "T2",
