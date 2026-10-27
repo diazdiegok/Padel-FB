@@ -85,7 +85,7 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
                 <button type="button" data-season-step="${escAttr(temp)}" data-dir="1" aria-label="Una sede más">+</button>
               </span>
             </div>
-            <button class="btn btn-lime" type="button" data-season-venues-save="${escAttr(temp)}">Publicar</button>
+            <button class="btn btn-lime" type="button" data-season-venues-save="${escAttr(temp)}">Publicar temporada</button>
           </div>
         </article>`;
       })
