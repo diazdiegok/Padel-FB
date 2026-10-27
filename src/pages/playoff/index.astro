@@ -11,13 +11,12 @@ const playoffs = normalizePlayoffs(playoffJson)
   .filter((p) => p.categories.length)
   .map((p) => {
     const categories = p.categories.map(resolveCategory);
-    const champions = categories.filter((c) => c.champion);
+    const champions = categories.filter((c) => c.champion).length;
     const live = p.temp === current;
-    const done = champions.length > 0 && champions.length === categories.length;
+    const done = champions > 0 && champions === categories.length;
     return {
       ...p,
-      categories,
-      champions,
+      count: categories.length,
       done,
       live,
       label: done ? "Finalizado" : live ? "En juego" : "Histórico",
@@ -37,29 +36,15 @@ const playoffs = normalizePlayoffs(playoffJson)
     {playoffs.length === 0 ? (
       <p class="empty" style="display:block;padding:48px 0">Todavía no hay playoff publicados.</p>
     ) : (
-      <div class="po-archive">
+      <div class="hub-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
         {playoffs.map((p) => (
-          <a class="po-archive-card" href={p.href}>
-            <div class="po-archive-top">
-              <span class="po-archive-date">{p.dates || seasonLabel(p.temp)}</span>
-              <span class:list={["po-archive-tag", { live: p.live && !p.done, done: p.done }]}>{p.label}</span>
+          <a class="hub-card" href={p.href}>
+            <div class="hub-card-top">
+              <p class="kicker" style="margin:0">{p.dates || seasonLabel(p.temp)}</p>
+              <span class:list={["hub-tag", { live: p.live && !p.done, done: p.done }]}>{p.label}</span>
             </div>
             <h2>{p.heading}</h2>
-            <p class="po-archive-meta">
-              {p.categories.length} categorí{p.categories.length === 1 ? "a" : "as"}
-              {p.champions.length ? ` · ${p.champions.length} campeon${p.champions.length === 1 ? "a" : "as"}` : ""}
-            </p>
-            {p.champions.length > 0 && (
-              <ul class="po-archive-champs">
-                {p.champions.map((c) => (
-                  <li>
-                    <span>{c.cat}</span>
-                    <strong><span class="po-archive-medal" aria-hidden="true">🥇</span>{c.champion}</strong>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <span class="po-archive-cta">Ver cuadro completo</span>
+            <p>{p.count} categorí{p.count === 1 ? "a" : "as"}</p>
           </a>
         ))}
       </div>
