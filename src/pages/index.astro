@@ -34,7 +34,7 @@ const boardRows = playoffDone
 const boardTitle = playoffDone
   ? `Campeones ${seasonLabel(current)}`
   : seasonStarted
-    ? `Líderes ${current}`
+    ? `Líderes ${seasonLabel(current)}`
     : seasonLabel(current);
 const countedVenues = (site.venues || []).filter((v) => v.liga !== false).length;
 const savedVenues = site.seasonVenues && typeof site.seasonVenues === "object" ? site.seasonVenues : {};
@@ -67,7 +67,7 @@ const seasonVenues = Object.fromEntries(
           {upcoming && <p class="home-soon">Próximamente {seasonLabel(upcoming)}</p>}
           <aside class:list={["scoreboard", { "is-empty": boardRows.length === 0, "is-finished": playoffDone }]}>
             <header>
-              {playoffDone ? (
+              {playoffDone || seasonStarted ? (
                 <span class="live">{boardTitle}</span>
               ) : (
                 <span>{boardTitle}</span>
