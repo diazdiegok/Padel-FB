@@ -530,6 +530,16 @@ function deviceOf(ua) {
   return "Desktop";
 }
 
+// Tráfico que no aporta (previews, CI, pruebas desde afuera): no lo contamos.
+function noiseHit(request, country, device) {
+  if (device === "Bot") return true;
+  if (country === "US") return true;
+  const ua = String(request.headers.get("user-agent") || "").toLowerCase();
+  if (!ua) return true;
+  if (/curl|wget|python|axios|node-fetch|httpclient|vercel-favicon|headless|phantom|selenium/i.test(ua)) return true;
+  return false;
+}
+
 function cleanHitPath(raw) {
   let p = String(raw || "/")
     .split("?")[0]
@@ -560,7 +570,14 @@ function referrerHost(raw, env) {
         return "";
       }
     });
-    if (own.includes(host) || host === "localhost" || host.endsWith(".workers.dev")) return "Directo";
+    if (
+      own.includes(host) ||
+      host === "localhost" ||
+      host.endsWith(".workers.dev") ||
+      host.endsWith(".vercel.app")
+    ) {
+      return "Directo";
+    }
     return host.slice(0, 80);
   } catch {
     return "Directo";
@@ -579,12 +596,13 @@ async function hitRateOk(env, request) {
 
 async function recordHit(env, request, raw) {
   if (!env.AUTH_KV) return { ok: true };
-  const day = utcDay(0);
-  const key = `stats:day:${day}`;
   const country = String(request.cf?.country || "XX")
     .toUpperCase()
     .slice(0, 3);
   const device = deviceOf(request.headers.get("user-agent"));
+  if (noiseHit(request, country, device)) return { ok: true };
+  const day = utcDay(0);
+  const key = `stats:day:${day}`;
   const path = cleanHitPath(raw?.path || "/");
   const ref = referrerHost(raw?.ref || request.headers.get("Referer"), env);
   const ip = String(clientIp(request) || "anon").slice(0, 45);
@@ -617,6 +635,16 @@ async function recordHit(env, request, raw) {
   return { ok: true };
 }
 
+function isNoiseCountry(codeOrName) {
+  const v = String(codeOrName || "");
+  return v === "US" || v === "Estados Unidos";
+}
+
+function isNoiseRef(ref) {
+  const v = String(ref || "").toLowerCase();
+  return !v || v === "directo" ? false : v.endsWith(".vercel.app") || v.includes("vercel.app");
+}
+
 function mergeMaps(into, from) {
   for (const [k, v] of Object.entries(from || {})) into[k] = (into[k] || 0) + Number(v || 0);
 }
@@ -632,7 +660,8 @@ async function readStats(env, days = 14) {
   for (let i = n - 1; i >= 0; i--) {
     const day = utcDay(-i);
     const cur = (await env.AUTH_KV?.get(`stats:day:${day}`, "json")) || null;
-    const dayTotal = Number(cur?.total || 0);
+    const noise = Number(cur?.countries?.US || 0);
+    const dayTotal = Math.max(0, Number(cur?.total || 0) - noise);
     daily.push({ day, total: dayTotal });
     total += dayTotal;
     if (!cur) continue;
@@ -643,11 +672,28 @@ async function readStats(env, days = 14) {
   }
   const namedCountries = {};
   for (const [code, count] of Object.entries(countries)) {
+    if (isNoiseCountry(code)) continue;
     namedCountries[COUNTRY_NAMES[code] || code] = count;
   }
+  const cleanRefs = {};
+  for (const [ref, count] of Object.entries(refs)) {
+    const key = isNoiseRef(ref) ? "Directo" : ref;
+    cleanRefs[key] = (cleanRefs[key] || 0) + Number(count || 0);
+  }
   const recentRaw = (await env.AUTH_KV?.get("stats:recent", "json")) || [];
-  const recent = Array.isArray(recentRaw) ? recentRaw.slice(0, 50) : [];
-  return { days: n, total, daily, countries: namedCountries, devices, paths, refs, recent };
+  const recent = (Array.isArray(recentRaw) ? recentRaw : [])
+    .filter((row) => !isNoiseCountry(row?.country) && row?.device !== "Bot")
+    .slice(0, 50);
+  return {
+    days: n,
+    total,
+    daily,
+    countries: namedCountries,
+    devices,
+    paths,
+    refs: cleanRefs,
+    recent,
+  };
 }
 
 function fold(value) {
