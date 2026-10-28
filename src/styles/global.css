@@ -1211,6 +1211,28 @@ footer strong { color: var(--cream); }
   object-fit: cover;
   display: block;
 }
+.ascensos-list {
+  display: grid;
+  gap: 40px;
+  padding-bottom: 64px;
+}
+.ascensos-card h2 {
+  margin: 0 0 14px;
+  font-size: clamp(24px, 4vw, 34px);
+}
+.ascensos-figure {
+  margin: 0;
+  border: 1px solid var(--line);
+  background: #0b0f0b;
+  overflow: hidden;
+}
+.ascensos-figure .photo {
+  width: 100%;
+  height: auto;
+  max-height: min(78vh, 920px);
+  object-fit: contain;
+  background: #0b0f0b;
+}
 .venue-photo { height: 180px; padding: 0; background: #111; }
 .venue-photo.tall { min-height: 220px; height: auto; }
 .sede-grid .venue-photo { min-height: 240px; }

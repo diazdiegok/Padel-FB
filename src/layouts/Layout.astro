@@ -22,6 +22,7 @@ const inLiga =
   path.includes("/fixture") ||
   path.includes("/resultados") ||
   path.includes("/playoff") ||
+  path.includes("/ascensos") ||
   path.includes("/fecha") ||
   path.includes("/inscribir-pareja") ||
   (path.includes("/sedes") && !path.includes("/academia")) ||
@@ -112,6 +113,7 @@ const inTorneos = path.includes("/torneos");
                   <a href={page("resultados/")}>Resultados</a>
                   <a href={page("ranking/")}>Ranking</a>
                   <a href={page("playoff/")}>Playoff</a>
+                  <a href={page("ascensos/")}>Ascensos</a>
                   <a href={page("sedes/")}>Sedes</a>
                 </div>
               </div>

@@ -1,0 +1,48 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { site } from "../../data/site";
+import ascensosJson from "../../data/ascensos.json";
+import { asset, page } from "../../lib/paths";
+
+const items = (Array.isArray(ascensosJson) ? ascensosJson : [])
+  .map((item) => ({
+    id: String(item?.id || ""),
+    title: String(item?.title || "").trim(),
+    image: String(item?.image || "").replace(/^\//, "").trim(),
+  }))
+  .filter((item) => item.title && item.image);
+---
+<Layout
+  title="Ascensos | Padel FB"
+  description={`Ascensos de la liga Padel FB en ${site.city}.`}
+>
+  <div class="wrap">
+    <header class="page-hero">
+      <p class="kicker">Liga</p>
+      <h1>Ascensos</h1>
+      <p>Las fotos de los ascensos de cada temporada.</p>
+    </header>
+
+    {items.length === 0 ? (
+      <div class="coming">
+        <p class="kicker" style="margin:0 0 12px">Pronto</p>
+        <h2 style="margin-bottom:12px">Todavía no hay ascensos publicados</h2>
+        <p style="margin:0 0 24px">Cuando se carguen desde el admin, van a aparecer acá.</p>
+        <div class="actions" style="margin:0">
+          <a class="btn btn-ghost" href={page("liga/")}>Volver a Liga</a>
+        </div>
+      </div>
+    ) : (
+      <div class="ascensos-list">
+        {items.map((item) => (
+          <article class="ascensos-card">
+            <h2>{item.title}</h2>
+            <figure class="ascensos-figure">
+              <img class="photo" src={asset(item.image)} alt={item.title} loading="lazy" />
+            </figure>
+          </article>
+        ))}
+      </div>
+    )}
+  </div>
+</Layout>

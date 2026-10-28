@@ -86,6 +86,7 @@ import "../styles/admin.css";
         <button class="admin-nav-btn" type="button" data-nav="resultados">Resultados</button>
         <button class="admin-nav-btn" type="button" data-nav="ranking">Ranking</button>
         <button class="admin-nav-btn" type="button" data-nav="playoff">Playoff</button>
+        <button class="admin-nav-btn" type="button" data-nav="ascensos">Ascensos</button>
         <button class="admin-nav-btn" type="button" data-nav="sedes">Sedes</button>
       </div>
       <div class="admin-nav-group">
@@ -373,6 +374,29 @@ import "../styles/admin.css";
           </div>
         </section>
 
+        <!-- Ascensos -->
+        <section data-section="ascensos" hidden>
+          <div class="admin-callout">
+            <strong>Cómo se carga</strong>
+            <span>Agregá un ítem, ponéle nombre (ej. <b>Ascensos Temporada 4</b>), subí la foto y publicá. Queda en el resumen de Liga y en <b>/ascensos/</b>.</span>
+          </div>
+          <div class="cms-head">
+            <h3>Ascensos</h3>
+            <button class="btn btn-ghost" type="button" id="asc-add">+ Agregar</button>
+          </div>
+          <div class="admin-empty" id="asc-empty" hidden>
+            <p>Todavía no hay ascensos. Agregá uno con nombre y foto.</p>
+          </div>
+          <div class="cms-list" id="asc-list"></div>
+          <p class="admin-msg" id="asc-msg"></p>
+          <div class="admin-sticky-bar">
+            <p class="admin-sticky-note">Publicá para que se vea en la web (~1 minuto).</p>
+            <div class="admin-sticky-actions">
+              <button class="btn btn-lime" type="button" id="asc-publish">Publicar ascensos</button>
+            </div>
+          </div>
+        </section>
+
         <!-- Parejas -->
         <section data-section="parejas" hidden>
           <div class="admin-panel">
@@ -618,8 +642,9 @@ import "../styles/admin.css";
     import playoffJson from "../data/playoff.json";
     import pairsJson from "../data/parejas.json";
     import pairsConfigJson from "../data/inscripcion-parejas.json";
+    import ascensosJson from "../data/ascensos.json";
     import { bootAdmin } from "../admin/main.js";
 
-    bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson, pairsJson, pairsConfigJson });
+    bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson, pairsJson, pairsConfigJson, ascensosJson });
   </script>
 </Layout>

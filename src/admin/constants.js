@@ -5,6 +5,7 @@ export const SITE_PATH = "src/data/site.json";
 export const FIXTURE_PATH = "src/data/fixture.json";
 export const RESULTS_PATH = "src/data/results.json";
 export const PLAYOFF_PATH = "src/data/playoff.json";
+export const ASCENSOS_PATH = "src/data/ascensos.json";
 export const PAIRS_CONFIG_PATH = "src/data/inscripcion-parejas.json";
 export const PAIRS_PATH = "src/data/parejas.json";
 export const RANK_COLS = ["name", "cat", "pts", "pj", "dif", "pos", "temp"];
@@ -57,6 +58,11 @@ export const SECTIONS = {
   fixture: { group: "Liga", title: "Fixture", help: "Armá Fecha 1, Fecha 2… con las parejas inscriptas, revisá y publicá. Los resultados se cargan en Resultados." },
   resultados: { group: "Liga", title: "Resultados", help: "Cargá el score de cada partido. Al publicar se actualiza el ranking." },
   playoff: { group: "Liga", title: "Playoff", help: "Armá el cuadro de cada categoría. Las temporadas anteriores quedan en el historial de /playoff/. Con Editar cambiás una pareja a mano." },
+  ascensos: {
+    group: "Liga",
+    title: "Ascensos",
+    help: "Subí una foto y ponéle nombre (ej. Ascensos Temporada 4). Se muestra en /ascensos/ y en el resumen de Liga.",
+  },
   parejas: {
     group: "Liga",
     title: "Inscripciones de parejas",

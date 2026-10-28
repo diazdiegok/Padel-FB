@@ -1,5 +1,6 @@
 import { createAcademiaInscripciones } from "./acadinsc.js";
 import { createApi } from "./api.js";
+import { createAscensos } from "./ascensos.js";
 import { createAuth } from "./auth.js";
 import { HIDDEN_CATS } from "./constants.js";
 import { createCms } from "./cms.js";
@@ -14,7 +15,7 @@ import { createShell } from "./shell.js";
 import { createVisitas } from "./visitas.js";
 import { $ } from "./ui.js";
 
-export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson, pairsJson, pairsConfigJson }) {
+export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson, pairsJson, pairsConfigJson, ascensosJson }) {
   const ctx = {
     rows: structuredClone(rankingJson.filter((p) => !HIDDEN_CATS.has(p.cat))),
     siteData: structuredClone(siteJson),
@@ -26,6 +27,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
     pairsConfig: { open: true, deadline: "", ...(pairsConfigJson || {}) },
     contacts: {},
     playoffs: normalizePlayoffs(playoffJson),
+    ascensos: structuredClone(Array.isArray(ascensosJson) ? ascensosJson : []),
     owner: siteJson.githubOwner,
     repo: siteJson.githubRepo,
     API_URL: String(siteJson.apiUrl || "").replace(/\/$/, ""),
@@ -42,6 +44,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   let seasons;
   let cms;
   let playoff;
+  let ascensos;
   let parejas;
   let acadinsc;
   let visitas;
@@ -95,6 +98,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   });
   cms = createCms(ctx, api, shell);
   playoff = createPlayoff(ctx, api, shell);
+  ascensos = createAscensos(ctx, api, shell);
   acadinsc = createAcademiaInscripciones(ctx, api);
   visitas = createVisitas(ctx, api);
   parejas = createParejas(ctx, api, shell, {
@@ -121,6 +125,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
     fixture.render();
     results.render();
     playoff.render();
+    ascensos.render();
     parejas.render();
     cms.refreshAll();
     shell.setSection(shell.initialSection(), { force: true });
@@ -136,6 +141,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
   seasons.bind();
   cms.bind();
   playoff.bind();
+  ascensos.bind();
   parejas.bind();
   acadinsc.bind();
   visitas.bind();
