@@ -556,13 +556,13 @@ async function savePayment(env, pairId, raw) {
   const entry = {
     mime: mime === "image/jpg" ? "image/jpeg" : mime,
     data,
-    verified: false,
+    verified: true,
     at: new Date().toISOString(),
   };
   await env.AUTH_KV.put(`pay:${pairId}`, JSON.stringify(entry), {
-    metadata: { verified: false, mime: entry.mime, at: entry.at, hasReceipt: true },
+    metadata: { verified: true, mime: entry.mime, at: entry.at, hasReceipt: true },
   });
-  return { ok: true };
+  return { ok: true, verified: true, hasReceipt: true };
 }
 
 async function listPayments(env) {
