@@ -21,7 +21,7 @@ npm run build
 
 Panel en `/admin/` (acceso vía `/acceso-fb/`).
 
-**Login:** usuario + clave del cliente + código TOTP de 6 dígitos. La sesión se guarda en el navegador (~14 días). La publicación va por el Worker `padel-fb-api` (no hace falta pegar un PAT de GitHub en la UI).
+**Login:** usuario + clave del cliente + código TOTP de 6 dígitos. La sesión se guarda en el navegador (~3 días) y se puede revocar al salir. La publicación va por el Worker `padel-fb-api` (no hace falta pegar un PAT de GitHub en la UI).
 
 ### Secciones
 

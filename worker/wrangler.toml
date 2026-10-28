@@ -27,5 +27,5 @@ name = "FORM_LIMITER"
 namespace_id = "1002"
 
   [ratelimits.simple]
-  limit = 3
+  limit = 2
   period = 60

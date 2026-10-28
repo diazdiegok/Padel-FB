@@ -3,6 +3,9 @@ import { closeStatus, deadlinePassed, validDeadline } from "../../src/lib/cierre
 import { buildMail, cleanDays, validateDays, validateMail } from "../../src/lib/disponibilidad.js";
 
 const PASS_SALT = "liga-fb-admin-v1";
+const PBKDF2_ITERS = 210_000;
+const SESSION_SECONDS = 3 * 86400;
+const FORM_DAY_MAX = { pairs: 8, form: 12 };
 const RANK_PATH = "src/data/ranking.json";
 const DISP_PATH = "src/data/disponibilidad.json";
 const PAIRS_PATH = "src/data/parejas.json";
@@ -74,25 +77,45 @@ async function hmac(secret, value) {
   return new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value)));
 }
 
+function sessionTokenFrom(request) {
+  return (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+}
+
 async function createSession(env) {
   const now = Math.floor(Date.now() / 1000);
-  const payload = encodeBase64Url(JSON.stringify({ sub: "admin", iat: now, exp: now + 14 * 86400 }));
+  const jti = crypto.randomUUID();
+  const payload = encodeBase64Url(JSON.stringify({ sub: "admin", iat: now, exp: now + SESSION_SECONDS, jti }));
   const signature = encodeBase64Url(await hmac(env.SESSION_SECRET, payload));
-  return { token: `${payload}.${signature}`, exp: (now + 14 * 86400) * 1000 };
+  if (env.AUTH_KV) {
+    await env.AUTH_KV.put(`sess:${jti}`, "1", { expirationTtl: SESSION_SECONDS });
+  }
+  return { token: `${payload}.${signature}`, exp: (now + SESSION_SECONDS) * 1000 };
+}
+
+async function parseSession(request, env) {
+  const token = sessionTokenFrom(request);
+  const [payload, signature] = token.split(".");
+  if (!payload || !signature) return null;
+  const expected = encodeBase64Url(await hmac(env.SESSION_SECRET, payload));
+  if (!timingEqual(signature, expected)) return null;
+  try {
+    const json = JSON.parse(decodeBase64(payload.replace(/-/g, "+").replace(/_/g, "/")));
+    if (json.sub !== "admin" || Number(json.exp) <= Date.now() / 1000 || !json.jti) return null;
+    return json;
+  } catch {
+    return null;
+  }
 }
 
 async function validSession(request, env) {
-  const token = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
-  const [payload, signature] = token.split(".");
-  if (!payload || !signature) return false;
-  const expected = encodeBase64Url(await hmac(env.SESSION_SECRET, payload));
-  if (!timingEqual(signature, expected)) return false;
-  try {
-    const json = JSON.parse(decodeBase64(payload.replace(/-/g, "+").replace(/_/g, "/")));
-    return json.sub === "admin" && Number(json.exp) > Date.now() / 1000;
-  } catch {
-    return false;
-  }
+  const json = await parseSession(request, env);
+  if (!json || !env.AUTH_KV) return false;
+  return Boolean(await env.AUTH_KV.get(`sess:${json.jti}`));
+}
+
+async function revokeSession(request, env) {
+  const json = await parseSession(request, env);
+  if (json?.jti && env.AUTH_KV) await env.AUTH_KV.delete(`sess:${json.jti}`);
 }
 
 function timingEqual(a, b) {
@@ -144,10 +167,91 @@ async function validTotp(secret, value) {
   return false;
 }
 
+function bytesToHex(bytes) {
+  return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function pbkdf2Hex(password, saltBytes, iterations = PBKDF2_ITERS) {
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(String(password || "")),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt: saltBytes, iterations, hash: "SHA-256" },
+    keyMaterial,
+    256
+  );
+  return bytesToHex(new Uint8Array(bits));
+}
+
+async function createPbkdf2Hash(password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const hash = await pbkdf2Hex(password, salt, PBKDF2_ITERS);
+  return `pbkdf2$${PBKDF2_ITERS}$${encodeBase64Url(salt)}$${hash}`;
+}
+
+async function storedPassHash(env) {
+  const fromKv = env.AUTH_KV ? await env.AUTH_KV.get("admin:passhash") : null;
+  return String(fromKv || env.PASSWORD_HASH || "");
+}
+
+async function verifyStoredPassword(stored, password) {
+  if (!stored) return false;
+  if (stored.startsWith("pbkdf2$")) {
+    const [, itersRaw, saltB64, want] = stored.split("$");
+    const iterations = Number(itersRaw) || PBKDF2_ITERS;
+    if (!saltB64 || !want) return false;
+    const salt = Uint8Array.from(
+      atob(saltB64.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (saltB64.length % 4)) % 4)),
+      (c) => c.charCodeAt(0)
+    );
+    const got = await pbkdf2Hex(password, salt, iterations);
+    return timingEqual(got, want);
+  }
+  const hash = await sha256hex(PASS_SALT + String(password || ""));
+  return timingEqual(hash, stored);
+}
+
 async function validPassword(env, user, password) {
   if (String(user || "").trim().toLowerCase() !== String(env.ADMIN_USER).toLowerCase()) return false;
-  const hash = await sha256hex(PASS_SALT + String(password || ""));
-  return timingEqual(hash, env.PASSWORD_HASH);
+  return verifyStoredPassword(await storedPassHash(env), password);
+}
+
+async function maybeUpgradePassword(env, password) {
+  if (!env.AUTH_KV) return;
+  const stored = await storedPassHash(env);
+  if (stored.startsWith("pbkdf2$")) return;
+  await env.AUTH_KV.put("admin:passhash", await createPbkdf2Hash(password));
+}
+
+async function formDayOk(env, request, scope) {
+  if (!env.AUTH_KV) return true;
+  const max = FORM_DAY_MAX[scope] ?? FORM_DAY_MAX.form;
+  const day = new Date().toISOString().slice(0, 10);
+  const key = `formday:${scope}:${clientIp(request)}:${day}`;
+  const n = Number((await env.AUTH_KV.get(key)) || 0);
+  if (n >= max) return false;
+  await env.AUTH_KV.put(key, String(n + 1), { expirationTtl: 90_000 });
+  return true;
+}
+
+function receiptLooksValid(mime, b64) {
+  try {
+    const head = atob(String(b64 || "").slice(0, 48));
+    const bytes = [...head].slice(0, 16).map((c) => c.charCodeAt(0));
+    const kind = String(mime || "").toLowerCase();
+    if (kind.includes("pdf")) return head.startsWith("%PDF");
+    if (kind.includes("jpeg") || kind.includes("jpg")) return bytes[0] === 0xff && bytes[1] === 0xd8;
+    if (kind.includes("png")) return bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+    if (kind.includes("gif")) return head.startsWith("GIF8");
+    if (kind.includes("webp")) return head.startsWith("RIFF") && head.slice(8, 12) === "WEBP";
+  } catch {
+    return false;
+  }
+  return false;
 }
 
 async function github(env, path, options = {}) {
@@ -368,6 +472,9 @@ async function registerPair(env, raw) {
   if (receiptData.length > MAX_RECEIPT_B64) {
     throw new Error("El comprobante es muy pesado. Sacá una foto más liviana (menos de 1,5 MB).");
   }
+  if (!receiptLooksValid(receiptMime, receiptData)) {
+    throw new Error("El archivo no parece una imagen o PDF válido. Probá con otra foto del comprobante.");
+  }
   for (let attempt = 0; attempt < 4; attempt++) {
     const file = await readPairs(env);
     const same = file.json.find((row) => row.temp === pair.temp && pairKey(row) === pairKey(pair));
@@ -408,7 +515,6 @@ async function listPairs(env) {
     p1: p.p1,
     p2: p.p2,
     days: p.days && typeof p.days === "object" ? p.days : {},
-    note: p.note || "",
   }));
   await caches.default.put(
     PAIRS_CACHE,
@@ -439,6 +545,9 @@ async function savePayment(env, pairId, raw) {
   if (!PAY_MIME.test(mime)) throw new Error("El comprobante tiene que ser una imagen (JPG/PNG) o un PDF.");
   if (!data) throw new Error("Adjuntá el comprobante de pago o abono de la inscripción.");
   if (data.length > MAX_RECEIPT_B64) throw new Error("El comprobante es muy pesado. Sacá una foto más liviana (menos de 1,5 MB).");
+  if (!receiptLooksValid(mime, data)) {
+    throw new Error("El archivo no parece una imagen o PDF válido. Probá con otra foto del comprobante.");
+  }
   const entry = {
     mime: mime === "image/jpg" ? "image/jpeg" : mime,
     data,
@@ -883,8 +992,7 @@ export default {
     try {
       if (url.pathname === "/health") return response(request, env, { ok: true });
 
-      const isAuth = url.pathname === "/auth/password" || url.pathname === "/auth/login";
-      if (isAuth && request.method === "POST") {
+      if (url.pathname === "/auth/login" && request.method === "POST") {
         const lockedMinutes = await loginLock(env, request);
         if (lockedMinutes) {
           const wait = lockedMinutes >= 60 ? "1 hora" : lockedMinutes > 1 ? `${lockedMinutes} minutos` : "1 minuto";
@@ -893,17 +1001,6 @@ export default {
         if (!(await allowed(env.LOGIN_LIMITER, request, "login"))) {
           return response(request, env, { message: "Demasiados intentos. Esperá un minuto y probá de nuevo." }, 429);
         }
-      }
-
-      if (url.pathname === "/auth/password" && request.method === "POST") {
-        const body = await request.json();
-        const ok = await validPassword(env, body.user, body.password);
-        if (ok) return response(request, env, { ok: true });
-        await loginFailed(env, request);
-        return response(request, env, { message: "Usuario o clave incorrectos." }, 401);
-      }
-
-      if (url.pathname === "/auth/login" && request.method === "POST") {
         const body = await request.json();
         const passwordOk = await validPassword(env, body.user, body.password);
         const otpOk = passwordOk && (await validTotp(env.TOTP_SECRET, body.otp));
@@ -911,8 +1008,22 @@ export default {
           await loginFailed(env, request);
           return response(request, env, { message: "Datos de acceso incorrectos." }, 401);
         }
+        await maybeUpgradePassword(env, body.password);
         await loginOk(env, request);
         return response(request, env, await createSession(env));
+      }
+
+      if (url.pathname === "/auth/logout" && request.method === "POST") {
+        await revokeSession(request, env);
+        return response(request, env, { ok: true });
+      }
+
+      // Compat: ya no valida la clave (evita oráculo). Solo rate-limit + ok.
+      if (url.pathname === "/auth/password" && request.method === "POST") {
+        if (!(await allowed(env.LOGIN_LIMITER, request, "login"))) {
+          return response(request, env, { message: "Demasiados intentos. Esperá un minuto y probá de nuevo." }, 429);
+        }
+        return response(request, env, { ok: true });
       }
 
       if (url.pathname === "/github" && request.method === "POST") {
@@ -934,6 +1045,9 @@ export default {
         if (!(await allowed(env.FORM_LIMITER, request, "form"))) {
           return response(request, env, { message: "Muchos envíos seguidos. Esperá un minuto y probá de nuevo." }, 429);
         }
+        if (!(await formDayOk(env, request, "form"))) {
+          return response(request, env, { message: "Llegaste al límite de envíos por hoy. Probá mañana." }, 429);
+        }
         return response(request, env, await appendAvailability(env, body));
       }
 
@@ -948,6 +1062,9 @@ export default {
         if (body.website) return response(request, env, { ok: true });
         if (!(await allowed(env.FORM_LIMITER, request, "form"))) {
           return response(request, env, { message: "Muchos envíos seguidos. Esperá un minuto y probá de nuevo." }, 429);
+        }
+        if (!(await formDayOk(env, request, "form"))) {
+          return response(request, env, { message: "Llegaste al límite de envíos por hoy. Probá mañana." }, 429);
         }
         return response(request, env, await saveAcademy(env, body));
       }
@@ -1001,6 +1118,9 @@ export default {
         if (body.website) return response(request, env, { ok: true });
         if (!(await allowed(env.FORM_LIMITER, request, "form"))) {
           return response(request, env, { message: "Muchos envíos seguidos. Esperá un minuto y probá de nuevo." }, 429);
+        }
+        if (!(await formDayOk(env, request, "pairs"))) {
+          return response(request, env, { message: "Llegaste al límite de inscripciones por hoy. Probá mañana." }, 429);
         }
         return response(request, env, await registerPair(env, body));
       }

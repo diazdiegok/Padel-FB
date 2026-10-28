@@ -21,9 +21,16 @@ export function createAuth(ctx, { onLogin }) {
   }
 
   function clearLogin() {
+    const token = ctx.token;
     ctx.token = "";
     localStorage.removeItem(AUTH_KEY);
     sessionStorage.removeItem(AUTH_KEY);
+    if (token && ctx.API_URL) {
+      fetch(`${ctx.API_URL}/auth/logout`, {
+        method: "POST",
+        headers: { Authorization: "Bearer " + token },
+      }).catch(() => {});
+    }
   }
 
   function isLoggedIn() {
@@ -148,7 +155,10 @@ export function createAuth(ctx, { onLogin }) {
           password: $("pass").value,
         };
         if (!passReady) {
-          await authRequest("/auth/password", credentials);
+          // No consultar /auth/password: evita filtrar si la clave es correcta.
+          if (!String(credentials.user || "").trim() || !String(credentials.password || "")) {
+            throw new Error("Completá usuario y clave.");
+          }
           passReady = true;
           setOtpMode(true);
           setMsg($("login-msg"), "");
