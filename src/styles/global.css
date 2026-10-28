@@ -893,18 +893,32 @@ footer a:hover { color: var(--lime); }
 }
 .insc-pay strong {
   color: var(--cream);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
-.insc-pay-file input[type="file"] {
-  display: block;
-  width: 100%;
-  margin-top: 8px;
-  padding: 12px;
-  border: 1px dashed var(--line);
-  border-radius: 12px;
-  background: transparent;
+.insc-pay-fees {
+  margin: 0;
+  padding-left: 1.15em;
+  display: grid;
+  gap: 6px;
   color: var(--cream);
-  font: inherit;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.insc-pay-attach {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.insc-pay-btn {
+  width: auto;
+  min-height: 44px;
+  padding: 10px 18px;
+}
+#insc-receipt-name {
+  margin: 0;
+}
+#insc-receipt-name.on {
+  color: var(--lime);
 }
 
 .mail-split {

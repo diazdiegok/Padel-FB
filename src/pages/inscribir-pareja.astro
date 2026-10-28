@@ -107,11 +107,16 @@ const TO_HOURS = HOURS.slice(3);
       </label>
       <fieldset class="form-set insc-pay">
         <legend>Pago / abono de inscripción</legend>
-        <p class="form-hint">Transferí el abono al alias <strong>ligapadelfb</strong> y adjuntá el comprobante (foto o PDF). Sin comprobante no se completa la inscripción.</p>
-        <label class="insc-pay-file">Comprobante
-          <input id="insc-receipt" name="receipt" type="file" accept="image/*,application/pdf" required />
-        </label>
-        <p class="form-hint" id="insc-receipt-name" hidden></p>
+        <ul class="insc-pay-fees">
+          <li>Si jugó la temporada anterior: <strong>$10.000</strong> por jugador (50%).</li>
+          <li>Competidores nuevos: <strong>$20.000</strong> por jugador.</li>
+        </ul>
+        <p class="form-hint">Transferí al alias <strong>ligapadelfb</strong> y adjuntá el comprobante (foto o PDF). Sin comprobante no se completa la inscripción.</p>
+        <div class="insc-pay-attach">
+          <input id="insc-receipt" name="receipt" type="file" accept="image/*,application/pdf" required hidden />
+          <button class="btn btn-ghost insc-pay-btn" type="button" id="insc-receipt-btn">Adjuntar comprobante</button>
+          <p class="form-hint" id="insc-receipt-name">Ningún archivo elegido</p>
+        </div>
       </fieldset>
       <p class="form-hint" id="insc-hint">{copy.hint}</p>
       <p class="form-notice">Una vez publicados los partidos del fixture tienen <strong>24 hs</strong> para avisar si no pueden jugar; si no, el partido se da por perdido.</p>
@@ -184,27 +189,25 @@ const TO_HOURS = HOURS.slice(3);
       });
     }
 
-    document.querySelector("#insc-receipt")?.addEventListener("change", () => {
-      const file = document.querySelector("#insc-receipt")?.files?.[0];
-      const label = document.querySelector("#insc-receipt-name");
-      if (!label) return;
-      if (!file) {
-        label.hidden = true;
-        label.textContent = "";
-        return;
-      }
-      label.hidden = false;
-      label.textContent = `Archivo: ${file.name}`;
-    });
+    const receiptInput = document.querySelector("#insc-receipt");
+    const receiptName = document.querySelector("#insc-receipt-name");
+    const receiptBtn = document.querySelector("#insc-receipt-btn");
+
+    function syncReceiptLabel() {
+      const file = receiptInput?.files?.[0];
+      if (!receiptName) return;
+      receiptName.textContent = file ? file.name : "Ningún archivo elegido";
+      receiptName.classList.toggle("on", Boolean(file));
+      if (receiptBtn) receiptBtn.textContent = file ? "Cambiar comprobante" : "Adjuntar comprobante";
+    }
+
+    receiptBtn?.addEventListener("click", () => receiptInput?.click());
+    receiptInput?.addEventListener("change", syncReceiptLabel);
 
     document.querySelector("#insc-clear")?.addEventListener("click", () => {
       form?.reset();
       syncDays();
-      const label = document.querySelector("#insc-receipt-name");
-      if (label) {
-        label.hidden = true;
-        label.textContent = "";
-      }
+      syncReceiptLabel();
       setMsg("");
     });
 
