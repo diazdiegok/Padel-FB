@@ -113,12 +113,6 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
     const current = ctx.siteData.currentSeason || "";
     const phase = currentPhase();
     const list = seasons();
-    const tag = $("season-current");
-    if (tag) {
-      tag.textContent = current
-        ? `${seasonLabel(current)} · ${phase === "live" ? "En juego" : "Próximamente"}`
-        : "Sin temporada activa";
-    }
     const focused = document.activeElement?.dataset?.seasonVenues || "";
     $("season-list").innerHTML = list
       .map((temp) => {

@@ -881,6 +881,32 @@ footer a:hover { color: var(--lime); }
 #insc-go-fecha { justify-self: start; }
 .form-hint { display: block; color: var(--muted); font-size: 13px; font-weight: 400; text-transform: none; letter-spacing: 0; }
 
+.insc-pay {
+  margin-top: 8px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--cream) 4%, transparent);
+}
+.insc-pay legend {
+  color: var(--lime);
+}
+.insc-pay strong {
+  color: var(--cream);
+  letter-spacing: 0.04em;
+}
+.insc-pay-file input[type="file"] {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--cream);
+  font: inherit;
+}
+
 .mail-split {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

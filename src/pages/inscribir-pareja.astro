@@ -105,6 +105,14 @@ const TO_HOURS = HOURS.slice(3);
       <label>Nota adicional:
         <textarea name="note" rows="3" maxlength="500"></textarea>
       </label>
+      <fieldset class="form-set insc-pay">
+        <legend>Pago / abono de inscripción</legend>
+        <p class="form-hint">Transferí el abono al alias <strong>ligapadelfb</strong> y adjuntá el comprobante (foto o PDF). Sin comprobante no se completa la inscripción.</p>
+        <label class="insc-pay-file">Comprobante
+          <input id="insc-receipt" name="receipt" type="file" accept="image/*,application/pdf" required />
+        </label>
+        <p class="form-hint" id="insc-receipt-name" hidden></p>
+      </fieldset>
       <p class="form-hint" id="insc-hint">{copy.hint}</p>
       <p class="form-notice">Una vez publicados los partidos del fixture tienen <strong>24 hs</strong> para avisar si no pueden jugar; si no, el partido se da por perdido.</p>
       <input class="hp" name="website" tabindex="-1" autocomplete="off" />
@@ -167,9 +175,36 @@ const TO_HOURS = HOURS.slice(3);
       box.addEventListener("change", syncDays);
     });
 
+    function fileToB64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("No se pudo leer el comprobante."));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    document.querySelector("#insc-receipt")?.addEventListener("change", () => {
+      const file = document.querySelector("#insc-receipt")?.files?.[0];
+      const label = document.querySelector("#insc-receipt-name");
+      if (!label) return;
+      if (!file) {
+        label.hidden = true;
+        label.textContent = "";
+        return;
+      }
+      label.hidden = false;
+      label.textContent = `Archivo: ${file.name}`;
+    });
+
     document.querySelector("#insc-clear")?.addEventListener("click", () => {
       form?.reset();
       syncDays();
+      const label = document.querySelector("#insc-receipt-name");
+      if (label) {
+        label.hidden = true;
+        label.textContent = "";
+      }
       setMsg("");
     });
 
@@ -231,10 +266,16 @@ const TO_HOURS = HOURS.slice(3);
       const same = registered.find((p) => pairKey(p) === pairKey({ p1, p2 }));
       if (same) return setMsg(repeatedText(same), "err");
       if (!apiUrl) return setMsg("La inscripción todavía no está configurada.", "err");
+      const receiptFile = document.querySelector("#insc-receipt")?.files?.[0];
+      if (!receiptFile) return setMsg("Adjuntá el comprobante de pago o abono.", "err");
+      if (receiptFile.size > 1_400_000) {
+        return setMsg("El comprobante es muy pesado. Usá una foto de menos de 1,5 MB.", "err");
+      }
       const btn = document.querySelector("#insc-send");
       btn.disabled = true;
       setMsg("Enviando…");
       try {
+        const receiptData = await fileToB64(receiptFile);
         const res = await fetch(`${apiUrl}/pairs`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -252,6 +293,8 @@ const TO_HOURS = HOURS.slice(3);
             note,
             temp: site.currentSeason,
             website: form.website.value,
+            receiptMime: receiptFile.type || "image/jpeg",
+            receiptData,
           }),
         });
         const data = await res.json().catch(() => ({}));
@@ -261,7 +304,7 @@ const TO_HOURS = HOURS.slice(3);
         }
         form.hidden = true;
         document.querySelector("#insc-done-text").textContent =
-          `${p1} / ${p2} quedó inscrita en ${cat}. Cuando se publiquen los partidos del fixture, tienen 24 hs para avisar si no pueden jugar.`;
+          `${p1} / ${p2} quedó inscrita en ${cat}. Revisamos el comprobante y te confirmamos. Cuando se publiquen los partidos del fixture, tienen 24 hs para avisar si no pueden jugar.`;
         document.querySelector("#insc-done").hidden = false;
       } catch (ex) {
         setMsg(ex.message || "No se pudo inscribir.", "err");

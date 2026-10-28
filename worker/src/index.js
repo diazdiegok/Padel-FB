@@ -359,6 +359,15 @@ async function registerPair(env, raw) {
   if (dayError) throw new Error(dayError);
   const state = await registrationState(env);
   if (!state.open) throw new Error(state.message);
+  if (!env.AUTH_KV) throw new Error("Falta configurar el guardado de contactos y comprobantes.");
+  // Validar comprobante antes de grabar la pareja.
+  const receiptMime = String(raw.receiptMime || raw.mime || "").toLowerCase();
+  const receiptData = cleanReceiptData(raw.receiptData || raw.receipt || "");
+  if (!PAY_MIME.test(receiptMime)) throw new Error("El comprobante tiene que ser una imagen (JPG/PNG) o un PDF.");
+  if (!receiptData) throw new Error("Adjuntá el comprobante de pago o abono de la inscripción.");
+  if (receiptData.length > MAX_RECEIPT_B64) {
+    throw new Error("El comprobante es muy pesado. Sacá una foto más liviana (menos de 1,5 MB).");
+  }
   for (let attempt = 0; attempt < 4; attempt++) {
     const file = await readPairs(env);
     const same = file.json.find((row) => row.temp === pair.temp && pairKey(row) === pairKey(pair));
@@ -368,7 +377,8 @@ async function registerPair(env, raw) {
     const saved = await writeData(env, PAIRS_PATH, [...file.json, pair], file.sha, `Inscribe a ${pair.p1} / ${pair.p2} en ${pair.cat}.`);
     if (saved) {
       await caches.default.delete(PAIRS_CACHE);
-      if (env.AUTH_KV) await env.AUTH_KV.put(`contact:${pair.id}`, "", { metadata: contact });
+      await env.AUTH_KV.put(`contact:${pair.id}`, "", { metadata: contact });
+      await savePayment(env, pair.id, { receiptMime, receiptData });
       await addToRanking(env, pair).catch(() => {});
       return { ok: true, pair: { id: pair.id, p1: pair.p1, p2: pair.p2, cat: pair.cat } };
     }
@@ -407,9 +417,91 @@ async function listPairs(env) {
   return list;
 }
 
-// Los WhatsApp quedan en KV y no en el repo, que es público.
+// Los WhatsApp y comprobantes quedan en KV y no en el repo, que es público.
 function clip(value, max) {
   return String(value || "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+const PAY_MIME = /^(image\/(jpeg|jpg|png|webp|gif)|application\/pdf)$/i;
+const MAX_RECEIPT_B64 = 1_900_000;
+
+function cleanReceiptData(raw) {
+  return String(raw || "")
+    .replace(/^data:[^;]+;base64,/i, "")
+    .replace(/\s+/g, "");
+}
+
+async function savePayment(env, pairId, raw) {
+  if (!env.AUTH_KV) throw new Error("Falta configurar el guardado de comprobantes.");
+  if (!/^p[a-z0-9]{4,30}$/i.test(String(pairId || ""))) throw new Error("Pareja inválida.");
+  const mime = String(raw.receiptMime || raw.mime || "image/jpeg").toLowerCase();
+  const data = cleanReceiptData(raw.receiptData || raw.receipt || "");
+  if (!PAY_MIME.test(mime)) throw new Error("El comprobante tiene que ser una imagen (JPG/PNG) o un PDF.");
+  if (!data) throw new Error("Adjuntá el comprobante de pago o abono de la inscripción.");
+  if (data.length > MAX_RECEIPT_B64) throw new Error("El comprobante es muy pesado. Sacá una foto más liviana (menos de 1,5 MB).");
+  const entry = {
+    mime: mime === "image/jpg" ? "image/jpeg" : mime,
+    data,
+    verified: false,
+    at: new Date().toISOString(),
+  };
+  await env.AUTH_KV.put(`pay:${pairId}`, JSON.stringify(entry), {
+    metadata: { verified: false, mime: entry.mime, at: entry.at },
+  });
+  return { ok: true };
+}
+
+async function listPayments(env) {
+  if (!env.AUTH_KV) return {};
+  const out = {};
+  let cursor;
+  do {
+    const page = await env.AUTH_KV.list({ prefix: "pay:", cursor });
+    for (const key of page.keys) {
+      const id = key.name.slice("pay:".length);
+      const meta = key.metadata || {};
+      out[id] = {
+        hasReceipt: true,
+        verified: Boolean(meta.verified),
+        mime: meta.mime || "",
+        at: meta.at || "",
+      };
+    }
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+  return out;
+}
+
+async function readPayment(env, id) {
+  if (!env.AUTH_KV) throw new Error("Falta configurar el guardado de comprobantes.");
+  if (!/^p[a-z0-9]{4,30}$/i.test(String(id || ""))) throw new Error("Pareja inválida.");
+  const raw = await env.AUTH_KV.get(`pay:${id}`, "json");
+  if (!raw || !raw.data) throw new Error("No hay comprobante para esa pareja.");
+  return {
+    id,
+    mime: raw.mime || "image/jpeg",
+    data: raw.data,
+    verified: Boolean(raw.verified),
+    at: raw.at || "",
+  };
+}
+
+async function setPaymentVerified(env, id, verified) {
+  if (!env.AUTH_KV) throw new Error("Falta configurar el guardado de comprobantes.");
+  if (!/^p[a-z0-9]{4,30}$/i.test(String(id || ""))) throw new Error("Pareja inválida.");
+  const raw = (await env.AUTH_KV.get(`pay:${id}`, "json")) || null;
+  if (!raw || !raw.data) throw new Error("No hay comprobante para esa pareja.");
+  const next = { ...raw, verified: Boolean(verified) };
+  await env.AUTH_KV.put(`pay:${id}`, JSON.stringify(next), {
+    metadata: { verified: next.verified, mime: next.mime || "", at: next.at || "" },
+  });
+  return { ok: true, verified: next.verified };
+}
+
+async function deletePayment(env, id) {
+  if (!env.AUTH_KV) return;
+  if (!/^p[a-z0-9]{4,30}$/i.test(String(id || ""))) return;
+  await env.AUTH_KV.delete(`pay:${id}`);
 }
 
 async function saveAcademy(env, raw) {
@@ -867,6 +959,29 @@ export default {
         if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
         if (request.method === "GET") return response(request, env, await listContacts(env));
         if (request.method === "POST") return response(request, env, await saveContacts(env, (await request.json()).contacts));
+      }
+
+      if (url.pathname === "/pairs/payments" && request.method === "GET") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        return response(request, env, await listPayments(env));
+      }
+
+      if (url.pathname === "/pairs/payment" && request.method === "GET") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        return response(request, env, await readPayment(env, url.searchParams.get("id")));
+      }
+
+      if (url.pathname === "/pairs/payment/verify" && request.method === "POST") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        const body = await request.json();
+        return response(request, env, await setPaymentVerified(env, body.id, body.verified));
+      }
+
+      if (url.pathname === "/pairs/payment/delete" && request.method === "POST") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        const body = await request.json();
+        await deletePayment(env, body.id);
+        return response(request, env, { ok: true });
       }
 
       if (url.pathname === "/pairs" && request.method === "POST") {

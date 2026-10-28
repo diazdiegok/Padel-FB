@@ -134,11 +134,10 @@ import "../styles/admin.css";
         <section data-section="temporadas" hidden>
           <div class="admin-callout">
             <strong>Próximamente y En juego</strong>
-            Solo la temporada del sistema tiene esos botones (igual que el inicio). Las anteriores quedan <em>Finalizadas</em>. Al cerrar la inscripción de parejas pasa sola a En juego. Con <em>Nueva temporada</em> arranca la siguiente.
+            Solo la temporada del sistema tiene esos botones (igual que el inicio). Las anteriores quedan Finalizadas. Al cerrar la inscripción de parejas pasa sola a En juego. Con Nueva temporada arranca la siguiente.
           </div>
           <div class="admin-section-tools">
             <button class="btn btn-lime" type="button" id="season-create">Nueva temporada</button>
-            <span class="tag" id="season-current"></span>
           </div>
           <p class="admin-help">Cambiá fase, sedes o cuál temporada usa el sistema: queda local hasta <strong>Publicar temporadas</strong>.</p>
           <p class="admin-msg" id="season-msg"></p>
@@ -574,6 +573,12 @@ import "../styles/admin.css";
           <button class="btn btn-ghost" type="button" id="admin-modal-cancel">Cancelar</button>
           <button class="btn btn-lime" type="button" id="admin-modal-ok">Confirmar</button>
         </div>
+      </div>
+    </dialog>
+    <dialog class="pay-lightbox" id="pay-lightbox">
+      <div class="pay-lightbox-inner">
+        <button class="pay-lightbox-close" type="button" id="pay-lightbox-close" aria-label="Cerrar">×</button>
+        <div id="pay-lightbox-body"></div>
       </div>
     </dialog>
   </div>

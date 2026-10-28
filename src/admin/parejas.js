@@ -116,9 +116,11 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
   const contactsDirty = new Set();
   let loaded = false;
   let closeTimer = 0;
+  ctx.payments = ctx.payments || {};
 
   const season = () => ctx.siteData.currentSeason || "T4";
   const contact = (id) => ctx.contacts[id] || {};
+  const payment = (id) => ctx.payments[id] || {};
 
   function seasonPairs() {
     const temp = season();
@@ -252,9 +254,10 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
                 ${rows
                   .map(({ p, i }) => {
                     const c = contact(p.id);
+                    const pay = payment(p.id);
                     const days = p.days && typeof p.days === "object" ? p.days : {};
                     const dayCount = Object.keys(days).length;
-                    return `<article class="pairs-card${dupKeys.get(pairKey(p)) > 1 ? " is-dup" : ""}" data-i="${i}">
+                    return `<article class="pairs-card${dupKeys.get(pairKey(p)) > 1 ? " is-dup" : ""}${pay.verified ? " is-paid" : ""}" data-i="${i}" data-pair-id="${esc(p.id)}">
                       <div class="pairs-row">
                         <input data-k="p1" value="${esc(p.p1)}" placeholder="Integrante 1" aria-label="Integrante 1" />
                         <input data-k="tel1" value="${esc(c.tel1 || "")}" inputmode="tel" placeholder="WhatsApp" aria-label="WhatsApp integrante 1" />
@@ -269,6 +272,17 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
                       <div class="pairs-mail-row">
                         ${mailField("mail1", c.mail1 || "", "Mail 1")}
                         ${mailField("mail2", c.mail2 || "", "Mail 2")}
+                      </div>
+                      <div class="pairs-pay">
+                        ${
+                          pay.hasReceipt
+                            ? `<button class="btn btn-ghost pairs-pay-view" type="button" data-pay-view="${esc(p.id)}">Ver comprobante</button>`
+                            : `<span class="muted">Sin comprobante</span>`
+                        }
+                        <label class="chk pairs-pay-check">
+                          <input type="checkbox" data-pay-verified="${esc(p.id)}" ${pay.verified ? "checked" : ""} ${pay.hasReceipt ? "" : "disabled"} />
+                          Pago verificado
+                        </label>
                       </div>
                       <details class="pairs-avail">
                         <summary>Disponibilidad · ${dayCount ? `${dayCount} día${dayCount === 1 ? "" : "s"}` : "sin días"}</summary>
@@ -339,6 +353,30 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
     ctx.contacts = { ...(remote || {}), ...local };
   }
 
+  async function loadPayments() {
+    const remote = await api.worker("/pairs/payments");
+    ctx.payments = remote && typeof remote === "object" ? remote : {};
+  }
+
+  async function openReceipt(id) {
+    const box = $("pay-lightbox");
+    const body = $("pay-lightbox-body");
+    if (!box || !body) return;
+    body.innerHTML = `<p class="muted">Cargando comprobante…</p>`;
+    box.showModal();
+    try {
+      const pay = await api.worker(`/pairs/payment?id=${encodeURIComponent(id)}`);
+      const src = `data:${pay.mime || "image/jpeg"};base64,${pay.data}`;
+      if (String(pay.mime || "").includes("pdf")) {
+        body.innerHTML = `<iframe class="pay-frame" src="${src}" title="Comprobante"></iframe>`;
+      } else {
+        body.innerHTML = `<img class="pay-img" src="${src}" alt="Comprobante de pago" />`;
+      }
+    } catch (err) {
+      body.innerHTML = `<p class="admin-msg err">${esc(err?.message || "No se pudo abrir el comprobante.")}</p>`;
+    }
+  }
+
   async function reload({ quiet = true } = {}) {
     if (!ctx.token || ctx.dirty.has("parejas")) {
       render();
@@ -354,7 +392,12 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       knownIds = new Set(ctx.pairs.map((p) => p.id));
       deleted.clear();
       contactsDirty.clear();
-      await loadContacts().catch((err) => setMsg($("pairs-msg"), `No pude leer los contactos: ${err.message}`, "err"));
+      await Promise.all([
+        loadContacts().catch((err) => setMsg($("pairs-msg"), `No pude leer los contactos: ${err.message}`, "err")),
+        loadPayments().catch(() => {
+          ctx.payments = {};
+        }),
+      ]);
       loaded = true;
       fillConfig();
       render();
@@ -447,7 +490,22 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       const rows = document.querySelectorAll("#pairs-list .pairs-row input[data-k=p1]");
       [...rows].find((el) => !el.value)?.focus();
     });
-    $("pairs-list")?.addEventListener("change", (e) => {
+    $("pairs-list")?.addEventListener("change", async (e) => {
+      const payBox = e.target.closest("[data-pay-verified]");
+      if (payBox) {
+        const id = payBox.dataset.payVerified;
+        const verified = payBox.checked;
+        try {
+          await api.worker("/pairs/payment/verify", { id, verified });
+          ctx.payments[id] = { ...(ctx.payments[id] || {}), hasReceipt: true, verified };
+          payBox.closest(".pairs-card")?.classList.toggle("is-paid", verified);
+          toast(verified ? "Pago verificado" : "Pago sin verificar", "ok");
+        } catch (err) {
+          payBox.checked = !verified;
+          toast(err?.message || "No se pudo guardar la verificación.", "err");
+        }
+        return;
+      }
       const card = e.target.closest(".pairs-card");
       if (!card) return;
       const pair = ctx.pairs[Number(card.dataset.i)];
@@ -473,7 +531,17 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       shell.markDirty("parejas");
       if (k === "cat") render();
     });
+    $("pay-lightbox-close")?.addEventListener("click", () => $("pay-lightbox")?.close());
+    $("pay-lightbox")?.addEventListener("click", (e) => {
+      if (e.target === $("pay-lightbox")) $("pay-lightbox")?.close();
+    });
+
     $("pairs-list")?.addEventListener("click", async (e) => {
+      const view = e.target.closest("[data-pay-view]");
+      if (view) {
+        await openReceipt(view.dataset.payView);
+        return;
+      }
       const btn = e.target.closest("[data-pair-del]");
       if (!btn) return;
       const pair = ctx.pairs[Number(btn.dataset.pairDel)];
@@ -496,7 +564,9 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       if (!ok) return;
       deleted.add(pair.id);
       delete ctx.contacts[pair.id];
+      delete ctx.payments[pair.id];
       contactsDirty.add(pair.id);
+      api.worker("/pairs/payment/delete", { id: pair.id }).catch(() => {});
       ctx.pairs.splice(Number(btn.dataset.pairDel), 1);
       if (removePairsFromRanking(ctx.rows || [], [pair]).length) {
         shell.markDirty("ranking");
