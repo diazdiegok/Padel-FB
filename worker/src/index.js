@@ -803,13 +803,20 @@ function referrerHost(raw, env) {
   }
 }
 
+// Rate limit de /hit sin gastar cuota KV (usa Cache API del edge).
 async function hitRateOk(env, request) {
-  if (!env.AUTH_KV) return true;
   const hash = (await sha256hex(clientIp(request))).slice(0, 16);
-  const key = `hitrl:${hash}`;
-  const n = Number((await env.AUTH_KV.get(key)) || 0);
+  const url = `https://padel-fb-api.cache/hitrl/${hash}`;
+  const cache = caches.default;
+  const hit = await cache.match(url);
+  const n = hit ? Number(await hit.text()) || 0 : 0;
   if (n >= 40) return false;
-  await env.AUTH_KV.put(key, String(n + 1), { expirationTtl: 60 });
+  await cache.put(
+    url,
+    new Response(String(n + 1), {
+      headers: { "Cache-Control": "max-age=60", "Content-Type": "text/plain" },
+    })
+  );
   return true;
 }
 
@@ -837,20 +844,23 @@ async function recordHit(env, request, raw) {
   bump(cur.devices, device);
   bump(cur.paths, path);
   bump(cur.refs, ref);
-  const recentRaw = await env.AUTH_KV.get("stats:recent", "json");
-  const recentList = Array.isArray(recentRaw) ? recentRaw : [];
-  recentList.unshift({
-    at: new Date().toISOString(),
-    ip,
-    path,
-    country: COUNTRY_NAMES[country] || country,
-    device,
-    ref,
-  });
-  await Promise.all([
-    env.AUTH_KV.put(key, JSON.stringify(cur), { expirationTtl: STATS_TTL }),
-    env.AUTH_KV.put("stats:recent", JSON.stringify(recentList.slice(0, 50)), { expirationTtl: STATS_TTL }),
-  ]);
+  // 1 escritura fija por visita (totales del día).
+  const writes = [env.AUTH_KV.put(key, JSON.stringify(cur), { expirationTtl: STATS_TTL })];
+  // La lista con IP solo se actualiza ~1 de cada 4 visitas (ahorra cuota free).
+  if (cur.total % 4 === 1) {
+    const recentRaw = await env.AUTH_KV.get("stats:recent", "json");
+    const recentList = Array.isArray(recentRaw) ? recentRaw : [];
+    recentList.unshift({
+      at: new Date().toISOString(),
+      ip,
+      path,
+      country: COUNTRY_NAMES[country] || country,
+      device,
+      ref,
+    });
+    writes.push(env.AUTH_KV.put("stats:recent", JSON.stringify(recentList.slice(0, 50)), { expirationTtl: STATS_TTL }));
+  }
+  await Promise.all(writes);
   return { ok: true };
 }
 
