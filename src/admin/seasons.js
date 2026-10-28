@@ -111,51 +111,30 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
 
   function render() {
     const current = ctx.siteData.currentSeason || "";
-    const teaser = nextTeaser();
     const phase = currentPhase();
     const list = seasons();
     const tag = $("season-current");
     if (tag) {
-      const parts = [];
-      if (current) parts.push(`${seasonLabel(current)} · ${phase === "live" ? "En juego" : "Próximamente"}`);
-      if (teaser) parts.push(`${seasonLabel(teaser)} siguiente`);
-      tag.textContent = parts.join(" · ") || "Sin temporada activa";
+      tag.textContent = current
+        ? `${seasonLabel(current)} · ${phase === "live" ? "En juego" : "Próximamente"}`
+        : "Sin temporada activa";
     }
     const focused = document.activeElement?.dataset?.seasonVenues || "";
     $("season-list").innerHTML = list
       .map((temp) => {
         const count = ctx.rows.filter((row) => row.temp === temp).length;
         const active = temp === current;
-        const isTeaser = temp === teaser;
-        let badge = "";
-        if (active) {
-          badge = `<div class="admin-season-actions">
-            <span class="${phase === "live" ? "admin-chip-live" : "admin-chip-soon"}">${
-              phase === "live" ? "En juego" : "Próximamente"
-            }</span>
+        const badge = active
+          ? `<div class="admin-season-actions">
             <button class="btn btn-ghost${phase === "soon" ? " on" : ""}" type="button" data-season-phase="soon">Próximamente</button>
             <button class="btn btn-ghost${phase === "live" ? " on" : ""}" type="button" data-season-phase="live">En juego</button>
-          </div>`;
-        } else if (isTeaser) {
-          badge = `<div class="admin-season-actions">
-            <span class="admin-chip-soon">Siguiente</span>
-            <button class="btn btn-ghost admin-season-play" type="button" data-season-play="${escAttr(temp)}">Usar esta</button>
-            <button class="btn btn-ghost" type="button" data-season-soon-clear="${escAttr(temp)}">Quitar</button>
-          </div>`;
-        } else {
-          badge = `<div class="admin-season-actions">
-            <span class="admin-chip-done">Finalizada</span>
-            <button class="btn btn-ghost admin-season-play" type="button" data-season-play="${escAttr(temp)}">Usar esta</button>
-            <button class="btn btn-ghost" type="button" data-season-soon="${escAttr(temp)}">Siguiente</button>
-          </div>`;
-        }
+          </div>`
+          : `<span class="admin-chip-done">Finalizada</span>`;
         const phaseHint = active
           ? phase === "live"
-            ? `<p class="muted">En juego: misma señal que el inicio. Se marca también al cerrar la inscripción de parejas.</p>`
-            : `<p class="muted">Próximamente: Inscribite YA en el inicio. Pasá a En juego a mano o al cerrar la inscripción.</p>`
-          : isTeaser
-            ? `<p class="muted">Solo aviso en el inicio de la que viene.</p>`
-            : `<p class="muted">Temporada anterior. El historial sigue en ranking y playoff.</p>`;
+            ? `<p class="muted">En juego en el inicio. También se marca al cerrar la inscripción de parejas.</p>`
+            : `<p class="muted">Próximamente = Inscribite YA en el inicio. Pasá a En juego a mano o al cerrar la inscripción.</p>`
+          : "";
         return `<article class="admin-result-card">
           <div class="admin-season-head">
             <div>
@@ -257,21 +236,6 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
     );
   }
 
-  function markTeaserLocal(temp) {
-    if (temp === ctx.siteData.currentSeason) {
-      toast("Esa ya es la temporada del sistema.", "err");
-      return;
-    }
-    applyLocal(
-      { upcomingSeason: temp },
-      `${seasonLabel(temp)} marcada como siguiente. Tocá Publicar temporadas.`
-    );
-  }
-
-  function clearTeaserLocal() {
-    applyLocal({ upcomingSeason: "" }, "Se quitó el aviso de siguiente temporada. Tocá Publicar temporadas.");
-  }
-
   function bind() {
     $("season-create")?.addEventListener("click", async () => {
       const created = nextSeason(seasons());
@@ -311,35 +275,6 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
         });
         if (!ok) return;
         setPhaseLocal(phase);
-        return;
-      }
-      const play = e.target.closest("[data-season-play]");
-      if (play) {
-        const temp = play.dataset.seasonPlay;
-        const ok = await confirmModal({
-          title: `Usar ${seasonLabel(temp)}`,
-          body: `Queda como temporada del sistema en Próximamente. Las demás pasan a Finalizada.`,
-          confirmLabel: "Usar esta",
-        });
-        if (!ok) return;
-        activateLocal(temp);
-        return;
-      }
-      const soonBtn = e.target.closest("[data-season-soon]");
-      if (soonBtn) {
-        const temp = soonBtn.dataset.seasonSoon;
-        const ok = await confirmModal({
-          title: `Siguiente: ${seasonLabel(temp)}`,
-          body: `Solo un aviso en el inicio. No cambia inscripciones ni ranking.`,
-          confirmLabel: "Marcar siguiente",
-        });
-        if (!ok) return;
-        markTeaserLocal(temp);
-        return;
-      }
-      const clearBtn = e.target.closest("[data-season-soon-clear]");
-      if (clearBtn) {
-        clearTeaserLocal();
         return;
       }
       const step = e.target.closest("[data-season-step]");
