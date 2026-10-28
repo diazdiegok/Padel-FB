@@ -1245,49 +1245,77 @@ body.is-admin main > .wrap {
 .pay-lightbox {
   border: 0;
   padding: 0;
-  max-width: min(920px, 96vw);
+  width: min(960px, 96vw);
+  max-width: min(960px, 96vw);
   max-height: 92vh;
+  margin: auto;
+  inset: 0;
   background: transparent;
   color: var(--cream);
 }
+.pay-lightbox[open] {
+  display: grid;
+  place-items: center;
+}
 .pay-lightbox::backdrop {
-  background: rgba(0, 0, 0, 0.78);
+  background: rgba(0, 0, 0, 0.88);
 }
 .pay-lightbox-inner {
   position: relative;
+  width: min(960px, 96vw);
   background: #0c110c;
   border: 1px solid var(--line);
   border-radius: 16px;
-  padding: 18px;
+  padding: 44px 20px 20px;
   max-height: 92vh;
   overflow: auto;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
 }
 .pay-lightbox-close {
   position: absolute;
-  top: 8px;
-  right: 10px;
+  top: 10px;
+  right: 12px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
   appearance: none;
-  border: 0;
-  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
   color: var(--cream);
-  font-size: 28px;
+  font-size: 26px;
   line-height: 1;
   cursor: pointer;
 }
+.pay-lightbox-close:hover {
+  border-color: var(--lime);
+  color: var(--lime);
+}
+#pay-lightbox-body {
+  display: grid;
+  place-items: center;
+  min-height: 160px;
+}
 .pay-img {
   display: block;
+  width: auto;
   max-width: 100%;
+  max-height: min(80vh, 860px);
   height: auto;
-  margin: 12px auto 0;
-  border-radius: 8px;
+  margin: 0 auto;
+  border-radius: 10px;
+  object-fit: contain;
+  background: #050705;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
 }
 .pay-frame {
-  width: min(860px, 90vw);
-  height: min(78vh, 900px);
+  width: min(900px, 90vw);
+  height: min(78vh, 860px);
   border: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #111;
-  margin-top: 12px;
+  margin: 0 auto;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
 }
 
 .admin-season-actions .btn.on {

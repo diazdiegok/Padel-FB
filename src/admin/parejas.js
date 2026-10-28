@@ -368,7 +368,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       const pay = await api.worker(`/pairs/payment?id=${encodeURIComponent(id)}`);
       const src = `data:${pay.mime || "image/jpeg"};base64,${pay.data}`;
       if (String(pay.mime || "").includes("pdf")) {
-        body.innerHTML = `<iframe class="pay-frame" src="${src}" title="Comprobante"></iframe>`;
+        body.innerHTML = `<iframe class="pay-frame" src="${src}#view=FitH" title="Comprobante"></iframe>`;
       } else {
         body.innerHTML = `<img class="pay-img" src="${src}" alt="Comprobante de pago" />`;
       }
