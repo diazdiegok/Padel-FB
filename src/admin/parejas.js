@@ -1,4 +1,4 @@
-import { CATS, PAIRS_CONFIG_PATH, PAIRS_PATH, RANK_PATH } from "./constants.js";
+import { CATS, PAIRS_CONFIG_PATH, PAIRS_PATH, RANK_PATH, SITE_PATH } from "./constants.js";
 import {
   DAYS,
   MAIL_DOMAINS,
@@ -544,13 +544,26 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         const dropped = syncRankingToSeasonPairs(rankRows, seasonPairs, season());
         const toRanking = addPairsToRanking(rankRows, seasonPairs);
         const rankingChanged = dropped.length > 0 || toRanking.length > 0;
+        const closing = config.open === false;
+        const goLive = closing && String(ctx.siteData.seasonPhase || "").toLowerCase() !== "live";
+        const files = [
+          { path: PAIRS_PATH, content: JSON.stringify(next, null, 2) + "\n" },
+          { path: PAIRS_CONFIG_PATH, content: JSON.stringify(config, null, 2) + "\n" },
+          ...(rankingChanged ? [{ path: RANK_PATH, content: JSON.stringify(rankRows, null, 2) + "\n" }] : []),
+        ];
+        if (goLive) {
+          const siteRemote = await api.readRemoteJson(SITE_PATH, ctx.siteData);
+          const nextSite = { ...siteRemote, ...ctx.siteData, seasonPhase: "live" };
+          files.push({ path: SITE_PATH, content: JSON.stringify(nextSite, null, 2) + "\n" });
+          Object.assign(ctx.siteData, nextSite);
+        }
         await api.publishFiles(
-          [
-            { path: PAIRS_PATH, content: JSON.stringify(next, null, 2) + "\n" },
-            { path: PAIRS_CONFIG_PATH, content: JSON.stringify(config, null, 2) + "\n" },
-            ...(rankingChanged ? [{ path: RANK_PATH, content: JSON.stringify(rankRows, null, 2) + "\n" }] : []),
-          ],
-          config.open ? "Actualiza parejas inscriptas desde el admin." : "Cierra la inscripción de parejas."
+          files,
+          closing
+            ? goLive
+              ? "Cierra la inscripción de parejas y pone la temporada en juego."
+              : "Cierra la inscripción de parejas."
+            : "Actualiza parejas inscriptas desde el admin."
         );
         const localDropped = syncRankingToSeasonPairs(ctx.rows || [], seasonPairs, season());
         const localAdded = addPairsToRanking(ctx.rows || [], seasonPairs);
@@ -568,6 +581,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         if (fresh.length) await loadContacts().catch(() => {});
         shell.clearDirty("parejas");
         shell.clearDirty("ranking");
+        if (goLive) shell.clearDirty("temporadas");
         render();
         const extra = fresh.length
           ? ` Se ${fresh.length === 1 ? "sumó 1 pareja que se inscribió" : `sumaron ${fresh.length} parejas que se inscribieron`} mientras editabas.`
@@ -578,8 +592,9 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         const unranked = dropped.length
           ? ` Se ${dropped.length === 1 ? "quitó 1 pareja" : `quitaron ${dropped.length} parejas`} del ranking.`
           : "";
-        setMsg($("pairs-msg"), "Parejas publicadas." + extra + ranked + unranked, "ok");
-        toast("Parejas publicadas", "ok");
+        const liveNote = goLive ? " La temporada pasó a En juego." : "";
+        setMsg($("pairs-msg"), "Parejas publicadas." + extra + ranked + unranked + liveNote, "ok");
+        toast(goLive ? "Inscripción cerrada · En juego" : "Parejas publicadas", "ok");
       } catch (err) {
         const m = api.publishError(err);
         setMsg($("pairs-msg"), m, "err");

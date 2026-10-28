@@ -17,10 +17,14 @@ const upcoming = upcomingRaw && upcomingRaw !== current ? upcomingRaw : "";
 const seasons = listSeasons(site, rows.map((p) => p.temp));
 const seasonCounts = Object.fromEntries(seasons.map((t) => [t, rows.filter((p) => p.temp === t).length]));
 const live = rows.filter((p) => p.temp === current);
+const phase = String(site.seasonPhase || "").toLowerCase();
 const hasLiveFixture = (Array.isArray(fixtureJson) ? fixtureJson : []).some(
   (m) => String(m.temp || "").toUpperCase() === String(current).toUpperCase() && m.home && m.away
 );
-const seasonStarted = live.some((p) => Number(p.pts) > 0 || Number(p.pj) > 0) || hasLiveFixture;
+const seasonStarted =
+  phase === "live" ||
+  (phase !== "soon" &&
+    (live.some((p) => Number(p.pts) > 0 || Number(p.pj) > 0) || hasLiveFixture));
 const cats = [...new Set(live.map((p) => p.cat))];
 const leaders = cats
   .map((cat) => live.filter((p) => p.cat === cat).sort((a, b) => a.pos - b.pos || b.pts - a.pts)[0])

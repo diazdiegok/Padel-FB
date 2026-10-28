@@ -3,6 +3,10 @@ import { DISP_PATH } from "../lib/disponibilidad.js";
 import { listSeasons, nextSeason, normalizeSeason, seasonLabel } from "../lib/liga.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
+function normalizePhase(value) {
+  return String(value || "").toLowerCase() === "live" ? "live" : "soon";
+}
+
 export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
   let published = null;
 
@@ -43,30 +47,15 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
     shell.markDirty("temporadas");
   }
 
-  // Misma regla que el inicio: con puntos o PJ ya “arrancó” → En juego; si no → Próximamente (Inscribite YA).
-  function seasonLive(temp) {
-    const key = String(temp || "").toUpperCase();
-    return (ctx.rows || []).some(
-      (row) => String(row.temp || "").toUpperCase() === key && (Number(row.pts) > 0 || Number(row.pj) > 0)
-    );
-  }
-
-  function hasFixture(temp) {
-    const key = String(temp || "").toUpperCase();
-    const rows = [...(ctx.fixturePublished || []), ...(ctx.fixture || []), ...(ctx.results || [])];
-    return rows.some((m) => String(m.temp || "").toUpperCase() === key && m.home && m.away && !String(m.home).startsWith("BYE"));
-  }
-
-  // En juego = ya hay resultados/PJ, o ya se publicó fixture (arrancó Fecha 1).
-  function phaseOf(temp) {
-    if (seasonLive(temp) || hasFixture(temp)) return "live";
-    return "soon";
+  function currentPhase() {
+    return normalizePhase(ctx.siteData.seasonPhase);
   }
 
   function snapshot() {
     published = {
       currentSeason: ctx.siteData.currentSeason || "",
       upcomingSeason: ctx.siteData.upcomingSeason || "",
+      seasonPhase: currentPhase(),
       seasons: Array.isArray(ctx.siteData.seasons) ? [...ctx.siteData.seasons] : [],
       seasonVenues: { ...(ctx.siteData.seasonVenues || {}) },
     };
@@ -76,6 +65,7 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
     if (!published) return;
     ctx.siteData.currentSeason = published.currentSeason;
     ctx.siteData.upcomingSeason = published.upcomingSeason;
+    ctx.siteData.seasonPhase = published.seasonPhase;
     ctx.siteData.seasons = [...published.seasons];
     ctx.siteData.seasonVenues = { ...published.seasonVenues };
   }
@@ -92,6 +82,7 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
     if (remote.currentSeason) ctx.siteData.currentSeason = remote.currentSeason;
     if (Array.isArray(remote.seasons)) ctx.siteData.seasons = remote.seasons;
     if ("upcomingSeason" in remote) ctx.siteData.upcomingSeason = remote.upcomingSeason || "";
+    if ("seasonPhase" in remote) ctx.siteData.seasonPhase = normalizePhase(remote.seasonPhase);
     if ("showPlayoff" in remote) ctx.siteData.showPlayoff = Boolean(remote.showPlayoff);
     if (remote.seasonVenues && typeof remote.seasonVenues === "object") {
       ctx.siteData.seasonVenues = { ...remote.seasonVenues };
@@ -121,14 +112,12 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
   function render() {
     const current = ctx.siteData.currentSeason || "";
     const teaser = nextTeaser();
+    const phase = currentPhase();
     const list = seasons();
     const tag = $("season-current");
     if (tag) {
       const parts = [];
-      if (current) {
-        const phase = phaseOf(current) === "live" ? "En juego" : "Próximamente";
-        parts.push(`${seasonLabel(current)} · ${phase}`);
-      }
+      if (current) parts.push(`${seasonLabel(current)} · ${phase === "live" ? "En juego" : "Próximamente"}`);
       if (teaser) parts.push(`${seasonLabel(teaser)} siguiente`);
       tag.textContent = parts.join(" · ") || "Sin temporada activa";
     }
@@ -138,13 +127,15 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
         const count = ctx.rows.filter((row) => row.temp === temp).length;
         const active = temp === current;
         const isTeaser = temp === teaser;
-        const phase = phaseOf(temp);
         let badge = "";
         if (active) {
-          badge =
-            phase === "live"
-              ? `<span class="admin-chip-live">En juego</span>`
-              : `<span class="admin-chip-soon">Próximamente</span>`;
+          badge = `<div class="admin-season-actions">
+            <span class="${phase === "live" ? "admin-chip-live" : "admin-chip-soon"}">${
+              phase === "live" ? "En juego" : "Próximamente"
+            }</span>
+            <button class="btn btn-ghost${phase === "soon" ? " on" : ""}" type="button" data-season-phase="soon">Próximamente</button>
+            <button class="btn btn-ghost${phase === "live" ? " on" : ""}" type="button" data-season-phase="live">En juego</button>
+          </div>`;
         } else if (isTeaser) {
           badge = `<div class="admin-season-actions">
             <span class="admin-chip-soon">Siguiente</span>
@@ -153,15 +144,18 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
           </div>`;
         } else {
           badge = `<div class="admin-season-actions">
+            <span class="admin-chip-done">Finalizada</span>
             <button class="btn btn-ghost admin-season-play" type="button" data-season-play="${escAttr(temp)}">Usar esta</button>
             <button class="btn btn-ghost" type="button" data-season-soon="${escAttr(temp)}">Siguiente</button>
           </div>`;
         }
         const phaseHint = active
           ? phase === "live"
-            ? `<p class="muted">Misma señal que el inicio: ya hay fixture o partidos con puntos.</p>`
-            : `<p class="muted">Misma señal que el inicio: Inscribite YA / Próximamente. Pasa a En juego al publicar Fecha 1 o cargar resultados.</p>`
-          : "";
+            ? `<p class="muted">En juego: misma señal que el inicio. Se marca también al cerrar la inscripción de parejas.</p>`
+            : `<p class="muted">Próximamente: Inscribite YA en el inicio. Pasá a En juego a mano o al cerrar la inscripción.</p>`
+          : isTeaser
+            ? `<p class="muted">Solo aviso en el inicio de la que viene.</p>`
+            : `<p class="muted">Temporada anterior. El historial sigue en ranking y playoff.</p>`;
         return `<article class="admin-result-card">
           <div class="admin-season-head">
             <div>
@@ -216,6 +210,7 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
         seasons: Array.isArray(ctx.siteData.seasons) ? ctx.siteData.seasons : remote.seasons,
         currentSeason,
         upcomingSeason: ctx.siteData.upcomingSeason || "",
+        seasonPhase: currentPhase(),
         seasonVenues: { ...(remote.seasonVenues || {}), ...seasonVenues },
       };
       const files = [{ path: SITE_PATH, content: JSON.stringify(nextSite, null, 2) + "\n" }];
@@ -245,21 +240,31 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
     const nextList = list.includes(temp) ? list : [...list, temp];
     const teaser = nextTeaser() === temp ? "" : nextTeaser();
     applyLocal(
-      { seasons: nextList, currentSeason: temp, upcomingSeason: teaser },
+      { seasons: nextList, currentSeason: temp, upcomingSeason: teaser, seasonPhase: "soon" },
       created
-        ? `${seasonLabel(temp)} creada y queda como temporada del sistema. Tocá Publicar temporadas.`
-        : `${seasonLabel(temp)} queda como temporada del sistema (inscripciones, ranking, fixture). Tocá Publicar temporadas.`
+        ? `${seasonLabel(temp)} creada en Próximamente. Tocá Publicar temporadas.`
+        : `${seasonLabel(temp)} queda como temporada del sistema en Próximamente. Tocá Publicar temporadas.`
+    );
+  }
+
+  function setPhaseLocal(phase) {
+    const next = normalizePhase(phase);
+    applyLocal(
+      { seasonPhase: next },
+      next === "live"
+        ? `${seasonLabel(ctx.siteData.currentSeason)} marcada En juego. Tocá Publicar temporadas.`
+        : `${seasonLabel(ctx.siteData.currentSeason)} marcada Próximamente. Tocá Publicar temporadas.`
     );
   }
 
   function markTeaserLocal(temp) {
     if (temp === ctx.siteData.currentSeason) {
-      toast("Esa ya es la temporada del sistema. El aviso “siguiente” es para la que viene después.", "err");
+      toast("Esa ya es la temporada del sistema.", "err");
       return;
     }
     applyLocal(
       { upcomingSeason: temp },
-      `${seasonLabel(temp)} marcada como siguiente. Tocá Publicar temporadas para el aviso en el inicio.`
+      `${seasonLabel(temp)} marcada como siguiente. Tocá Publicar temporadas.`
     );
   }
 
@@ -272,7 +277,7 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
       const created = nextSeason(seasons());
       const ok = await confirmModal({
         title: `Crear ${seasonLabel(created)}`,
-        body: `${seasonLabel(created)} pasa a ser la temporada del sistema (inscripciones y ranking). Empezará en Próximamente en el inicio hasta que publiques Fecha 1 o resultados. Después tocá Publicar temporadas.`,
+        body: `Pasa a ser la temporada del sistema en Próximamente (Inscribite YA). Las anteriores quedan Finalizadas. Después publicá temporadas.`,
         confirmLabel: "Crear temporada",
       });
       if (!ok) return;
@@ -292,12 +297,28 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
       setVenueCount(input.dataset.seasonVenues, value);
     });
     $("season-list")?.addEventListener("click", async (e) => {
+      const phaseBtn = e.target.closest("[data-season-phase]");
+      if (phaseBtn) {
+        const phase = phaseBtn.dataset.seasonPhase;
+        if (phase === currentPhase()) return;
+        const ok = await confirmModal({
+          title: phase === "live" ? "Pasar a En juego" : "Volver a Próximamente",
+          body:
+            phase === "live"
+              ? "El inicio deja Inscribite YA y muestra En juego (líderes cuando haya puntos). También pasa solo al cerrar la inscripción de parejas."
+              : "El inicio vuelve a Inscribite YA / Próximamente.",
+          confirmLabel: phase === "live" ? "En juego" : "Próximamente",
+        });
+        if (!ok) return;
+        setPhaseLocal(phase);
+        return;
+      }
       const play = e.target.closest("[data-season-play]");
       if (play) {
         const temp = play.dataset.seasonPlay;
         const ok = await confirmModal({
           title: `Usar ${seasonLabel(temp)}`,
-          body: `Queda como temporada del sistema: inscripciones, ranking y fixture. El chip Próximamente / En juego sigue la misma regla que el inicio.`,
+          body: `Queda como temporada del sistema en Próximamente. Las demás pasan a Finalizada.`,
           confirmLabel: "Usar esta",
         });
         if (!ok) return;
@@ -309,7 +330,7 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
         const temp = soonBtn.dataset.seasonSoon;
         const ok = await confirmModal({
           title: `Siguiente: ${seasonLabel(temp)}`,
-          body: `Solo un aviso en el inicio de la que viene. No cambia inscripciones ni ranking (siguen en la temporada del sistema).`,
+          body: `Solo un aviso en el inicio. No cambia inscripciones ni ranking.`,
           confirmLabel: "Marcar siguiente",
         });
         if (!ok) return;
