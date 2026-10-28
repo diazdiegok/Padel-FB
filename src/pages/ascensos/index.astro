@@ -45,12 +45,8 @@ const items = (Array.isArray(ascensosJson) ? ascensosJson : [])
               data-title={item.title}
               aria-label={`Ampliar ${item.title}`}
             >
-              <span class="ascensos-bg" aria-hidden="true">
-                <img src={asset(item.image)} alt="" loading="lazy" />
-              </span>
-              <span class="ascensos-shot">
-                <img class="photo" src={asset(item.image)} alt={item.title} loading="lazy" />
-              </span>
+              <img class="ascensos-bg" src={asset(item.image)} alt="" aria-hidden="true" loading="lazy" />
+              <img class="ascensos-shot" src={asset(item.image)} alt={item.title} loading="lazy" />
             </button>
           </article>
         ))}
@@ -60,16 +56,12 @@ const items = (Array.isArray(ascensosJson) ? ascensosJson : [])
 
   {items.length > 0 && (
     <dialog class="ascensos-lightbox" id="ascensos-lightbox" aria-label="Foto de ascensos">
-      <div class="ascensos-lightbox-bg" aria-hidden="true">
-        <img id="ascensos-lightbox-bg-img" alt="" />
-      </div>
-      <div class="ascensos-lightbox-panel">
-        <div class="ascensos-lightbox-bar">
-          <p class="ascensos-lightbox-title" id="ascensos-lightbox-title"></p>
-          <button class="ascensos-lightbox-close" type="button" id="ascensos-lightbox-close" aria-label="Cerrar">×</button>
-        </div>
+      <button class="ascensos-lightbox-close" type="button" id="ascensos-lightbox-close" aria-label="Cerrar">×</button>
+      <img class="ascensos-lightbox-bg" id="ascensos-lightbox-bg" alt="" aria-hidden="true" />
+      <figure class="ascensos-lightbox-figure">
+        <figcaption class="ascensos-lightbox-title" id="ascensos-lightbox-title"></figcaption>
         <img class="ascensos-lightbox-img" id="ascensos-lightbox-img" alt="" />
-      </div>
+      </figure>
     </dialog>
   )}
 
@@ -77,14 +69,14 @@ const items = (Array.isArray(ascensosJson) ? ascensosJson : [])
     <script>
       const box = document.getElementById("ascensos-lightbox");
       const img = document.getElementById("ascensos-lightbox-img");
-      const bgImg = document.getElementById("ascensos-lightbox-bg-img");
+      const bg = document.getElementById("ascensos-lightbox-bg");
       const title = document.getElementById("ascensos-lightbox-title");
       const closeBtn = document.getElementById("ascensos-lightbox-close");
-      if (box && img && title && bgImg) {
+      if (box && img && title && bg) {
         function openLightbox(src, name) {
           img.src = src;
           img.alt = name || "Ascensos";
-          bgImg.src = src;
+          bg.src = src;
           title.textContent = name || "";
           if (typeof box.showModal === "function") box.showModal();
           else box.setAttribute("open", "");
@@ -93,14 +85,14 @@ const items = (Array.isArray(ascensosJson) ? ascensosJson : [])
           if (typeof box.close === "function") box.close();
           else box.removeAttribute("open");
           img.removeAttribute("src");
-          bgImg.removeAttribute("src");
+          bg.removeAttribute("src");
         }
         document.querySelectorAll("[data-asc-open]").forEach((btn) => {
           btn.addEventListener("click", () => openLightbox(btn.dataset.src, btn.dataset.title));
         });
         closeBtn?.addEventListener("click", closeLightbox);
         box.addEventListener("click", (e) => {
-          if (e.target === box || e.target.closest(".ascensos-lightbox-bg")) closeLightbox();
+          if (e.target === box || e.target === bg) closeLightbox();
         });
         box.addEventListener("cancel", (e) => {
           e.preventDefault();
