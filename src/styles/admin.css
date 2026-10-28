@@ -1117,8 +1117,60 @@ body.is-admin main > .wrap {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 14px;
 }
+.visitas-grid-pies {
+  margin-top: 14px;
+}
 .visitas-grid .admin-result-card {
   padding: 16px;
+}
+.visitas-pie {
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+.visitas-pie-chart {
+  width: 148px;
+  height: 148px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  box-shadow: inset 0 0 0 10px var(--bg-2);
+  background: var(--bg);
+}
+.visitas-pie-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.visitas-pie-legend li {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+.visitas-pie-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+.visitas-pie-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--cream);
+}
+.visitas-pie-n {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--cream);
+  white-space: nowrap;
+}
+.visitas-pie-n small {
+  color: var(--muted);
+  font-weight: 600;
 }
 .visitas-bars { display: grid; gap: 12px; }
 .visitas-row {
@@ -1257,6 +1309,13 @@ body.is-admin main > .wrap {
 @media (max-width: 980px) {
   .visitas-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .visitas-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .visitas-pie {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .visitas-pie-legend { width: 100%; }
 }
 @media (max-width: 560px) {
   .visitas-kpis { grid-template-columns: 1fr; }

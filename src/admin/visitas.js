@@ -1,9 +1,46 @@
 import { $, escAttr as esc, setMsg } from "./ui.js";
 
+const PIE_COLORS = ["#d6ff2f", "#5eead4", "#60a5fa", "#c084fc", "#fb7185", "#fbbf24", "#a3e635", "#94a3b8"];
+
+const COUNTRY_CODE = {
+  Argentina: "AR",
+  Uruguay: "UY",
+  Chile: "CL",
+  Brasil: "BR",
+  Brazil: "BR",
+  Paraguay: "PY",
+  Bolivia: "BO",
+  Perú: "PE",
+  Peru: "PE",
+  España: "ES",
+  Spain: "ES",
+  "Estados Unidos": "US",
+  México: "MX",
+  Mexico: "MX",
+  Desconocido: "XX",
+  "Tor / proxy": "T1",
+};
+
 function pathLabel(path) {
   const p = String(path || "/").replace(/\/+$/, "") || "/";
   if (p === "/") return "Inicio / Home";
   return p;
+}
+
+function countryCode(nameOrCode) {
+  const raw = String(nameOrCode || "").trim();
+  if (/^[A-Z]{2}$/i.test(raw)) return raw.toUpperCase();
+  return COUNTRY_CODE[raw] || "";
+}
+
+function flagEmoji(nameOrCode) {
+  const code = countryCode(nameOrCode);
+  if (!code || code === "XX" || code === "T1") return "🏳️";
+  return String.fromCodePoint(...[...code].map((c) => 127397 + c.charCodeAt(0)));
+}
+
+function countryLabel(nameOrCode) {
+  return `${flagEmoji(nameOrCode)} ${nameOrCode}`;
 }
 
 function topEntries(map, limit = 8) {
@@ -40,6 +77,34 @@ function bars(map, empty, { labelOf, total } = {}) {
       </div>`;
     })
     .join("")}</div>`;
+}
+
+function pieChart(map, empty, { labelOf } = {}) {
+  const rows = topEntries(map, 6);
+  if (!rows.length) return `<p class="muted">${esc(empty)}</p>`;
+  const sum = rows.reduce((a, [, n]) => a + n, 0) || 1;
+  let cursor = 0;
+  const stops = rows.map(([key, n], i) => {
+    const start = cursor;
+    const share = (n / sum) * 100;
+    cursor += share;
+    return { key, n, start, end: cursor, color: PIE_COLORS[i % PIE_COLORS.length], label: labelOf ? labelOf(key) : key };
+  });
+  const gradient = stops.map((s) => `${s.color} ${s.start}% ${s.end}%`).join(", ");
+  return `<div class="visitas-pie">
+    <div class="visitas-pie-chart" style="background: conic-gradient(${gradient})" role="img" aria-label="Gráfico de torta"></div>
+    <ul class="visitas-pie-legend">
+      ${stops
+        .map(
+          (s) => `<li>
+            <span class="visitas-pie-swatch" style="background:${s.color}"></span>
+            <span class="visitas-pie-label" title="${esc(s.key)}">${esc(s.label)}</span>
+            <span class="visitas-pie-n">${s.n} <small>${pct(s.n, sum)}%</small></span>
+          </li>`
+        )
+        .join("")}
+    </ul>
+  </div>`;
 }
 
 function dayName(iso) {
@@ -105,7 +170,7 @@ function recentTable(recent) {
           <td>${esc(formatWhen(r.at))}</td>
           <td class="visitas-ip">${esc(r.ip || "—")}</td>
           <td title="${esc(r.path || "/")}">${esc(pathLabel(r.path))}</td>
-          <td>${esc(r.country || "—")}</td>
+          <td>${esc(countryLabel(r.country || "—"))}</td>
           <td>${esc(r.device || "—")}</td>
           <td>${esc(r.ref || "Directo")}</td>
         </tr>`
@@ -166,15 +231,17 @@ export function createVisitas(ctx, api) {
         </div>
         ${dailyChart(data.daily)}
       </article>
-      <div class="visitas-grid">
+      <div class="visitas-grid visitas-grid-pies">
         <article class="admin-result-card">
           <h3>Países</h3>
-          ${bars(data.countries, "Sin datos de país todavía.", { total })}
+          ${pieChart(data.countries, "Sin datos de país todavía.", { labelOf: countryLabel })}
         </article>
         <article class="admin-result-card">
           <h3>Dispositivos</h3>
-          ${bars(data.devices, "Sin datos de dispositivo todavía.", { total })}
+          ${pieChart(data.devices, "Sin datos de dispositivo todavía.")}
         </article>
+      </div>
+      <div class="visitas-grid">
         <article class="admin-result-card">
           <h3>Páginas</h3>
           ${bars(data.paths, "Sin páginas todavía.", { labelOf: pathLabel, total })}
