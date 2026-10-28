@@ -133,14 +133,14 @@ import "../styles/admin.css";
         <!-- Temporadas -->
         <section data-section="temporadas" hidden>
           <div class="admin-callout">
-            <strong>En juego y próximamente</strong>
-            La temporada en juego es la que usan el inicio, el ranking, el fixture y las inscripciones. La marcada Próximamente aparece en el inicio hasta que la pongas en juego.
+            <strong>Próximamente y En juego</strong>
+            La temporada del sistema (inscripciones, ranking, fixture) muestra el mismo estado que el inicio: <em>Próximamente</em> = Inscribite YA, todavía no arrancó; <em>En juego</em> = ya hay Fecha 1 / resultados. <em>Siguiente</em> es solo el aviso de la que viene después.
           </div>
           <div class="admin-section-tools">
             <button class="btn btn-lime" type="button" id="season-create">Nueva temporada</button>
             <span class="tag" id="season-current"></span>
           </div>
-          <p class="admin-help">En juego es la actual. Próximamente avisa en el inicio la que viene. Cambiá sedes, poné en juego o marcá próximamente: todo queda local hasta que toques <strong>Publicar temporadas</strong>.</p>
+          <p class="admin-help">El chip se actualiza solo (como el inicio). Cambiá sedes o marcá cuál temporada usa el sistema / cuál es la siguiente: queda local hasta <strong>Publicar temporadas</strong>.</p>
           <p class="admin-msg" id="season-msg"></p>
           <div id="season-list"></div>
           <div class="admin-sticky-bar">
@@ -352,13 +352,14 @@ import "../styles/admin.css";
         <section data-section="parejas" hidden>
           <div class="admin-panel">
             <div class="admin-toolbar">
+              <span class="tag" id="pairs-season" title="Misma temporada del sistema que en Temporadas">Temporada —</span>
               <label class="chk"><input id="pairs-open" type="checkbox" checked /> Inscripción abierta</label>
               <label class="admin-week">Cierra el:
                 <input id="pairs-deadline" type="datetime-local" />
               </label>
               <span class="admin-status-pill open" id="pairs-status">Inscripción abierta</span>
             </div>
-            <p class="admin-help">Si ponés fecha y hora, a esa hora se destilda sola y la web deja de aceptar inscripciones. Destildá para cerrarla ya. Los textos de abajo son los de la página pública. Se aplica al tocar Publicar parejas.</p>
+            <p class="admin-help">Esta sección y la web pública usan la temporada del sistema (Temporadas → Usar esta → Publicar). Las parejas nuevas se graban con ese código (ej. T5). El chip Próximamente / En juego es el mismo criterio que el inicio. Si ponés fecha y hora de cierre, a esa hora se destilda sola.</p>
             <div class="form cms-form pairs-copy">
               <label>Título:
                 <input id="pairs-title" maxlength="80" />

@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import { site } from "../data/site";
 import ranking from "../data/ranking.json";
+import fixtureJson from "../data/fixture.json";
 import playoffJson from "../data/playoff.json";
 import { normalizePlayoffs, playoffSlug, resolveCategory } from "../lib/playoff.js";
 import { listSeasons, seasonLabel } from "../lib/liga.js";
@@ -16,7 +17,10 @@ const upcoming = upcomingRaw && upcomingRaw !== current ? upcomingRaw : "";
 const seasons = listSeasons(site, rows.map((p) => p.temp));
 const seasonCounts = Object.fromEntries(seasons.map((t) => [t, rows.filter((p) => p.temp === t).length]));
 const live = rows.filter((p) => p.temp === current);
-const seasonStarted = live.some((p) => Number(p.pts) > 0 || Number(p.pj) > 0);
+const hasLiveFixture = (Array.isArray(fixtureJson) ? fixtureJson : []).some(
+  (m) => String(m.temp || "").toUpperCase() === String(current).toUpperCase() && m.home && m.away
+);
+const seasonStarted = live.some((p) => Number(p.pts) > 0 || Number(p.pj) > 0) || hasLiveFixture;
 const cats = [...new Set(live.map((p) => p.cat))];
 const leaders = cats
   .map((cat) => live.filter((p) => p.cat === cat).sort((a, b) => a.pos - b.pos || b.pts - a.pts)[0])
@@ -64,7 +68,7 @@ const seasonVenues = Object.fromEntries(
           </div>
         </div>
         <div class="home-board">
-          {upcoming && <p class="home-soon">Próximamente {seasonLabel(upcoming)}</p>}
+          {upcoming && <p class="home-soon">Siguiente: {seasonLabel(upcoming)}</p>}
           <aside class:list={["scoreboard", { "is-empty": boardRows.length === 0, "is-finished": playoffDone, "is-inscribe": !seasonStarted && !playoffDone }]}>
             <header>
               {playoffDone || seasonStarted ? (

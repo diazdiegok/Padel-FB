@@ -48,12 +48,20 @@ export const VENUE_MAP = {
 
 export const SECTIONS = {
   sitio: { group: "Inicio", title: "Inicio", help: "Contacto, ciudad, texto de inicio y si se muestra el botón Ver playoff." },
-  temporadas: { group: "Liga", title: "Temporadas", help: "Creá una temporada, dejala en juego o marcá la que viene próximamente." },
+  temporadas: {
+    group: "Liga",
+    title: "Temporadas",
+    help: "Próximamente / En juego siguen al inicio. Creá temporadas y marcá cuál usa el sistema o cuál es la siguiente.",
+  },
   ranking: { group: "Liga", title: "Ranking", help: "La tabla se arma con las parejas inscriptas y los resultados. Acá corregís a mano y publicás." },
   fixture: { group: "Liga", title: "Fixture", help: "Armá Fecha 1, Fecha 2… con las parejas inscriptas, revisá y publicá. Los resultados se cargan en Resultados." },
   resultados: { group: "Liga", title: "Resultados", help: "Cargá el score de cada partido. Al publicar se actualiza el ranking." },
   playoff: { group: "Liga", title: "Playoff", help: "Armá el cuadro de cada categoría. Las temporadas anteriores quedan en el historial de /playoff/. Con Editar cambiás una pareja a mano." },
-  parejas: { group: "Liga", title: "Inscripciones de parejas", help: "Textos de la página, contactos, mails y disponibilidad de cada pareja. Con eso se arma el fixture de a una fecha." },
+  parejas: {
+    group: "Liga",
+    title: "Inscripciones de parejas",
+    help: "Usa la temporada del sistema (la misma que Temporadas). Acá ves textos, contactos y disponibilidad; con eso se arma el fixture.",
+  },
   sedes: { group: "Liga", title: "Sedes", help: "Complejos de la liga y la academia. Marcá dónde se muestra cada uno." },
   acadinsc: { group: "Academia", title: "Inscripciones", help: "Quienes se anotaron a las clases desde la web. El teléfono solo se ve acá." },
   academia: { group: "Academia", title: "Adultos", help: "Profes, programas y textos de las clases de adultos." },

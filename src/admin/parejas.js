@@ -207,8 +207,17 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
     }
   }
 
+  function renderSeasonBadge() {
+    const temp = season();
+    const badge = $("pairs-season");
+    if (!badge) return;
+    badge.textContent = seasonLabel(temp);
+    badge.title = `Temporada del sistema (${temp}). Se cambia en Temporadas → Usar esta → Publicar.`;
+  }
+
   function render() {
     const temp = season();
+    renderSeasonBadge();
     const list = seasonPairs();
     const dupKeys = dupMap(list);
     renderCats(list, dupKeys);
