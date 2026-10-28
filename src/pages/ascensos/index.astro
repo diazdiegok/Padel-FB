@@ -37,9 +37,9 @@ const items = (Array.isArray(ascensosJson) ? ascensosJson : [])
         {items.map((item) => (
           <article class="ascensos-card">
             <h2>{item.title}</h2>
-            <figure class="ascensos-figure">
+            <a class="ascensos-figure" href={asset(item.image)} target="_blank" rel="noreferrer" aria-label={`Ver ${item.title} en tamaño completo`}>
               <img class="photo" src={asset(item.image)} alt={item.title} loading="lazy" />
-            </figure>
+            </a>
           </article>
         ))}
       </div>

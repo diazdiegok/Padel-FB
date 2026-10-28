@@ -1213,25 +1213,42 @@ footer strong { color: var(--cream); }
 }
 .ascensos-list {
   display: grid;
-  gap: 40px;
-  padding-bottom: 64px;
+  justify-items: center;
+  gap: 36px;
+  padding: 28px 0 72px;
+}
+.ascensos-card {
+  width: min(100%, 440px);
+  display: grid;
+  gap: 12px;
 }
 .ascensos-card h2 {
-  margin: 0 0 14px;
-  font-size: clamp(24px, 4vw, 34px);
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(20px, 3.2vw, 26px);
+  letter-spacing: 0.04em;
+  text-align: center;
+  line-height: 1.15;
 }
 .ascensos-figure {
   margin: 0;
   border: 1px solid var(--line);
-  background: #0b0f0b;
+  background: var(--bg-2);
   overflow: hidden;
+  border-radius: 4px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
 }
 .ascensos-figure .photo {
   width: 100%;
   height: auto;
-  max-height: min(78vh, 920px);
+  max-height: min(62vh, 640px);
   object-fit: contain;
-  background: #0b0f0b;
+  margin-inline: auto;
+  background: var(--bg-2);
+}
+@media (max-width: 640px) {
+  .ascensos-card { width: min(100%, 360px); }
+  .ascensos-figure .photo { max-height: min(58vh, 520px); }
 }
 .venue-photo { height: 180px; padding: 0; background: #111; }
 .venue-photo.tall { min-height: 220px; height: auto; }
