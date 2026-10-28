@@ -1,5 +1,11 @@
 import { $, escAttr as esc, setMsg } from "./ui.js";
 
+function pathLabel(path) {
+  const p = String(path || "/").replace(/\/+$/, "") || "/";
+  if (p === "/") return "Inicio / Home";
+  return p;
+}
+
 function topEntries(map, limit = 10) {
   return Object.entries(map || {})
     .map(([k, v]) => [k, Number(v) || 0])
@@ -8,18 +14,19 @@ function topEntries(map, limit = 10) {
     .slice(0, limit);
 }
 
-function bars(map, empty) {
+function bars(map, empty, { labelOf } = {}) {
   const rows = topEntries(map);
   if (!rows.length) return `<p class="muted">${esc(empty)}</p>`;
   const max = rows[0][1] || 1;
   return `<div class="visitas-bars">${rows
-    .map(
-      ([label, n]) => `<div class="visitas-row">
-        <span class="visitas-label" title="${esc(label)}">${esc(label)}</span>
+    .map(([key, n]) => {
+      const label = labelOf ? labelOf(key) : key;
+      return `<div class="visitas-row">
+        <span class="visitas-label" title="${esc(key)}">${esc(label)}</span>
         <span class="visitas-bar" aria-hidden="true"><i style="width:${Math.max(6, Math.round((n / max) * 100))}%"></i></span>
         <span class="visitas-n">${n}</span>
-      </div>`
-    )
+      </div>`;
+    })
     .join("")}</div>`;
 }
 
@@ -75,7 +82,7 @@ function recentTable(recent) {
           (r) => `<tr>
           <td>${esc(formatWhen(r.at))}</td>
           <td class="visitas-ip">${esc(r.ip || "—")}</td>
-          <td>${esc(r.path || "/")}</td>
+          <td title="${esc(r.path || "/")}">${esc(pathLabel(r.path))}</td>
           <td>${esc(r.country || "—")}</td>
           <td>${esc(r.device || "—")}</td>
           <td>${esc(r.ref || "Directo")}</td>
@@ -118,7 +125,7 @@ export function createVisitas(ctx, api) {
         </article>
         <article class="admin-result-card">
           <h3>Páginas</h3>
-          ${bars(data.paths, "Sin páginas todavía.")}
+          ${bars(data.paths, "Sin páginas todavía.", { labelOf: pathLabel })}
         </article>
         <article class="admin-result-card">
           <h3>Orígenes</h3>
