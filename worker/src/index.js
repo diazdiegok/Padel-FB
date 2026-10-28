@@ -3,7 +3,8 @@ import { closeStatus, deadlinePassed, validDeadline } from "../../src/lib/cierre
 import { buildMail, cleanDays, validateDays, validateMail } from "../../src/lib/disponibilidad.js";
 
 const PASS_SALT = "liga-fb-admin-v1";
-const PBKDF2_ITERS = 210_000;
+// Cloudflare Workers: Web Crypto PBKDF2 topea en 100_000 iteraciones.
+const PBKDF2_ITERS = 100_000;
 const SESSION_SECONDS = 3 * 86400;
 const FORM_DAY_MAX = { pairs: 8, form: 12 };
 const RANK_PATH = "src/data/ranking.json";
@@ -221,10 +222,14 @@ async function validPassword(env, user, password) {
 }
 
 async function maybeUpgradePassword(env, password) {
-  if (!env.AUTH_KV) return;
-  const stored = await storedPassHash(env);
-  if (stored.startsWith("pbkdf2$")) return;
-  await env.AUTH_KV.put("admin:passhash", await createPbkdf2Hash(password));
+  try {
+    if (!env.AUTH_KV) return;
+    const stored = await storedPassHash(env);
+    if (stored.startsWith("pbkdf2$")) return;
+    await env.AUTH_KV.put("admin:passhash", await createPbkdf2Hash(password));
+  } catch {
+    /* el login no debe fallar si el upgrade del hash no sale */
+  }
 }
 
 async function formDayOk(env, request, scope) {
