@@ -42,5 +42,20 @@
       "Viernes": "16:30 - 23:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmvsjmgypaec8",
+    "createdAt": "2026-10-28T20:04:36.577Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Espinoza, Francisco",
+    "p2": "Rodriguez, Joaquin",
+    "days": {
+      "Lunes": "14:00 - 19:30",
+      "Martes": "14:00 - 19:30",
+      "Miércoles": "14:00 - 00:00",
+      "Viernes": "14:00 - 00:00"
+    },
+    "note": ""
   }
 ]
