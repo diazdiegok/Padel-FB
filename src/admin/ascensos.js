@@ -47,7 +47,36 @@ export function createAscensos(ctx, api, shell) {
     if (src) {
       return `<img class="cms-photo" src="${escAttr(assetUrl(src))}" alt="${escAttr(item.title || "Ascensos")}" />`;
     }
-    return `<div class="cms-photo cms-photo-empty">Sin foto</div>`;
+    return `<div class="cms-photo cms-photo-empty">Sin foto · Ctrl+V</div>`;
+  }
+
+  function attachPhoto(item, file) {
+    if (!item || !file || !String(file.type || "").startsWith("image/")) return false;
+    item._file = file;
+    const reader = new FileReader();
+    reader.onload = () => {
+      item._preview = String(reader.result);
+      shell.markDirty("ascensos");
+      render();
+    };
+    reader.readAsDataURL(file);
+    return true;
+  }
+
+  function imageFromClipboard(e) {
+    const items = [...(e.clipboardData?.items || [])];
+    const image = items.find((item) => item.kind === "file" && String(item.type || "").startsWith("image/"));
+    return image?.getAsFile() || null;
+  }
+
+  function targetForPaste() {
+    const rows = list();
+    const focused = document.activeElement?.closest?.("[data-asc]");
+    if (focused) {
+      const item = rows[Number(focused.dataset.asc)];
+      if (item) return item;
+    }
+    return rows.find((item) => !(item.image || item._file || item._preview)) || rows[0] || null;
   }
 
   function readFromDom() {
@@ -87,7 +116,7 @@ export function createAscensos(ctx, api, shell) {
                 <button class="btn cms-btn cms-btn-move" type="button" data-asc-move="${i}" data-dir="-1" aria-label="Subir" ${i === 0 ? "disabled" : ""}>↑ Subir</button>
                 <button class="btn cms-btn cms-btn-move" type="button" data-asc-move="${i}" data-dir="1" aria-label="Bajar" ${i >= rows.length - 1 ? "disabled" : ""}>↓ Bajar</button>
               </div>
-              <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
+              <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto / Ctrl+V
                 <input data-asc-photo type="file" accept="image/*" hidden />
               </label>
               <button class="btn cms-btn cms-btn-del" type="button" data-asc-del="${i}">Quitar</button>
@@ -150,15 +179,24 @@ export function createAscensos(ctx, api, shell) {
       if (!input?.files?.[0]) return;
       const card = e.target.closest("[data-asc]");
       const item = list()[Number(card?.dataset.asc)];
-      if (!item) return;
-      item._file = input.files[0];
-      const reader = new FileReader();
-      reader.onload = () => {
-        item._preview = String(reader.result);
-        shell.markDirty("ascensos");
-        render();
-      };
-      reader.readAsDataURL(item._file);
+      attachPhoto(item, input.files[0]);
+    });
+
+    document.addEventListener("paste", (e) => {
+      if (ctx.currentSection !== "ascensos") return;
+      const file = imageFromClipboard(e);
+      if (!file) return;
+      e.preventDefault();
+      readFromDom();
+      let item = targetForPaste();
+      if (!item) {
+        item = { id: `a${Date.now().toString(36)}`, title: "", image: "" };
+        list().unshift(item);
+      }
+      if (attachPhoto(item, file)) {
+        setMsg($("asc-msg"), "Foto pegada. Revisá el nombre y publicá.", "ok");
+        toast("Foto pegada", "ok");
+      }
     });
 
     $("asc-list")?.addEventListener("click", async (e) => {

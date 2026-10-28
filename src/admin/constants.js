@@ -61,7 +61,7 @@ export const SECTIONS = {
   ascensos: {
     group: "Liga",
     title: "Ascensos",
-    help: "Subí una foto y ponéle nombre (ej. Ascensos Temporada 4). Se muestra en /ascensos/ y en el resumen de Liga.",
+    help: "Subí o pegá (Ctrl+V) una foto y ponéle nombre (ej. Ascensos Temporada 4). Se muestra en /ascensos/ y en el resumen de Liga.",
   },
   parejas: {
     group: "Liga",
