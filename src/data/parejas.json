@@ -12,5 +12,19 @@
       "Sábado": "13:00 - 15:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmvs6b8lt59d7",
+    "createdAt": "2026-10-28T13:51:57.521Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "González Micaela",
+    "p2": "Romero Daiana",
+    "days": {
+      "Lunes": "19:00 - 22:00",
+      "Miércoles": "19:00 - 22:00",
+      "Viernes": "19:30 - 22:00"
+    },
+    "note": ""
   }
 ]
