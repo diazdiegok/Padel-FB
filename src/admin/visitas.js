@@ -53,71 +53,21 @@ function dailyChart(daily) {
   if (!rows.length) return `<p class="muted">Todavía no hay visitas registradas.</p>`;
   const values = rows.map((d) => Number(d.total) || 0);
   const max = Math.max(1, ...values);
-  const w = 640;
-  const h = 220;
-  const padL = 36;
-  const padR = 12;
-  const padT = 24;
-  const padB = 36;
-  const innerW = w - padL - padR;
-  const innerH = h - padT - padB;
-  const n = rows.length;
-  const gap = n > 10 ? 4 : 8;
-  const barW = Math.max(10, (innerW - gap * (n - 1)) / n);
-  const points = rows.map((d, i) => {
-    const v = values[i];
-    const x = padL + i * (barW + gap) + barW / 2;
-    const y = padT + innerH - (v / max) * innerH;
-    return { x, y, v, d };
-  });
-  const area = points.length
-    ? `M ${points[0].x} ${padT + innerH} ` +
-      points.map((p) => `L ${p.x} ${p.y}`).join(" ") +
-      ` L ${points[points.length - 1].x} ${padT + innerH} Z`
-    : "";
-  const line = points.length ? `M ${points.map((p) => `${p.x} ${p.y}`).join(" L ")}` : "";
-  const grid = [0, 0.25, 0.5, 0.75, 1]
-    .map((t) => {
-      const y = padT + innerH * (1 - t);
-      const val = Math.round(max * t);
-      return `<line class="visitas-grid-line" x1="${padL}" x2="${w - padR}" y1="${y}" y2="${y}" />
-        <text class="visitas-axis" x="${padL - 8}" y="${y + 3}" text-anchor="end">${val}</text>`;
-    })
-    .join("");
-
-  return `<div class="visitas-daily-wrap">
-    <svg class="visitas-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="Visitas por día">
-      <defs>
-        <linearGradient id="visitasArea" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#d6ff2f" stop-opacity="0.35" />
-          <stop offset="100%" stop-color="#d6ff2f" stop-opacity="0.02" />
-        </linearGradient>
-        <linearGradient id="visitasBar" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#e8ff6a" />
-          <stop offset="100%" stop-color="#9fbf24" />
-        </linearGradient>
-      </defs>
-      ${grid}
-      <path d="${area}" fill="url(#visitasArea)"></path>
-      <path d="${line}" class="visitas-line" fill="none"></path>
-      ${rows
-        .map((d, i) => {
-          const v = values[i];
-          const x = padL + i * (barW + gap);
-          const bh = v ? Math.max(3, (v / max) * innerH) : 2;
-          const y = padT + innerH - bh;
-          const label = String(d.day || "").slice(5);
-          const wd = dayName(d.day);
-          return `<g class="visitas-bar-g">
-            <title>${esc(d.day)}: ${v} visita${v === 1 ? "" : "s"}</title>
-            <rect class="visitas-svg-bar" x="${x}" y="${y}" width="${barW}" height="${bh}" rx="4"></rect>
-            <text class="visitas-axis visitas-axis-x" x="${x + barW / 2}" y="${h - 18}" text-anchor="middle">${esc(label)}</text>
-            <text class="visitas-axis visitas-axis-wd" x="${x + barW / 2}" y="${h - 4}" text-anchor="middle">${esc(wd)}</text>
-            ${v ? `<text class="visitas-bar-val" x="${x + barW / 2}" y="${y - 6}" text-anchor="middle">${v}</text>` : ""}
-          </g>`;
-        })
-        .join("")}
-    </svg>
+  return `<div class="visitas-daily" role="img" aria-label="Visitas por día">
+    ${rows
+      .map((d, i) => {
+        const v = values[i];
+        const h = v ? Math.max(8, Math.round((v / max) * 140)) : 3;
+        const label = String(d.day || "").slice(5);
+        const wd = dayName(d.day);
+        return `<div class="visitas-day" title="${esc(d.day)}: ${v} visita${v === 1 ? "" : "s"}">
+          <span class="visitas-day-n">${v ? v : ""}</span>
+          <span class="visitas-col" style="height:${h}px"></span>
+          <span class="visitas-day-l">${esc(label)}</span>
+          <span class="visitas-day-w">${esc(wd)}</span>
+        </div>`;
+      })
+      .join("")}
   </div>`;
 }
 
@@ -212,7 +162,7 @@ export function createVisitas(ctx, api) {
       <article class="admin-result-card visitas-chart-wide">
         <div class="visitas-card-head">
           <h3>Por día</h3>
-          <span class="muted">Pasá el mouse sobre cada barra</span>
+          <span class="muted">Últimos ${days} días</span>
         </div>
         ${dailyChart(data.daily)}
       </article>

@@ -1053,14 +1053,12 @@ body.is-admin main > .wrap {
   margin-bottom: 14px;
 }
 .visitas-kpi {
-  padding: 16px 16px 14px;
-  border: 1px solid rgba(214, 255, 47, 0.22);
-  border-radius: 14px;
-  background:
-    radial-gradient(ellipse 80% 70% at 100% 0%, rgba(214, 255, 47, 0.08), transparent 55%),
-    var(--bg-2);
+  padding: 14px 14px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-2);
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 .visitas-kpi-label {
   font-size: 11px;
@@ -1070,14 +1068,15 @@ body.is-admin main > .wrap {
   font-weight: 700;
 }
 .visitas-kpi strong {
-  font-size: clamp(1.6rem, 3vw, 2.2rem);
-  line-height: 1;
+  font-size: 1.45rem;
+  line-height: 1.1;
   color: var(--cream);
   font-variant-numeric: tabular-nums;
+  font-weight: 750;
 }
 .visitas-kpi-text {
-  font-size: clamp(1rem, 2vw, 1.25rem) !important;
-  line-height: 1.2 !important;
+  font-size: 1.05rem !important;
+  line-height: 1.25 !important;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1129,13 +1128,13 @@ body.is-admin main > .wrap {
   align-items: center;
 }
 .visitas-rank {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 999px;
   display: grid;
   place-items: center;
-  font-size: 11px;
-  font-weight: 800;
+  font-size: 10px;
+  font-weight: 700;
   color: #111;
   background: var(--lime);
 }
@@ -1164,8 +1163,7 @@ body.is-admin main > .wrap {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #9fbf24, #d6ff2f);
-  box-shadow: 0 0 12px rgba(214, 255, 47, 0.35);
+  background: var(--lime);
 }
 .visitas-n {
   font-variant-numeric: tabular-nums;
@@ -1177,43 +1175,48 @@ body.is-admin main > .wrap {
   color: var(--muted);
   font-weight: 600;
 }
-.visitas-daily-wrap {
-  width: 100%;
+.visitas-daily {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  min-height: 190px;
   overflow-x: auto;
+  padding: 8px 2px 4px;
 }
-.visitas-svg {
+.visitas-day {
+  flex: 1 0 34px;
+  max-width: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-height: 170px;
+}
+.visitas-col {
   width: 100%;
-  min-width: 520px;
-  height: auto;
-  display: block;
+  max-width: 22px;
+  border-radius: 5px 5px 2px 2px;
+  background: var(--lime);
 }
-.visitas-grid-line {
-  stroke: rgba(255, 255, 255, 0.08);
-  stroke-width: 1;
-}
-.visitas-axis {
-  fill: var(--muted);
-  font-size: 10px;
-  font-family: var(--font);
-}
-.visitas-axis-wd { fill: rgba(154, 163, 148, 0.7); }
-.visitas-line {
-  stroke: rgba(214, 255, 47, 0.55);
-  stroke-width: 2;
-}
-.visitas-svg-bar {
-  fill: url(#visitasBar);
-  opacity: 0.92;
-}
-.visitas-bar-g:hover .visitas-svg-bar {
-  opacity: 1;
-  filter: brightness(1.12);
-}
-.visitas-bar-val {
-  fill: var(--cream);
-  font-size: 10px;
+.visitas-day-n {
+  min-height: 14px;
+  font-size: 11px;
   font-weight: 700;
-  font-family: var(--font);
+  color: var(--cream);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.visitas-day-l,
+.visitas-day-w {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.visitas-day-w {
+  color: rgba(154, 163, 148, 0.75);
+  text-transform: lowercase;
 }
 .visitas-recent { margin-top: 14px; padding: 16px; }
 .visitas-table-wrap {
