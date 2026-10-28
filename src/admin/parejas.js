@@ -277,10 +277,10 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
                         ${
                           pay.hasReceipt
                             ? `<button class="btn btn-ghost pairs-pay-view" type="button" data-pay-view="${esc(p.id)}">Ver comprobante</button>`
-                            : `<span class="muted">Sin comprobante</span>`
+                            : `<span class="muted">Sin comprobante (WSP u otro)</span>`
                         }
                         <label class="chk pairs-pay-check">
-                          <input type="checkbox" data-pay-verified="${esc(p.id)}" ${pay.verified ? "checked" : ""} ${pay.hasReceipt ? "" : "disabled"} />
+                          <input type="checkbox" data-pay-verified="${esc(p.id)}" ${pay.verified ? "checked" : ""} />
                           Pago verificado
                         </label>
                       </div>
@@ -496,8 +496,12 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         const id = payBox.dataset.payVerified;
         const verified = payBox.checked;
         try {
-          await api.worker("/pairs/payment/verify", { id, verified });
-          ctx.payments[id] = { ...(ctx.payments[id] || {}), hasReceipt: true, verified };
+          const res = await api.worker("/pairs/payment/verify", { id, verified });
+          ctx.payments[id] = {
+            ...(ctx.payments[id] || {}),
+            hasReceipt: Boolean(res?.hasReceipt ?? ctx.payments[id]?.hasReceipt),
+            verified,
+          };
           payBox.closest(".pairs-card")?.classList.toggle("is-paid", verified);
           toast(verified ? "Pago verificado" : "Pago sin verificar", "ok");
         } catch (err) {

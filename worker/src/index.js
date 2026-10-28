@@ -446,7 +446,7 @@ async function savePayment(env, pairId, raw) {
     at: new Date().toISOString(),
   };
   await env.AUTH_KV.put(`pay:${pairId}`, JSON.stringify(entry), {
-    metadata: { verified: false, mime: entry.mime, at: entry.at },
+    metadata: { verified: false, mime: entry.mime, at: entry.at, hasReceipt: true },
   });
   return { ok: true };
 }
@@ -460,8 +460,10 @@ async function listPayments(env) {
     for (const key of page.keys) {
       const id = key.name.slice("pay:".length);
       const meta = key.metadata || {};
+      const hasReceipt =
+        typeof meta.hasReceipt === "boolean" ? meta.hasReceipt : Boolean(meta.mime);
       out[id] = {
-        hasReceipt: true,
+        hasReceipt,
         verified: Boolean(meta.verified),
         mime: meta.mime || "",
         at: meta.at || "",
@@ -489,13 +491,23 @@ async function readPayment(env, id) {
 async function setPaymentVerified(env, id, verified) {
   if (!env.AUTH_KV) throw new Error("Falta configurar el guardado de comprobantes.");
   if (!/^p[a-z0-9]{4,30}$/i.test(String(id || ""))) throw new Error("Pareja inválida.");
-  const raw = (await env.AUTH_KV.get(`pay:${id}`, "json")) || null;
-  if (!raw || !raw.data) throw new Error("No hay comprobante para esa pareja.");
-  const next = { ...raw, verified: Boolean(verified) };
+  const raw = (await env.AUTH_KV.get(`pay:${id}`, "json")) || {};
+  const next = {
+    mime: raw.mime || "",
+    data: raw.data || "",
+    verified: Boolean(verified),
+    at: raw.at || new Date().toISOString(),
+    note: raw.note || (raw.data ? "" : "manual"),
+  };
   await env.AUTH_KV.put(`pay:${id}`, JSON.stringify(next), {
-    metadata: { verified: next.verified, mime: next.mime || "", at: next.at || "" },
+    metadata: {
+      verified: next.verified,
+      mime: next.mime || "",
+      at: next.at,
+      hasReceipt: Boolean(next.data),
+    },
   });
-  return { ok: true, verified: next.verified };
+  return { ok: true, verified: next.verified, hasReceipt: Boolean(next.data) };
 }
 
 async function deletePayment(env, id) {
