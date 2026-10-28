@@ -1223,14 +1223,22 @@ body.is-admin main > .wrap {
   border: 1px solid rgba(239, 68, 68, 0.35);
 }
 
-.pairs-pay {
+.pairs-foot {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 14px;
-  margin-top: 6px;
-  padding: 6px 0 2px;
-  width: 100%;
+  gap: 8px 16px;
+  padding-top: 2px;
+  border-top: 1px solid var(--line);
+}
+.pairs-pay {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0;
+  padding: 0;
+  width: auto;
   border: 0;
   background: transparent;
 }
@@ -1432,12 +1440,12 @@ body.is-admin main > .wrap {
 }
 
 .admin-disp-group {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .admin-disp-group h3 {
-  margin: 0 0 8px;
-  font-size: 15px;
+  margin: 0 0 6px;
+  font-size: 13px;
 }
 
 .pairs-rows {
@@ -1484,9 +1492,11 @@ body.is-admin main > .wrap {
 }
 
 .pairs-avail {
-  margin-top: 2px;
-  border-top: 1px solid var(--line);
-  padding-top: 6px;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  flex: 1;
+  min-width: 180px;
 }
 
 .pairs-avail summary {
@@ -1494,6 +1504,17 @@ body.is-admin main > .wrap {
   font-size: 13px;
   color: var(--muted);
   user-select: none;
+  list-style: none;
+}
+
+.pairs-avail summary::-webkit-details-marker {
+  display: none;
+}
+
+.pairs-avail[open] {
+  flex-basis: 100%;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
 }
 
 .pairs-day-list {
@@ -1682,8 +1703,22 @@ body.is-admin main > .wrap {
 .pairs-filters {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin: 4px 0 20px;
+  gap: 8px;
+  margin: 4px 0 12px;
+}
+
+.pairs-filters .pills {
+  gap: 6px;
+}
+
+.pairs-row input,
+.pairs-row select {
+  padding: 8px 10px;
+}
+
+.pairs-mail input,
+.pairs-mail select {
+  padding: 8px 10px;
 }
 
 #pairs-search {
@@ -1790,11 +1825,11 @@ body.is-admin main > .wrap {
 }
 
 .admin-disp-group h3 {
-  font-size: 13px;
+  font-size: 12px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
-  margin: 0 0 12px;
+  margin: 0 0 6px;
 }
 
 .admin-disp-card .admin-del {

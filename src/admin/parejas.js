@@ -262,79 +262,67 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       q && shown.length !== filterTotal
         ? `${shown.length} de ${filterTotal} pareja${filterTotal === 1 ? "" : "s"} en ${totalLabel}`
         : `${filterTotal} pareja${filterTotal === 1 ? "" : "s"} en ${totalLabel}`;
-    const cats = filterCat
-      ? shown.length
-        ? [filterCat]
-        : []
-      : [...new Set([...CATS, ...shown.map(({ p }) => p.cat)])].filter((c) => shown.some(({ p }) => p.cat === c));
-    $("pairs-list").innerHTML = cats.length
-      ? cats
-          .map((cat) => {
-            const rows = shown.filter(({ p }) => p.cat === cat).sort((a, b) => a.p.p1.localeCompare(b.p.p1, "es"));
-            return `<section class="admin-disp-group">
-              <h3>${esc(cat)} · ${rows.length}</h3>
-              <div class="pairs-rows">
-                ${rows
-                  .map(({ p, i }) => {
-                    const c = contact(p.id);
-                    const pay = payment(p.id);
-                    const days = p.days && typeof p.days === "object" ? p.days : {};
-                    const dayCount = Object.keys(days).length;
-                    return `<article class="pairs-card${dupKeys.get(pairKey(p)) > 1 ? " is-dup" : ""}${pay.verified ? " is-paid" : ""}" data-i="${i}" data-pair-id="${esc(p.id)}">
-                      <div class="pairs-row">
-                        <input data-k="p1" value="${esc(p.p1)}" placeholder="Integrante 1" aria-label="Integrante 1" />
-                        <input data-k="tel1" value="${esc(c.tel1 || "")}" inputmode="tel" placeholder="WhatsApp" aria-label="WhatsApp integrante 1" />
-                        <input data-k="p2" value="${esc(p.p2)}" placeholder="Integrante 2" aria-label="Integrante 2" />
-                        <input data-k="tel2" value="${esc(c.tel2 || "")}" inputmode="tel" placeholder="WhatsApp" aria-label="WhatsApp integrante 2" />
-                        <select data-k="cat" aria-label="Categoría">
-                          ${CATS.map((opt) => `<option${opt === p.cat ? " selected" : ""}>${esc(opt)}</option>`).join("")}
-                        </select>
-                        <span class="pairs-origin">${esc(originLabel(pairOrigin(p, dupKeys)))}</span>
-                        <button class="admin-del" type="button" data-pair-del="${i}" aria-label="Eliminar">×</button>
-                      </div>
-                      <div class="pairs-mail-row">
-                        ${mailField("mail1", c.mail1 || "", "Mail 1")}
-                        ${mailField("mail2", c.mail2 || "", "Mail 2")}
-                      </div>
-                      <div class="pairs-pay">
-                        ${
-                          pay.hasReceipt
-                            ? `<button class="btn btn-ghost pairs-pay-view" type="button" data-pay-view="${esc(p.id)}">Ver comprobante</button>`
-                            : `<span class="pairs-pay-miss">Sin comprobante</span>`
-                        }
-                        <label class="chk pairs-pay-check">
-                          <input type="checkbox" data-pay-verified="${esc(p.id)}" ${pay.verified ? "checked" : ""} />
-                          Pago verificado
-                        </label>
-                      </div>
-                      <details class="pairs-avail">
-                        <summary>Disponibilidad · ${dayCount ? `${dayCount} día${dayCount === 1 ? "" : "s"}` : "sin días"}</summary>
-                        <div class="day-list pairs-day-list">
-                          ${DAYS.map((day) => {
-                            const on = Object.prototype.hasOwnProperty.call(days, day);
-                            return `<div class="day-row">
-                              <label class="day-check">
-                                <input type="checkbox" data-day="${esc(day)}"${on ? " checked" : ""} />
-                                <span>${esc(day)}</span>
-                              </label>
-                              <span class="day-hours">
-                                ${hoursSelect("from", days[day] || "", FROM_HOURS, day)}
-                                ${hoursSelect("to", days[day] || "", TO_HOURS, day)}
-                              </span>
-                            </div>`;
-                          }).join("")}
-                        </div>
-                        <label class="pairs-note">Nota:
-                          <textarea data-k="note" rows="2" maxlength="500">${esc(p.note || "")}</textarea>
-                        </label>
-                      </details>
-                    </article>`;
-                  })
-                  .join("")}
+    const rows = shown.slice().sort((a, b) => a.p.cat.localeCompare(b.p.cat, "es") || a.p.p1.localeCompare(b.p.p1, "es"));
+    $("pairs-list").innerHTML = rows.length
+      ? `<div class="pairs-rows">${rows
+          .map(({ p, i }) => {
+            const c = contact(p.id);
+            const pay = payment(p.id);
+            const days = p.days && typeof p.days === "object" ? p.days : {};
+            const dayCount = Object.keys(days).length;
+            return `<article class="pairs-card${dupKeys.get(pairKey(p)) > 1 ? " is-dup" : ""}${pay.verified ? " is-paid" : ""}" data-i="${i}" data-pair-id="${esc(p.id)}">
+              <div class="pairs-row">
+                <input data-k="p1" value="${esc(p.p1)}" placeholder="Integrante 1" aria-label="Integrante 1" />
+                <input data-k="tel1" value="${esc(c.tel1 || "")}" inputmode="tel" placeholder="WhatsApp" aria-label="WhatsApp integrante 1" />
+                <input data-k="p2" value="${esc(p.p2)}" placeholder="Integrante 2" aria-label="Integrante 2" />
+                <input data-k="tel2" value="${esc(c.tel2 || "")}" inputmode="tel" placeholder="WhatsApp" aria-label="WhatsApp integrante 2" />
+                <select data-k="cat" aria-label="Categoría">
+                  ${CATS.map((opt) => `<option${opt === p.cat ? " selected" : ""}>${esc(opt)}</option>`).join("")}
+                </select>
+                <span class="pairs-origin">${esc(originLabel(pairOrigin(p, dupKeys)))}</span>
+                <button class="admin-del" type="button" data-pair-del="${i}" aria-label="Eliminar">×</button>
               </div>
-            </section>`;
+              <div class="pairs-mail-row">
+                ${mailField("mail1", c.mail1 || "", "Mail 1")}
+                ${mailField("mail2", c.mail2 || "", "Mail 2")}
+              </div>
+              <div class="pairs-foot">
+                <div class="pairs-pay">
+                  ${
+                    pay.hasReceipt
+                      ? `<button class="btn btn-ghost pairs-pay-view" type="button" data-pay-view="${esc(p.id)}">Ver comprobante</button>`
+                      : `<span class="pairs-pay-miss">Sin comprobante</span>`
+                  }
+                  <label class="chk pairs-pay-check">
+                    <input type="checkbox" data-pay-verified="${esc(p.id)}" ${pay.verified ? "checked" : ""} />
+                    Pago verificado
+                  </label>
+                </div>
+                <details class="pairs-avail">
+                  <summary>Disponibilidad · ${dayCount ? `${dayCount} día${dayCount === 1 ? "" : "s"}` : "sin días"}</summary>
+                  <div class="day-list pairs-day-list">
+                    ${DAYS.map((day) => {
+                      const on = Object.prototype.hasOwnProperty.call(days, day);
+                      return `<div class="day-row">
+                        <label class="day-check">
+                          <input type="checkbox" data-day="${esc(day)}"${on ? " checked" : ""} />
+                          <span>${esc(day)}</span>
+                        </label>
+                        <span class="day-hours">
+                          ${hoursSelect("from", days[day] || "", FROM_HOURS, day)}
+                          ${hoursSelect("to", days[day] || "", TO_HOURS, day)}
+                        </span>
+                      </div>`;
+                    }).join("")}
+                  </div>
+                  <label class="pairs-note">Nota:
+                    <textarea data-k="note" rows="2" maxlength="500">${esc(p.note || "")}</textarea>
+                  </label>
+                </details>
+              </div>
+            </article>`;
           })
-          .join("")
+          .join("")}</div>`
       : `<div class="admin-empty"><p>${
           list.length
             ? filterCat || filterOrigin || filterPay || q

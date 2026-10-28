@@ -578,7 +578,7 @@ async function listPayments(env) {
         typeof meta.hasReceipt === "boolean" ? meta.hasReceipt : Boolean(meta.mime);
       out[id] = {
         hasReceipt,
-        verified: Boolean(meta.verified),
+        verified: meta.forcedUnverified ? false : Boolean(meta.verified) || hasReceipt,
         mime: meta.mime || "",
         at: meta.at || "",
       };
@@ -616,6 +616,7 @@ async function setPaymentVerified(env, id, verified) {
   await env.AUTH_KV.put(`pay:${id}`, JSON.stringify(next), {
     metadata: {
       verified: next.verified,
+      forcedUnverified: !next.verified,
       mime: next.mime || "",
       at: next.at,
       hasReceipt: Boolean(next.data),
