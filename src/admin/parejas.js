@@ -111,6 +111,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
   let term = "";
   let filterCat = "";
   let filterOrigin = "";
+  let filterPay = "";
   let knownIds = new Set((ctx.pairs || []).map((p) => p.id));
   const deleted = new Set();
   const contactsDirty = new Set();
@@ -136,6 +137,8 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
   function matchesFilters(p, dupKeys) {
     if (filterCat && p.cat !== filterCat) return false;
     if (filterOrigin && pairOrigin(p, dupKeys) !== filterOrigin) return false;
+    if (filterPay === "verified" && !payment(p.id).verified) return false;
+    if (filterPay === "unverified" && payment(p.id).verified) return false;
     return true;
   }
 
@@ -169,6 +172,24 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         (o) =>
           `<button class="pill${filterOrigin === o.id ? " on" : ""}" type="button" data-pairs-origin="${o.id}" title="${esc(o.hint)}">${esc(o.label)} <small>${counts[o.id] || 0}</small></button>`
       ),
+    ].join("");
+  }
+
+  function renderPayFilters(list, dupKeys) {
+    const box = $("pairs-pays");
+    if (!box) return;
+    const base = list.filter(({ p }) => {
+      if (filterCat && p.cat !== filterCat) return false;
+      if (filterOrigin && pairOrigin(p, dupKeys) !== filterOrigin) return false;
+      return true;
+    });
+    const verified = base.filter(({ p }) => payment(p.id).verified).length;
+    const unverified = base.length - verified;
+    if (filterPay && filterPay !== "verified" && filterPay !== "unverified") filterPay = "";
+    box.innerHTML = [
+      `<button class="pill${filterPay === "" ? " on" : ""}" type="button" data-pairs-pay="">Todos <small>${base.length}</small></button>`,
+      `<button class="pill${filterPay === "verified" ? " on" : ""}" type="button" data-pairs-pay="verified">Pago verificado <small>${verified}</small></button>`,
+      `<button class="pill${filterPay === "unverified" ? " on" : ""}" type="button" data-pairs-pay="unverified">Pago no verificado <small>${unverified}</small></button>`,
     ].join("");
   }
 
@@ -224,6 +245,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
     const dupKeys = dupMap(list);
     renderCats(list, dupKeys);
     renderOrigins(list, dupKeys);
+    renderPayFilters(list, dupKeys);
     const q = fold(term);
     let shown = list.filter(({ p }) => matchesFilters(p, dupKeys));
     if (q) {
@@ -233,7 +255,8 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       });
     }
     const filterTotal = list.filter(({ p }) => matchesFilters(p, dupKeys)).length;
-    const parts = [filterCat, filterOrigin ? originLabel(filterOrigin) : ""].filter(Boolean);
+    const payLabel = filterPay === "verified" ? "Pago verificado" : filterPay === "unverified" ? "Pago no verificado" : "";
+    const parts = [filterCat, filterOrigin ? originLabel(filterOrigin) : "", payLabel].filter(Boolean);
     const totalLabel = parts.length ? parts.join(" · ") : seasonLabel(temp);
     $("pairs-count").textContent =
       q && shown.length !== filterTotal
@@ -277,7 +300,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
                         ${
                           pay.hasReceipt
                             ? `<button class="btn btn-ghost pairs-pay-view" type="button" data-pay-view="${esc(p.id)}">Ver comprobante</button>`
-                            : `<span class="muted">Sin comprobante (WSP u otro)</span>`
+                            : `<span class="pairs-pay-miss">Sin comprobante</span>`
                         }
                         <label class="chk pairs-pay-check">
                           <input type="checkbox" data-pay-verified="${esc(p.id)}" ${pay.verified ? "checked" : ""} />
@@ -314,7 +337,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
           .join("")
       : `<div class="admin-empty"><p>${
           list.length
-            ? filterCat || filterOrigin || q
+            ? filterCat || filterOrigin || filterPay || q
               ? "Nadie coincide con el filtro o la búsqueda."
               : "Nadie coincide con la búsqueda."
             : `Todavía no hay parejas inscriptas en ${esc(seasonLabel(temp))}. Compartí el link /inscribir-pareja/.`
@@ -468,6 +491,12 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       filterOrigin = btn.dataset.pairsOrigin || "";
       render();
     });
+    $("pairs-pays")?.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-pairs-pay]");
+      if (!btn) return;
+      filterPay = btn.dataset.pairsPay || "";
+      render();
+    });
     $("pairs-reload")?.addEventListener("click", () => reload({ quiet: false }));
     $("pairs-export")?.addEventListener("click", exportCsv);
     $("pairs-add")?.addEventListener("click", () => {
@@ -502,8 +531,8 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
             hasReceipt: Boolean(res?.hasReceipt ?? ctx.payments[id]?.hasReceipt),
             verified,
           };
-          payBox.closest(".pairs-card")?.classList.toggle("is-paid", verified);
           toast(verified ? "Pago verificado" : "Pago sin verificar", "ok");
+          render();
         } catch (err) {
           payBox.checked = !verified;
           toast(err?.message || "No se pudo guardar la verificación.", "err");
