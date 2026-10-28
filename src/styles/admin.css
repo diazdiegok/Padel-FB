@@ -1046,103 +1046,181 @@ body.is-admin main > .wrap {
 .acad-lead a { color: var(--cream); }
 .acad-note { color: var(--cream); }
 
-.visitas-hero strong {
-  display: block;
-  font-size: clamp(2rem, 4vw, 2.8rem);
+.visitas-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.visitas-kpi {
+  padding: 16px 16px 14px;
+  border: 1px solid rgba(214, 255, 47, 0.22);
+  border-radius: 14px;
+  background:
+    radial-gradient(ellipse 80% 70% at 100% 0%, rgba(214, 255, 47, 0.08), transparent 55%),
+    var(--bg-2);
+  display: grid;
+  gap: 6px;
+}
+.visitas-kpi-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+.visitas-kpi strong {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
   line-height: 1;
-  margin: 6px 0 8px;
+  color: var(--cream);
+  font-variant-numeric: tabular-nums;
+}
+.visitas-kpi-text {
+  font-size: clamp(1rem, 2vw, 1.25rem) !important;
+  line-height: 1.2 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.visitas-kpi-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+.visitas-chart-wide,
+.visitas-recent,
+.visitas-grid .admin-result-card {
+  padding-right: 16px;
 }
 .visitas-chart-wide {
-  margin-top: 14px;
-  padding: 18px 18px 20px;
+  margin-top: 0;
+  padding: 18px 18px 12px;
+}
+.visitas-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 .visitas-chart-wide h3,
 .visitas-grid .admin-result-card h3,
-.visitas-recent h3 {
-  margin: 0 0 14px;
-  font-size: 14px;
-  letter-spacing: 0.06em;
+.visitas-recent h3,
+.visitas-card-head h3 {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
 }
 .visitas-grid {
   display: grid;
   gap: 14px;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 14px;
 }
-.visitas-bars { display: grid; gap: 10px; }
+.visitas-grid .admin-result-card {
+  padding: 16px;
+}
+.visitas-bars { display: grid; gap: 12px; }
 .visitas-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(64px, 1.6fr) auto;
+  grid-template-columns: 22px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
+}
+.visitas-rank {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #111;
+  background: var(--lime);
+}
+.visitas-bar-block { min-width: 0; display: grid; gap: 5px; }
+.visitas-bar-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
 }
 .visitas-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 13px;
+  color: var(--cream);
 }
 .visitas-bar {
   display: block;
-  height: 10px;
+  height: 9px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--cream) 12%, transparent);
+  background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
 .visitas-bar i {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--lime, #d6ff2f);
+  background: linear-gradient(90deg, #9fbf24, #d6ff2f);
+  box-shadow: 0 0 12px rgba(214, 255, 47, 0.35);
 }
 .visitas-n {
   font-variant-numeric: tabular-nums;
   font-size: 12px;
+  color: var(--cream);
+  white-space: nowrap;
+}
+.visitas-n small {
   color: var(--muted);
-  min-width: 1.5ch;
-  text-align: right;
+  font-weight: 600;
 }
-.visitas-daily {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  min-height: 120px;
-  overflow-x: auto;
-  padding: 4px 2px 2px;
-}
-.visitas-daily-lg {
-  min-height: 220px;
-  gap: 10px;
-}
-.visitas-day {
-  flex: 1 0 36px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-  min-height: 200px;
-}
-.visitas-col {
+.visitas-daily-wrap {
   width: 100%;
-  max-width: 28px;
-  border-radius: 8px 8px 3px 3px;
-  background: var(--lime, #d6ff2f);
+  overflow-x: auto;
 }
-.visitas-day-n,
-.visitas-day-l {
-  font-size: 11px;
-  color: var(--muted);
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
+.visitas-svg {
+  width: 100%;
+  min-width: 520px;
+  height: auto;
+  display: block;
 }
-.visitas-day-n { min-height: 14px; font-weight: 700; color: var(--cream); }
-.visitas-recent { margin-top: 14px; }
+.visitas-grid-line {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+}
+.visitas-axis {
+  fill: var(--muted);
+  font-size: 10px;
+  font-family: var(--font);
+}
+.visitas-axis-wd { fill: rgba(154, 163, 148, 0.7); }
+.visitas-line {
+  stroke: rgba(214, 255, 47, 0.55);
+  stroke-width: 2;
+}
+.visitas-svg-bar {
+  fill: url(#visitasBar);
+  opacity: 0.92;
+}
+.visitas-bar-g:hover .visitas-svg-bar {
+  opacity: 1;
+  filter: brightness(1.12);
+}
+.visitas-bar-val {
+  fill: var(--cream);
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font);
+}
+.visitas-recent { margin-top: 14px; padding: 16px; }
 .visitas-table-wrap {
   overflow-x: auto;
-  margin: 0 -4px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
 }
 .visitas-table {
   width: 100%;
@@ -1152,9 +1230,13 @@ body.is-admin main > .wrap {
 .visitas-table th,
 .visitas-table td {
   text-align: left;
-  padding: 10px 12px;
+  padding: 11px 12px;
   border-bottom: 1px solid var(--line);
   white-space: nowrap;
+}
+.visitas-table tr:last-child td { border-bottom: 0; }
+.visitas-table tbody tr:hover td {
+  background: rgba(214, 255, 47, 0.04);
 }
 .visitas-table th {
   color: var(--muted);
@@ -1162,11 +1244,19 @@ body.is-admin main > .wrap {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   font-weight: 700;
+  background: rgba(0, 0, 0, 0.25);
 }
 .visitas-ip {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 12px;
   color: var(--lime, #d6ff2f);
+}
+@media (max-width: 980px) {
+  .visitas-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .visitas-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .visitas-kpis { grid-template-columns: 1fr; }
 }
 .pairs-copy { padding-top: 4px; }
 
