@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "id": "pmvrffwi0226f",
+    "createdAt": "2026-10-28T01:19:45.480Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Valentino Sánchez",
+    "p2": "Thiago Rivera",
+    "days": {
+      "Jueves": "20:00 - 22:00",
+      "Viernes": "20:00 - 22:00",
+      "Sábado": "13:00 - 15:00"
+    },
+    "note": ""
+  }
+]
