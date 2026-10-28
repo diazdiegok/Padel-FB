@@ -4,9 +4,16 @@ import "../styles/admin.css";
 ---
 <Layout title="Admin | Padel FB" description="Panel interno para cargar y editar datos de Padel FB." noindex>
   <div class="admin-gate" id="gate">
+    <div class="admin-gate-ambient" aria-hidden="true">
+      <span class="admin-gate-orb"></span>
+      <span class="admin-gate-ball"></span>
+      <span class="admin-gate-ball admin-gate-ball-2"></span>
+    </div>
     <form class="admin-card form" id="login-form" autocomplete="off">
-      <p class="kicker">Panel interno</p>
-      <h1>Admin Padel FB</h1>
+      <div id="login-pass-head">
+        <p class="kicker">Panel interno</p>
+        <h1>Admin Padel FB</h1>
+      </div>
       <div class="admin-step" id="step-pass">
         <p class="admin-help">Ingresá usuario y clave para continuar.</p>
         <label>Usuario
@@ -19,13 +26,32 @@ import "../styles/admin.css";
           <button class="btn btn-lime" type="submit" id="login-next">Continuar</button>
         </div>
       </div>
-      <div class="admin-step" id="step-otp" hidden>
-        <p class="admin-help">Ahora el código de 6 dígitos del autenticador.</p>
-        <label>Código
-          <input id="otp" class="admin-otp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" />
-        </label>
+      <div class="admin-step admin-otp-step" id="step-otp" hidden>
+        <div class="admin-otp-head">
+          <span class="admin-otp-ico" aria-hidden="true">
+            <svg viewBox="0 0 48 48" width="36" height="36">
+              <circle cx="24" cy="24" r="10" fill="#d6ff2f"/>
+              <path d="M18 20c4 2 8 5 12 10" stroke="#141814" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <div>
+            <h2 class="admin-otp-title">Verificar acceso</h2>
+            <p class="admin-help">Ingresá el código de 6 dígitos del autenticador.</p>
+          </div>
+        </div>
+        <input id="otp" class="admin-otp-hidden" inputmode="numeric" maxlength="6" autocomplete="one-time-code" tabindex="-1" aria-hidden="true" />
+        <div class="admin-otp-grid" id="otp-grid" role="group" aria-label="Código del autenticador">
+          <input class="admin-otp-cell" data-otp-i="0" inputmode="numeric" maxlength="1" autocomplete="one-time-code" aria-label="Dígito 1" />
+          <input class="admin-otp-cell" data-otp-i="1" inputmode="numeric" maxlength="1" aria-label="Dígito 2" />
+          <input class="admin-otp-cell" data-otp-i="2" inputmode="numeric" maxlength="1" aria-label="Dígito 3" />
+          <input class="admin-otp-cell" data-otp-i="3" inputmode="numeric" maxlength="1" aria-label="Dígito 4" />
+          <input class="admin-otp-cell" data-otp-i="4" inputmode="numeric" maxlength="1" aria-label="Dígito 5" />
+          <input class="admin-otp-cell" data-otp-i="5" inputmode="numeric" maxlength="1" aria-label="Dígito 6" />
+        </div>
         <div class="admin-login-actions">
-          <button class="btn btn-lime" type="submit" id="login">Entrar</button>
+          <button class="btn btn-lime admin-otp-submit" type="submit" id="login">
+            <span class="admin-otp-submit-label">Entrar</span>
+          </button>
           <button class="btn btn-ghost" type="button" id="login-back">Volver</button>
         </div>
       </div>
