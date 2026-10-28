@@ -57,5 +57,18 @@
       "Viernes": "14:00 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmvsmmsjm7c7c",
+    "createdAt": "2026-10-28T21:28:50.434Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Benedetich Stefania",
+    "p2": "Benedetich Florencia",
+    "days": {
+      "Lunes": "19:00 - 22:00",
+      "Viernes": "19:00 - 22:00"
+    },
+    "note": ""
   }
 ]
