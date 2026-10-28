@@ -26,5 +26,21 @@
       "Viernes": "19:30 - 22:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmvs795wdb290",
+    "createdAt": "2026-10-28T14:18:20.317Z",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "p1": "Julián Gea Sánchez",
+    "p2": "Joaquín Gea Sánchez",
+    "days": {
+      "Lunes": "16:30 - 21:00",
+      "Martes": "16:30 - 21:00",
+      "Miércoles": "16:30 - 21:00",
+      "Jueves": "16:30 - 21:00",
+      "Viernes": "16:30 - 23:00"
+    },
+    "note": ""
   }
 ]
