@@ -37,12 +37,63 @@ const items = (Array.isArray(ascensosJson) ? ascensosJson : [])
         {items.map((item) => (
           <article class="ascensos-card">
             <h2>{item.title}</h2>
-            <a class="ascensos-figure" href={asset(item.image)} target="_blank" rel="noreferrer" aria-label={`Ver ${item.title} en tamaño completo`}>
+            <button
+              class="ascensos-figure"
+              type="button"
+              data-asc-open
+              data-src={asset(item.image)}
+              data-title={item.title}
+              aria-label={`Ampliar ${item.title}`}
+            >
               <img class="photo" src={asset(item.image)} alt={item.title} loading="lazy" />
-            </a>
+            </button>
           </article>
         ))}
       </div>
     )}
   </div>
+
+  {items.length > 0 && (
+    <dialog class="ascensos-lightbox" id="ascensos-lightbox" aria-label="Foto de ascensos">
+      <div class="ascensos-lightbox-bar">
+        <p class="ascensos-lightbox-title" id="ascensos-lightbox-title"></p>
+        <button class="ascensos-lightbox-close" type="button" id="ascensos-lightbox-close" aria-label="Cerrar">×</button>
+      </div>
+      <img class="ascensos-lightbox-img" id="ascensos-lightbox-img" alt="" />
+    </dialog>
+  )}
+
+  {items.length > 0 && (
+    <script>
+      const box = document.getElementById("ascensos-lightbox");
+      const img = document.getElementById("ascensos-lightbox-img");
+      const title = document.getElementById("ascensos-lightbox-title");
+      const closeBtn = document.getElementById("ascensos-lightbox-close");
+      if (box && img && title) {
+        function openLightbox(src, name) {
+          img.src = src;
+          img.alt = name || "Ascensos";
+          title.textContent = name || "";
+          if (typeof box.showModal === "function") box.showModal();
+          else box.setAttribute("open", "");
+        }
+        function closeLightbox() {
+          if (typeof box.close === "function") box.close();
+          else box.removeAttribute("open");
+          img.removeAttribute("src");
+        }
+        document.querySelectorAll("[data-asc-open]").forEach((btn) => {
+          btn.addEventListener("click", () => openLightbox(btn.dataset.src, btn.dataset.title));
+        });
+        closeBtn?.addEventListener("click", closeLightbox);
+        box.addEventListener("click", (e) => {
+          if (e.target === box) closeLightbox();
+        });
+        box.addEventListener("cancel", (e) => {
+          e.preventDefault();
+          closeLightbox();
+        });
+      }
+    </script>
+  )}
 </Layout>

@@ -1213,42 +1213,102 @@ footer strong { color: var(--cream); }
 }
 .ascensos-list {
   display: grid;
-  justify-items: center;
-  gap: 36px;
+  justify-items: start;
+  gap: 40px;
   padding: 28px 0 72px;
 }
 .ascensos-card {
-  width: min(100%, 440px);
+  width: min(100%, 380px);
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 .ascensos-card h2 {
   margin: 0;
   font-family: var(--display);
   font-size: clamp(20px, 3.2vw, 26px);
   letter-spacing: 0.04em;
-  text-align: center;
+  text-align: left;
   line-height: 1.15;
 }
 .ascensos-figure {
+  display: block;
+  width: 100%;
   margin: 0;
+  padding: 0;
   border: 1px solid var(--line);
   background: var(--bg-2);
   overflow: hidden;
   border-radius: 4px;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  cursor: zoom-in;
+  text-align: left;
 }
 .ascensos-figure .photo {
   width: 100%;
   height: auto;
-  max-height: min(62vh, 640px);
+  max-height: min(56vh, 560px);
   object-fit: contain;
-  margin-inline: auto;
   background: var(--bg-2);
 }
+.ascensos-lightbox {
+  width: 100vw;
+  max-width: none;
+  height: 100vh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: #000;
+  color: var(--cream);
+  inset: 0;
+}
+.ascensos-lightbox::backdrop {
+  background: #000;
+}
+.ascensos-lightbox[open] {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+.ascensos-lightbox-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: #000;
+}
+.ascensos-lightbox-title {
+  margin: 0;
+  font-family: var(--display);
+  letter-spacing: 0.05em;
+  font-size: clamp(16px, 2.5vw, 22px);
+}
+.ascensos-lightbox-close {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: transparent;
+  color: var(--cream);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  flex: none;
+}
+.ascensos-lightbox-close:hover {
+  border-color: var(--lime);
+  color: var(--lime);
+}
+.ascensos-lightbox-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+  padding: 12px;
+}
 @media (max-width: 640px) {
-  .ascensos-card { width: min(100%, 360px); }
-  .ascensos-figure .photo { max-height: min(58vh, 520px); }
+  .ascensos-card { width: min(100%, 320px); }
+  .ascensos-figure .photo { max-height: min(50vh, 460px); }
 }
 .venue-photo { height: 180px; padding: 0; background: #111; }
 .venue-photo.tall { min-height: 220px; height: auto; }
