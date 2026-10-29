@@ -1446,6 +1446,13 @@ footer strong { color: var(--cream); }
   margin-bottom: 4px;
   padding-top: 36px;
 }
+.sponsors-title {
+  display: inline-block;
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--lime);
+  line-height: 1.1;
+}
 .sponsors-marquee {
   position: relative;
   margin-top: 22px;
