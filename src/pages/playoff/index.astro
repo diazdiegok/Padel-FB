@@ -36,7 +36,7 @@ const playoffs = normalizePlayoffs(playoffJson)
     </header>
 
     {playoffs.length === 0 ? (
-      <p class="empty" style="display:block;padding:48px 0">Todavía no hay playoff publicados.</p>
+      <p class="empty" style="display:block;padding:48px 0">Todavía no hay playoff.</p>
     ) : (
       <div class="hub-grid hub-fill">
         {playoffs.map((p) => (

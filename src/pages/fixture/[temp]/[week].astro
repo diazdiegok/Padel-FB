@@ -68,7 +68,7 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
     </header>
 
     {list.length === 0 ? (
-      <p class="empty" style="display:block;padding:48px 0">No hay partidos en esta fecha.</p>
+      <p class="empty" style="display:block;padding:48px 0">Todavía no hay partidos fixtureados en esta fecha.</p>
     ) : (
       <>
         <div class="filters fixture-filters">

@@ -41,7 +41,7 @@ const pendingCats = [...new Set(pending.map((m) => m.cat || "Sin categoría"))];
     </header>
 
     {seasonBlocks.length === 0 ? (
-      <p class="empty" style="display:block;padding:48px 0">Todavía no hay partidos cargados. Cuando se publiquen desde el admin van a aparecer acá.</p>
+      <p class="empty" style="display:block;padding:48px 0">Todavía no hay partidos fixtureados.</p>
     ) : (
       <div class="hub-grid hub-fill">
         {seasonBlocks.map((block) => (

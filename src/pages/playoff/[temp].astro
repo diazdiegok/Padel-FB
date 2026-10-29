@@ -34,7 +34,7 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
       {visible ? (
         <p>{playoff.note || "Cuadro por categoría. La pareja ganadora de cada partido pasa a la ronda siguiente."}</p>
       ) : (
-        <p>El cuadro todavía no está publicado. Mientras tanto, mirá el <a class="po-link" href={page("ranking/")}>ranking</a>.</p>
+        <p>El cuadro todavía no está armado. Mientras tanto, mirá el <a class="po-link" href={page("ranking/")}>ranking</a>.</p>
       )}
     </header>
 
