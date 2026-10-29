@@ -2116,6 +2116,21 @@ body.is-admin main > .wrap {
   grid-column: 1 / -1;
 }
 
+.admin-range-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.admin-range-row input[type="range"] {
+  flex: 1;
+  min-width: 0;
+}
+.admin-range-val {
+  min-width: 3.2rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--lime);
+  font-weight: 700;
+}
 .admin-site-block h3 {
   margin: 0;
   font-size: 15px;

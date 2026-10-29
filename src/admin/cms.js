@@ -21,6 +21,9 @@ export function createCms(ctx, api, shell) {
     if (!Array.isArray(ctx.siteData.torneos.items)) ctx.siteData.torneos.items = [];
     if (!Array.isArray(ctx.siteData.venues)) ctx.siteData.venues = [];
     if (!Array.isArray(ctx.siteData.moreVenues)) ctx.siteData.moreVenues = [];
+    if (!Array.isArray(ctx.siteData.sponsors)) ctx.siteData.sponsors = [];
+    const speed = Number(ctx.siteData.sponsorsSpeed);
+    ctx.siteData.sponsorsSpeed = Number.isFinite(speed) ? Math.min(90, Math.max(20, Math.round(speed))) : 48;
     if (!ctx.siteData.kids) ctx.siteData.kids = {};
     if (!Array.isArray(ctx.siteData.kids.features)) ctx.siteData.kids.features = [];
     if (!Array.isArray(ctx.siteData.kids.groups)) ctx.siteData.kids.groups = [];
@@ -86,6 +89,7 @@ export function createCms(ctx, api, shell) {
   }
 
   function fillSiteForm() {
+    ensureCms();
     const form = $("site-form");
     if (!form) return;
     form.whatsapp.value = ctx.siteData.whatsapp || "";
@@ -94,10 +98,103 @@ export function createCms(ctx, api, shell) {
     form.province.value = ctx.siteData.province || "";
     form.ligaIntro.value = ctx.siteData.ligaIntro || "";
     if (form.showPlayoff) form.showPlayoff.checked = Boolean(ctx.siteData.showPlayoff);
+    if (form.sponsorsSpeed) form.sponsorsSpeed.value = String(ctx.siteData.sponsorsSpeed || 48);
+    const speedVal = $("sponsors-speed-val");
+    if (speedVal) speedVal.textContent = `${ctx.siteData.sponsorsSpeed || 48}s`;
     const help = $("site-playoff-help");
     if (help) {
       help.textContent =
         "Si está tildado, el inicio muestra Ver playoff y lleva al cuadro de la temporada en juego. Destildalo mientras se juega la fase regular; cuando armes el playoff, volvé a tildarlo.";
+    }
+    fillSponsorsForm();
+  }
+
+  function fillSponsorsForm() {
+    ensureCms();
+    const list = ctx.siteData.sponsors;
+    const empty = $("sponsor-empty");
+    if (empty) empty.hidden = list.length > 0;
+    const root = $("sponsor-list");
+    if (!root) return;
+    root.innerHTML = list
+      .map(
+        (s, i) => `<article class="cms-card" data-sponsor="${i}">
+          ${cmsMedia(
+            s._preview || s.image,
+            s.name || "Sponsor",
+            `<label class="btn cms-btn">Cambiar foto
+              <input data-photo="sponsor" type="file" accept="image/*" hidden />
+            </label>
+            <button class="btn cms-btn cms-btn-danger" type="button" data-sponsor-del="${i}">Quitar</button>`
+          )}
+          <label>Nombre
+            <input data-s="name" value="${escAttr(s.name || "")}" placeholder="Ej. EVOXX" />
+          </label>
+          ${cmsMoveBtns("sponsor", i, list.length)}
+        </article>`
+      )
+      .join("");
+  }
+
+  function readSponsorsFromDom() {
+    ensureCms();
+    $("sponsor-list")?.querySelectorAll("[data-sponsor]").forEach((card) => {
+      const i = Number(card.dataset.sponsor);
+      const s = ctx.siteData.sponsors[i];
+      if (!s) return;
+      s.name = card.querySelector("[data-s='name']")?.value.trim() || "";
+    });
+    const form = $("site-form");
+    if (form?.sponsorsSpeed) {
+      const speed = Number(form.sponsorsSpeed.value);
+      ctx.siteData.sponsorsSpeed = Number.isFinite(speed) ? Math.min(90, Math.max(20, Math.round(speed))) : 48;
+    }
+  }
+
+  /** Adapta cualquier imagen al formato del carrusel: cuadrado negro 1024×1024 JPEG. */
+  async function fitSponsorImage(file) {
+    const SIZE = 1024;
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement("canvas");
+    canvas.width = SIZE;
+    canvas.height = SIZE;
+    const c = canvas.getContext("2d");
+    c.fillStyle = "#000000";
+    c.fillRect(0, 0, SIZE, SIZE);
+    const scale = Math.min(SIZE / bitmap.width, SIZE / bitmap.height);
+    const w = bitmap.width * scale;
+    const h = bitmap.height * scale;
+    c.drawImage(bitmap, (SIZE - w) / 2, (SIZE - h) / 2, w, h);
+    bitmap.close?.();
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("No se pudo procesar la imagen"))), "image/jpeg", 0.92);
+    });
+    return new File([blob], "sponsor.jpg", { type: "image/jpeg" });
+  }
+
+  async function attachSponsorPhoto(item, file) {
+    if (!item || !file || !String(file.type || "").startsWith("image/")) return;
+    const fitted = await fitSponsorImage(file);
+    item._file = fitted;
+    const reader = new FileReader();
+    reader.onload = () => {
+      item._preview = String(reader.result);
+      fillSponsorsForm();
+    };
+    reader.readAsDataURL(fitted);
+  }
+
+  async function uploadPendingSponsors() {
+    ensureCms();
+    for (const item of ctx.siteData.sponsors) {
+      if (!item?._file) continue;
+      const name = slugify(item.name || "sponsor") + "-" + Date.now() + ".jpg";
+      const path = "public/images/sponsors/" + name;
+      await api.publishFile(path, await fileToB64(item._file), "Sube sponsor: " + (item.name || name) + ".", true);
+      item.image = "/images/sponsors/" + name;
+      if (item._preview) uploadedPreviews.set(item.image, item._preview);
+      delete item._file;
+      delete item._preview;
     }
   }
 
@@ -414,6 +511,15 @@ export function createCms(ctx, api, shell) {
     (copy.staff || []).forEach(strip);
     (copy.venues || []).forEach(strip);
     (copy.moreVenues || []).forEach(strip);
+    (copy.sponsors || []).forEach(strip);
+    copy.sponsors = (copy.sponsors || [])
+      .map((s) => ({
+        name: String(s.name || "").trim(),
+        image: String(s.image || "").trim(),
+      }))
+      .filter((s) => s.image);
+    const speed = Number(copy.sponsorsSpeed);
+    copy.sponsorsSpeed = Number.isFinite(speed) ? Math.min(90, Math.max(20, Math.round(speed))) : 48;
     return copy;
   }
 
@@ -456,10 +562,61 @@ export function createCms(ctx, api, shell) {
   }
 
   function bind() {
-    $("site-form")?.addEventListener("input", () => shell.markDirty("sitio"));
+    $("site-form")?.addEventListener("input", (e) => {
+      shell.markDirty("sitio");
+      if (e.target?.name === "sponsorsSpeed" || e.target?.id === "sponsors-speed") {
+        const speedVal = $("sponsors-speed-val");
+        if (speedVal) speedVal.textContent = `${e.target.value}s`;
+      }
+    });
     $("ac-copy")?.addEventListener("input", () => shell.markDirty("academia"));
     $("kids-copy")?.addEventListener("input", () => shell.markDirty("infantiles"));
     $("tn-copy")?.addEventListener("input", () => shell.markDirty("torneos"));
+
+    $("sponsor-add")?.addEventListener("click", () => {
+      readSponsorsFromDom();
+      ctx.siteData.sponsors.push({ name: "", image: "" });
+      shell.markDirty("sitio");
+      fillSponsorsForm();
+    });
+    $("sponsor-list")?.addEventListener("click", async (e) => {
+      const move = e.target.closest("[data-move='sponsor']");
+      if (move) {
+        readSponsorsFromDom();
+        moveInList(ctx.siteData.sponsors, move.dataset.i, move.dataset.dir);
+        shell.markDirty("sitio");
+        fillSponsorsForm();
+        return;
+      }
+      const del = e.target.closest("[data-sponsor-del]");
+      if (!del) return;
+      const ok = await confirmModal({
+        title: "Quitar sponsor",
+        body: "Se saca de la lista local. Publicá inicio para confirmarlo en la web.",
+        confirmLabel: "Quitar",
+        danger: true,
+      });
+      if (!ok) return;
+      readSponsorsFromDom();
+      ctx.siteData.sponsors.splice(Number(del.dataset.sponsorDel), 1);
+      shell.markDirty("sitio");
+      fillSponsorsForm();
+    });
+    $("sponsor-list")?.addEventListener("change", async (e) => {
+      const input = e.target.closest("[data-photo='sponsor']");
+      const file = input?.files?.[0];
+      if (!file) return;
+      const i = Number(input.closest("[data-sponsor]")?.dataset.sponsor);
+      readSponsorsFromDom();
+      try {
+        await attachSponsorPhoto(ctx.siteData.sponsors[i], file);
+        shell.markDirty("sitio");
+      } catch (err) {
+        toast(err?.message || "No se pudo procesar la imagen", "err");
+      }
+      if (input) input.value = "";
+    });
+    $("sponsor-list")?.addEventListener("input", () => shell.markDirty("sitio"));
 
     $("staff-add")?.addEventListener("click", () => {
       readAcademiaFromDom();
@@ -780,6 +937,7 @@ export function createCms(ctx, api, shell) {
       const gate = api.usePublishToken();
       if (!gate.ok) return toast(gate.message, "err");
       const form = e.target;
+      readSponsorsFromDom();
       ctx.siteData = {
         ...ctx.siteData,
         whatsapp: form.whatsapp.value.trim(),
@@ -789,9 +947,15 @@ export function createCms(ctx, api, shell) {
         ligaIntro: form.ligaIntro.value.trim(),
         showPlayoff: Boolean(form.showPlayoff?.checked),
       };
+      const pending = (ctx.siteData.sponsors || []).find((s) => !s.image && !s._file);
+      if (pending) {
+        setMsg($("site-msg"), "Hay un sponsor sin foto. Subí la imagen o quitálo.", "err");
+        return toast("Falta la foto de un sponsor", "err");
+      }
       setBusy($("site-save"), true, "Publicando…");
       setMsg($("site-msg"), "Publicando inicio…");
       try {
+        await uploadPendingSponsors();
         const local = cleanSiteForSave();
         await publishSiteFields(
           {
@@ -801,10 +965,13 @@ export function createCms(ctx, api, shell) {
             province: local.province,
             ligaIntro: local.ligaIntro,
             showPlayoff: Boolean(local.showPlayoff),
+            sponsors: local.sponsors,
+            sponsorsSpeed: local.sponsorsSpeed,
           },
-          "Actualiza el inicio desde el admin."
+          "Actualiza el inicio y sponsors desde el admin."
         );
         shell.clearDirty("sitio");
+        fillSponsorsForm();
         setMsg($("site-msg"), "Inicio publicado. El sitio se actualiza en ~1 minuto.", "ok");
         toast("Inicio publicado", "ok");
       } catch (err) {

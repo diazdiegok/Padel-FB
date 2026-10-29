@@ -146,6 +146,24 @@ import "../styles/admin.css";
                 <label class="chk"><input name="showPlayoff" type="checkbox" /> Mostrar botón Ver playoff</label>
                 <p class="admin-help" id="site-playoff-help">Si está tildado, el inicio muestra Ver playoff y lleva al cuadro de la temporada en juego. Destildalo mientras se juega la fase regular; cuando armes el playoff, volvé a tildarlo.</p>
               </div>
+              <div class="admin-site-block span-2">
+                <h3>Sponsors del inicio</h3>
+                <p class="admin-help">Las fotos se adaptan solas al formato del carrusel (cuadrado negro 1024×1024). Podés subir, renombrar, ordenar o sacar marcas.</p>
+                <label>Velocidad del carrusel:
+                  <div class="admin-range-row">
+                    <input name="sponsorsSpeed" id="sponsors-speed" type="range" min="20" max="90" step="1" />
+                    <span class="admin-range-val" id="sponsors-speed-val">48s</span>
+                  </div>
+                </label>
+                <p class="admin-help">Más chico = más rápido. Es la duración de una vuelta completa.</p>
+                <div class="admin-section-tools" style="margin:12px 0 8px">
+                  <button class="btn btn-lime" type="button" id="sponsor-add">+ Sponsor</button>
+                </div>
+                <div class="admin-empty" id="sponsor-empty" hidden>
+                  <p>Todavía no hay sponsors. Agregá uno con + Sponsor.</p>
+                </div>
+                <div id="sponsor-list" class="cms-list"></div>
+              </div>
             </div>
             <p class="admin-msg" id="site-msg"></p>
             <div class="admin-sticky-bar">

@@ -290,6 +290,7 @@
     }
   ],
   "moreVenues": [],
+  "sponsorsSpeed": 48,
   "sponsors": [
     { "name": "EVOXX", "image": "/images/sponsors/evoxx.jpg" },
     { "name": "Teccell", "image": "/images/sponsors/teccell.jpg" },

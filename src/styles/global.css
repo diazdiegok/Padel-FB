@@ -1462,7 +1462,7 @@ footer strong { color: var(--cream); }
 .sponsors-track {
   display: flex;
   width: max-content;
-  animation: sponsors-scroll 48s linear infinite;
+  animation: sponsors-scroll var(--sponsors-duration, 48s) linear infinite;
   will-change: transform;
 }
 .sponsors-marquee:hover .sponsors-track,
@@ -1520,7 +1520,6 @@ footer strong { color: var(--cream); }
     border-radius: 18px;
   }
   .sponsors-row { gap: 12px; }
-  .sponsors-track { animation-duration: 40s; }
 }
 
 .staff-list { display: grid; gap: 28px; }

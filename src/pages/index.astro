@@ -44,6 +44,10 @@ const boardTitle = playoffDone
   : seasonStarted
     ? `Líderes ${seasonLabel(current)}`
     : seasonLabel(current);
+const sponsorsSpeed = (() => {
+  const n = Number(site.sponsorsSpeed);
+  return Number.isFinite(n) ? Math.min(90, Math.max(20, Math.round(n))) : 48;
+})();
 const countedVenues = (site.venues || []).filter((v) => v.liga !== false).length;
 const savedVenues = site.seasonVenues && typeof site.seasonVenues === "object" ? site.seasonVenues : {};
 const seasonVenues = Object.fromEntries(
@@ -273,7 +277,7 @@ const seasonVenues = Object.fromEntries(
         </div>
       </div>
       <div class="sponsors-marquee">
-        <div class="sponsors-track">
+        <div class="sponsors-track" style={`--sponsors-duration: ${sponsorsSpeed}s`}>
           <ul class="sponsors-row">
             {site.sponsors.map((s) => {
               const name = typeof s === "string" ? "Sponsor" : s.name;

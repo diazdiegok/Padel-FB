@@ -48,7 +48,7 @@ export const VENUE_MAP = {
 };
 
 export const SECTIONS = {
-  sitio: { group: "Inicio", title: "Inicio", help: "Contacto, ciudad, texto de inicio y si se muestra el botón Ver playoff." },
+  sitio: { group: "Inicio", title: "Inicio", help: "Contacto, ciudad, texto de inicio, botón Ver playoff, sponsors del carrusel y su velocidad." },
   temporadas: {
     group: "Liga",
     title: "Temporadas",
