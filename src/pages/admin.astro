@@ -195,60 +195,51 @@ import "../styles/admin.css";
 
         <!-- Fixture -->
         <section data-section="fixture" hidden>
-          <div class="admin-stepper">
-            <div class="admin-step-card">
-              <span>1 · Armar</span>
-              <p>Armar fixture cruza las parejas inscriptas según su disponibilidad. Las que no coinciden quedan pendientes.</p>
-            </div>
-            <div class="admin-step-card">
-              <span>2 · Revisar</span>
-              <p>Editá día, horario, cancha y parejas. El score se carga en Resultados.</p>
-            </div>
-            <div class="admin-step-card">
-              <span>3 · Publicar</span>
-              <p>Se publica la fecha en juego. Las fechas anteriores quedan en Resultados.</p>
-            </div>
+          <div class="admin-callout">
+            <strong>Cómo se arma</strong>
+            <span>Elegí la temporada, después la fecha. Armar fixture cruza las parejas inscriptas; las fechas anteriores quedan en Resultados.</span>
           </div>
-
-          <div class="admin-panel">
-            <div class="admin-toolbar">
-              <label class="admin-week">Jornada
-                <input id="fx-week" value="Fecha 1" placeholder="Fecha 1" />
-              </label>
-              <button class="btn btn-lime" type="button" id="fx-build">Armar fixture</button>
-              <button class="btn btn-ghost" type="button" id="fx-add">+ Partido</button>
-              <span class="admin-summary" id="fx-summary">Sin partidos cargados</span>
-            </div>
+          <div class="admin-section-tools">
+            <span class="tag" id="fx-summary">Sin partidos</span>
           </div>
-
+          <input id="fx-week" type="hidden" value="" />
           <p class="admin-msg" id="fx-msg"></p>
           <datalist id="fx-venues"></datalist>
-          <div class="admin-empty" id="fx-empty" hidden>
-            <p>Todavía no hay partidos. Usá Armar fixture o + Partido.</p>
-          </div>
-          <div class="fx-warnings" id="fx-warnings" role="status" hidden></div>
-          <div class="fx-pending" id="fx-pending" hidden></div>
-          <div class="admin-scroll">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>Día</th>
-                  <th>Horario</th>
-                  <th>Cat</th>
-                  <th>Complejo</th>
-                  <th>Cancha</th>
-                  <th>Pareja 1</th>
-                  <th>Pareja 2</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="fx-body"></tbody>
-            </table>
-          </div>
-          <div class="admin-sticky-bar">
-            <p class="admin-sticky-note">Publicá el fixture de la fecha. Los resultados se cargan en la sección Resultados.</p>
-            <div class="admin-sticky-actions">
-              <button class="btn btn-lime" type="button" id="fx-publish">Publicar fixture</button>
+          <div class="res-boxes hub-like" id="fx-boxes"></div>
+          <div id="fx-detail" hidden>
+            <div class="admin-panel">
+              <div class="admin-toolbar">
+                <button class="btn btn-lime" type="button" id="fx-build">Armar fixture</button>
+                <button class="btn btn-ghost" type="button" id="fx-add">+ Partido</button>
+              </div>
+            </div>
+            <div class="admin-empty" id="fx-empty" hidden>
+              <p>Todavía no hay partidos. Usá Armar fixture o + Partido.</p>
+            </div>
+            <div class="fx-warnings" id="fx-warnings" role="status" hidden></div>
+            <div class="fx-pending" id="fx-pending" hidden></div>
+            <div class="admin-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Día</th>
+                    <th>Horario</th>
+                    <th>Cat</th>
+                    <th>Complejo</th>
+                    <th>Cancha</th>
+                    <th>Pareja 1</th>
+                    <th>Pareja 2</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="fx-body"></tbody>
+              </table>
+            </div>
+            <div class="admin-sticky-bar">
+              <p class="admin-sticky-note">Publicá el fixture de la fecha. Los resultados se cargan en la sección Resultados.</p>
+              <div class="admin-sticky-actions">
+                <button class="btn btn-lime" type="button" id="fx-publish">Publicar fixture</button>
+              </div>
             </div>
           </div>
         </section>

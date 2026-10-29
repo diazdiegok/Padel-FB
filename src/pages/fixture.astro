@@ -1,8 +1,9 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import fixture from "../data/fixture.json";
+import results from "../data/results.json";
 import { site } from "../data/site";
-import { latestWeek, liveFixture, seasonLabel } from "../lib/liga.js";
+import { combineResults, seasonLabel, seasonNumber, weekNumber } from "../lib/liga.js";
 
 const DAY_ORDER = ["lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado", "domingo"];
 const dayIdx = (d: string) => {
@@ -10,22 +11,46 @@ const dayIdx = (d: string) => {
   const i = DAY_ORDER.indexOf(key);
   return i < 0 ? 99 : i;
 };
-const currentWeek = latestWeek(fixture);
-const live: any[] = liveFixture(fixture);
-const pending = live
-  .filter((m) => !m.away)
-  .sort((a, b) => String(a.cat).localeCompare(String(b.cat), "es") || String(a.home).localeCompare(String(b.home), "es"));
-const pendingCats = [...new Set(pending.map((m) => m.cat || "Sin categoría"))];
-const matches = live.filter((m) => m.home && m.away).sort((a, b) => {
+
+const all = combineResults(results, (fixture as any[]).filter((m) => m.home && m.away)).sort((a, b) => {
   const da = dayIdx(a.day);
   const db = dayIdx(b.day);
   if (da !== db) return da - db;
   return String(a.time || "").localeCompare(String(b.time || ""), "es");
 });
-const season = seasonLabel(matches[0]?.temp || site.currentSeason);
-const days = [...new Set(matches.map((m) => m.day).filter(Boolean))].sort((a, b) => dayIdx(a) - dayIdx(b));
-const cats = [...new Set(matches.map((m) => m.cat).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
-const courts = [...new Set(matches.map((m) => m.venue).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
+
+const liveKeys = new Set(
+  (fixture as any[])
+    .filter((m) => m.home && m.away)
+    .map((m) => `${m.temp || ""}|${m.week || ""}`)
+);
+
+const seasons = [...new Set(all.map((m) => m.temp || site.currentSeason || "T4"))].sort(
+  (a, b) => seasonNumber(b) - seasonNumber(a)
+);
+
+const seasonBlocks = seasons.map((temp) => {
+  const list = all.filter((m) => (m.temp || site.currentSeason || "T4") === temp);
+  const weeks = [...new Set(list.map((m) => m.week || "Sin fecha"))].sort(
+    (a, b) => weekNumber(b) - weekNumber(a) || String(a).localeCompare(String(b), "es")
+  );
+  const cards = weeks.map((week) => {
+    const weekList = list.filter((m) => (m.week || "Sin fecha") === week);
+    const live = liveKeys.has(`${temp}|${week}`);
+    return { week, temp, total: weekList.length, live };
+  });
+  return {
+    temp,
+    title: seasonLabel(temp),
+    live: temp === (site.currentSeason || ""),
+    cards,
+  };
+});
+
+const pending = (fixture as any[])
+  .filter((m) => !!m.pending && !String(m.away || "").trim())
+  .sort((a, b) => String(a.cat).localeCompare(String(b.cat), "es") || String(a.home).localeCompare(String(b.home), "es"));
+const pendingCats = [...new Set(pending.map((m) => m.cat || "Sin categoría"))];
 ---
 <Layout
   title="Fixture | Padel FB"
@@ -33,48 +58,56 @@ const courts = [...new Set(matches.map((m) => m.venue).filter(Boolean))].sort((a
 >
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker">{currentWeek ? `${currentWeek} · ${season}` : season} · lunes a sábado</p>
+      <p class="kicker">Liga</p>
       <h1>Fixture</h1>
-      <p>Filtrá por día, categoría o cancha. Solo se muestra la fecha en juego; la anterior queda en Resultados.</p>
+      <p>Elegí la temporada y después la fecha. Los partidos de cada jornada quedan ahí.</p>
     </header>
 
-    {matches.length === 0 ? (
+    {seasonBlocks.length === 0 ? (
       <p class="empty" style="display:block;padding:48px 0">Todavía no hay partidos cargados. Cuando se publiquen desde el admin van a aparecer acá.</p>
     ) : (
       <>
-        <div class="filters fixture-filters">
-          <input class="search" id="q" type="search" placeholder="Buscar pareja o jugador…" autocomplete="off" />
-          <div class="filter-group">
-            <span>Día</span>
-            <div class="pills" id="f-days">
-              <button class="pill on" data-day="Todas" type="button">Todos</button>
-              {days.map((d) => (
-                <button class="pill" data-day={d} type="button">{d}</button>
-              ))}
-            </div>
-          </div>
-          <div class="filter-group">
-            <span>Categoría</span>
-            <div class="pills" id="f-cats">
-              <button class="pill on" data-cat="Todas" type="button">Todas</button>
-              {cats.map((c) => (
-                <button class="pill" data-cat={c} type="button">{c}</button>
-              ))}
-            </div>
-          </div>
-          <div class="filter-group">
-            <span>Cancha</span>
-            <div class="pills" id="f-courts">
-              <button class="pill on" data-court="Todas" type="button">Todas</button>
-              {courts.map((c) => (
-                <button class="pill" data-court={c} type="button">{c}</button>
-              ))}
-            </div>
-          </div>
-          <span class="tag" id="count"></span>
+        <div class="hub-grid" id="fx-seasons" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+          {seasonBlocks.map((block) => (
+            <button class="hub-card" type="button" data-open-temp={block.temp} style="cursor:pointer;width:100%;text-align:left">
+              <p class="kicker" style="margin:0">Temporada{block.live ? " · En juego" : ""}</p>
+              <h2>{block.title}</h2>
+              <p>{block.cards.length} fecha{block.cards.length === 1 ? "" : "s"}</p>
+            </button>
+          ))}
         </div>
-        <div id="fixture-root"></div>
-        <p class="empty" id="empty" hidden>No hay partidos con ese filtro.</p>
+
+        <div id="fx-inside" hidden>
+          {seasonBlocks.map((block) => (
+            <section class="season-box" data-fx-season={block.temp} hidden>
+              <header class="season-box-head">
+                <button class="season-back" type="button" data-fx-back>← Temporadas</button>
+                <p class="kicker">Temporada{block.live ? " · En juego" : ""}</p>
+                <h2>{block.title}</h2>
+                <p>{block.cards.length} fecha{block.cards.length === 1 ? "" : "s"}</p>
+              </header>
+              <div class="season-box-body" style="border:0;padding-top:16px">
+                <div class="result-grid">
+                  {block.cards.map((c) => (
+                    <button class="result-card" type="button" data-week={c.week} data-temp={c.temp}>
+                      <p class="kicker">Fecha</p>
+                      <h2>{c.week}</h2>
+                      <p>{c.total} partido{c.total === 1 ? "" : "s"}{c.live ? " · en juego" : ""}</p>
+                    </button>
+                  ))}
+                </div>
+                <div data-fx-body hidden>
+                  <div class="filters fixture-filters">
+                    <input class="search" data-fx-q type="search" placeholder="Buscar pareja o jugador…" autocomplete="off" />
+                    <span class="tag" data-fx-count></span>
+                  </div>
+                  <div data-fx-root></div>
+                  <p class="empty" data-fx-empty hidden>No hay partidos con ese filtro.</p>
+                </div>
+              </div>
+            </section>
+          ))}
+        </div>
       </>
     )}
 
@@ -99,114 +132,159 @@ const courts = [...new Set(matches.map((m) => m.venue).filter(Boolean))].sort((a
     )}
   </div>
 
+  <style>
+    .season-back {
+      justify-self: start;
+      border: 0;
+      background: none;
+      color: var(--lime);
+      font: inherit;
+      font-size: 13px;
+      padding: 0;
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+  </style>
+
   <script>
     import { describeResult } from "../lib/scoring.js";
     window.__ligaScoring = { describeResult };
   </script>
-  <script define:vars={{ matches }}>
-    const q = document.querySelector("#q");
-    const root = document.querySelector("#fixture-root");
-    const empty = document.querySelector("#empty");
-    const count = document.querySelector("#count");
-    if (!root) throw new Error("fixture");
-
-    let day = "Todas";
-    let cat = "Todas";
-    let court = "Todas";
+  <script define:vars={{ matches: all }}>
+    let week = "";
+    let temp = "";
+    const seasonsEl = document.querySelector("#fx-seasons");
+    const inside = document.querySelector("#fx-inside");
+    const describeResult = (raw) => window.__ligaScoring?.describeResult?.(raw) || null;
 
     function esc(s) {
       return String(s ?? "").replace(/[&<>"']/g, (c) =>
         ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
       );
     }
-    const describeResult = (raw) => window.__ligaScoring?.describeResult?.(raw) || null;
     function fold(s) {
       return String(s || "")
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
     }
-    function vsBlock(m) {
-      const info = describeResult(m.result);
-      return `<div class="fixture-vs">
-        <div class="pair pair-a${info?.homeWin ? " winner" : ""}">
-          <span class="pair-label">Pareja 1</span>
-          <strong>${esc(m.home)}</strong>
-          ${info ? `<span class="pair-pts">${info.homePts} pts</span>` : ""}
-        </div>
-        <span class="vs">vs</span>
-        <div class="pair pair-b${info && !info.homeWin ? " winner" : ""}">
-          <span class="pair-label">Pareja 2</span>
-          <strong>${esc(m.away)}</strong>
-          ${info ? `<span class="pair-pts">${info.awayPts} pts</span>` : ""}
-        </div>
-      </div>
-      <div class="fixture-score">${
-        info
-          ? `<b>${esc(info.score)}</b><span>${info.label}</span>`
-          : m.result
-            ? `<b>${esc(m.result)}</b>`
-            : `<span class="tag">Por jugar</span>`
-      }</div>`;
+
+    function activeBox() {
+      return document.querySelector(`.season-box[data-fx-season="${temp}"]`);
+    }
+
+    function showSeasons() {
+      week = "";
+      temp = "";
+      if (seasonsEl) seasonsEl.hidden = false;
+      if (inside) inside.hidden = true;
+      document.querySelectorAll(".season-box").forEach((box) => {
+        box.hidden = true;
+        box.classList.remove("open");
+        const body = box.querySelector("[data-fx-body]");
+        if (body) body.hidden = true;
+      });
     }
 
     function render() {
+      const box = activeBox();
+      if (!box || !week) return;
+      const root = box.querySelector("[data-fx-root]");
+      const empty = box.querySelector("[data-fx-empty]");
+      const count = box.querySelector("[data-fx-count]");
+      const q = box.querySelector("[data-fx-q]");
       const term = fold((q?.value || "").trim());
       const rows = matches.filter((m) => {
-        const okDay = day === "Todas" || m.day === day;
-        const okCat = cat === "Todas" || m.cat === cat;
-        const okCourt = court === "Todas" || m.venue === court;
+        if ((m.week || "Sin fecha") !== week || (m.temp || "") !== temp) return false;
         const blob = fold([m.home, m.away].filter(Boolean).join(" "));
-        const okQ = !term || blob.includes(term);
-        return okDay && okCat && okCourt && okQ;
+        return !term || blob.includes(term);
       });
-
-      const weeks = [...new Set(rows.map((m) => m.week || "Sin fecha"))];
-      root.innerHTML = weeks
-        .map((week) => {
-          const list = rows.filter((m) => (m.week || "Sin fecha") === week);
-          return `<section class="fixture-week">
-            <h2>${esc(week)}</h2>
-            <div class="fixture-list">
-              ${list
-                .map(
-                  (m) => `<article class="fixture-row">
-                    <div class="fixture-meta">
-                      <span>${esc(m.day || m.date)}</span>
-                      <span>${esc(m.time)}</span>
-                      <span>${esc(m.cat)}</span>
-                    </div>
-                    ${vsBlock(m)}
-                    <div class="fixture-place">
-                      <span>${esc(m.venue)}${m.court ? ` · ${esc(m.court)}` : ""}</span>
-                    </div>
-                  </article>`
-                )
-                .join("")}
-            </div>
-          </section>`;
-        })
-        .join("");
-
+      root.innerHTML = `<section class="fixture-week" style="padding-top:0">
+        <h2>${esc(week)}</h2>
+        <div class="fixture-list">
+          ${rows
+            .map((m) => {
+              const info = describeResult(m.result);
+              return `<article class="fixture-row">
+                <div class="fixture-meta">
+                  <span>${esc(m.day || m.date)}</span>
+                  <span>${esc(m.time)}</span>
+                  <span>${esc(m.cat)}</span>
+                </div>
+                <div class="fixture-vs">
+                  <div class="pair pair-a${info?.homeWin ? " winner" : ""}">
+                    <span class="pair-label">Pareja 1</span>
+                    <strong>${esc(m.home)}</strong>
+                    ${info ? `<span class="pair-pts">${info.homePts} pts</span>` : ""}
+                  </div>
+                  <span class="vs">vs</span>
+                  <div class="pair pair-b${info && !info.homeWin ? " winner" : ""}">
+                    <span class="pair-label">Pareja 2</span>
+                    <strong>${esc(m.away)}</strong>
+                    ${info ? `<span class="pair-pts">${info.awayPts} pts</span>` : ""}
+                  </div>
+                </div>
+                <div class="fixture-score">${
+                  info
+                    ? `<b>${esc(info.score)}</b><span>${info.label}</span>`
+                    : m.result
+                      ? `<b>${esc(m.result)}</b>`
+                      : `<span class="tag">Por jugar</span>`
+                }</div>
+                <div class="fixture-place">
+                  <span>${esc(m.venue)}${m.court ? ` · ${esc(m.court)}` : ""}</span>
+                </div>
+              </article>`;
+            })
+            .join("")}
+        </div>
+      </section>`;
       empty.hidden = rows.length > 0;
       count.textContent = rows.length + (rows.length === 1 ? " partido" : " partidos");
     }
 
-    function bind(selector, key, setter) {
-      document.querySelectorAll(selector).forEach((btn) => {
-        btn.addEventListener("click", () => {
-          document.querySelectorAll(selector).forEach((b) => b.classList.remove("on"));
-          btn.classList.add("on");
-          setter(btn.dataset[key]);
-          render();
-        });
+    function openSeason(nextTemp) {
+      temp = nextTemp || "";
+      week = "";
+      if (seasonsEl) seasonsEl.hidden = true;
+      if (inside) inside.hidden = false;
+      document.querySelectorAll(".season-box").forEach((box) => {
+        const on = box.dataset.fxSeason === temp;
+        box.hidden = !on;
+        box.classList.toggle("open", on);
+        const body = box.querySelector("[data-fx-body]");
+        if (body) body.hidden = true;
       });
+      document.querySelectorAll("[data-week]").forEach((b) => b.classList.remove("open"));
     }
 
-    q?.addEventListener("input", render);
-    bind("[data-day]", "day", (v) => { day = v; });
-    bind("[data-cat]", "cat", (v) => { cat = v; });
-    bind("[data-court]", "court", (v) => { court = v; });
-    render();
+    document.querySelectorAll("[data-open-temp]").forEach((btn) => {
+      btn.addEventListener("click", () => openSeason(btn.dataset.openTemp));
+    });
+    document.querySelectorAll("[data-fx-back]").forEach((btn) => {
+      btn.addEventListener("click", showSeasons);
+    });
+    document.querySelectorAll("[data-week]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        week = btn.dataset.week;
+        temp = btn.dataset.temp || temp;
+        document.querySelectorAll(".season-box").forEach((box) => {
+          const on = box.dataset.fxSeason === temp;
+          box.hidden = !on;
+          box.classList.toggle("open", on);
+          const body = box.querySelector("[data-fx-body]");
+          if (body) body.hidden = !on;
+        });
+        document.querySelectorAll("[data-week]").forEach((b) => {
+          b.classList.toggle("open", b.dataset.week === week && b.dataset.temp === temp);
+        });
+        render();
+      });
+    });
+    document.querySelectorAll("[data-fx-q]").forEach((input) => {
+      input.addEventListener("input", () => {
+        if (input.closest(".season-box")?.dataset.fxSeason === temp) render();
+      });
+    });
   </script>
 </Layout>
