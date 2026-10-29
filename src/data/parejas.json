@@ -116,19 +116,5 @@
       "Viernes": "13:00 - 00:00"
     },
     "note": ""
-  },
-  {
-    "id": "pmvttlokzfa79",
-    "createdAt": "2026-10-29T17:31:42.131Z",
-    "temp": "T5",
-    "cat": "A Masculina",
-    "p1": "Diaz Diego",
-    "p2": "Fontanetto Emiliano",
-    "days": {
-      "Jueves": "16:30 - 19:00",
-      "Viernes": "16:30 - 19:00",
-      "Sábado": "16:30 - 19:00"
-    },
-    "note": ""
   }
 ]
