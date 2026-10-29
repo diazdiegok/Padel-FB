@@ -107,17 +107,18 @@ const TO_HOURS = HOURS.slice(3);
       <label>Nota adicional:
         <textarea name="note" rows="3" maxlength="500"></textarea>
       </label>
-      <fieldset class="form-set insc-pay">
+      <fieldset class="form-set insc-pay" id="insc-pay">
         <legend>Pago / abono de inscripción</legend>
         <ul class="insc-pay-fees">
           <li>Si jugó la temporada anterior: <strong>$10.000</strong> por jugador (50%).</li>
           <li>Competidores nuevos: <strong>$20.000</strong> por jugador.</li>
         </ul>
-        <p class="form-hint">Transferí al alias <strong>ligafbpadel</strong> y adjuntá el comprobante (foto o PDF). Sin comprobante no se completa la inscripción.</p>
+        <p class="form-hint">Transferí al alias <strong>ligafbpadel</strong> y adjuntá el comprobante (foto o PDF). <strong>Sin comprobante no se puede completar la inscripción.</strong></p>
         <div class="insc-pay-attach">
           <input id="insc-receipt" name="receipt" type="file" accept="image/*,application/pdf" required hidden />
           <button class="btn btn-ghost insc-pay-btn" type="button" id="insc-receipt-btn">Adjuntar comprobante</button>
           <p class="form-hint" id="insc-receipt-name">Ningún archivo elegido</p>
+          <p class="insc-pay-alert" id="insc-receipt-alert" hidden>Falta el comprobante. Adjuntá la foto o el PDF de la transferencia para poder inscribirte.</p>
         </div>
       </fieldset>
       <p class="form-hint" id="insc-hint">{copy.hint}</p>
@@ -127,7 +128,7 @@ const TO_HOURS = HOURS.slice(3);
         <button class="btn btn-clear" type="button" id="insc-clear">Limpiar formulario</button>
         <button class="btn btn-lime" type="submit" id="insc-send">{copy.cta}</button>
       </div>
-      <p class="admin-msg" id="insc-msg" aria-live="polite"></p>
+      <p class="form-msg" id="insc-msg" aria-live="polite"></p>
     </form>
 
     <div class="empty insc-done" id="insc-closed" hidden={!closedAtBuild}>
@@ -135,9 +136,18 @@ const TO_HOURS = HOURS.slice(3);
       <a class="btn btn-ghost" href={`${base}liga/`}>Volver a Liga</a>
     </div>
 
-    <div class="empty insc-done" id="insc-done" hidden>
-      <p><strong>Listo.</strong> <span id="insc-done-text"></span></p>
-      <a class="btn btn-ghost" href={`${base}liga/`}>Volver a Liga</a>
+    <div class="insc-success" id="insc-done" hidden>
+      <p class="insc-success-kicker">Inscripción recibida</p>
+      <h2 class="insc-success-title">¡Listo, ya están anotados!</h2>
+      <p class="insc-success-lead" id="insc-done-text"></p>
+      <ul class="insc-success-list">
+        <li>Revisamos el comprobante y te confirmamos por WhatsApp.</li>
+        <li>Cuando salga el fixture, tienen <strong>24 hs</strong> para avisar si no pueden jugar.</li>
+      </ul>
+      <div class="insc-success-actions">
+        <a class="btn btn-lime" href={`${base}liga/`}>Ir a Liga</a>
+        <a class="btn btn-ghost" href={`${base}`}>Volver al inicio</a>
+      </div>
     </div>
   </div>
 
@@ -155,8 +165,20 @@ const TO_HOURS = HOURS.slice(3);
 
     function setMsg(text, kind) {
       if (!msg) return;
-      msg.textContent = text;
-      msg.className = "admin-msg" + (kind ? " " + kind : "");
+      msg.textContent = text || "";
+      msg.className = "form-msg" + (kind ? " " + kind : "");
+      msg.hidden = !text;
+    }
+
+    function setReceiptMissing(on) {
+      const pay = document.querySelector("#insc-pay");
+      const alert = document.querySelector("#insc-receipt-alert");
+      pay?.classList.toggle("missing", Boolean(on));
+      if (alert) alert.hidden = !on;
+      if (on) {
+        pay?.scrollIntoView({ behavior: "smooth", block: "center" });
+        receiptBtn?.focus();
+      }
     }
 
     function showClosed(text) {
@@ -201,15 +223,18 @@ const TO_HOURS = HOURS.slice(3);
       receiptName.textContent = file ? file.name : "Ningún archivo elegido";
       receiptName.classList.toggle("on", Boolean(file));
       if (receiptBtn) receiptBtn.textContent = file ? "Cambiar comprobante" : "Adjuntar comprobante";
+      if (file) setReceiptMissing(false);
     }
 
     receiptBtn?.addEventListener("click", () => receiptInput?.click());
     receiptInput?.addEventListener("change", syncReceiptLabel);
+    setMsg("");
 
     document.querySelector("#insc-clear")?.addEventListener("click", () => {
       form?.reset();
       syncDays();
       syncReceiptLabel();
+      setReceiptMissing(false);
       setMsg("");
     });
 
@@ -271,14 +296,20 @@ const TO_HOURS = HOURS.slice(3);
       const same = registered.find((p) => pairKey(p) === pairKey({ p1, p2 }));
       if (same) return setMsg(repeatedText(same), "err");
       if (!apiUrl) return setMsg("La inscripción todavía no está configurada.", "err");
-      const receiptFile = document.querySelector("#insc-receipt")?.files?.[0];
-      if (!receiptFile) return setMsg("Adjuntá el comprobante de pago o abono.", "err");
+      const receiptFile = receiptInput?.files?.[0];
+      if (!receiptFile) {
+        setReceiptMissing(true);
+        return setMsg("Adjuntá el comprobante de pago para completar la inscripción.", "err");
+      }
+      setReceiptMissing(false);
       if (receiptFile.size > 1_400_000) {
         return setMsg("El comprobante es muy pesado. Usá una foto de menos de 1,5 MB.", "err");
       }
       const btn = document.querySelector("#insc-send");
+      const btnLabel = btn?.textContent || "";
       btn.disabled = true;
-      setMsg("Enviando…");
+      if (btn) btn.textContent = "Enviando inscripción…";
+      setMsg("Estamos cargando tu pareja. No cierres esta página…", "ok");
       try {
         const receiptData = await fileToB64(receiptFile);
         const res = await fetch(`${apiUrl}/pairs`, {
@@ -305,16 +336,21 @@ const TO_HOURS = HOURS.slice(3);
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           if (/cerrada|cerró/.test(data.message || "")) return showClosed(data.message);
-          throw new Error(data.message || "No se pudo inscribir.");
+          throw new Error(data.message || "No se pudo completar la inscripción.");
         }
         form.hidden = true;
-        document.querySelector("#insc-done-text").textContent =
-          `${p1} / ${p2} quedó inscrita en ${cat}. Revisamos el comprobante y te confirmamos. Cuando se publiquen los partidos del fixture, tienen 24 hs para avisar si no pueden jugar.`;
+        setMsg("");
+        const doneLead = document.querySelector("#insc-done-text");
+        if (doneLead) {
+          doneLead.textContent = `${p1} / ${p2} quedó anotada en ${cat}.`;
+        }
         document.querySelector("#insc-done").hidden = false;
+        document.querySelector("#insc-done")?.scrollIntoView({ behavior: "smooth", block: "start" });
       } catch (ex) {
-        setMsg(ex.message || "No se pudo inscribir.", "err");
+        setMsg(ex.message || "No se pudo completar la inscripción. Probá de nuevo.", "err");
       } finally {
         btn.disabled = false;
+        if (btn) btn.textContent = btnLabel;
       }
     });
   </script>
