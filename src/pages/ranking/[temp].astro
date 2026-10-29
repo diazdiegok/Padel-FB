@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import BackNav from "../../components/BackNav.astro";
 import ranking from "../../data/ranking.json";
 import { site } from "../../data/site";
 import { listSeasons, seasonLabel, seasonSlug } from "../../lib/liga.js";
@@ -27,10 +28,11 @@ const live = tempCode === site.currentSeason;
 >
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker">
-        <a class="po-back" href={page("ranking/")}>← Volver al ranking</a>
-        {live ? " · En juego" : ""}
-      </p>
+      <BackNav crumbs={[
+        { label: "Ranking", href: "ranking/" },
+        { label: "Liga", href: "liga/" },
+      ]} />
+      <p class="kicker">{live ? "En juego" : "Histórico"}</p>
       <h1>Ranking · {title}</h1>
       <p>{rows.length} pareja{rows.length === 1 ? "" : "s"}. Filtrá por categoría o buscá un apellido.</p>
     </header>
@@ -71,9 +73,6 @@ const live = tempCode === site.currentSeason;
         </div>
         <p class="empty" id="empty" hidden>No hay jugadores con ese filtro.</p>
 
-        <p style="margin:28px 0 48px">
-          <a class="btn btn-ghost" href={page("ranking/")}>Volver al ranking</a>
-        </p>
       </>
     )}
   </div>

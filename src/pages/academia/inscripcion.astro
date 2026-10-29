@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import BackNav from "../../components/BackNav.astro";
 import { site } from "../../data/site";
 
 const venues = ((site as any).venues || []).filter((v: any) => v.academia === true || v.infantiles === true);
@@ -12,6 +13,10 @@ const kidsVenues = venues.filter((v: any) => v.infantiles === true).map((v: any)
 >
   <div class="wrap">
     <header class="page-hero">
+      <BackNav crumbs={[
+        { label: "Academia", href: "academia/" },
+        { label: "Inicio", href: "" },
+      ]} />
       <p class="kicker">Academia · Inscripción</p>
       <h1>Anotate a las clases</h1>
       <p>Adultos o infantiles. Completá los datos: quedan anotados y se abre WhatsApp con el mensaje armado para que te confirmemos horarios y valores.</p>

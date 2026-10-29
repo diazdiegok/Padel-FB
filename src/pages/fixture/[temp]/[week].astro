@@ -1,5 +1,6 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
+import BackNav from "../../../components/BackNav.astro";
 import fixture from "../../../data/fixture.json";
 import results from "../../../data/results.json";
 import { site } from "../../../data/site";
@@ -56,11 +57,14 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
 <Layout title={`${weekLabel} · Fixture ${title} | Padel FB`} description={`Partidos de ${weekLabel} · ${title}.`}>
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker">
-        <a class="po-back" href={seasonHref}>← Volver a {title}</a>
-      </p>
+      <BackNav crumbs={[
+        { label: title, href: `fixture/${seasonSlug(tempCode)}/` },
+        { label: "Fixture", href: "fixture/" },
+        { label: "Liga", href: "liga/" },
+      ]} />
+      <p class="kicker">Fixture · {title}</p>
       <h1>{weekLabel}</h1>
-      <p>Fixture · {title}</p>
+      <p>Partidos de la jornada.</p>
     </header>
 
     {list.length === 0 ? (
@@ -103,10 +107,6 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
       </>
     )}
 
-    <p style="margin:28px 0 48px;display:flex;gap:12px;flex-wrap:wrap">
-      <a class="btn btn-ghost" href={seasonHref}>Volver a {title}</a>
-      <a class="btn btn-ghost" href={page("fixture/")}>Volver al fixture</a>
-    </p>
   </div>
 
   <script>

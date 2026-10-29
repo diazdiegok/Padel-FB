@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import BackNav from "../../components/BackNav.astro";
 import { page } from "../../lib/paths";
 import { site } from "../../data/site";
 
@@ -16,6 +17,7 @@ const links = [
 >
   <div class="wrap">
     <header class="page-hero">
+      <BackNav crumbs={[{ label: "Inicio", href: "" }]} />
       <p class="kicker">Academia FB</p>
       <h1>Academia</h1>
       <p>Clases de adultos e infantiles, inscripción y sedes donde se entrena.</p>

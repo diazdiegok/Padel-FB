@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import BackNav from "../../components/BackNav.astro";
 import { page } from "../../lib/paths";
 import { site } from "../../data/site";
 import playoffJson from "../../data/playoff.json";
@@ -22,6 +23,7 @@ const links = [
 >
   <div class="wrap">
     <header class="page-hero">
+      <BackNav crumbs={[{ label: "Inicio", href: "" }]} />
       <p class="kicker">Liga · temporada {site.currentSeason}</p>
       <h1>Liga</h1>
       <p>Todo lo de la competencia: ranking, partidos, resultados e inscripciones.</p>

@@ -1,5 +1,6 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
+import BackNav from "../../../components/BackNav.astro";
 import fixture from "../../../data/fixture.json";
 import results from "../../../data/results.json";
 import { site } from "../../../data/site";
@@ -53,19 +54,17 @@ const seasonHref = page(`resultados/${seasonSlug(tempCode)}/`);
 <Layout title={`${weekLabel} · ${title} | Padel FB`} description={`Resultados de ${weekLabel} · ${title}.`}>
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker">
-        <a class="po-back" href={seasonHref}>← Volver a {title}</a>
-      </p>
+      <BackNav crumbs={[
+        { label: title, href: `resultados/${seasonSlug(tempCode)}/` },
+        { label: "Resultados", href: "resultados/" },
+        { label: "Liga", href: "liga/" },
+      ]} />
+      <p class="kicker">{title} · {list.length} partido{list.length === 1 ? "" : "s"}</p>
       <h1>{weekLabel}</h1>
-      <p>{title} · {list.length} partido{list.length === 1 ? "" : "s"}</p>
+      <p>Resultados de la jornada.</p>
     </header>
 
     <div id="result-root" class="result-panel"></div>
-
-    <p style="margin:8px 0 48px;display:flex;gap:12px;flex-wrap:wrap">
-      <a class="btn btn-ghost" href={seasonHref}>Volver a {title}</a>
-      <a class="btn btn-ghost" href={page("resultados/")}>Volver a resultados</a>
-    </p>
   </div>
 
   <script>

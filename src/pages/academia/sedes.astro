@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import BackNav from "../../components/BackNav.astro";
 import { site } from "../../data/site";
 import { asset, page } from "../../lib/paths";
 import VenueLinks from "../../components/VenueLinks.astro";
@@ -15,12 +16,15 @@ const list = venues.length ? venues : site.venues || [];
 >
   <div class="wrap">
     <header class="page-hero">
+      <BackNav crumbs={[
+        { label: "Academia", href: "academia/" },
+        { label: "Inicio", href: "" },
+      ]} />
       <p class="kicker">Academia FB</p>
       <h1>Sedes</h1>
       <p>Complejos donde se entrenan adultos y niños. Para las canchas de la competencia, mirá las sedes de la liga.</p>
       <div class="actions">
         <a class="btn btn-lime" href={page("academia/inscripcion/")}>Inscripción</a>
-        <a class="btn btn-ghost" href={page("academia/")}>Volver a academia</a>
       </div>
     </header>
 

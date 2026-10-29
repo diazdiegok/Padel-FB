@@ -163,6 +163,25 @@ nav .wrap {
 }
 .po-back:hover { color: var(--cream); }
 
+.back-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 0 0 10px;
+}
+.back-nav-link {
+  color: var(--lime);
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+.back-nav-link:hover {
+  color: var(--cream);
+}
+.page-hero .back-nav {
+  margin-bottom: 12px;
+}
+
 .hub-card {
   border: 1px solid var(--line);
   background: var(--bg-2);

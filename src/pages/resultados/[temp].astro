@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import BackNav from "../../components/BackNav.astro";
 import fixture from "../../data/fixture.json";
 import results from "../../data/results.json";
 import { site } from "../../data/site";
@@ -38,10 +39,11 @@ const live = tempCode === site.currentSeason;
 <Layout title={`Resultados ${title} | Padel FB`} description={`Resultados de ${title} de Padel FB en Paraná.`}>
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker">
-        <a class="po-back" href={page("resultados/")}>← Volver a resultados</a>
-        {live ? " · En juego" : ""}
-      </p>
+      <BackNav crumbs={[
+        { label: "Resultados", href: "resultados/" },
+        { label: "Liga", href: "liga/" },
+      ]} />
+      <p class="kicker">{live ? "En juego" : "Histórico"}</p>
       <h1>Resultados · {title}</h1>
       <p>Elegí la fecha para ver los partidos.</p>
     </header>
@@ -60,8 +62,5 @@ const live = tempCode === site.currentSeason;
       </div>
     )}
 
-    <p style="margin:28px 0 48px">
-      <a class="btn btn-ghost" href={page("resultados/")}>Volver a resultados</a>
-    </p>
   </div>
 </Layout>

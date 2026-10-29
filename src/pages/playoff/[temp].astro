@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import BackNav from "../../components/BackNav.astro";
 import playoffJson from "../../data/playoff.json";
 import { site } from "../../data/site";
 import { seasonLabel } from "../../lib/liga.js";
@@ -24,7 +25,11 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
 <Layout title={`${title} | Padel FB`} description={`Cuadro y resultados del ${title} de Padel FB en ${site.city}.`}>
   <div class="wrap">
     <header class="page-hero">
-      <p class="kicker"><a class="po-back" href={page("playoff/")}>← Playoff</a> · {season}{playoff.dates ? ` · ${playoff.dates}` : ""}</p>
+      <BackNav crumbs={[
+        { label: "Playoff", href: "playoff/" },
+        { label: "Liga", href: "liga/" },
+      ]} />
+      <p class="kicker">{season}{playoff.dates ? ` · ${playoff.dates}` : ""}</p>
       <h1>{visible ? title : "Playoff"}</h1>
       {visible ? (
         <p>{playoff.note || "Cuadro por categoría. La pareja ganadora de cada partido pasa a la ronda siguiente."}</p>

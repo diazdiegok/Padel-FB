@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import BackNav from "../../components/BackNav.astro";
 import ranking from "../../data/ranking.json";
 import { site } from "../../data/site";
 import { listSeasons, seasonLabel, seasonNumber, seasonSlug } from "../../lib/liga.js";
@@ -28,6 +29,7 @@ const seasonBlocks = temps.map((temp) => {
 >
   <div class="wrap">
     <header class="page-hero">
+      <BackNav crumbs={[{ label: "Liga", href: "liga/" }]} />
       <p class="kicker">{rows.length} jugadores totales (todas las temporadas)</p>
       <h1>Ranking</h1>
       <p>Elegí la temporada para ver la tabla.</p>

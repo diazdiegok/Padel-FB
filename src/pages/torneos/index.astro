@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import BackNav from "../../components/BackNav.astro";
 import { site } from "../../data/site";
 import { page } from "../../lib/paths";
 
@@ -13,6 +14,7 @@ const tournamentWa = `https://wa.me/${site.whatsapp}?text=${encodeURIComponent("
 >
   <div class="wrap">
     <header class="page-hero">
+      <BackNav crumbs={[{ label: "Inicio", href: "" }]} />
       <p class="kicker">{t.kicker || "Torneos"}</p>
       <h1>{t.title || "Torneos"}</h1>
       <p>{t.intro}</p>

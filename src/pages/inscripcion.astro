@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import BackNav from "../components/BackNav.astro";
 import { page } from "../lib/paths";
 ---
 <Layout
@@ -8,6 +9,7 @@ import { page } from "../lib/paths";
 >
   <div class="wrap">
     <header class="page-hero">
+      <BackNav crumbs={[{ label: "Inicio", href: "" }]} />
       <p class="kicker">Sumate</p>
       <h1>¿A qué te querés sumar?</h1>
       <p>Elegí una opción y te llevamos a su inscripción.</p>

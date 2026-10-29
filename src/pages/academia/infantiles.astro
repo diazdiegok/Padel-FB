@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import BackNav from "../../components/BackNav.astro";
 import { site } from "../../data/site";
 import { asset, page } from "../../lib/paths";
 import VenueLinks from "../../components/VenueLinks.astro";
@@ -34,6 +35,10 @@ for (const v of flagged) {
 >
   <div class="wrap">
     <header class="page-hero">
+      <BackNav crumbs={[
+        { label: "Academia", href: "academia/" },
+        { label: "Inicio", href: "" },
+      ]} />
       <p class="kicker">{kids.kicker || "Academia infantil"}</p>
       <h1>
         {titleLines.map((line, i) => (

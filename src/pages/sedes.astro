@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import BackNav from "../components/BackNav.astro";
 import { site } from "../data/site";
 import { asset } from "../lib/paths";
 import VenueLinks from "../components/VenueLinks.astro";
@@ -12,6 +13,7 @@ const venues = (site.venues || []).filter((v) => v.liga !== false);
 >
   <div class="wrap">
     <header class="page-hero">
+      <BackNav crumbs={[{ label: "Liga", href: "liga/" }]} />
       <p class="kicker">Padel FB · {site.city}, {site.province}</p>
       <h1>Sedes</h1>
       <p>Canchas oficiales de la liga. Direcciones, Instagram y WhatsApp de cada complejo.</p>

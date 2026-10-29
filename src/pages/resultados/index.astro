@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import BackNav from "../../components/BackNav.astro";
 import fixture from "../../data/fixture.json";
 import results from "../../data/results.json";
 import { site } from "../../data/site";
@@ -25,6 +26,7 @@ const seasonBlocks = seasons.map((temp) => {
 <Layout title="Resultados | Padel FB" description="Resultados por fecha de Padel FB en Paraná.">
   <div class="wrap">
     <header class="page-hero">
+      <BackNav crumbs={[{ label: "Liga", href: "liga/" }]} />
       <p class="kicker">Liga</p>
       <h1>Resultados</h1>
       <p>Elegí la temporada para ver las fechas.</p>

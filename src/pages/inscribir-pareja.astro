@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import BackNav from "../components/BackNav.astro";
 import { site } from "../data/site";
 import config from "../data/inscripcion-parejas.json";
 import { CATS, DAYS, MAIL_DOMAINS } from "../lib/disponibilidad.js";
@@ -27,6 +28,7 @@ const TO_HOURS = HOURS.slice(3);
 >
   <div class="wrap">
     <header class="page-hero">
+      <BackNav crumbs={[{ label: "Liga", href: "liga/" }]} />
       <p class="kicker" id="insc-kicker">Inscripciones de parejas · {seasonLabel(site.currentSeason)}</p>
       <h1 id="insc-title">{copy.title}</h1>
       <p id="insc-intro">{copy.intro}</p>

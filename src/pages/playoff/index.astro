@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import BackNav from "../../components/BackNav.astro";
 import playoffJson from "../../data/playoff.json";
 import { site } from "../../data/site";
 import { seasonLabel } from "../../lib/liga.js";
@@ -28,6 +29,7 @@ const playoffs = normalizePlayoffs(playoffJson)
 <Layout title="Playoff | Padel FB" description={`Cuadros e historial de playoff de cada temporada de Padel FB en ${site.city}.`}>
   <div class="wrap">
     <header class="page-hero">
+      <BackNav crumbs={[{ label: "Liga", href: "liga/" }]} />
       <p class="kicker">Liga</p>
       <h1>Playoff</h1>
       <p>Historial de cuadros. Cada temporada queda guardada con su fecha, cruces, resultados y campeones.</p>

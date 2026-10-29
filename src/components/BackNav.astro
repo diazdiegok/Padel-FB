@@ -1,0 +1,19 @@
+---
+import { page } from "../lib/paths";
+
+/**
+ * crumbs: [{ label: "Liga", href: "liga/" }, { label: "Fixture", href: "fixture/" }]
+ * Se muestran como "← Volver a …" de más cercana a más general.
+ */
+const { crumbs = [] } = Astro.props;
+const items = (Array.isArray(crumbs) ? crumbs : []).filter((c) => c?.label && c?.href);
+---
+{items.length > 0 && (
+  <nav class="back-nav" aria-label="Navegación hacia atrás">
+    {items.map((c) => (
+      <a class="back-nav-link" href={page(c.href)}>
+        ← Volver a {c.label}
+      </a>
+    ))}
+  </nav>
+)}
