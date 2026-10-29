@@ -268,7 +268,7 @@ const seasonVenues = Object.fromEntries(
       <div class="wrap">
         <div class="section-head sponsors-head">
           <div>
-            <p class="kicker">Sponsors</p>
+            <p class="kicker">Gracias</p>
             <h2>Marcas que nos acompañan</h2>
           </div>
         </div>
@@ -281,20 +281,17 @@ const seasonVenues = Object.fromEntries(
               const image = typeof s === "string" ? s : s.image;
               return (
                 <li class="sponsor-card">
-                  <img src={asset(image)} alt={name} loading="lazy" width="160" height="88" />
-                  <span class="sponsor-name">{name}</span>
+                  <img src={asset(image)} alt={name} loading="lazy" width="220" height="220" decoding="async" />
                 </li>
               );
             })}
           </ul>
           <ul class="sponsors-row" aria-hidden="true">
             {site.sponsors.map((s) => {
-              const name = typeof s === "string" ? "Sponsor" : s.name;
               const image = typeof s === "string" ? s : s.image;
               return (
                 <li class="sponsor-card">
-                  <img src={asset(image)} alt="" loading="lazy" width="160" height="88" />
-                  <span class="sponsor-name">{name}</span>
+                  <img src={asset(image)} alt="" loading="lazy" width="220" height="220" decoding="async" />
                 </li>
               );
             })}

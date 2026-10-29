@@ -291,16 +291,16 @@
   ],
   "moreVenues": [],
   "sponsors": [
-    { "name": "EVOXX", "image": "/images/sponsors/evoxx.png" },
-    { "name": "Teccell", "image": "/images/sponsors/teccell.png" },
-    { "name": "ABBA Construcciones", "image": "/images/sponsors/abba.png" },
-    { "name": "Horax Reparaciones", "image": "/images/sponsors/horax.png" },
-    { "name": "La Casa del Paragolpe", "image": "/images/sponsors/lcdp.png" },
-    { "name": "Padel Pai", "image": "/images/sponsors/padel-pai.png" },
-    { "name": "Mundo Medias", "image": "/images/sponsors/mundo-medias.png" },
-    { "name": "Open Padel FB", "image": "/images/sponsors/open-padel-fb.png" },
-    { "name": "El Viejo Matero", "image": "/images/sponsors/el-viejo-matero.png" },
-    { "name": "Grupo Alfa", "image": "/images/sponsors/grupo-alfa.png" }
+    { "name": "EVOXX", "image": "/images/sponsors/evoxx.jpg" },
+    { "name": "Teccell", "image": "/images/sponsors/teccell.jpg" },
+    { "name": "ABBA Construcciones", "image": "/images/sponsors/abba.jpg" },
+    { "name": "Horax Reparaciones", "image": "/images/sponsors/horax.jpg" },
+    { "name": "La Casa del Paragolpe", "image": "/images/sponsors/lcdp.jpg" },
+    { "name": "Padel Pai", "image": "/images/sponsors/padel-pai.jpg" },
+    { "name": "Mundo Medias", "image": "/images/sponsors/mundo-medias.jpg" },
+    { "name": "Open Padel FB", "image": "/images/sponsors/open-padel-fb.jpg" },
+    { "name": "El Viejo Matero", "image": "/images/sponsors/el-viejo-matero.jpg" },
+    { "name": "Grupo Alfa", "image": "/images/sponsors/grupo-alfa.jpg" }
   ],
   "seasonVenues": {
     "T1": 3,
