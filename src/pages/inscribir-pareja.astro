@@ -35,7 +35,7 @@ const TO_HOURS = HOURS.slice(3);
       <p class="tag" id="insc-deadline" hidden></p>
     </header>
 
-    <form class="form form-fecha" id="insc-form" hidden={closedAtBuild}>
+    <form class="form form-fecha" id="insc-form" novalidate hidden={closedAtBuild}>
       <fieldset class="form-set">
         <legend>Primer integrante</legend>
         <div class="form-grid">
@@ -115,7 +115,7 @@ const TO_HOURS = HOURS.slice(3);
         </ul>
         <p class="form-hint">Transferí al alias <strong>ligafbpadel</strong> y adjuntá el comprobante (foto o PDF). <strong>Sin comprobante no se puede completar la inscripción.</strong></p>
         <div class="insc-pay-attach">
-          <input id="insc-receipt" name="receipt" type="file" accept="image/*,application/pdf" required hidden />
+          <input id="insc-receipt" name="receipt" type="file" accept="image/*,application/pdf" hidden />
           <button class="btn btn-ghost insc-pay-btn" type="button" id="insc-receipt-btn">Adjuntar comprobante</button>
           <p class="form-hint" id="insc-receipt-name">Ningún archivo elegido</p>
           <p class="insc-pay-alert" id="insc-receipt-alert" hidden>Falta el comprobante. Adjuntá la foto o el PDF de la transferencia para poder inscribirte.</p>
