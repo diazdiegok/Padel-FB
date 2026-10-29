@@ -29,7 +29,7 @@ const links = [
       <p>Todo lo de la competencia: ranking, partidos, resultados e inscripciones.</p>
     </header>
 
-    <div class="hub-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+    <div class="hub-grid hub-fill">
       {links.map((l) => (
         <a class="hub-card" href={page(l.href)}>
           <p class="kicker" style="margin:0">{l.title}</p>

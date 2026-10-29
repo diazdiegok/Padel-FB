@@ -38,7 +38,7 @@ const playoffs = normalizePlayoffs(playoffJson)
     {playoffs.length === 0 ? (
       <p class="empty" style="display:block;padding:48px 0">Todavía no hay playoff publicados.</p>
     ) : (
-      <div class="hub-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+      <div class="hub-grid hub-fill">
         {playoffs.map((p) => (
           <a class="hub-card" href={p.href}>
             <div class="hub-card-top">

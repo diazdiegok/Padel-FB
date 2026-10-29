@@ -55,7 +55,7 @@ const live = tempCode === site.currentSeason;
     {cards.length === 0 ? (
       <p class="empty" style="display:block;padding:48px 0">Todavía no hay fechas en esta temporada.</p>
     ) : (
-      <div class="hub-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+      <div class="hub-grid hub-fill">
         {cards.map((c) => (
           <a class="hub-card" href={c.href}>
             <p class="kicker" style="margin:0">Fecha{c.live ? " · En juego" : ""}</p>

@@ -55,9 +55,8 @@ const live = tempCode === site.currentSeason;
           <span class="tag" id="count" aria-live="polite"></span>
         </div>
 
-        <p class="table-hint">Deslizá horizontalmente para ver toda la tabla.</p>
-        <div class="table-scroll" tabindex="0" role="region" aria-label={`Tabla ${title}`}>
-          <table class="board">
+        <div class="table-scroll rank-board-wrap" tabindex="0" role="region" aria-label={`Tabla ${title}`}>
+          <table class="board rank-board">
             <thead>
               <tr>
                 <th>#</th>
@@ -101,16 +100,20 @@ const live = tempCode === site.currentSeason;
         })
         .sort((a, b) => Number(a.pos) - Number(b.pos) || Number(b.pts) - Number(a.pts));
       tbody.innerHTML = list
-        .map(
-          (p) => `<tr class="${Number(p.pos) === 1 ? "top1" : ""}">
+        .map((p) => {
+          const dif = `${Number(p.dif) > 0 ? "+" : ""}${esc(p.dif)}`;
+          return `<tr class="${Number(p.pos) === 1 ? "top1" : ""}">
           <td class="pos">${esc(p.pos)}</td>
-          <td class="name">${esc(p.name)}</td>
-          <td>${esc(p.cat)}</td>
-          <td>${esc(p.pj)}</td>
-          <td>${Number(p.dif) > 0 ? "+" : ""}${esc(p.dif)}</td>
-          <td><strong>${esc(p.pts)}</strong></td>
-        </tr>`
-        )
+          <td class="name">
+            <span class="rank-name">${esc(p.name)}</span>
+            <span class="rank-meta">${esc(p.cat)} · PJ ${esc(p.pj)} · Dif ${dif}</span>
+          </td>
+          <td class="cat-cell">${esc(p.cat)}</td>
+          <td class="pj">${esc(p.pj)}</td>
+          <td class="dif">${dif}</td>
+          <td class="pts"><strong>${esc(p.pts)}</strong></td>
+        </tr>`;
+        })
         .join("");
       if (empty) empty.hidden = list.length > 0;
       if (count) count.textContent = list.length + " jugadores";

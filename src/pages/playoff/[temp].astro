@@ -240,10 +240,11 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
     }
     .po-col-list {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      grid-template-columns: 1fr;
       gap: 10px;
     }
-    .po-team { font-size: 15px; gap: 8px; grid-template-columns: 22px 1fr auto; }
-    .po-card { padding: 12px 14px; }
+    .po-team { font-size: 15px; gap: 8px; grid-template-columns: 22px minmax(0, 1fr) auto; }
+    .po-team-sets { flex-shrink: 0; }
+    .po-card { padding: 12px 14px; min-width: 0; }
   }
 </style>

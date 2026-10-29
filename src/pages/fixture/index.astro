@@ -43,7 +43,7 @@ const pendingCats = [...new Set(pending.map((m) => m.cat || "Sin categoría"))];
     {seasonBlocks.length === 0 ? (
       <p class="empty" style="display:block;padding:48px 0">Todavía no hay partidos cargados. Cuando se publiquen desde el admin van a aparecer acá.</p>
     ) : (
-      <div class="hub-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+      <div class="hub-grid hub-fill">
         {seasonBlocks.map((block) => (
           <a class="hub-card" href={block.href}>
             <p class="kicker" style="margin:0">Temporada{block.live ? " · En juego" : ""}</p>

@@ -23,7 +23,7 @@ const links = [
       <p>Clases de adultos e infantiles, inscripción y sedes donde se entrena.</p>
     </header>
 
-    <div class="hub-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+    <div class="hub-grid hub-fill">
       {links.map((l) => (
         <a class="hub-card" href={page(l.href)}>
           <p class="kicker" style="margin:0">{l.title}</p>
