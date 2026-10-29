@@ -35,7 +35,7 @@ const seasonBlocks = temps.map((temp) => {
     <header class="page-hero">
       <p class="kicker">{rows.length} jugadores totales (todas las temporadas)</p>
       <h1>Ranking</h1>
-      <p>Cada temporada es una caja. Adentro elegís la categoría o Todas.</p>
+      <p>Elegí la temporada. Adentro están las categorías.</p>
     </header>
 
     <aside class="rank-rules" aria-labelledby="rank-rules-title">
@@ -58,60 +58,91 @@ const seasonBlocks = temps.map((temp) => {
     {seasonBlocks.length === 0 ? (
       <p class="empty" style="display:block;padding:48px 0">Próximamente. Cuando haya parejas en el ranking van a aparecer acá.</p>
     ) : (
-      seasonBlocks.map((block) => (
-        <section class="season-box" data-rank-season={block.temp}>
-          <header class="season-box-head">
-            <p class="kicker">Temporada{block.live ? " · En juego" : ""}</p>
-            <h2>{block.title}</h2>
-            <p>{block.total} pareja{block.total === 1 ? "" : "s"}</p>
-          </header>
-          <div class="season-box-body" style="border:0;padding-top:16px">
-          <div class="result-grid">
-            <button class="result-card" type="button" data-temp={block.temp} data-cat="Todas">
-              <p class="kicker">Ranking</p>
-              <h2>Todas</h2>
+      <>
+        <div class="hub-grid" id="rank-seasons" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+          {seasonBlocks.map((block) => (
+            <button class="hub-card" type="button" data-open-temp={block.temp} style="cursor:pointer;width:100%;text-align:left">
+              <p class="kicker" style="margin:0">Temporada{block.live ? " · En juego" : ""}</p>
+              <h2>{block.title}</h2>
               <p>{block.total} pareja{block.total === 1 ? "" : "s"}</p>
             </button>
-            {block.cats.map((c) => (
-              <button class="result-card" type="button" data-temp={block.temp} data-cat={c.cat}>
-                <p class="kicker">Categoría</p>
-                <h2>{c.cat}</h2>
-                <p>{c.total} pareja{c.total === 1 ? "" : "s"}</p>
-              </button>
-            ))}
-          </div>
-          <div data-rank-body hidden>
-            <div class="filters">
-              <input class="search" data-rank-q type="search" placeholder="Buscar jugador o pareja…" autocomplete="off" />
-              <span class="tag" data-rank-count aria-live="polite"></span>
-            </div>
-            <p class="table-hint">Deslizá horizontalmente para ver toda la tabla.</p>
-            <div class="table-scroll" tabindex="0" role="region" aria-label={`Tabla ${block.title}`}>
-              <table class="board">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Jugador / pareja</th>
-                    <th>Categoría</th>
-                    <th>PJ</th>
-                    <th>Dif. sets</th>
-                    <th>Pts</th>
-                  </tr>
-                </thead>
-                <tbody data-rank-rows></tbody>
-              </table>
-            </div>
-            <p class="empty" data-rank-empty hidden>No hay jugadores con ese filtro.</p>
-          </div>
-          </div>
-        </section>
-      ))
+          ))}
+        </div>
+
+        <div id="rank-inside" hidden>
+          {seasonBlocks.map((block) => (
+            <section class="season-box" data-rank-season={block.temp} hidden>
+              <header class="season-box-head">
+                <button class="season-back" type="button" data-rank-back>← Temporadas</button>
+                <p class="kicker">Temporada{block.live ? " · En juego" : ""}</p>
+                <h2>{block.title}</h2>
+                <p>{block.total} pareja{block.total === 1 ? "" : "s"}</p>
+              </header>
+              <div class="season-box-body" style="border:0;padding-top:16px">
+                <div class="result-grid">
+                  <button class="result-card" type="button" data-temp={block.temp} data-cat="Todas">
+                    <p class="kicker">Ranking</p>
+                    <h2>Todas</h2>
+                    <p>{block.total} pareja{block.total === 1 ? "" : "s"}</p>
+                  </button>
+                  {block.cats.map((c) => (
+                    <button class="result-card" type="button" data-temp={block.temp} data-cat={c.cat}>
+                      <p class="kicker">Categoría</p>
+                      <h2>{c.cat}</h2>
+                      <p>{c.total} pareja{c.total === 1 ? "" : "s"}</p>
+                    </button>
+                  ))}
+                </div>
+                <div data-rank-body hidden>
+                  <div class="filters">
+                    <input class="search" data-rank-q type="search" placeholder="Buscar jugador o pareja…" autocomplete="off" />
+                    <span class="tag" data-rank-count aria-live="polite"></span>
+                  </div>
+                  <p class="table-hint">Deslizá horizontalmente para ver toda la tabla.</p>
+                  <div class="table-scroll" tabindex="0" role="region" aria-label={`Tabla ${block.title}`}>
+                    <table class="board">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Jugador / pareja</th>
+                          <th>Categoría</th>
+                          <th>PJ</th>
+                          <th>Dif. sets</th>
+                          <th>Pts</th>
+                        </tr>
+                      </thead>
+                      <tbody data-rank-rows></tbody>
+                    </table>
+                  </div>
+                  <p class="empty" data-rank-empty hidden>No hay jugadores con ese filtro.</p>
+                </div>
+              </div>
+            </section>
+          ))}
+        </div>
+      </>
     )}
   </div>
+
+  <style>
+    .season-back {
+      justify-self: start;
+      border: 0;
+      background: none;
+      color: var(--lime);
+      font: inherit;
+      font-size: 13px;
+      padding: 0;
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+  </style>
 
   <script define:vars={{ players: rows }}>
     let cat = "Todas";
     let temp = "";
+    const seasons = document.querySelector("#rank-seasons");
+    const inside = document.querySelector("#rank-inside");
 
     function esc(s) {
       return String(s ?? "").replace(/[&<>"']/g, (c) =>
@@ -123,6 +154,19 @@ const seasonBlocks = temps.map((temp) => {
       return document.querySelector(`.season-box[data-rank-season="${temp}"]`);
     }
 
+    function showSeasons() {
+      temp = "";
+      cat = "Todas";
+      if (seasons) seasons.hidden = false;
+      if (inside) inside.hidden = true;
+      document.querySelectorAll(".season-box").forEach((box) => {
+        box.hidden = true;
+        box.classList.remove("open");
+        const body = box.querySelector("[data-rank-body]");
+        if (body) body.hidden = true;
+      });
+    }
+
     function render() {
       const box = activeBox();
       if (!box) return;
@@ -131,7 +175,7 @@ const seasonBlocks = temps.map((temp) => {
       const count = box.querySelector("[data-rank-count]");
       const q = box.querySelector("[data-rank-q]");
       const term = (q?.value || "").trim().toLowerCase();
-      const rows = players
+      const list = players
         .filter((p) => {
           const okCat = cat === "Todas" || p.cat === cat;
           const okTemp = p.temp === temp;
@@ -139,7 +183,7 @@ const seasonBlocks = temps.map((temp) => {
           return okCat && okTemp && okQ;
         })
         .sort((a, b) => Number(a.pos) - Number(b.pos) || Number(b.pts) - Number(a.pts));
-      tbody.innerHTML = rows
+      tbody.innerHTML = list
         .map(
           (p) => `<tr class="${Number(p.pos) === 1 ? "top1" : ""}">
           <td class="pos">${esc(p.pos)}</td>
@@ -151,15 +195,18 @@ const seasonBlocks = temps.map((temp) => {
         </tr>`
         )
         .join("");
-      empty.hidden = rows.length > 0;
-      count.textContent = rows.length + " jugadores";
+      empty.hidden = list.length > 0;
+      count.textContent = list.length + " jugadores";
     }
 
-    function openSeason(nextTemp, nextCat) {
+    function openSeason(nextTemp, nextCat = "Todas") {
       temp = nextTemp || "";
       cat = nextCat || "Todas";
+      if (seasons) seasons.hidden = true;
+      if (inside) inside.hidden = false;
       document.querySelectorAll(".season-box").forEach((box) => {
         const on = box.dataset.rankSeason === temp;
+        box.hidden = !on;
         box.classList.toggle("open", on);
         const body = box.querySelector("[data-rank-body]");
         if (body) body.hidden = !on;
@@ -168,9 +215,14 @@ const seasonBlocks = temps.map((temp) => {
         b.classList.toggle("open", b.dataset.temp === temp && b.dataset.cat === cat);
       });
       render();
-      activeBox()?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
 
+    document.querySelectorAll("[data-open-temp]").forEach((btn) => {
+      btn.addEventListener("click", () => openSeason(btn.dataset.openTemp, "Todas"));
+    });
+    document.querySelectorAll("[data-rank-back]").forEach((btn) => {
+      btn.addEventListener("click", showSeasons);
+    });
     document.querySelectorAll(".result-card[data-temp]").forEach((btn) => {
       btn.addEventListener("click", () => openSeason(btn.dataset.temp, btn.dataset.cat));
     });

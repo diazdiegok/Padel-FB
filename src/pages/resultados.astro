@@ -37,7 +37,6 @@ const seasonBlocks = seasons.map((temp) => {
   };
 });
 const cards = seasonBlocks.flatMap((block) => block.cards);
-const first = cards[0];
 ---
 <Layout
   title="Resultados | Padel FB"
@@ -47,50 +46,76 @@ const first = cards[0];
     <header class="page-hero">
       <p class="kicker">Liga</p>
       <h1>Resultados</h1>
-      <p>Cada temporada es una caja. Adentro están las fechas.</p>
+      <p>Elegí la temporada. Adentro están las fechas.</p>
     </header>
 
     {cards.length === 0 ? (
       <p class="empty" style="display:block;padding:48px 0">Próximamente. Cuando se publique la Fecha 1 van a aparecer acá.</p>
     ) : (
-      seasonBlocks.map((block, s) => (
-        <section class:list={["season-box", { open: s === 0 }]} data-res-season={block.temp}>
-          <header class="season-box-head">
-            <p class="kicker">Temporada{block.live ? " · En juego" : ""}</p>
-            <h2>{block.title}</h2>
-            <p>{block.cards.length} fecha{block.cards.length === 1 ? "" : "s"}</p>
-          </header>
-          <div class="season-box-body" style="border:0;padding-top:16px">
-            <div class="result-grid">
-              {block.cards.map((c, i) => (
-                <button
-                  class:list={["result-card", { open: s === 0 && i === 0 }]}
-                  type="button"
-                  data-week={c.week}
-                  data-temp={c.temp}
-                >
-                  <p class="kicker">Fecha</p>
-                  <h2>{c.week}</h2>
-                  <p>{c.played} / {c.total} resultados</p>
-                </button>
-              ))}
-            </div>
-            <div data-res-body hidden={s !== 0}>
-              <div data-res-root></div>
-            </div>
-          </div>
-        </section>
-      ))
+      <>
+        <div class="hub-grid" id="res-seasons" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+          {seasonBlocks.map((block) => (
+            <button class="hub-card" type="button" data-open-temp={block.temp} style="cursor:pointer;width:100%;text-align:left">
+              <p class="kicker" style="margin:0">Temporada{block.live ? " · En juego" : ""}</p>
+              <h2>{block.title}</h2>
+              <p>{block.cards.length} fecha{block.cards.length === 1 ? "" : "s"}</p>
+            </button>
+          ))}
+        </div>
+
+        <div id="res-inside" hidden>
+          {seasonBlocks.map((block) => (
+            <section class="season-box" data-res-season={block.temp} hidden>
+              <header class="season-box-head">
+                <button class="season-back" type="button" data-res-back>← Temporadas</button>
+                <p class="kicker">Temporada{block.live ? " · En juego" : ""}</p>
+                <h2>{block.title}</h2>
+                <p>{block.cards.length} fecha{block.cards.length === 1 ? "" : "s"}</p>
+              </header>
+              <div class="season-box-body" style="border:0;padding-top:16px">
+                <div class="result-grid">
+                  {block.cards.map((c) => (
+                    <button class="result-card" type="button" data-week={c.week} data-temp={c.temp}>
+                      <p class="kicker">Fecha</p>
+                      <h2>{c.week}</h2>
+                      <p>{c.played} / {c.total} resultados</p>
+                    </button>
+                  ))}
+                </div>
+                <div data-res-body hidden>
+                  <div data-res-root></div>
+                </div>
+              </div>
+            </section>
+          ))}
+        </div>
+      </>
     )}
   </div>
+
+  <style>
+    .season-back {
+      justify-self: start;
+      border: 0;
+      background: none;
+      color: var(--lime);
+      font: inherit;
+      font-size: 13px;
+      padding: 0;
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+  </style>
 
   <script>
     import { describeResult } from "../lib/scoring.js";
     window.__ligaScoring = { describeResult };
   </script>
-  <script define:vars={{ matches, first }}>
-    let week = first?.week || "";
-    let temp = first?.temp || "";
+  <script define:vars={{ matches }}>
+    let week = "";
+    let temp = "";
+    const seasonsEl = document.querySelector("#res-seasons");
+    const inside = document.querySelector("#res-inside");
 
     const describeResult = (raw) => window.__ligaScoring?.describeResult?.(raw) || null;
     function esc(s) {
@@ -103,9 +128,22 @@ const first = cards[0];
       return document.querySelector(`.season-box[data-res-season="${temp}"] [data-res-root]`);
     }
 
+    function showSeasons() {
+      week = "";
+      temp = "";
+      if (seasonsEl) seasonsEl.hidden = false;
+      if (inside) inside.hidden = true;
+      document.querySelectorAll(".season-box").forEach((box) => {
+        box.hidden = true;
+        box.classList.remove("open");
+        const body = box.querySelector("[data-res-body]");
+        if (body) body.hidden = true;
+      });
+    }
+
     function render() {
       const root = activeRoot();
-      if (!root) return;
+      if (!root || !week) return;
       const list = matches.filter((m) =>
         (m.week || "Sin fecha") === week && (m.temp || "") === temp
       );
@@ -155,12 +193,34 @@ const first = cards[0];
       </section>`;
     }
 
+    function openSeason(nextTemp) {
+      temp = nextTemp || "";
+      week = "";
+      if (seasonsEl) seasonsEl.hidden = true;
+      if (inside) inside.hidden = false;
+      document.querySelectorAll(".season-box").forEach((box) => {
+        const on = box.dataset.resSeason === temp;
+        box.hidden = !on;
+        box.classList.toggle("open", on);
+        const body = box.querySelector("[data-res-body]");
+        if (body) body.hidden = true;
+      });
+      document.querySelectorAll("[data-week]").forEach((b) => b.classList.remove("open"));
+    }
+
+    document.querySelectorAll("[data-open-temp]").forEach((btn) => {
+      btn.addEventListener("click", () => openSeason(btn.dataset.openTemp));
+    });
+    document.querySelectorAll("[data-res-back]").forEach((btn) => {
+      btn.addEventListener("click", showSeasons);
+    });
     document.querySelectorAll("[data-week]").forEach((btn) => {
       btn.addEventListener("click", () => {
         week = btn.dataset.week;
-        temp = btn.dataset.temp || "";
+        temp = btn.dataset.temp || temp;
         document.querySelectorAll(".season-box").forEach((box) => {
           const on = box.dataset.resSeason === temp;
+          box.hidden = !on;
           box.classList.toggle("open", on);
           const body = box.querySelector("[data-res-body]");
           if (body) body.hidden = !on;
@@ -169,12 +229,7 @@ const first = cards[0];
           b.classList.toggle("open", b.dataset.week === week && b.dataset.temp === temp);
         });
         render();
-        document.querySelector(`.season-box[data-res-season="${temp}"]`)?.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-        });
       });
     });
-    if (first) render();
   </script>
 </Layout>

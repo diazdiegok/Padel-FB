@@ -1586,6 +1586,10 @@ body.is-admin main > .wrap {
   gap: 12px;
   margin-bottom: 16px;
 }
+.res-boxes.hub-like {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
 .res-boxes.stack {
   display: grid;
   grid-template-columns: 1fr;
@@ -1604,6 +1608,26 @@ body.is-admin main > .wrap {
   text-align: left;
   color: var(--cream);
   font: inherit;
+  cursor: pointer;
+}
+.res-box.hub-season {
+  min-height: 180px;
+  padding: 28px 24px;
+  background: var(--bg-2);
+  gap: 12px;
+}
+.res-box.hub-season strong {
+  font-size: 34px;
+}
+.season-back {
+  justify-self: start;
+  border: 0;
+  background: none;
+  color: var(--lime);
+  font: inherit;
+  font-size: 13px;
+  padding: 0;
+  margin-bottom: 6px;
   cursor: pointer;
 }
 .res-box:hover { border-color: var(--lime); }

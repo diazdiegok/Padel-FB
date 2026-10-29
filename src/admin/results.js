@@ -219,15 +219,19 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
   function render() {
     const all = allMatches();
     const temps = seasons(all);
-    if (!selTemp || !temps.includes(selTemp)) {
-      selTemp = temps.includes(ctx.siteData.currentSeason) ? ctx.siteData.currentSeason : temps[0] || "";
+    const root = $("res-boxes");
+    if (!root) return;
+    if (selTemp && !temps.includes(selTemp)) {
+      selTemp = "";
       selWeek = "";
       filterCat = "";
       term = "";
     }
+
     const empty = $("res-empty");
     if (!temps.length) {
-      $("res-boxes").innerHTML = "";
+      root.className = "res-boxes";
+      root.innerHTML = "";
       $("res-count").textContent = "0 partidos";
       if (empty) {
         empty.hidden = false;
@@ -237,33 +241,60 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
       return;
     }
     if (empty) empty.hidden = true;
-
     $("res-count").textContent = count(all.length, "partido", "partidos");
-    $("res-boxes").innerHTML = temps
-      .map((temp) => {
-        const games = all.filter((m) => tempOf(m) === temp);
-        const weeks = weeksOf(games);
-        const open = temp === selTemp;
-        const live = temp === ctx.siteData.currentSeason;
-        if (open && selWeek && selWeek !== ALL_WEEKS && !weeks.includes(selWeek)) {
-          selWeek = "";
-          filterCat = "";
-          term = "";
-        }
-        const list =
-          open && selWeek
-            ? selWeek === ALL_WEEKS
-              ? games.slice().sort(
-                  (a, b) =>
-                    weekNumber(weekOf(a)) - weekNumber(weekOf(b)) ||
-                    String(weekOf(a)).localeCompare(String(weekOf(b)), "es") ||
-                    String(a.cat || "").localeCompare(String(b.cat || ""), "es") ||
-                    String(a.home || "").localeCompare(String(b.home || ""), "es")
-                )
-              : games.filter((m) => weekOf(m) === selWeek)
-            : [];
-        const weekGrid = `<div class="res-inner-grid">
-          <button class="res-box${open && selWeek === ALL_WEEKS ? " done" : ""}" type="button" data-res-temp="${escAttr(temp)}" data-res-week="${ALL_WEEKS}" style="min-height:96px">
+
+    // Nivel 1: solo cajas tipo resumen Temporada 1…5
+    if (!selTemp) {
+      root.className = "res-boxes hub-like";
+      root.innerHTML = temps
+        .map((temp) => {
+          const games = all.filter((m) => tempOf(m) === temp);
+          const weeks = weeksOf(games);
+          const live = temp === ctx.siteData.currentSeason;
+          return `<button class="res-box hub-season" type="button" data-res-open="${escAttr(temp)}">
+            <span class="kicker">Temporada${live ? " · En juego" : ""}</span>
+            <strong>${escAttr(seasonLabel(temp))}</strong>
+            <p>${escAttr(count(weeks.length, "fecha", "fechas"))} · ${escAttr(progress(games))}</p>
+          </button>`;
+        })
+        .join("");
+      return;
+    }
+
+    // Nivel 2: UNA caja Temporada; adentro las fechas
+    const games = all.filter((m) => tempOf(m) === selTemp);
+    const weeks = weeksOf(games);
+    if (selWeek && selWeek !== ALL_WEEKS && !weeks.includes(selWeek)) {
+      selWeek = "";
+      filterCat = "";
+      term = "";
+    }
+    const live = selTemp === ctx.siteData.currentSeason;
+    const list = selWeek
+      ? selWeek === ALL_WEEKS
+        ? games.slice().sort(
+            (a, b) =>
+              weekNumber(weekOf(a)) - weekNumber(weekOf(b)) ||
+              String(weekOf(a)).localeCompare(String(weekOf(b)), "es") ||
+              String(a.cat || "").localeCompare(String(b.cat || ""), "es") ||
+              String(a.home || "").localeCompare(String(b.home || ""), "es")
+          )
+        : games.filter((m) => weekOf(m) === selWeek)
+      : [];
+
+    root.className = "res-boxes stack";
+    root.innerHTML = `<article class="season-box open" data-res-season="${escAttr(selTemp)}">
+      <div class="season-box-head">
+        <button class="season-back" type="button" data-res-back>← Temporadas</button>
+        <span class="kicker">Temporada${live ? " · En juego" : ""}</span>
+        <strong>${escAttr(seasonLabel(selTemp))}</strong>
+        <p>${escAttr(count(weeks.length, "fecha", "fechas"))} · ${escAttr(progress(games))}</p>
+      </div>
+      <div class="season-box-body">
+        ${
+          weeks.length
+            ? `<div class="res-inner-grid">
+          <button class="res-box${selWeek === ALL_WEEKS ? " done" : ""}" type="button" data-res-week="${ALL_WEEKS}" style="min-height:96px">
             <span class="kicker">Temporada</span>
             <strong>Todas las fechas</strong>
             <p>${escAttr(count(weeks.length, "fecha", "fechas"))} · ${escAttr(progress(games))}</p>
@@ -272,7 +303,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
             .map((week) => {
               const weekGames = games.filter((m) => weekOf(m) === week);
               const weekLive = weekGames.some((m) => m._source === "fixture");
-              return `<button class="res-box${open && selWeek === week ? " done" : ""}" type="button" data-res-temp="${escAttr(temp)}" data-res-week="${escAttr(week)}" style="min-height:96px">
+              return `<button class="res-box${selWeek === week ? " done" : ""}" type="button" data-res-week="${escAttr(week)}" style="min-height:96px">
                 <span class="kicker">Fecha</span>
                 <strong>${escAttr(week)}</strong>
                 <p>${escAttr(progress(weekGames))}</p>
@@ -280,23 +311,11 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
               </button>`;
             })
             .join("")}
-        </div>`;
-        return `<article class="season-box${open ? " open" : ""}" data-res-season="${escAttr(temp)}">
-          <div class="season-box-head">
-            <span class="kicker">Temporada${live ? " · En juego" : ""}</span>
-            <strong>${escAttr(seasonLabel(temp))}</strong>
-            <p>${escAttr(count(weeks.length, "fecha", "fechas"))} · ${escAttr(progress(games))}</p>
-          </div>
-          <div class="season-box-body">
-            ${
-              weeks.length
-                ? `${weekGrid}${open && selWeek ? listHtml(list) : ""}`
-                : `<div class="admin-empty"><p>${escAttr(seasonLabel(temp))} todavía no tiene fechas. Publicá un fixture en Fixture.</p></div>`
-            }
-          </div>
-        </article>`;
-      })
-      .join("");
+        </div>${selWeek ? listHtml(list) : ""}`
+            : `<div class="admin-empty"><p>${escAttr(seasonLabel(selTemp))} todavía no tiene fechas. Publicá un fixture en Fixture.</p></div>`
+        }
+      </div>
+    </article>`;
   }
 
   async function reload() {
@@ -322,6 +341,23 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
 
   function bind() {
     $("res-boxes")?.addEventListener("click", (e) => {
+      if (e.target.closest("[data-res-back]")) {
+        selTemp = "";
+        selWeek = "";
+        filterCat = "";
+        term = "";
+        render();
+        return;
+      }
+      const openBtn = e.target.closest("[data-res-open]");
+      if (openBtn) {
+        selTemp = openBtn.dataset.resOpen;
+        selWeek = "";
+        filterCat = "";
+        term = "";
+        render();
+        return;
+      }
       const weekBtn = e.target.closest("[data-res-week]");
       const catBtn = e.target.closest("[data-res-cat]");
       if (catBtn) {
@@ -330,12 +366,10 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
         return;
       }
       if (!weekBtn) return;
-      selTemp = weekBtn.dataset.resTemp || selTemp;
       selWeek = weekBtn.dataset.resWeek || "";
       filterCat = "";
       term = "";
       render();
-      weekBtn.closest(".season-box")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
     $("res-boxes")?.addEventListener("input", (e) => {
       const search = e.target.closest("[data-res-search]");

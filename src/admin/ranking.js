@@ -5,7 +5,7 @@ import { fold } from "../lib/scoring.js";
 import { $, confirmModal, escAttr, num, setBusy, setMsg, toast } from "./ui.js";
 
 export function createRanking(ctx, api, shell) {
-  let filterTemp = ctx.siteData.currentSeason || "";
+  let filterTemp = "";
   let filterCat = "";
   let term = "";
   const rowKey = (r) => `${String(r.temp).toUpperCase()}|${r.cat}|${fold(r.name)}`;
@@ -56,84 +56,91 @@ export function createRanking(ctx, api, shell) {
       .join("");
   }
 
-  function catGrid(temp, open) {
-    const n = countIn(temp);
-    const cats = catsOf(temp);
-    return `<div class="res-inner-grid">
-      <button class="res-box${open && filterCat === "" ? " done" : ""}" type="button" data-rank-temp="${escAttr(temp)}" data-rank-cat="" style="min-height:96px">
-        <span class="kicker">Ranking</span>
-        <strong>Todas</strong>
-        <p>${n} pareja${n === 1 ? "" : "s"}</p>
-      </button>
-      ${cats
-        .map((c) => {
-          const cn = countIn(temp, c);
-          return `<button class="res-box${open && filterCat === c ? " done" : ""}" type="button" data-rank-temp="${escAttr(temp)}" data-rank-cat="${escAttr(c)}" style="min-height:96px">
-            <span class="kicker">Categoría</span>
-            <strong>${escAttr(c)}</strong>
-            <p>${cn} pareja${cn === 1 ? "" : "s"}</p>
-          </button>`;
-        })
-        .join("")}
-    </div>`;
-  }
-
   function render() {
     const tlist = temps();
-    if (filterTemp && !tlist.includes(filterTemp)) filterTemp = tlist[0] || "";
     const current = ctx.siteData.currentSeason;
-    if (!filterTemp) filterTemp = tlist.includes(current) ? current : tlist[0] || "";
+    if (filterTemp && !tlist.includes(filterTemp)) {
+      filterTemp = "";
+      filterCat = "";
+      term = "";
+    }
 
-    const openCats = catsOf(filterTemp);
-    if (filterCat && !openCats.includes(filterCat)) filterCat = "";
+    const root = $("rank-boxes");
+    if (!root) return;
 
-    const list = filterTemp ? visible() : [];
-    $("rank-count").textContent = filterTemp
-      ? `${list.length} pareja${list.length === 1 ? "" : "s"} · ${seasonLabel(filterTemp)}`
-      : `${ctx.rows.length} pareja${ctx.rows.length === 1 ? "" : "s"}`;
-
-    // Cada temporada = UNA caja contenedora. Adentro: cajitas de categoría (+ tabla si está abierta).
-    $("rank-boxes").innerHTML = tlist
-      .map((temp) => {
-        const open = temp === filterTemp;
-        const n = countIn(temp);
-        const live = temp === current;
-        return `<article class="season-box${open ? " open" : ""}" data-rank-season="${escAttr(temp)}">
-          <div class="season-box-head">
+    // Nivel 1: solo cajas tipo resumen (Temporada 1…5). Nada de categorías a la vista.
+    if (!filterTemp) {
+      $("rank-count").textContent = `${ctx.rows.length} pareja${ctx.rows.length === 1 ? "" : "s"}`;
+      root.className = "res-boxes hub-like";
+      root.innerHTML = tlist
+        .map((temp) => {
+          const n = countIn(temp);
+          const live = temp === current;
+          return `<button class="res-box hub-season" type="button" data-rank-open="${escAttr(temp)}">
             <span class="kicker">Temporada${live ? " · En juego" : ""}</span>
             <strong>${escAttr(seasonLabel(temp))}</strong>
             <p>${n} pareja${n === 1 ? "" : "s"}</p>
-          </div>
-          <div class="season-box-body">
-            ${catGrid(temp, open)}
-            ${
-              open
-                ? `<input class="search" data-rank-q type="search" placeholder="Buscar pareja…" autocomplete="off" value="${escAttr(term)}" />
-              <div class="admin-empty" ${list.length ? "hidden" : ""}>
-                <p>Todavía no hay parejas en este filtro. Cuando se inscriban aparecen solas acá con 0 puntos.</p>
-              </div>
-              <div class="admin-scroll">
-                <table class="admin-table">
-                  <thead>
-                    <tr>
-                      <th class="col-pos">#</th>
-                      <th>Nombre / pareja</th>
-                      <th class="col-cat">Categoría</th>
-                      <th class="col-num">PJ</th>
-                      <th class="col-num">Dif</th>
-                      <th class="col-num">Pts</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody data-rank-tbody>${tableHtml(list)}</tbody>
-                </table>
-              </div>`
-                : ""
-            }
-          </div>
-        </article>`;
-      })
-      .join("");
+          </button>`;
+        })
+        .join("");
+      return;
+    }
+
+    // Nivel 2: UNA caja Temporada X; adentro las cajitas de categoría + tabla.
+    const openCats = catsOf(filterTemp);
+    if (filterCat && !openCats.includes(filterCat)) filterCat = "";
+    const list = visible();
+    const n = countIn(filterTemp);
+    const live = filterTemp === current;
+    $("rank-count").textContent = `${list.length} pareja${list.length === 1 ? "" : "s"} · ${seasonLabel(filterTemp)}`;
+    root.className = "res-boxes stack";
+    root.innerHTML = `<article class="season-box open" data-rank-season="${escAttr(filterTemp)}">
+      <div class="season-box-head">
+        <button class="season-back" type="button" data-rank-back>← Temporadas</button>
+        <span class="kicker">Temporada${live ? " · En juego" : ""}</span>
+        <strong>${escAttr(seasonLabel(filterTemp))}</strong>
+        <p>${n} pareja${n === 1 ? "" : "s"}</p>
+      </div>
+      <div class="season-box-body">
+        <div class="res-inner-grid">
+          <button class="res-box${filterCat === "" ? " done" : ""}" type="button" data-rank-cat="" style="min-height:96px">
+            <span class="kicker">Ranking</span>
+            <strong>Todas</strong>
+            <p>${n} pareja${n === 1 ? "" : "s"}</p>
+          </button>
+          ${openCats
+            .map((c) => {
+              const cn = countIn(filterTemp, c);
+              return `<button class="res-box${filterCat === c ? " done" : ""}" type="button" data-rank-cat="${escAttr(c)}" style="min-height:96px">
+                <span class="kicker">Categoría</span>
+                <strong>${escAttr(c)}</strong>
+                <p>${cn} pareja${cn === 1 ? "" : "s"}</p>
+              </button>`;
+            })
+            .join("")}
+        </div>
+        <input class="search" data-rank-q type="search" placeholder="Buscar pareja…" autocomplete="off" value="${escAttr(term)}" />
+        <div class="admin-empty" ${list.length ? "hidden" : ""}>
+          <p>Todavía no hay parejas en este filtro. Cuando se inscriban aparecen solas acá con 0 puntos.</p>
+        </div>
+        <div class="admin-scroll">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th class="col-pos">#</th>
+                <th>Nombre / pareja</th>
+                <th class="col-cat">Categoría</th>
+                <th class="col-num">PJ</th>
+                <th class="col-num">Dif</th>
+                <th class="col-num">Pts</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody data-rank-tbody>${tableHtml(list)}</tbody>
+          </table>
+        </div>
+      </div>
+    </article>`;
   }
 
   function refreshTable() {
@@ -169,13 +176,27 @@ export function createRanking(ctx, api, shell) {
         return;
       }
 
+      if (e.target.closest("[data-rank-back]")) {
+        filterTemp = "";
+        filterCat = "";
+        term = "";
+        render();
+        return;
+      }
+
+      const openBtn = e.target.closest("[data-rank-open]");
+      if (openBtn) {
+        filterTemp = openBtn.dataset.rankOpen;
+        filterCat = "";
+        term = "";
+        render();
+        return;
+      }
+
       const catBtn = e.target.closest("[data-rank-cat]");
       if (!catBtn) return;
-      filterTemp = catBtn.dataset.rankTemp || filterTemp;
       filterCat = catBtn.dataset.rankCat || "";
-      term = "";
       render();
-      catBtn.closest(".season-box")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
 
     $("rank-boxes")?.addEventListener("input", (e) => {
