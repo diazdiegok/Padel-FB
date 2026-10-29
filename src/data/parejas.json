@@ -100,5 +100,21 @@
       "Sábado": "09:30 - 20:00"
     },
     "note": "Natalia se va de viaje desde el 16 al 30 de noviembre. Por lo tanto jugará un reemplazo de la misma categoría."
+  },
+  {
+    "id": "pmvtrxq03a931",
+    "createdAt": "2026-10-29T16:45:04.611Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Diaz sebastian",
+    "p2": "Zarate pablo",
+    "days": {
+      "Lunes": "18:00 - 00:00",
+      "Martes": "18:00 - 00:00",
+      "Miércoles": "13:00 - 00:00",
+      "Jueves": "13:00 - 00:00",
+      "Viernes": "13:00 - 00:00"
+    },
+    "note": ""
   }
 ]
