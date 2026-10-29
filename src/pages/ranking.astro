@@ -65,6 +65,7 @@ const seasonBlocks = temps.map((temp) => {
             <h2>{block.title}</h2>
             <p>{block.total} pareja{block.total === 1 ? "" : "s"}</p>
           </header>
+          <div class="season-box-body" style="border:0;padding-top:16px">
           <div class="result-grid">
             <button class="result-card" type="button" data-temp={block.temp} data-cat="Todas">
               <p class="kicker">Ranking</p>
@@ -79,7 +80,7 @@ const seasonBlocks = temps.map((temp) => {
               </button>
             ))}
           </div>
-          <div class="season-box-body" data-rank-body hidden>
+          <div data-rank-body hidden>
             <div class="filters">
               <input class="search" data-rank-q type="search" placeholder="Buscar jugador o pareja…" autocomplete="off" />
               <span class="tag" data-rank-count aria-live="polite"></span>
@@ -101,6 +102,7 @@ const seasonBlocks = temps.map((temp) => {
               </table>
             </div>
             <p class="empty" data-rank-empty hidden>No hay jugadores con ese filtro.</p>
+          </div>
           </div>
         </section>
       ))

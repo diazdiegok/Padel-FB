@@ -268,17 +268,11 @@ import "../styles/admin.css";
             <input id="res-import-file" type="file" accept=".csv,.xls,.xlsx,.txt,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden />
             <span class="tag" id="res-count"></span>
           </div>
-          <div class="res-crumbs" id="res-crumbs" role="navigation" aria-label="Ubicación en resultados"></div>
-          <div class="res-boxes" id="res-boxes"></div>
+          <div class="res-boxes stack" id="res-boxes"></div>
           <div class="admin-empty" id="res-empty" hidden>
             <p>Todavía no hay partidos. Cuando publiques un fixture, aparecen acá para cargar el resultado.</p>
           </div>
-          <div class="res-filters" id="res-filters" hidden>
-            <div class="pills" id="res-cats"></div>
-            <input class="admin-search" id="res-search" type="search" placeholder="Buscar pareja…" autocomplete="off" />
-          </div>
           <p class="admin-msg" id="res-msg"></p>
-          <div id="res-list"></div>
           <div class="admin-sticky-bar">
             <p class="admin-sticky-note">Publicar suma los scores al ranking de la temporada del partido.</p>
             <div class="admin-sticky-actions">

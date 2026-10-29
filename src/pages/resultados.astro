@@ -60,22 +60,24 @@ const first = cards[0];
             <h2>{block.title}</h2>
             <p>{block.cards.length} fecha{block.cards.length === 1 ? "" : "s"}</p>
           </header>
-          <div class="result-grid">
-            {block.cards.map((c, i) => (
-              <button
-                class:list={["result-card", { open: s === 0 && i === 0 }]}
-                type="button"
-                data-week={c.week}
-                data-temp={c.temp}
-              >
-                <p class="kicker">Fecha</p>
-                <h2>{c.week}</h2>
-                <p>{c.played} / {c.total} resultados</p>
-              </button>
-            ))}
-          </div>
-          <div class="season-box-body" data-res-body hidden={s !== 0}>
-            <div data-res-root></div>
+          <div class="season-box-body" style="border:0;padding-top:16px">
+            <div class="result-grid">
+              {block.cards.map((c, i) => (
+                <button
+                  class:list={["result-card", { open: s === 0 && i === 0 }]}
+                  type="button"
+                  data-week={c.week}
+                  data-temp={c.temp}
+                >
+                  <p class="kicker">Fecha</p>
+                  <h2>{c.week}</h2>
+                  <p>{c.played} / {c.total} resultados</p>
+                </button>
+              ))}
+            </div>
+            <div data-res-body hidden={s !== 0}>
+              <div data-res-root></div>
+            </div>
           </div>
         </section>
       ))

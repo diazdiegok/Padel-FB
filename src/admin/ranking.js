@@ -56,6 +56,28 @@ export function createRanking(ctx, api, shell) {
       .join("");
   }
 
+  function catGrid(temp, open) {
+    const n = countIn(temp);
+    const cats = catsOf(temp);
+    return `<div class="res-inner-grid">
+      <button class="res-box${open && filterCat === "" ? " done" : ""}" type="button" data-rank-temp="${escAttr(temp)}" data-rank-cat="" style="min-height:96px">
+        <span class="kicker">Ranking</span>
+        <strong>Todas</strong>
+        <p>${n} pareja${n === 1 ? "" : "s"}</p>
+      </button>
+      ${cats
+        .map((c) => {
+          const cn = countIn(temp, c);
+          return `<button class="res-box${open && filterCat === c ? " done" : ""}" type="button" data-rank-temp="${escAttr(temp)}" data-rank-cat="${escAttr(c)}" style="min-height:96px">
+            <span class="kicker">Categoría</span>
+            <strong>${escAttr(c)}</strong>
+            <p>${cn} pareja${cn === 1 ? "" : "s"}</p>
+          </button>`;
+        })
+        .join("")}
+    </div>`;
+  }
+
   function render() {
     const tlist = temps();
     if (filterTemp && !tlist.includes(filterTemp)) filterTemp = tlist[0] || "";
@@ -70,32 +92,23 @@ export function createRanking(ctx, api, shell) {
       ? `${list.length} pareja${list.length === 1 ? "" : "s"} · ${seasonLabel(filterTemp)}`
       : `${ctx.rows.length} pareja${ctx.rows.length === 1 ? "" : "s"}`;
 
+    // Cada temporada = UNA caja contenedora. Adentro: cajitas de categoría (+ tabla si está abierta).
     $("rank-boxes").innerHTML = tlist
       .map((temp) => {
         const open = temp === filterTemp;
         const n = countIn(temp);
         const live = temp === current;
-        const cats = catsOf(temp);
-        const body = open
-          ? `<div class="season-box-body">
-              <div class="res-inner-grid">
-                <button class="res-box${filterCat === "" ? " done" : ""}" type="button" data-rank-cat="" style="min-height:96px">
-                  <span class="kicker">Ranking</span>
-                  <strong>Todas</strong>
-                  <p>${n} pareja${n === 1 ? "" : "s"}</p>
-                </button>
-                ${cats
-                  .map((c) => {
-                    const cn = countIn(temp, c);
-                    return `<button class="res-box${filterCat === c ? " done" : ""}" type="button" data-rank-cat="${escAttr(c)}" style="min-height:96px">
-                      <span class="kicker">Categoría</span>
-                      <strong>${escAttr(c)}</strong>
-                      <p>${cn} pareja${cn === 1 ? "" : "s"}</p>
-                    </button>`;
-                  })
-                  .join("")}
-              </div>
-              <input class="search" data-rank-q type="search" placeholder="Buscar pareja…" autocomplete="off" value="${escAttr(term)}" />
+        return `<article class="season-box${open ? " open" : ""}" data-rank-season="${escAttr(temp)}">
+          <div class="season-box-head">
+            <span class="kicker">Temporada${live ? " · En juego" : ""}</span>
+            <strong>${escAttr(seasonLabel(temp))}</strong>
+            <p>${n} pareja${n === 1 ? "" : "s"}</p>
+          </div>
+          <div class="season-box-body">
+            ${catGrid(temp, open)}
+            ${
+              open
+                ? `<input class="search" data-rank-q type="search" placeholder="Buscar pareja…" autocomplete="off" value="${escAttr(term)}" />
               <div class="admin-empty" ${list.length ? "hidden" : ""}>
                 <p>Todavía no hay parejas en este filtro. Cuando se inscriban aparecen solas acá con 0 puntos.</p>
               </div>
@@ -114,16 +127,10 @@ export function createRanking(ctx, api, shell) {
                   </thead>
                   <tbody data-rank-tbody>${tableHtml(list)}</tbody>
                 </table>
-              </div>
-            </div>`
-          : `<div class="season-box-body" hidden></div>`;
-        return `<article class="season-box${open ? " open" : ""}" data-rank-season="${escAttr(temp)}">
-          <button class="season-box-head" type="button" data-rank-temp="${escAttr(temp)}">
-            <span class="kicker">Temporada${live ? " · En juego" : ""}</span>
-            <strong>${escAttr(seasonLabel(temp))}</strong>
-            <p>${n} pareja${n === 1 ? "" : "s"}</p>
-          </button>
-          ${body}
+              </div>`
+                : ""
+            }
+          </div>
         </article>`;
       })
       .join("");
@@ -145,25 +152,30 @@ export function createRanking(ctx, api, shell) {
   }
 
   function bind() {
-    $("rank-boxes")?.addEventListener("click", (e) => {
-      const seasonBtn = e.target.closest("[data-rank-temp]");
-      const catBtn = e.target.closest("[data-rank-cat]");
+    $("rank-boxes")?.addEventListener("click", async (e) => {
       const del = e.target.closest("[data-del]");
-      if (del) return;
-      if (catBtn) {
-        filterCat = catBtn.dataset.rankCat || "";
-        render();
+      if (del) {
+        const ok = await confirmModal({
+          title: "Eliminar pareja",
+          body: "Se va a quitar de la tabla local. Publicá el ranking para que se vea en la web.",
+          confirmLabel: "Eliminar",
+          danger: true,
+        });
+        if (!ok) return;
+        removed.add(rowKey(ctx.rows[Number(del.dataset.del)]));
+        ctx.rows.splice(Number(del.dataset.del), 1);
+        shell.markDirty("ranking");
+        refresh();
         return;
       }
-      if (seasonBtn) {
-        const next = seasonBtn.dataset.rankTemp;
-        if (filterTemp === next) return;
-        filterTemp = next;
-        filterCat = "";
-        term = "";
-        render();
-        seasonBtn.closest(".season-box")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
+
+      const catBtn = e.target.closest("[data-rank-cat]");
+      if (!catBtn) return;
+      filterTemp = catBtn.dataset.rankTemp || filterTemp;
+      filterCat = catBtn.dataset.rankCat || "";
+      term = "";
+      render();
+      catBtn.closest(".season-box")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
 
     $("rank-boxes")?.addEventListener("input", (e) => {
@@ -182,22 +194,6 @@ export function createRanking(ctx, api, shell) {
       ctx.rows[i][k] = k === "name" || k === "cat" ? field.value : num(field.value);
       shell.markDirty("ranking");
       if (k === "cat") render();
-    });
-
-    $("rank-boxes")?.addEventListener("click", async (e) => {
-      const btn = e.target.closest("[data-del]");
-      if (!btn) return;
-      const ok = await confirmModal({
-        title: "Eliminar pareja",
-        body: "Se va a quitar de la tabla local. Publicá el ranking para que se vea en la web.",
-        confirmLabel: "Eliminar",
-        danger: true,
-      });
-      if (!ok) return;
-      removed.add(rowKey(ctx.rows[Number(btn.dataset.del)]));
-      ctx.rows.splice(Number(btn.dataset.del), 1);
-      shell.markDirty("ranking");
-      refresh();
     });
 
     $("csv-export")?.addEventListener("click", () => {

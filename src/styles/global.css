@@ -1594,19 +1594,22 @@ footer strong { color: var(--cream); }
 .fixture-score b { color: var(--cream); letter-spacing: 0.04em; }
 .fixture-place b { color: var(--cream); }
 .season-box {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(214, 255, 47, 0.28);
   border-radius: 22px;
-  background: var(--bg-2);
-  padding: 22px 20px 20px;
+  background: #0c100c;
+  padding: 0;
   margin: 28px 0;
   display: grid;
-  gap: 18px;
+  overflow: hidden;
 }
 .season-box-head {
   display: grid;
   gap: 6px;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(214, 255, 47, 0.18);
+  background: rgba(214, 255, 47, 0.06);
 }
-.season-box-head .kicker { margin: 0; }
+.season-box-head .kicker { margin: 0; color: var(--lime); }
 .season-box-head h2 {
   font-size: 36px;
   margin: 0;
@@ -1618,7 +1621,19 @@ footer strong { color: var(--cream); }
   font-size: 13px;
 }
 .season-box.open {
-  border-color: color-mix(in srgb, var(--lime) 55%, var(--line));
+  border-color: var(--lime);
+}
+.season-box > .result-grid,
+.season-box > .season-box-body {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.season-box > .result-grid {
+  padding-top: 16px;
+  padding-bottom: 8px;
+}
+.season-box > .season-box-body {
+  padding-bottom: 16px;
 }
 .result-season {
   padding: 36px 0 8px;

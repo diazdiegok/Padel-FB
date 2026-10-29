@@ -1530,35 +1530,37 @@ body.is-admin main > .wrap {
 .res-crumbs b { color: var(--cream); }
 
 .season-box {
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: var(--bg-2);
-  padding: 18px 16px 16px;
-  margin-bottom: 14px;
+  border: 1px solid rgba(214, 255, 47, 0.28);
+  border-radius: 22px;
+  background: #0c100c;
+  padding: 0;
+  margin-bottom: 16px;
   display: grid;
-  gap: 14px;
+  overflow: hidden;
 }
 .season-box.open {
-  border-color: color-mix(in srgb, var(--lime) 55%, var(--line));
+  border-color: var(--lime);
 }
 .season-box-head {
   display: grid;
   gap: 4px;
   width: 100%;
   border: 0;
-  background: none;
+  border-bottom: 1px solid rgba(214, 255, 47, 0.18);
+  background: rgba(214, 255, 47, 0.06);
   color: inherit;
   text-align: left;
-  padding: 0;
+  padding: 16px 18px;
   cursor: pointer;
   font: inherit;
 }
-.season-box-head .kicker { margin: 0; }
+.season-box-head .kicker { margin: 0; color: var(--lime); }
 .season-box-head strong {
   font-family: var(--display);
-  font-size: 28px;
+  font-size: 30px;
   text-transform: uppercase;
   line-height: 1.05;
+  color: var(--cream);
 }
 .season-box-head p {
   margin: 0;
@@ -1566,10 +1568,10 @@ body.is-admin main > .wrap {
   font-size: 13px;
 }
 .season-box-body {
-  border-top: 1px solid var(--line);
-  padding-top: 14px;
+  padding: 14px 16px 16px;
   display: grid;
   gap: 12px;
+  background: #080a08;
 }
 .season-box-body[hidden] { display: none !important; }
 .season-box .res-inner-grid {
