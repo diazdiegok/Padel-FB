@@ -2178,6 +2178,26 @@ body.is-admin main > .wrap {
   grid-template-columns: 1fr;
 }
 
+.cms-card-sponsor {
+  grid-template-columns: 120px minmax(0, 280px);
+  align-items: start;
+}
+
+.cms-card-sponsor .cms-photo,
+.cms-card-sponsor .cms-photo-empty {
+  width: 120px;
+  min-height: 120px;
+}
+
+.sponsor-name-field {
+  max-width: 220px;
+}
+
+.sponsor-name-field input {
+  width: 100%;
+  max-width: 220px;
+}
+
 .cms-media {
   display: grid;
   gap: 10px;

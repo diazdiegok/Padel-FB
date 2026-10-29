@@ -118,19 +118,21 @@ export function createCms(ctx, api, shell) {
     if (!root) return;
     root.innerHTML = list
       .map(
-        (s, i) => `<article class="cms-card" data-sponsor="${i}">
+        (s, i) => `<article class="cms-card cms-card-sponsor" data-sponsor="${i}">
           ${cmsMedia(
             s._preview || s.image,
             s.name || "Sponsor",
             `<label class="btn cms-btn">Cambiar foto
               <input data-photo="sponsor" type="file" accept="image/*" hidden />
             </label>
-            <button class="btn cms-btn cms-btn-danger" type="button" data-sponsor-del="${i}">Quitar</button>`
+            <button class="btn cms-btn cms-btn-del" type="button" data-sponsor-del="${i}">Quitar</button>`
           )}
-          <label>Nombre
-            <input data-s="name" value="${escAttr(s.name || "")}" placeholder="Ej. EVOXX" />
-          </label>
-          ${cmsMoveBtns("sponsor", i, list.length)}
+          <div class="cms-fields">
+            <label class="sponsor-name-field">Nombre
+              <input data-s="name" value="${escAttr(s.name || "")}" placeholder="Ej. EVOXX" />
+            </label>
+            ${cmsMoveBtns("sponsor", i, list.length)}
+          </div>
         </article>`
       )
       .join("");
