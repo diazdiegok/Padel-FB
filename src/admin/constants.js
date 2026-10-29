@@ -54,7 +54,7 @@ export const SECTIONS = {
     title: "Temporadas",
     help: "Solo la temporada del sistema tiene Próximamente / En juego. Las anteriores quedan Finalizadas. Al cerrar inscripción pasa a En juego.",
   },
-  ranking: { group: "Liga", title: "Ranking", help: "La tabla se arma con las parejas inscriptas y los resultados. Acá corregís a mano y publicás." },
+  ranking: { group: "Liga", title: "Ranking", help: "Entrá a la temporada, corregí a mano si hace falta y publicá. La tabla se arma con las parejas inscriptas y los resultados." },
   fixture: { group: "Liga", title: "Fixture", help: "Armá Fecha 1, Fecha 2… con las parejas inscriptas, revisá y publicá. Los resultados se cargan en Resultados." },
   resultados: { group: "Liga", title: "Resultados", help: "Cargá el score de cada partido. Al publicar se actualiza el ranking." },
   playoff: { group: "Liga", title: "Playoff", help: "Armá el cuadro de cada categoría. Las temporadas anteriores quedan en el historial de /playoff/. Con Editar cambiás una pareja a mano." },
