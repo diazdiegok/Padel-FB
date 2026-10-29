@@ -1593,6 +1593,33 @@ footer strong { color: var(--cream); }
 }
 .fixture-score b { color: var(--cream); letter-spacing: 0.04em; }
 .fixture-place b { color: var(--cream); }
+.season-box {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--bg-2);
+  padding: 22px 20px 20px;
+  margin: 28px 0;
+  display: grid;
+  gap: 18px;
+}
+.season-box-head {
+  display: grid;
+  gap: 6px;
+}
+.season-box-head .kicker { margin: 0; }
+.season-box-head h2 {
+  font-size: 36px;
+  margin: 0;
+  line-height: 1.05;
+}
+.season-box-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.season-box.open {
+  border-color: color-mix(in srgb, var(--lime) 55%, var(--line));
+}
 .result-season {
   padding: 36px 0 8px;
 }
@@ -1609,14 +1636,15 @@ footer strong { color: var(--cream); }
 }
 .result-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
-  padding: 24px 0 36px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  padding: 0;
 }
 .result-card {
   border: 1px solid var(--line);
-  background: var(--bg-2);
-  padding: 22px 20px;
+  background: var(--bg);
+  border-radius: 16px;
+  padding: 18px 16px;
   text-align: left;
   color: inherit;
   cursor: pointer;
@@ -1624,8 +1652,15 @@ footer strong { color: var(--cream); }
   gap: 8px;
 }
 .result-card:hover, .result-card.open { border-color: var(--lime); }
-.result-card h2 { font-size: 28px; }
+.result-card h2 { font-size: 24px; margin: 0; }
 .result-card p { color: var(--muted); font-size: 13px; margin: 0; }
+.season-box-body {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  display: grid;
+  gap: 14px;
+}
+.season-box-body[hidden] { display: none !important; }
 .result-panel { padding-bottom: 48px; }
 @media (max-width: 700px) {
   .fixture-vs {

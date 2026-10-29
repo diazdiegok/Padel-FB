@@ -5,8 +5,9 @@ import { fold } from "../lib/scoring.js";
 import { $, confirmModal, escAttr, num, setBusy, setMsg, toast } from "./ui.js";
 
 export function createRanking(ctx, api, shell) {
-  let filterTemp = "";
+  let filterTemp = ctx.siteData.currentSeason || "";
   let filterCat = "";
+  let term = "";
   const rowKey = (r) => `${String(r.temp).toUpperCase()}|${r.cat}|${fold(r.name)}`;
   let known = new Set(ctx.rows.map(rowKey));
   const removed = new Set();
@@ -15,94 +16,29 @@ export function createRanking(ctx, api, shell) {
     return listSeasons(ctx.siteData, ctx.rows.map((r) => r.temp)).slice().reverse();
   }
 
-  function catsInView() {
-    const used = ctx.rows.filter((r) => r.temp === filterTemp).map((r) => r.cat);
+  function catsOf(temp) {
+    const used = ctx.rows.filter((r) => r.temp === temp).map((r) => r.cat);
     return [...new Set([...CATS, ...used])].filter(Boolean);
   }
 
-  function countIn(temp) {
-    return ctx.rows.filter((r) => r.temp === temp).length;
-  }
-
-  function renderCrumbs() {
-    const el = $("rank-crumbs");
-    if (!el) return;
-    if (!filterTemp) {
-      el.innerHTML = `<b>Temporadas</b>`;
-      return;
-    }
-    el.innerHTML = `<button type="button" data-rank-go="">Temporadas</button> <span>›</span> <b>${escAttr(seasonLabel(filterTemp))}</b>`;
-  }
-
-  function renderBoxes() {
-    const box = $("rank-boxes");
-    if (!box) return;
-    if (filterTemp) {
-      box.innerHTML = "";
-      return;
-    }
-    const tlist = temps();
-    const current = ctx.siteData.currentSeason;
-    box.innerHTML = tlist
-      .map((temp) => {
-        const n = countIn(temp);
-        const live = temp === current;
-        return `<button class="res-box" type="button" data-rank-temp="${escAttr(temp)}">
-          <span class="kicker">Temporada</span>
-          <strong>${escAttr(seasonLabel(temp))}</strong>
-          <p>${n} pareja${n === 1 ? "" : "s"}</p>
-          ${live ? `<span class="admin-chip-live">En juego</span>` : ""}
-        </button>`;
-      })
-      .join("");
-  }
-
-  function fillCats() {
-    const catList = catsInView();
-    const catCount = (c) => ctx.rows.filter((r) => r.temp === filterTemp && r.cat === c).length;
-    if (!catList.includes(filterCat)) filterCat = catList.find((c) => catCount(c)) || catList[0] || "";
-    $("f-cats").innerHTML = catList
-      .map(
-        (c) =>
-          `<button class="pill${c === filterCat ? " on" : ""}" type="button" data-cat="${escAttr(c)}">${escAttr(c)} <small>${catCount(c)}</small></button>`
-      )
-      .join("");
+  function countIn(temp, cat = "") {
+    return ctx.rows.filter((r) => r.temp === temp && (!cat || r.cat === cat)).length;
   }
 
   function visible() {
-    const q = ($("f-q")?.value || "").trim().toLowerCase();
+    const q = term.trim().toLowerCase();
     return ctx.rows
       .map((r, i) => ({ r, i }))
       .filter(({ r }) => {
         if (r.temp !== filterTemp) return false;
         if (q) return (r.name || "").toLowerCase().includes(q);
-        return r.cat === filterCat;
+        return !filterCat || r.cat === filterCat;
       })
       .sort((a, b) => (q ? a.r.cat.localeCompare(b.r.cat, "es") : 0) || Number(a.r.pos) - Number(b.r.pos));
   }
 
-  function render() {
-    const detail = $("rank-detail");
-    const inSeason = !!filterTemp;
-    if (detail) detail.hidden = !inSeason;
-    renderCrumbs();
-    renderBoxes();
-
-    if (!inSeason) {
-      const total = ctx.rows.length;
-      $("rank-count").textContent = `${total} pareja${total === 1 ? "" : "s"}`;
-      return;
-    }
-
-    fillCats();
-    const list = visible();
-    const q = ($("f-q")?.value || "").trim();
-    $("rank-count").textContent = q
-      ? `${list.length} resultado${list.length === 1 ? "" : "s"} en ${seasonLabel(filterTemp)}`
-      : `${list.length} pareja${list.length === 1 ? "" : "s"} en ${filterCat || "—"}`;
-    const empty = $("rank-empty");
-    if (empty) empty.hidden = list.length > 0;
-    $("tbody").innerHTML = list
+  function tableHtml(list) {
+    return list
       .map(({ r, i }) => {
         const catOpts = [...new Set([...CATS, r.cat].filter(Boolean))]
           .map((c) => `<option ${c === r.cat ? "selected" : ""}>${c}</option>`)
@@ -120,51 +56,135 @@ export function createRanking(ctx, api, shell) {
       .join("");
   }
 
-  function refresh() {
+  function render() {
     const tlist = temps();
-    if (filterTemp && !tlist.includes(filterTemp)) filterTemp = "";
+    if (filterTemp && !tlist.includes(filterTemp)) filterTemp = tlist[0] || "";
+    const current = ctx.siteData.currentSeason;
+    if (!filterTemp) filterTemp = tlist.includes(current) ? current : tlist[0] || "";
+
+    const openCats = catsOf(filterTemp);
+    if (filterCat && !openCats.includes(filterCat)) filterCat = "";
+
+    const list = filterTemp ? visible() : [];
+    $("rank-count").textContent = filterTemp
+      ? `${list.length} pareja${list.length === 1 ? "" : "s"} · ${seasonLabel(filterTemp)}`
+      : `${ctx.rows.length} pareja${ctx.rows.length === 1 ? "" : "s"}`;
+
+    $("rank-boxes").innerHTML = tlist
+      .map((temp) => {
+        const open = temp === filterTemp;
+        const n = countIn(temp);
+        const live = temp === current;
+        const cats = catsOf(temp);
+        const body = open
+          ? `<div class="season-box-body">
+              <div class="res-inner-grid">
+                <button class="res-box${filterCat === "" ? " done" : ""}" type="button" data-rank-cat="" style="min-height:96px">
+                  <span class="kicker">Ranking</span>
+                  <strong>Todas</strong>
+                  <p>${n} pareja${n === 1 ? "" : "s"}</p>
+                </button>
+                ${cats
+                  .map((c) => {
+                    const cn = countIn(temp, c);
+                    return `<button class="res-box${filterCat === c ? " done" : ""}" type="button" data-rank-cat="${escAttr(c)}" style="min-height:96px">
+                      <span class="kicker">Categoría</span>
+                      <strong>${escAttr(c)}</strong>
+                      <p>${cn} pareja${cn === 1 ? "" : "s"}</p>
+                    </button>`;
+                  })
+                  .join("")}
+              </div>
+              <input class="search" data-rank-q type="search" placeholder="Buscar pareja…" autocomplete="off" value="${escAttr(term)}" />
+              <div class="admin-empty" ${list.length ? "hidden" : ""}>
+                <p>Todavía no hay parejas en este filtro. Cuando se inscriban aparecen solas acá con 0 puntos.</p>
+              </div>
+              <div class="admin-scroll">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th class="col-pos">#</th>
+                      <th>Nombre / pareja</th>
+                      <th class="col-cat">Categoría</th>
+                      <th class="col-num">PJ</th>
+                      <th class="col-num">Dif</th>
+                      <th class="col-num">Pts</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody data-rank-tbody>${tableHtml(list)}</tbody>
+                </table>
+              </div>
+            </div>`
+          : `<div class="season-box-body" hidden></div>`;
+        return `<article class="season-box${open ? " open" : ""}" data-rank-season="${escAttr(temp)}">
+          <button class="season-box-head" type="button" data-rank-temp="${escAttr(temp)}">
+            <span class="kicker">Temporada${live ? " · En juego" : ""}</span>
+            <strong>${escAttr(seasonLabel(temp))}</strong>
+            <p>${n} pareja${n === 1 ? "" : "s"}</p>
+          </button>
+          ${body}
+        </article>`;
+      })
+      .join("");
+  }
+
+  function refreshTable() {
+    const box = $("rank-boxes")?.querySelector(`.season-box[data-rank-season="${filterTemp}"]`);
+    if (!box) return;
+    const list = visible();
+    const tbody = box.querySelector("[data-rank-tbody]");
+    const empty = box.querySelector(".admin-empty");
+    if (tbody) tbody.innerHTML = tableHtml(list);
+    if (empty) empty.hidden = list.length > 0;
+    $("rank-count").textContent = `${list.length} pareja${list.length === 1 ? "" : "s"} · ${seasonLabel(filterTemp)}`;
+  }
+
+  function refresh() {
     render();
   }
 
   function bind() {
     $("rank-boxes")?.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-rank-temp]");
-      if (!btn) return;
-      filterTemp = btn.dataset.rankTemp;
-      filterCat = "";
-      const search = $("f-q");
-      if (search) search.value = "";
-      render();
-      $("rank-crumbs")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const seasonBtn = e.target.closest("[data-rank-temp]");
+      const catBtn = e.target.closest("[data-rank-cat]");
+      const del = e.target.closest("[data-del]");
+      if (del) return;
+      if (catBtn) {
+        filterCat = catBtn.dataset.rankCat || "";
+        render();
+        return;
+      }
+      if (seasonBtn) {
+        const next = seasonBtn.dataset.rankTemp;
+        if (filterTemp === next) return;
+        filterTemp = next;
+        filterCat = "";
+        term = "";
+        render();
+        seasonBtn.closest(".season-box")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
     });
-    $("rank-crumbs")?.addEventListener("click", (e) => {
-      const go = e.target.closest("[data-rank-go]");
-      if (!go) return;
-      filterTemp = "";
-      filterCat = "";
-      const search = $("f-q");
-      if (search) search.value = "";
-      render();
-    });
-    $("f-cats")?.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-cat]");
-      if (!btn) return;
-      filterCat = btn.dataset.cat;
-      render();
-    });
-    $("f-q")?.addEventListener("input", render);
 
-    $("tbody")?.addEventListener("change", (e) => {
-      const tr = e.target.closest("tr");
+    $("rank-boxes")?.addEventListener("input", (e) => {
+      const search = e.target.closest("[data-rank-q]");
+      const field = e.target.closest("[data-k]");
+      if (search) {
+        term = search.value;
+        refreshTable();
+        return;
+      }
+      if (!field) return;
+      const tr = field.closest("tr");
       if (!tr) return;
       const i = Number(tr.dataset.i);
-      const k = e.target.dataset.k;
-      if (!k) return;
-      ctx.rows[i][k] = k === "name" || k === "cat" ? e.target.value : num(e.target.value);
+      const k = field.dataset.k;
+      ctx.rows[i][k] = k === "name" || k === "cat" ? field.value : num(field.value);
       shell.markDirty("ranking");
       if (k === "cat") render();
     });
-    $("tbody")?.addEventListener("click", async (e) => {
+
+    $("rank-boxes")?.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-del]");
       if (!btn) return;
       const ok = await confirmModal({
@@ -232,5 +252,5 @@ export function createRanking(ctx, api, shell) {
     });
   }
 
-  return { bind, refresh, render, fillFilters: fillCats };
+  return { bind, refresh, render, fillFilters: render };
 }

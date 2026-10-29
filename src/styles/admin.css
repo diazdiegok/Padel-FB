@@ -1529,17 +1529,71 @@ body.is-admin main > .wrap {
 }
 .res-crumbs b { color: var(--cream); }
 
+.season-box {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--bg-2);
+  padding: 18px 16px 16px;
+  margin-bottom: 14px;
+  display: grid;
+  gap: 14px;
+}
+.season-box.open {
+  border-color: color-mix(in srgb, var(--lime) 55%, var(--line));
+}
+.season-box-head {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}
+.season-box-head .kicker { margin: 0; }
+.season-box-head strong {
+  font-family: var(--display);
+  font-size: 28px;
+  text-transform: uppercase;
+  line-height: 1.05;
+}
+.season-box-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.season-box-body {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+.season-box-body[hidden] { display: none !important; }
+.season-box .res-inner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
 .res-boxes {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
+.res-boxes.stack {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
 .res-boxes:empty { display: none; }
 .res-box {
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: var(--bg-2);
+  background: var(--bg);
   padding: 20px 18px;
   display: grid;
   gap: 8px;

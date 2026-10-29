@@ -183,41 +183,12 @@ import "../styles/admin.css";
             <button class="btn btn-ghost" type="button" id="csv-export">Exportar</button>
             <span class="tag" id="rank-count"></span>
           </div>
-          <div class="res-crumbs" id="rank-crumbs" role="navigation" aria-label="Ubicación en ranking"></div>
-          <div class="res-boxes" id="rank-boxes"></div>
-          <div id="rank-detail" hidden>
-            <div class="filters">
-              <input class="search" id="f-q" type="search" placeholder="Buscar pareja…" autocomplete="off" />
-              <div class="filter-group" style="flex:1;min-width:220px">
-                <span>Categoría</span>
-                <div class="pills" id="f-cats"></div>
-              </div>
-            </div>
-            <p class="admin-msg" id="rank-msg"></p>
-            <div class="admin-empty" id="rank-empty" hidden>
-              <p>Todavía no hay parejas en esta categoría. Cuando se inscriban aparecen solas acá con 0 puntos.</p>
-            </div>
-            <div class="admin-scroll">
-              <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th class="col-pos">#</th>
-                    <th>Nombre / pareja</th>
-                    <th class="col-cat">Categoría</th>
-                    <th class="col-num">PJ</th>
-                    <th class="col-num">Dif</th>
-                    <th class="col-num">Pts</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody id="tbody"></tbody>
-              </table>
-            </div>
-            <div class="admin-sticky-bar">
-              <p class="admin-sticky-note">Los puntos se suman solos al publicar Resultados. Acá corregís a mano si hace falta.</p>
-              <div class="admin-sticky-actions">
-                <button class="btn btn-lime" type="button" id="publish">Publicar ranking</button>
-              </div>
+          <p class="admin-msg" id="rank-msg"></p>
+          <div class="res-boxes stack" id="rank-boxes"></div>
+          <div class="admin-sticky-bar">
+            <p class="admin-sticky-note">Los puntos se suman solos al publicar Resultados. Acá corregís a mano si hace falta.</p>
+            <div class="admin-sticky-actions">
+              <button class="btn btn-lime" type="button" id="publish">Publicar ranking</button>
             </div>
           </div>
         </section>

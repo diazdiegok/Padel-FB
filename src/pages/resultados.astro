@@ -28,9 +28,16 @@ const seasonBlocks = seasons.map((temp) => {
     const played = weekList.filter((m) => String(m.result || "").trim()).length;
     return { week, temp, total: weekList.length, played };
   });
-  return { temp, title: seasonLabel(temp), cards };
+  return {
+    temp,
+    title: seasonLabel(temp),
+    total: list.length,
+    live: temp === (site.currentSeason || ""),
+    cards,
+  };
 });
 const cards = seasonBlocks.flatMap((block) => block.cards);
+const first = cards[0];
 ---
 <Layout
   title="Resultados | Padel FB"
@@ -40,34 +47,38 @@ const cards = seasonBlocks.flatMap((block) => block.cards);
     <header class="page-hero">
       <p class="kicker">Liga</p>
       <h1>Resultados</h1>
-      <p>Las fechas quedan agrupadas por temporada.</p>
+      <p>Cada temporada es una caja. Adentro están las fechas.</p>
     </header>
 
     {cards.length === 0 ? (
       <p class="empty" style="display:block;padding:48px 0">Próximamente. Cuando se publique la Fecha 1 van a aparecer acá.</p>
     ) : (
-      <>
-        {seasonBlocks.map((block, s) => (
-          <div class="result-season">
+      seasonBlocks.map((block, s) => (
+        <section class:list={["season-box", { open: s === 0 }]} data-res-season={block.temp}>
+          <header class="season-box-head">
+            <p class="kicker">Temporada{block.live ? " · En juego" : ""}</p>
             <h2>{block.title}</h2>
-            <div class="result-grid">
-              {block.cards.map((c, i) => (
-                <button
-                  class:list={["result-card", { open: s === 0 && i === 0 }]}
-                  type="button"
-                  data-week={c.week}
-                  data-temp={c.temp}
-                >
-                  <p class="kicker">Fecha</p>
-                  <h2>{c.week}</h2>
-                  <p>{c.played} / {c.total} resultados</p>
-                </button>
-              ))}
-            </div>
+            <p>{block.cards.length} fecha{block.cards.length === 1 ? "" : "s"}</p>
+          </header>
+          <div class="result-grid">
+            {block.cards.map((c, i) => (
+              <button
+                class:list={["result-card", { open: s === 0 && i === 0 }]}
+                type="button"
+                data-week={c.week}
+                data-temp={c.temp}
+              >
+                <p class="kicker">Fecha</p>
+                <h2>{c.week}</h2>
+                <p>{c.played} / {c.total} resultados</p>
+              </button>
+            ))}
           </div>
-        ))}
-        <div id="result-root" class="result-panel"></div>
-      </>
+          <div class="season-box-body" data-res-body hidden={s !== 0}>
+            <div data-res-root></div>
+          </div>
+        </section>
+      ))
     )}
   </div>
 
@@ -75,11 +86,9 @@ const cards = seasonBlocks.flatMap((block) => block.cards);
     import { describeResult } from "../lib/scoring.js";
     window.__ligaScoring = { describeResult };
   </script>
-  <script define:vars={{ matches, cards }}>
-    const root = document.querySelector("#result-root");
-    if (!root) throw new Error("resultados");
-    let week = cards[0]?.week || "";
-    let temp = cards[0]?.temp || "";
+  <script define:vars={{ matches, first }}>
+    let week = first?.week || "";
+    let temp = first?.temp || "";
 
     const describeResult = (raw) => window.__ligaScoring?.describeResult?.(raw) || null;
     function esc(s) {
@@ -88,12 +97,18 @@ const cards = seasonBlocks.flatMap((block) => block.cards);
       );
     }
 
+    function activeRoot() {
+      return document.querySelector(`.season-box[data-res-season="${temp}"] [data-res-root]`);
+    }
+
     function render() {
+      const root = activeRoot();
+      if (!root) return;
       const list = matches.filter((m) =>
         (m.week || "Sin fecha") === week && (m.temp || "") === temp
       );
       const groups = [...new Set(list.map((m) => m.cat || "Sin categoría"))];
-      root.innerHTML = `<section class="fixture-week">
+      root.innerHTML = `<section class="fixture-week" style="padding-top:0">
         <h2>${esc(week)}</h2>
         ${groups
           .map((cat) => {
@@ -140,14 +155,24 @@ const cards = seasonBlocks.flatMap((block) => block.cards);
 
     document.querySelectorAll("[data-week]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        document.querySelectorAll("[data-week]").forEach((b) => b.classList.remove("open"));
-        btn.classList.add("open");
         week = btn.dataset.week;
         temp = btn.dataset.temp || "";
+        document.querySelectorAll(".season-box").forEach((box) => {
+          const on = box.dataset.resSeason === temp;
+          box.classList.toggle("open", on);
+          const body = box.querySelector("[data-res-body]");
+          if (body) body.hidden = !on;
+        });
+        document.querySelectorAll("[data-week]").forEach((b) => {
+          b.classList.toggle("open", b.dataset.week === week && b.dataset.temp === temp);
+        });
         render();
-        root.scrollIntoView({ behavior: "smooth", block: "start" });
+        document.querySelector(`.season-box[data-res-season="${temp}"]`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
       });
     });
-    render();
+    if (first) render();
   </script>
 </Layout>

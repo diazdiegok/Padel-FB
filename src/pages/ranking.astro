@@ -9,7 +9,6 @@ const rows = ranking.filter((p) => !HIDDEN_CATS.has(p.cat));
 const temps = listSeasons(site, rows.map((p) => p.temp))
   .slice()
   .sort((a, b) => seasonNumber(b) - seasonNumber(a));
-const cats = [...new Set(rows.map((p) => p.cat))].sort((a, b) => a.localeCompare(b, "es"));
 const current = temps.includes(site.currentSeason) ? site.currentSeason : temps[0] || "";
 const seasonBlocks = temps.map((temp) => {
   const list = rows.filter((p) => p.temp === temp);
@@ -36,7 +35,7 @@ const seasonBlocks = temps.map((temp) => {
     <header class="page-hero">
       <p class="kicker">{rows.length} jugadores totales (todas las temporadas)</p>
       <h1>Ranking</h1>
-      <p>Elegí la temporada y después la categoría. También podés buscar por apellido.</p>
+      <p>Cada temporada es una caja. Adentro elegís la categoría o Todas.</p>
     </header>
 
     <aside class="rank-rules" aria-labelledby="rank-rules-title">
@@ -59,84 +58,56 @@ const seasonBlocks = temps.map((temp) => {
     {seasonBlocks.length === 0 ? (
       <p class="empty" style="display:block;padding:48px 0">Próximamente. Cuando haya parejas en el ranking van a aparecer acá.</p>
     ) : (
-      <>
-        {seasonBlocks.map((block) => (
-          <div class="result-season" data-rank-season={block.temp}>
+      seasonBlocks.map((block) => (
+        <section class="season-box" data-rank-season={block.temp}>
+          <header class="season-box-head">
             <p class="kicker">Temporada{block.live ? " · En juego" : ""}</p>
             <h2>{block.title}</h2>
-            <p style="margin:8px 0 0;color:var(--muted)">{block.total} pareja{block.total === 1 ? "" : "s"}</p>
-            <div class="result-grid">
-              <button
-                class="result-card"
-                type="button"
-                data-temp={block.temp}
-                data-cat="Todas"
-              >
-                <p class="kicker">Ranking</p>
-                <h2>Todas</h2>
-                <p>{block.total} / {block.total} parejas</p>
+            <p>{block.total} pareja{block.total === 1 ? "" : "s"}</p>
+          </header>
+          <div class="result-grid">
+            <button class="result-card" type="button" data-temp={block.temp} data-cat="Todas">
+              <p class="kicker">Ranking</p>
+              <h2>Todas</h2>
+              <p>{block.total} pareja{block.total === 1 ? "" : "s"}</p>
+            </button>
+            {block.cats.map((c) => (
+              <button class="result-card" type="button" data-temp={block.temp} data-cat={c.cat}>
+                <p class="kicker">Categoría</p>
+                <h2>{c.cat}</h2>
+                <p>{c.total} pareja{c.total === 1 ? "" : "s"}</p>
               </button>
-              {block.cats.map((c) => (
-                <button
-                  class="result-card"
-                  type="button"
-                  data-temp={block.temp}
-                  data-cat={c.cat}
-                >
-                  <p class="kicker">Categoría</p>
-                  <h2>{c.cat}</h2>
-                  <p>{c.total} pareja{c.total === 1 ? "" : "s"}</p>
-                </button>
-              ))}
+            ))}
+          </div>
+          <div class="season-box-body" data-rank-body hidden>
+            <div class="filters">
+              <input class="search" data-rank-q type="search" placeholder="Buscar jugador o pareja…" autocomplete="off" />
+              <span class="tag" data-rank-count aria-live="polite"></span>
             </div>
-          </div>
-        ))}
-
-        <div id="rank-panel" class="result-panel" hidden>
-          <div class="filters">
-            <input class="search" id="q" type="search" placeholder="Buscar jugador o pareja…" autocomplete="off" />
-            <div class="filter-group" style="flex:1;min-width:220px">
-              <span>Categoría</span>
-              <div class="pills" id="rank-cats">
-                <button class="pill on" data-filter-cat="Todas" type="button">Todas</button>
-                {cats.map((c) => (
-                  <button class="pill" data-filter-cat={c} type="button">{c}</button>
-                ))}
-              </div>
+            <p class="table-hint">Deslizá horizontalmente para ver toda la tabla.</p>
+            <div class="table-scroll" tabindex="0" role="region" aria-label={`Tabla ${block.title}`}>
+              <table class="board">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Jugador / pareja</th>
+                    <th>Categoría</th>
+                    <th>PJ</th>
+                    <th>Dif. sets</th>
+                    <th>Pts</th>
+                  </tr>
+                </thead>
+                <tbody data-rank-rows></tbody>
+              </table>
             </div>
-            <span class="tag" id="count" aria-live="polite"></span>
+            <p class="empty" data-rank-empty hidden>No hay jugadores con ese filtro.</p>
           </div>
-
-          <p class="table-hint">Deslizá horizontalmente para ver toda la tabla.</p>
-          <div class="table-scroll" tabindex="0" role="region" aria-label="Tabla de posiciones">
-            <table class="board">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Jugador / pareja</th>
-                  <th>Categoría</th>
-                  <th>PJ</th>
-                  <th>Dif. sets</th>
-                  <th>Pts</th>
-                </tr>
-              </thead>
-              <tbody id="rows"></tbody>
-            </table>
-          </div>
-          <p class="empty" id="empty" hidden>No hay jugadores con ese filtro.</p>
-        </div>
-      </>
+        </section>
+      ))
     )}
   </div>
 
-  <script define:vars={{ players: rows, cats }}>
-    const panel = document.querySelector("#rank-panel");
-    if (!panel) throw new Error("ranking");
-    const q = document.querySelector("#q");
-    const tbody = document.querySelector("#rows");
-    const empty = document.querySelector("#empty");
-    const count = document.querySelector("#count");
-    const catPills = document.querySelector("#rank-cats");
+  <script define:vars={{ players: rows }}>
     let cat = "Todas";
     let temp = "";
 
@@ -146,25 +117,22 @@ const seasonBlocks = temps.map((temp) => {
       );
     }
 
-    function syncCatPills() {
-      if (!catPills) return;
-      const used = new Set(
-        players.filter((p) => !temp || p.temp === temp).map((p) => p.cat)
-      );
-      catPills.querySelectorAll("[data-filter-cat]").forEach((btn) => {
-        const value = btn.dataset.filterCat;
-        const show = value === "Todas" || used.has(value);
-        btn.hidden = !show;
-        btn.classList.toggle("on", value === cat);
-      });
+    function activeBox() {
+      return document.querySelector(`.season-box[data-rank-season="${temp}"]`);
     }
 
     function render() {
-      const term = (q.value || "").trim().toLowerCase();
+      const box = activeBox();
+      if (!box) return;
+      const tbody = box.querySelector("[data-rank-rows]");
+      const empty = box.querySelector("[data-rank-empty]");
+      const count = box.querySelector("[data-rank-count]");
+      const q = box.querySelector("[data-rank-q]");
+      const term = (q?.value || "").trim().toLowerCase();
       const rows = players
         .filter((p) => {
           const okCat = cat === "Todas" || p.cat === cat;
-          const okTemp = !temp || p.temp === temp;
+          const okTemp = p.temp === temp;
           const okQ = !term || (p.name || "").toLowerCase().includes(term);
           return okCat && okTemp && okQ;
         })
@@ -183,35 +151,31 @@ const seasonBlocks = temps.map((temp) => {
         .join("");
       empty.hidden = rows.length > 0;
       count.textContent = rows.length + " jugadores";
-      syncCatPills();
     }
 
     function openSeason(nextTemp, nextCat) {
       temp = nextTemp || "";
       cat = nextCat || "Todas";
-      if (cat !== "Todas" && !cats.includes(cat)) cat = "Todas";
-      document.querySelectorAll(".result-card[data-temp]").forEach((b) => {
-        const on = b.dataset.temp === temp && b.dataset.cat === cat;
-        b.classList.toggle("open", on);
+      document.querySelectorAll(".season-box").forEach((box) => {
+        const on = box.dataset.rankSeason === temp;
+        box.classList.toggle("open", on);
+        const body = box.querySelector("[data-rank-body]");
+        if (body) body.hidden = !on;
       });
-      panel.hidden = !temp;
-      syncCatPills();
-      render();
-      if (temp) panel.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-
-    q.addEventListener("input", render);
-    catPills?.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-filter-cat]");
-      if (!btn || btn.hidden) return;
-      cat = btn.dataset.filterCat || "Todas";
       document.querySelectorAll(".result-card[data-temp]").forEach((b) => {
         b.classList.toggle("open", b.dataset.temp === temp && b.dataset.cat === cat);
       });
       render();
-    });
+      activeBox()?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
     document.querySelectorAll(".result-card[data-temp]").forEach((btn) => {
       btn.addEventListener("click", () => openSeason(btn.dataset.temp, btn.dataset.cat));
+    });
+    document.querySelectorAll("[data-rank-q]").forEach((input) => {
+      input.addEventListener("input", () => {
+        if (input.closest(".season-box")?.dataset.rankSeason === temp) render();
+      });
     });
   </script>
 </Layout>
