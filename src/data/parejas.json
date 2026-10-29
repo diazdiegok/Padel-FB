@@ -85,5 +85,20 @@
       "Viernes": "17:00 - 20:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmvtrcesica54",
+    "createdAt": "2026-10-29T16:28:30.306Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Esquivel Florencia Gabriela",
+    "p2": "Frickel Natalia Ivana",
+    "days": {
+      "Martes": "19:30 - 22:00",
+      "Jueves": "18:00 - 22:00",
+      "Viernes": "18:30 - 23:00",
+      "Sábado": "09:30 - 20:00"
+    },
+    "note": "Natalia se va de viaje desde el 16 al 30 de noviembre. Por lo tanto jugará un reemplazo de la misma categoría."
   }
 ]
