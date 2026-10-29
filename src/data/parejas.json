@@ -70,5 +70,20 @@
       "Viernes": "19:00 - 22:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmvth2shtb92d",
+    "createdAt": "2026-10-29T11:41:05.345Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Francisco Benedetich",
+    "p2": "Facundo llover",
+    "days": {
+      "Lunes": "18:30 - 21:00",
+      "Miércoles": "18:30 - 21:00",
+      "Jueves": "17:00 - 21:00",
+      "Viernes": "17:00 - 20:00"
+    },
+    "note": ""
   }
 ]
