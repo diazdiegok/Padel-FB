@@ -1,0 +1,67 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import fixture from "../../data/fixture.json";
+import results from "../../data/results.json";
+import { site } from "../../data/site";
+import { combineResults, seasonLabel, seasonSlug, weekNumber, weekSlug } from "../../lib/liga.js";
+import { page } from "../../lib/paths";
+
+export function getStaticPaths() {
+  const pool = combineResults(results, fixture.filter((m: any) => m.home && m.away));
+  const seasons = [...new Set(pool.map((m) => m.temp || site.currentSeason || "T4"))];
+  return seasons.map((temp) => ({
+    params: { temp: seasonSlug(temp) },
+    props: { tempCode: temp },
+  }));
+}
+
+const { tempCode } = Astro.props;
+const list = combineResults(results, fixture.filter((m: any) => m.home && m.away)).filter(
+  (m) => (m.temp || site.currentSeason || "T4") === tempCode
+);
+const weeks = [...new Set(list.map((m) => m.week || "Sin fecha"))].sort(
+  (a, b) => weekNumber(b) - weekNumber(a) || String(a).localeCompare(String(b), "es")
+);
+const cards = weeks.map((week) => {
+  const weekList = list.filter((m) => (m.week || "Sin fecha") === week);
+  const played = weekList.filter((m) => String(m.result || "").trim()).length;
+  return {
+    week,
+    total: weekList.length,
+    played,
+    href: page(`resultados/${seasonSlug(tempCode)}/${weekSlug(week)}/`),
+  };
+});
+const title = seasonLabel(tempCode);
+const live = tempCode === site.currentSeason;
+---
+<Layout title={`Resultados ${title} | Padel FB`} description={`Resultados de ${title} de Padel FB en Paraná.`}>
+  <div class="wrap">
+    <header class="page-hero">
+      <p class="kicker">
+        <a class="po-back" href={page("resultados/")}>← Volver a resultados</a>
+        {live ? " · En juego" : ""}
+      </p>
+      <h1>Resultados · {title}</h1>
+      <p>Elegí la fecha para ver los partidos.</p>
+    </header>
+
+    {cards.length === 0 ? (
+      <p class="empty" style="display:block;padding:48px 0">Todavía no hay fechas en esta temporada.</p>
+    ) : (
+      <div class="hub-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+        {cards.map((c) => (
+          <a class="hub-card" href={c.href}>
+            <p class="kicker" style="margin:0">Fecha</p>
+            <h2>{c.week}</h2>
+            <p>{c.played} / {c.total} resultados</p>
+          </a>
+        ))}
+      </div>
+    )}
+
+    <p style="margin:28px 0 48px">
+      <a class="btn btn-ghost" href={page("resultados/")}>Volver a resultados</a>
+    </p>
+  </div>
+</Layout>

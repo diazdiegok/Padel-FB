@@ -1,0 +1,209 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import fixture from "../../../data/fixture.json";
+import results from "../../../data/results.json";
+import { site } from "../../../data/site";
+import { combineResults, seasonLabel, seasonSlug, weekSlug } from "../../../lib/liga.js";
+import { page } from "../../../lib/paths";
+
+export function getStaticPaths() {
+  const DAY_ORDER = ["lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado", "domingo"];
+  const dayIdx = (d) => {
+    const i = DAY_ORDER.indexOf(String(d || "").trim().toLowerCase());
+    return i < 0 ? 99 : i;
+  };
+  const matches = combineResults(results, (fixture as any[]).filter((m) => m.home && m.away)).sort((a, b) => {
+    const da = dayIdx(a.day);
+    const db = dayIdx(b.day);
+    if (da !== db) return da - db;
+    return String(a.time || "").localeCompare(String(b.time || ""), "es");
+  });
+  const seasons = [...new Set(matches.map((m) => m.temp || site.currentSeason || "T4"))];
+  const paths = [];
+  for (const temp of seasons) {
+    const list = matches.filter((m) => (m.temp || site.currentSeason || "T4") === temp);
+    const weeks = [...new Set(list.map((m) => m.week || "Sin fecha"))];
+    for (const week of weeks) {
+      paths.push({
+        params: { temp: seasonSlug(temp), week: weekSlug(week) },
+        props: { tempCode: temp, weekLabel: week },
+      });
+    }
+  }
+  return paths;
+}
+
+const { tempCode, weekLabel } = Astro.props;
+const DAY_ORDER = ["lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado", "domingo"];
+const dayIdx = (d: string) => {
+  const i = DAY_ORDER.indexOf(String(d || "").trim().toLowerCase());
+  return i < 0 ? 99 : i;
+};
+const list = combineResults(results, (fixture as any[]).filter((m) => m.home && m.away))
+  .filter((m) => (m.temp || site.currentSeason || "T4") === tempCode && (m.week || "Sin fecha") === weekLabel)
+  .sort((a, b) => {
+    const da = dayIdx(a.day);
+    const db = dayIdx(b.day);
+    if (da !== db) return da - db;
+    return String(a.time || "").localeCompare(String(b.time || ""), "es");
+  });
+const title = seasonLabel(tempCode);
+const seasonHref = page(`fixture/${seasonSlug(tempCode)}/`);
+const days = [...new Set(list.map((m) => m.day).filter(Boolean))].sort((a, b) => dayIdx(a) - dayIdx(b));
+const cats = [...new Set(list.map((m) => m.cat).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
+const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
+---
+<Layout title={`${weekLabel} · Fixture ${title} | Padel FB`} description={`Partidos de ${weekLabel} · ${title}.`}>
+  <div class="wrap">
+    <header class="page-hero">
+      <p class="kicker">
+        <a class="po-back" href={seasonHref}>← Volver a {title}</a>
+      </p>
+      <h1>{weekLabel}</h1>
+      <p>Fixture · {title}</p>
+    </header>
+
+    {list.length === 0 ? (
+      <p class="empty" style="display:block;padding:48px 0">No hay partidos en esta fecha.</p>
+    ) : (
+      <>
+        <div class="filters fixture-filters">
+          <input class="search" id="q" type="search" placeholder="Buscar pareja o jugador…" autocomplete="off" />
+          <div class="filter-group">
+            <span>Día</span>
+            <div class="pills" id="f-days">
+              <button class="pill on" data-day="Todas" type="button">Todos</button>
+              {days.map((d) => (
+                <button class="pill" data-day={d} type="button">{d}</button>
+              ))}
+            </div>
+          </div>
+          <div class="filter-group">
+            <span>Categoría</span>
+            <div class="pills" id="f-cats">
+              <button class="pill on" data-cat="Todas" type="button">Todas</button>
+              {cats.map((c) => (
+                <button class="pill" data-cat={c} type="button">{c}</button>
+              ))}
+            </div>
+          </div>
+          <div class="filter-group">
+            <span>Cancha</span>
+            <div class="pills" id="f-courts">
+              <button class="pill on" data-court="Todas" type="button">Todas</button>
+              {courts.map((c) => (
+                <button class="pill" data-court={c} type="button">{c}</button>
+              ))}
+            </div>
+          </div>
+          <span class="tag" id="count"></span>
+        </div>
+        <div id="fixture-root"></div>
+        <p class="empty" id="empty" hidden>No hay partidos con ese filtro.</p>
+      </>
+    )}
+
+    <p style="margin:28px 0 48px;display:flex;gap:12px;flex-wrap:wrap">
+      <a class="btn btn-ghost" href={seasonHref}>Volver a {title}</a>
+      <a class="btn btn-ghost" href={page("fixture/")}>Volver al fixture</a>
+    </p>
+  </div>
+
+  <script>
+    import { describeResult } from "../../../lib/scoring.js";
+    window.__ligaScoring = { describeResult };
+  </script>
+  <script define:vars={{ matches: list }}>
+    const q = document.querySelector("#q");
+    const root = document.querySelector("#fixture-root");
+    const empty = document.querySelector("#empty");
+    const count = document.querySelector("#count");
+    if (!root) throw new Error("fixture week");
+
+    let day = "Todas";
+    let cat = "Todas";
+    let court = "Todas";
+
+    function esc(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+      );
+    }
+    const describeResult = (raw) => window.__ligaScoring?.describeResult?.(raw) || null;
+    function fold(s) {
+      return String(s || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function render() {
+      const term = fold((q?.value || "").trim());
+      const rows = matches.filter((m) => {
+        const okDay = day === "Todas" || m.day === day;
+        const okCat = cat === "Todas" || m.cat === cat;
+        const okCourt = court === "Todas" || m.venue === court;
+        const blob = fold([m.home, m.away].filter(Boolean).join(" "));
+        return okDay && okCat && okCourt && (!term || blob.includes(term));
+      });
+      root.innerHTML = `<section class="fixture-week" style="padding-top:0">
+        <div class="fixture-list">
+          ${rows
+            .map((m) => {
+              const info = describeResult(m.result);
+              return `<article class="fixture-row">
+                <div class="fixture-meta">
+                  <span>${esc(m.day || m.date)}</span>
+                  <span>${esc(m.time)}</span>
+                  <span>${esc(m.cat)}</span>
+                </div>
+                <div class="fixture-vs">
+                  <div class="pair pair-a${info?.homeWin ? " winner" : ""}">
+                    <span class="pair-label">Pareja 1</span>
+                    <strong>${esc(m.home)}</strong>
+                    ${info ? `<span class="pair-pts">${info.homePts} pts</span>` : ""}
+                  </div>
+                  <span class="vs">vs</span>
+                  <div class="pair pair-b${info && !info.homeWin ? " winner" : ""}">
+                    <span class="pair-label">Pareja 2</span>
+                    <strong>${esc(m.away)}</strong>
+                    ${info ? `<span class="pair-pts">${info.awayPts} pts</span>` : ""}
+                  </div>
+                </div>
+                <div class="fixture-score">${
+                  info
+                    ? `<b>${esc(info.score)}</b><span>${info.label}</span>`
+                    : m.result
+                      ? `<b>${esc(m.result)}</b>`
+                      : `<span class="tag">Por jugar</span>`
+                }</div>
+                <div class="fixture-place">
+                  <span>${esc(m.venue)}${m.court ? ` · ${esc(m.court)}` : ""}</span>
+                </div>
+              </article>`;
+            })
+            .join("")}
+        </div>
+      </section>`;
+      empty.hidden = rows.length > 0;
+      count.textContent = rows.length + (rows.length === 1 ? " partido" : " partidos");
+    }
+
+    function bind(selector, key, setter) {
+      document.querySelectorAll(selector).forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(selector).forEach((b) => b.classList.remove("on"));
+          btn.classList.add("on");
+          setter(btn.dataset[key]);
+          render();
+        });
+      });
+    }
+
+    q?.addEventListener("input", render);
+    bind("[data-day]", "day", (v) => { day = v; });
+    bind("[data-cat]", "cat", (v) => { cat = v; });
+    bind("[data-court]", "court", (v) => { court = v; });
+    render();
+  </script>
+</Layout>

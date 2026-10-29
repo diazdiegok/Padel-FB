@@ -1,0 +1,75 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import fixture from "../../data/fixture.json";
+import results from "../../data/results.json";
+import { site } from "../../data/site";
+import { combineResults, seasonLabel, seasonNumber, seasonSlug } from "../../lib/liga.js";
+import { page } from "../../lib/paths";
+
+const all = combineResults(results, (fixture as any[]).filter((m) => m.home && m.away));
+const seasons = [...new Set(all.map((m) => m.temp || site.currentSeason || "T4"))].sort(
+  (a, b) => seasonNumber(b) - seasonNumber(a)
+);
+const seasonBlocks = seasons.map((temp) => {
+  const list = all.filter((m) => (m.temp || site.currentSeason || "T4") === temp);
+  const weeks = [...new Set(list.map((m) => m.week || "Sin fecha"))];
+  return {
+    temp,
+    title: seasonLabel(temp),
+    live: temp === (site.currentSeason || ""),
+    fechas: weeks.length,
+    href: page(`fixture/${seasonSlug(temp)}/`),
+  };
+});
+
+const pending = (fixture as any[])
+  .filter((m) => !!m.pending && !String(m.away || "").trim())
+  .sort((a, b) => String(a.cat).localeCompare(String(b.cat), "es") || String(a.home).localeCompare(String(b.home), "es"));
+const pendingCats = [...new Set(pending.map((m) => m.cat || "Sin categoría"))];
+---
+<Layout
+  title="Fixture | Padel FB"
+  description="Partidos semanales de Padel FB en Paraná."
+>
+  <div class="wrap">
+    <header class="page-hero">
+      <p class="kicker">Liga</p>
+      <h1>Fixture</h1>
+      <p>Elegí la temporada para ver las fechas.</p>
+    </header>
+
+    {seasonBlocks.length === 0 ? (
+      <p class="empty" style="display:block;padding:48px 0">Todavía no hay partidos cargados. Cuando se publiquen desde el admin van a aparecer acá.</p>
+    ) : (
+      <div class="hub-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+        {seasonBlocks.map((block) => (
+          <a class="hub-card" href={block.href}>
+            <p class="kicker" style="margin:0">Temporada{block.live ? " · En juego" : ""}</p>
+            <h2>{block.title}</h2>
+            <p>{block.fechas} fecha{block.fechas === 1 ? "" : "s"}</p>
+          </a>
+        ))}
+      </div>
+    )}
+
+    {pending.length > 0 && (
+      <section class="fixture-pending">
+        <h2>Pendientes · {pending.length}</h2>
+        <p>Estas parejas se anotaron pero no coincidieron en día y horario con otra de su categoría.</p>
+        {pendingCats.map((cat) => (
+          <div class="fixture-pending-cat">
+            <h3>{cat}</h3>
+            <ul>
+              {pending.filter((m) => (m.cat || "Sin categoría") === cat).map((m) => (
+                <li>
+                  <strong>{m.home}</strong>
+                  {m.avail && <span>{m.avail}</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
+    )}
+  </div>
+</Layout>

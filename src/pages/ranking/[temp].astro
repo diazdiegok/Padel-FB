@@ -1,0 +1,131 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import ranking from "../../data/ranking.json";
+import { site } from "../../data/site";
+import { listSeasons, seasonLabel, seasonSlug } from "../../lib/liga.js";
+import { page } from "../../lib/paths";
+
+export function getStaticPaths() {
+  const hidden = new Set(["S Masculina"]);
+  const rows = ranking.filter((p) => !hidden.has(p.cat));
+  const temps = listSeasons(site, rows.map((p) => p.temp));
+  return temps.map((temp) => ({
+    params: { temp: seasonSlug(temp) },
+    props: { tempCode: temp },
+  }));
+}
+
+const { tempCode } = Astro.props;
+const rows = ranking.filter((p) => p.cat !== "S Masculina" && p.temp === tempCode);
+const cats = [...new Set(rows.map((p) => p.cat))].sort((a, b) => a.localeCompare(b, "es"));
+const title = seasonLabel(tempCode);
+const live = tempCode === site.currentSeason;
+---
+<Layout
+  title={`Ranking ${title} | Padel FB`}
+  description={`Ranking de ${title} de Padel FB en Paraná.`}
+>
+  <div class="wrap">
+    <header class="page-hero">
+      <p class="kicker">
+        <a class="po-back" href={page("ranking/")}>← Volver al ranking</a>
+        {live ? " · En juego" : ""}
+      </p>
+      <h1>Ranking · {title}</h1>
+      <p>{rows.length} pareja{rows.length === 1 ? "" : "s"}. Filtrá por categoría o buscá un apellido.</p>
+    </header>
+
+    {rows.length === 0 ? (
+      <p class="empty" style="display:block;padding:48px 0">Todavía no hay parejas en esta temporada.</p>
+    ) : (
+      <>
+        <div class="filters">
+          <input class="search" id="q" type="search" placeholder="Buscar jugador o pareja…" autocomplete="off" />
+          <div class="filter-group" style="flex:1;min-width:220px">
+            <span>Categoría</span>
+            <div class="pills" id="rank-cats">
+              <button class="pill on" data-cat="Todas" type="button">Todas</button>
+              {cats.map((c) => (
+                <button class="pill" data-cat={c} type="button">{c}</button>
+              ))}
+            </div>
+          </div>
+          <span class="tag" id="count" aria-live="polite"></span>
+        </div>
+
+        <p class="table-hint">Deslizá horizontalmente para ver toda la tabla.</p>
+        <div class="table-scroll" tabindex="0" role="region" aria-label={`Tabla ${title}`}>
+          <table class="board">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Jugador / pareja</th>
+                <th>Categoría</th>
+                <th>PJ</th>
+                <th>Dif. sets</th>
+                <th>Pts</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <p class="empty" id="empty" hidden>No hay jugadores con ese filtro.</p>
+
+        <p style="margin:28px 0 48px">
+          <a class="btn btn-ghost" href={page("ranking/")}>Volver al ranking</a>
+        </p>
+      </>
+    )}
+  </div>
+
+  <script define:vars={{ players: rows }}>
+    const q = document.querySelector("#q");
+    const tbody = document.querySelector("#rows");
+    const empty = document.querySelector("#empty");
+    const count = document.querySelector("#count");
+    if (!tbody) throw new Error("ranking season");
+    let cat = "Todas";
+
+    function esc(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+      );
+    }
+
+    function render() {
+      const term = (q?.value || "").trim().toLowerCase();
+      const list = players
+        .filter((p) => {
+          const okCat = cat === "Todas" || p.cat === cat;
+          const okQ = !term || (p.name || "").toLowerCase().includes(term);
+          return okCat && okQ;
+        })
+        .sort((a, b) => Number(a.pos) - Number(b.pos) || Number(b.pts) - Number(a.pts));
+      tbody.innerHTML = list
+        .map(
+          (p) => `<tr class="${Number(p.pos) === 1 ? "top1" : ""}">
+          <td class="pos">${esc(p.pos)}</td>
+          <td class="name">${esc(p.name)}</td>
+          <td>${esc(p.cat)}</td>
+          <td>${esc(p.pj)}</td>
+          <td>${Number(p.dif) > 0 ? "+" : ""}${esc(p.dif)}</td>
+          <td><strong>${esc(p.pts)}</strong></td>
+        </tr>`
+        )
+        .join("");
+      if (empty) empty.hidden = list.length > 0;
+      if (count) count.textContent = list.length + " jugadores";
+    }
+
+    q?.addEventListener("input", render);
+    document.querySelectorAll("[data-cat]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("[data-cat]").forEach((b) => b.classList.remove("on"));
+        btn.classList.add("on");
+        cat = btn.dataset.cat || "Todas";
+        render();
+      });
+    });
+    render();
+  </script>
+</Layout>

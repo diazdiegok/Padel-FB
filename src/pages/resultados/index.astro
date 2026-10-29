@@ -1,0 +1,47 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import fixture from "../../data/fixture.json";
+import results from "../../data/results.json";
+import { site } from "../../data/site";
+import { combineResults, seasonLabel, seasonNumber, seasonSlug } from "../../lib/liga.js";
+import { page } from "../../lib/paths";
+
+const matches = combineResults(results, fixture.filter((m: any) => m.home && m.away));
+const seasons = [...new Set(matches.map((m) => m.temp || site.currentSeason || "T4"))].sort(
+  (a, b) => seasonNumber(b) - seasonNumber(a)
+);
+const seasonBlocks = seasons.map((temp) => {
+  const list = matches.filter((m) => (m.temp || site.currentSeason || "T4") === temp);
+  const weeks = [...new Set(list.map((m) => m.week || "Sin fecha"))];
+  return {
+    temp,
+    title: seasonLabel(temp),
+    live: temp === (site.currentSeason || ""),
+    fechas: weeks.length,
+    href: page(`resultados/${seasonSlug(temp)}/`),
+  };
+});
+---
+<Layout title="Resultados | Padel FB" description="Resultados por fecha de Padel FB en Paraná.">
+  <div class="wrap">
+    <header class="page-hero">
+      <p class="kicker">Liga</p>
+      <h1>Resultados</h1>
+      <p>Elegí la temporada para ver las fechas.</p>
+    </header>
+
+    {seasonBlocks.length === 0 ? (
+      <p class="empty" style="display:block;padding:48px 0">Próximamente. Cuando se publique la Fecha 1 van a aparecer acá.</p>
+    ) : (
+      <div class="hub-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+        {seasonBlocks.map((block) => (
+          <a class="hub-card" href={block.href}>
+            <p class="kicker" style="margin:0">Temporada{block.live ? " · En juego" : ""}</p>
+            <h2>{block.title}</h2>
+            <p>{block.fechas} fecha{block.fechas === 1 ? "" : "s"}</p>
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+</Layout>

@@ -1,0 +1,128 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import fixture from "../../../data/fixture.json";
+import results from "../../../data/results.json";
+import { site } from "../../../data/site";
+import { combineResults, seasonLabel, seasonSlug, weekSlug } from "../../../lib/liga.js";
+import { page } from "../../../lib/paths";
+
+export function getStaticPaths() {
+  const DAY_ORDER = ["lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado", "domingo"];
+  const dayIdx = (d) => {
+    const i = DAY_ORDER.indexOf(String(d || "").trim().toLowerCase());
+    return i < 0 ? 99 : i;
+  };
+  const matches = combineResults(results, fixture.filter((m) => m.home && m.away)).sort((a, b) => {
+    const da = dayIdx(a.day);
+    const db = dayIdx(b.day);
+    if (da !== db) return da - db;
+    return String(a.time || "").localeCompare(String(b.time || ""), "es");
+  });
+  const seasons = [...new Set(matches.map((m) => m.temp || site.currentSeason || "T4"))];
+  const paths = [];
+  for (const temp of seasons) {
+    const list = matches.filter((m) => (m.temp || site.currentSeason || "T4") === temp);
+    const weeks = [...new Set(list.map((m) => m.week || "Sin fecha"))];
+    for (const week of weeks) {
+      paths.push({
+        params: { temp: seasonSlug(temp), week: weekSlug(week) },
+        props: { tempCode: temp, weekLabel: week },
+      });
+    }
+  }
+  return paths;
+}
+
+const { tempCode, weekLabel } = Astro.props;
+const DAY_ORDER = ["lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado", "domingo"];
+const dayIdx = (d: string) => {
+  const i = DAY_ORDER.indexOf(String(d || "").trim().toLowerCase());
+  return i < 0 ? 99 : i;
+};
+const list = combineResults(results, fixture.filter((m: any) => m.home && m.away))
+  .filter((m) => (m.temp || site.currentSeason || "T4") === tempCode && (m.week || "Sin fecha") === weekLabel)
+  .sort((a, b) => {
+    const da = dayIdx(a.day);
+    const db = dayIdx(b.day);
+    if (da !== db) return da - db;
+    return String(a.time || "").localeCompare(String(b.time || ""), "es");
+  });
+const title = seasonLabel(tempCode);
+const seasonHref = page(`resultados/${seasonSlug(tempCode)}/`);
+---
+<Layout title={`${weekLabel} · ${title} | Padel FB`} description={`Resultados de ${weekLabel} · ${title}.`}>
+  <div class="wrap">
+    <header class="page-hero">
+      <p class="kicker">
+        <a class="po-back" href={seasonHref}>← Volver a {title}</a>
+      </p>
+      <h1>{weekLabel}</h1>
+      <p>{title} · {list.length} partido{list.length === 1 ? "" : "s"}</p>
+    </header>
+
+    <div id="result-root" class="result-panel"></div>
+
+    <p style="margin:8px 0 48px;display:flex;gap:12px;flex-wrap:wrap">
+      <a class="btn btn-ghost" href={seasonHref}>Volver a {title}</a>
+      <a class="btn btn-ghost" href={page("resultados/")}>Volver a resultados</a>
+    </p>
+  </div>
+
+  <script>
+    import { describeResult } from "../../../lib/scoring.js";
+    window.__ligaScoring = { describeResult };
+  </script>
+  <script define:vars={{ list, weekLabel }}>
+    const root = document.querySelector("#result-root");
+    if (!root) throw new Error("resultados week");
+    const describeResult = (raw) => window.__ligaScoring?.describeResult?.(raw) || null;
+    function esc(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+      );
+    }
+    const groups = [...new Set(list.map((m) => m.cat || "Sin categoría"))];
+    root.innerHTML = `<section class="fixture-week" style="padding-top:0">
+      ${groups
+        .map((cat) => {
+          const rows = list.filter((m) => (m.cat || "Sin categoría") === cat);
+          return `<h3 class="kicker" style="margin:18px 0 10px">${esc(cat)}</h3>
+            <div class="fixture-list">
+              ${rows
+                .map((m) => {
+                  const info = describeResult(m.result);
+                  return `<article class="fixture-row">
+                    <div class="fixture-meta">
+                      <span>${esc(m.day || m.date)}</span>
+                      <span>${esc(m.time)}</span>
+                      <span>${esc(m.venue)}${m.court ? ` · ${esc(m.court)}` : ""}</span>
+                    </div>
+                    <div class="fixture-vs">
+                      <div class="pair pair-a${info?.homeWin ? " winner" : ""}">
+                        <span class="pair-label">Pareja 1</span>
+                        <strong>${esc(m.home)}</strong>
+                        ${info ? `<span class="pair-pts">${info.homePts} pts</span>` : ""}
+                      </div>
+                      <span class="vs">vs</span>
+                      <div class="pair pair-b${info && !info.homeWin ? " winner" : ""}">
+                        <span class="pair-label">Pareja 2</span>
+                        <strong>${esc(m.away)}</strong>
+                        ${info ? `<span class="pair-pts">${info.awayPts} pts</span>` : ""}
+                      </div>
+                    </div>
+                    <div class="fixture-score">${
+                      info
+                        ? `<b>${esc(info.score)}</b><span>${info.label}</span>`
+                        : m.result
+                          ? `<b>${esc(m.result)}</b>`
+                          : `<span class="tag">Pendiente</span>`
+                    }</div>
+                  </article>`;
+                })
+                .join("")}
+            </div>`;
+        })
+        .join("")}
+    </section>`;
+  </script>
+</Layout>

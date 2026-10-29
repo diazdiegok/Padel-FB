@@ -1,0 +1,67 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import ranking from "../../data/ranking.json";
+import { site } from "../../data/site";
+import { listSeasons, seasonLabel, seasonNumber, seasonSlug } from "../../lib/liga.js";
+import { page } from "../../lib/paths";
+
+const HIDDEN_CATS = new Set(["S Masculina"]);
+const rows = ranking.filter((p) => !HIDDEN_CATS.has(p.cat));
+const temps = listSeasons(site, rows.map((p) => p.temp))
+  .slice()
+  .sort((a, b) => seasonNumber(b) - seasonNumber(a));
+const current = temps.includes(site.currentSeason) ? site.currentSeason : temps[0] || "";
+const seasonBlocks = temps.map((temp) => {
+  const list = rows.filter((p) => p.temp === temp);
+  return {
+    temp,
+    title: seasonLabel(temp),
+    total: list.length,
+    live: temp === current,
+    href: page(`ranking/${seasonSlug(temp)}/`),
+  };
+});
+---
+<Layout
+  title="Ranking | Padel FB"
+  description="Ranking actualizado de Padel FB en Paraná. Elegí la temporada."
+>
+  <div class="wrap">
+    <header class="page-hero">
+      <p class="kicker">{rows.length} jugadores totales (todas las temporadas)</p>
+      <h1>Ranking</h1>
+      <p>Elegí la temporada para ver la tabla.</p>
+    </header>
+
+    <aside class="rank-rules" aria-labelledby="rank-rules-title">
+      <h2 id="rank-rules-title">Cómo se suman los puntos</h2>
+      <p>Cada partido suma puntos a la pareja. <strong>La ganadora siempre suma 3 puntos</strong>. La perdedora suma según cómo se jugó:</p>
+      <ul>
+        <li>
+          <strong>Ganás 2-0</strong> (ej. <b>6-4 6-2</b>): ganadora <b>3 pts</b>, perdedora <b>0 pts</b>.
+        </li>
+        <li>
+          <strong>Ganás 2-1</strong> (ej. <b>6-4 3-6 6-2</b>): ganadora <b>3 pts</b>, perdedora <b>1 pt</b> (porque ganó un set).
+        </li>
+      </ul>
+      <p>
+        En la tabla, <b>PJ</b> son los partidos jugados y <b>Dif. sets</b> es la diferencia de sets a favor y en contra.
+        El orden es por puntos; si empatan, decide la diferencia de sets.
+      </p>
+    </aside>
+
+    {seasonBlocks.length === 0 ? (
+      <p class="empty" style="display:block;padding:48px 0">Próximamente. Cuando haya parejas en el ranking van a aparecer acá.</p>
+    ) : (
+      <div class="hub-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+        {seasonBlocks.map((block) => (
+          <a class="hub-card" href={block.href}>
+            <p class="kicker" style="margin:0">Temporada{block.live ? " · En juego" : ""}</p>
+            <h2>{block.title}</h2>
+            <p>{block.total} pareja{block.total === 1 ? "" : "s"}</p>
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+</Layout>

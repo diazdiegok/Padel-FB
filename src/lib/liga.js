@@ -8,6 +8,21 @@ export function seasonLabel(temp) {
   return n ? `Temporada ${n}` : "Temporada";
 }
 
+export function seasonSlug(temp) {
+  return String(temp || "").trim().toLowerCase();
+}
+
+export function weekSlug(week) {
+  const raw = String(week || "Sin fecha")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return raw || "sin-fecha";
+}
+
 export function normalizeSeason(temp) {
   const n = seasonNumber(temp);
   return n ? `T${n}` : "";
