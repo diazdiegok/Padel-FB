@@ -138,11 +138,11 @@ const TO_HOURS = HOURS.slice(3);
 
     <div class="insc-success" id="insc-done" hidden>
       <p class="insc-success-kicker">Inscripción recibida</p>
-      <h2 class="insc-success-title">¡Listo, ya están anotados!</h2>
+      <h2 class="insc-success-title">¡Listo, ya están anotados! 🎾</h2>
       <p class="insc-success-lead" id="insc-done-text"></p>
       <ul class="insc-success-list">
-        <li>Revisamos el comprobante y te confirmamos por WhatsApp.</li>
         <li>Cuando salga el fixture, tienen <strong>24 hs</strong> para avisar si no pueden jugar.</li>
+        <li>¡Mucha suerte y éxitos en la temporada! 🏆</li>
       </ul>
       <div class="insc-success-actions">
         <a class="btn btn-lime" href={`${base}liga/`}>Ir a Liga</a>
@@ -168,6 +168,21 @@ const TO_HOURS = HOURS.slice(3);
       msg.textContent = text || "";
       msg.className = "form-msg" + (kind ? " " + kind : "");
       msg.hidden = !text;
+      if (text) msg.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function fail(text, el, opts = {}) {
+      if (!opts.keepReceiptAlert) setReceiptMissing(false);
+      setMsg(text, "err");
+      if (el && typeof el.focus === "function") {
+        try {
+          el.focus({ preventScroll: true });
+        } catch {
+          el.focus();
+        }
+        el.scrollIntoView?.({ behavior: "smooth", block: "center" });
+      }
+      return false;
     }
 
     function setReceiptMissing(on) {
@@ -272,38 +287,79 @@ const TO_HOURS = HOURS.slice(3);
       const p2 = form.p2.value.trim();
       const tel1 = form.tel1.value.trim();
       const tel2 = form.tel2.value.trim();
-      const mail1 = buildMail(form.mail1local.value, form.mail1domain.value);
-      const mail2 = buildMail(form.mail2local.value, form.mail2domain.value);
+      const mail1local = form.mail1local.value.trim();
+      const mail2local = form.mail2local.value.trim();
+      const mail1 = buildMail(mail1local, form.mail1domain.value);
+      const mail2 = buildMail(mail2local, form.mail2domain.value);
       const cat = form.cat.value;
       const note = form.note.value.trim();
       const digits = (v) => v.replace(/\D/g, "").length;
       const days = {};
-      DAYS.forEach((day) => {
-        const on = form.querySelector(`[name=day][value="${day}"]`)?.checked;
-        const from = form.querySelector(`[data-from="${day}"]`)?.value || "";
-        const to = form.querySelector(`[data-to="${day}"]`)?.value || "";
-        if (on) days[day] = from && to ? `${from} - ${to}` : "";
-      });
-      if (!p1 || !p2) return setMsg("Completá los dos integrantes de la pareja.", "err");
-      if (digits(tel1) < 8 || digits(tel2) < 8) {
-        return setMsg("Dejá el WhatsApp de cada integrante, con característica (ej. 343 555 0000).", "err");
+
+      if (!p1) return fail("Falta el nombre del primer integrante.", form.p1);
+      if (!p2) return fail("Falta el nombre del segundo integrante.", form.p2);
+      if (!tel1) return fail("Falta el WhatsApp del primer integrante.", form.tel1);
+      if (digits(tel1) < 8) {
+        return fail("El WhatsApp del primer integrante está incompleto. Usá característica (ej. 343 555 0000).", form.tel1);
       }
-      const mailErr = validateMail(mail1) || validateMail(mail2);
-      if (mailErr) return setMsg(mailErr === "Completá el mail." ? "Completá el mail de cada integrante." : mailErr, "err");
-      if (!cat) return setMsg("Elegí la categoría.", "err");
+      if (!tel2) return fail("Falta el WhatsApp del segundo integrante.", form.tel2);
+      if (digits(tel2) < 8) {
+        return fail("El WhatsApp del segundo integrante está incompleto. Usá característica (ej. 343 555 0000).", form.tel2);
+      }
+      if (!mail1local) return fail("Falta el mail del primer integrante.", form.mail1local);
+      if (!mail1) {
+        return fail("El mail del primer integrante no es válido. Revisá el usuario y el dominio.", form.mail1local);
+      }
+      const mail1Err = validateMail(mail1);
+      if (mail1Err) return fail(`Mail del primer integrante: ${mail1Err.replace(/^Completá el mail\.$/, "está incompleto.")}`, form.mail1local);
+      if (!mail2local) return fail("Falta el mail del segundo integrante.", form.mail2local);
+      if (!mail2) {
+        return fail("El mail del segundo integrante no es válido. Revisá el usuario y el dominio.", form.mail2local);
+      }
+      const mail2Err = validateMail(mail2);
+      if (mail2Err) return fail(`Mail del segundo integrante: ${mail2Err.replace(/^Completá el mail\.$/, "está incompleto.")}`, form.mail2local);
+      if (!cat) return fail("Elegí la categoría de la pareja.", form.cat);
+
+      for (const day of DAYS) {
+        const on = form.querySelector(`[name=day][value="${day}"]`)?.checked;
+        if (!on) continue;
+        const fromEl = form.querySelector(`[data-from="${day}"]`);
+        const toEl = form.querySelector(`[data-to="${day}"]`);
+        const from = fromEl?.value || "";
+        const to = toEl?.value || "";
+        if (!from && !to) {
+          return fail(`Falta el horario de ${day}: elegí desde y hasta.`, fromEl);
+        }
+        if (!from) return fail(`En ${day} falta la hora "Desde".`, fromEl);
+        if (!to) return fail(`En ${day} falta la hora "Hasta".`, toEl);
+        days[day] = `${from} - ${to}`;
+      }
+      if (!Object.keys(days).length) {
+        const firstDay = form.querySelector("[name=day]");
+        return fail("Marcá al menos un día en el que puedan jugar.", firstDay);
+      }
       const dayErr = validateDays(days);
-      if (dayErr) return setMsg(dayErr, "err");
+      if (dayErr) {
+        const badDay = DAYS.find((d) => dayErr.includes(d));
+        const focusEl = badDay ? form.querySelector(`[data-from="${badDay}"]`) : null;
+        return fail(dayErr, focusEl);
+      }
+
       const same = registered.find((p) => pairKey(p) === pairKey({ p1, p2 }));
-      if (same) return setMsg(repeatedText(same), "err");
-      if (!apiUrl) return setMsg("La inscripción todavía no está configurada.", "err");
+      if (same) return fail(repeatedText(same), form.p1);
+      if (!apiUrl) return fail("La inscripción todavía no está configurada.", form.p1);
       const receiptFile = receiptInput?.files?.[0];
       if (!receiptFile) {
         setReceiptMissing(true);
-        return setMsg("Adjuntá el comprobante de pago para completar la inscripción.", "err");
+        return fail(
+          "Falta el comprobante de pago: adjuntá la foto o el PDF de la transferencia.",
+          receiptBtn,
+          { keepReceiptAlert: true }
+        );
       }
       setReceiptMissing(false);
       if (receiptFile.size > 1_400_000) {
-        return setMsg("El comprobante es muy pesado. Usá una foto de menos de 1,5 MB.", "err");
+        return fail("El comprobante es muy pesado. Usá una foto de menos de 1,5 MB.", receiptBtn);
       }
       const btn = document.querySelector("#insc-send");
       const btnLabel = btn?.textContent || "";

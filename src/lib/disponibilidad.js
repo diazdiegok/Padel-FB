@@ -76,15 +76,20 @@ export function cleanDays(raw) {
 export function validateDays(days) {
   const list = days && typeof days === "object" ? days : {};
   if (!Object.keys(list).length) return "Marcá al menos un día y horario en el que puedan jugar.";
-  const missing = Object.entries(list).filter(([, hours]) => !hours);
-  if (missing.length) return `Falta el horario de ${missing[0][0]}.`;
+  const missing = Object.entries(list).filter(([, hours]) => !String(hours || "").trim());
+  if (missing.length) {
+    const day = missing[0][0];
+    return `Falta el horario de ${day}: elegí desde y hasta.`;
+  }
   for (const [day, hours] of Object.entries(list)) {
     const m = String(hours).match(/^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);
     if (!m) return `El horario de ${day} no es válido. Usá desde-hasta, por ejemplo 19:00 - 22:00.`;
     const from = Number(m[1]) * 60 + Number(m[2]);
     let to = Number(m[3]) * 60 + Number(m[4]);
     if (to <= from) to += 24 * 60;
-    if (to - from < 90) return `En ${day} el horario tiene que cubrir al menos 1:30 (lo que dura un partido).`;
+    if (to - from < 90) {
+      return `En ${day} el horario tiene que cubrir al menos 1:30 (lo que dura un partido).`;
+    }
   }
   return "";
 }
