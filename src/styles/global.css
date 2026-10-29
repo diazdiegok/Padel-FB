@@ -57,15 +57,17 @@ button, input, select, textarea { font: inherit; color: inherit; }
 nav {
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: 80;
   height: var(--nav);
   display: flex;
   align-items: center;
   border-bottom: 1px solid var(--line);
-  background: rgba(7, 9, 7, 0.92);
-  backdrop-filter: blur(12px);
+  /* Sin backdrop-filter: en mobile clippea el menú abierto (queda “tapado”). */
+  background: rgba(7, 9, 7, 0.97);
+  overflow: visible;
 }
 nav .wrap {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1059,18 +1061,32 @@ footer a:hover { color: var(--lime); }
   .menu-btn { display: block; font: inherit; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
   .brand { min-width: 0; }
   .brand img { flex-shrink: 0; }
+  nav.open { z-index: 90; }
   nav.open .nav-links {
     display: flex;
     flex-direction: column;
-    position: absolute;
+    position: fixed;
     top: var(--nav);
     left: 0;
     right: 0;
-    background: var(--bg);
+    z-index: 91;
+    max-height: calc(100dvh - var(--nav));
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: #070907;
     border-bottom: 1px solid var(--line);
     padding: 20px 24px 28px;
     gap: 16px;
     align-items: stretch;
+    box-shadow: 0 28px 56px rgba(0, 0, 0, 0.55);
+  }
+  nav.open::after {
+    content: "";
+    position: fixed;
+    inset: var(--nav) 0 0 0;
+    z-index: 85;
+    background: rgba(0, 0, 0, 0.5);
   }
   .nav-item { width: 100%; }
   .nav-trigger { width: 100%; text-align: left; }
@@ -1081,8 +1097,13 @@ footer a:hover { color: var(--lime); }
     margin-top: 8px;
     padding: 0;
     min-width: 0;
+    z-index: auto;
   }
-  .nav-drop-inner { box-shadow: none; }
+  .nav-drop-inner {
+    box-shadow: none;
+    background: var(--bg-2);
+    border-color: var(--line);
+  }
   .nav-item:hover .nav-drop { display: none; }
   .nav-item.open .nav-drop { display: block; }
   .hub-grid { grid-template-columns: 1fr; }

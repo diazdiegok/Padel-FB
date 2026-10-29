@@ -166,9 +166,22 @@ const inTorneos = path.includes("/torneos");
     )}
     <script>
       const menuBtn = document.querySelector("[data-menu]");
-      menuBtn?.addEventListener("click", () => {
-        const open = document.querySelector("nav")?.classList.toggle("open") || false;
+      const siteNav = document.querySelector("nav");
+      function closeMobileMenu() {
+        siteNav?.classList.remove("open");
+        menuBtn?.setAttribute("aria-expanded", "false");
+      }
+      function closeNavDrops() {
+        document.querySelectorAll(".nav-item.open").forEach((el) => {
+          el.classList.remove("open");
+          el.querySelector("[data-nav-drop]")?.setAttribute("aria-expanded", "false");
+        });
+      }
+      menuBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const open = siteNav?.classList.toggle("open") || false;
         menuBtn.setAttribute("aria-expanded", String(open));
+        if (!open) closeNavDrops();
       });
       document.querySelectorAll("[data-nav-drop]").forEach((btn) => {
         btn.addEventListener("click", (e) => {
@@ -197,22 +210,25 @@ const inTorneos = path.includes("/torneos");
       document.querySelectorAll(".nav-item").forEach((item) => {
         item.addEventListener("click", (e) => e.stopPropagation());
       });
-      document.addEventListener("click", () => {
-        document.querySelectorAll(".nav-item.open").forEach((el) => {
-          el.classList.remove("open");
-          el.querySelector("[data-nav-drop]")?.setAttribute("aria-expanded", "false");
-        });
+      siteNav?.querySelector(".nav-links")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+      });
+      /* Cerrar al tocar el fondo oscuro o fuera del menú */
+      document.addEventListener("click", (e) => {
+        const t = e.target;
+        if (!(t instanceof Element)) return;
+        if (siteNav?.classList.contains("open") && !t.closest(".nav-links") && !t.closest("[data-menu]")) {
+          closeMobileMenu();
+          closeNavDrops();
+          return;
+        }
+        if (!t.closest(".nav-item")) closeNavDrops();
       });
       document.addEventListener("keydown", (e) => {
         if (e.key !== "Escape") return;
-        document.querySelectorAll(".nav-item.open").forEach((el) => {
-          el.classList.remove("open");
-          const btn = el.querySelector("[data-nav-drop]");
-          btn?.setAttribute("aria-expanded", "false");
-          btn?.focus();
-        });
-        document.querySelector("nav")?.classList.remove("open");
-        menuBtn?.setAttribute("aria-expanded", "false");
+        closeNavDrops();
+        closeMobileMenu();
+        menuBtn?.focus();
       });
       const AUTH_KEY = "liga-fb-admin-ok";
       const logoutBtn = document.getElementById("nav-logout");
