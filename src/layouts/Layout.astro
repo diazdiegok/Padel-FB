@@ -183,10 +183,13 @@ const inTorneos = path.includes("/torneos");
         menuBtn.setAttribute("aria-expanded", String(open));
         if (!open) closeNavDrops();
       });
+      const canHover = () => window.matchMedia("(hover: hover) and (pointer: fine)").matches;
       document.querySelectorAll("[data-nav-drop]").forEach((btn) => {
         btn.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
+          /* En desktop el desplegable se abre con hover; el click es para mobile/touch. */
+          if (canHover() && !siteNav?.classList.contains("open")) return;
           const item = btn.closest(".nav-item");
           const open = item?.classList.contains("open");
           document.querySelectorAll(".nav-item.open").forEach((el) => {
@@ -202,13 +205,29 @@ const inTorneos = path.includes("/torneos");
         btn.addEventListener("keydown", (e) => {
           if (e.key === "ArrowDown") {
             e.preventDefault();
-            if (btn.getAttribute("aria-expanded") !== "true") btn.click();
-            btn.closest(".nav-item")?.querySelector(".nav-drop a")?.focus();
+            const item = btn.closest(".nav-item");
+            if (!item?.classList.contains("open")) {
+              item?.classList.add("open");
+              btn.setAttribute("aria-expanded", "true");
+            }
+            item?.querySelector(".nav-drop a")?.focus();
           }
         });
       });
       document.querySelectorAll(".nav-item").forEach((item) => {
         item.addEventListener("click", (e) => e.stopPropagation());
+        const btn = item.querySelector("[data-nav-drop]");
+        item.addEventListener("mouseenter", () => {
+          if (!canHover() || siteNav?.classList.contains("open")) return;
+          closeNavDrops();
+          item.classList.add("open");
+          btn?.setAttribute("aria-expanded", "true");
+        });
+        item.addEventListener("mouseleave", () => {
+          if (!canHover() || siteNav?.classList.contains("open")) return;
+          item.classList.remove("open");
+          btn?.setAttribute("aria-expanded", "false");
+        });
       });
       siteNav?.querySelector(".nav-links")?.addEventListener("click", (e) => {
         e.stopPropagation();
