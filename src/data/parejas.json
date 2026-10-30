@@ -130,5 +130,20 @@
       "Sábado": "16:30 - 19:30"
     },
     "note": ""
+  },
+  {
+    "id": "pmvv2fdv92e37",
+    "createdAt": "2026-10-30T14:26:31.029Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Montero claudio francisco",
+    "p2": "Federico mullor",
+    "days": {
+      "Lunes": "18:00 - 22:30",
+      "Martes": "18:00 - 22:30",
+      "Miércoles": "18:00 - 22:30",
+      "Jueves": "18:00 - 22:30"
+    },
+    "note": ""
   }
 ]
