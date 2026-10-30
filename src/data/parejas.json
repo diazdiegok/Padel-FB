@@ -145,5 +145,20 @@
       "Jueves": "18:00 - 22:30"
     },
     "note": ""
+  },
+  {
+    "id": "pmvv3onl1a971",
+    "createdAt": "2026-10-30T15:01:43.141Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Nahuel Mayor",
+    "p2": "Exequiel Lyardet",
+    "days": {
+      "Lunes": "16:00 - 22:00",
+      "Martes": "16:00 - 22:00",
+      "Miércoles": "16:00 - 17:30",
+      "Jueves": "16:00 - 22:00"
+    },
+    "note": ""
   }
 ]
