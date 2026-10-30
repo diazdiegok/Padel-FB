@@ -58,7 +58,6 @@ nav {
   position: sticky;
   top: 0;
   z-index: 1000;
-  isolation: isolate;
   height: var(--nav);
   display: flex;
   align-items: center;
@@ -69,11 +68,14 @@ nav {
 }
 nav .wrap {
   position: relative;
-  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+}
+main {
+  position: relative;
+  z-index: 0;
 }
 .brand {
   display: flex;
@@ -105,9 +107,7 @@ nav .wrap {
   align-items: center;
 }
 .nav-links a:hover, .nav-links a.active, .nav-links a.on, .nav-trigger:hover, .nav-trigger.on { color: var(--cream); }
-.nav-item { position: relative; z-index: 1; }
-.nav-item:hover,
-.nav-item.open { z-index: 5; }
+.nav-item { position: relative; }
 .nav-trigger {
   background: none;
   border: 0;
@@ -137,8 +137,14 @@ nav .wrap {
   left: 50%;
   translate: -50% 0;
   min-width: 200px;
-  padding-top: 14px;
-  z-index: 20;
+  padding-top: 10px;
+  z-index: 2000;
+}
+.nav-drop.is-fixed {
+  position: fixed;
+  top: auto;
+  left: auto;
+  translate: -50% 0;
 }
 .nav-drop-inner {
   background: #0c100c;
@@ -147,12 +153,11 @@ nav .wrap {
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.65);
   display: grid;
   gap: 4px;
-  position: relative;
-  z-index: 1;
 }
 @media (hover: hover) and (pointer: fine) {
   .nav-item:hover .nav-drop,
-  .nav-item:focus-within .nav-drop { display: block; }
+  .nav-item:focus-within .nav-drop,
+  .nav-item.open .nav-drop { display: block; }
 }
 .nav-item.open .nav-drop { display: block; }
 .nav-drop a {
@@ -1175,8 +1180,11 @@ footer a:hover { color: var(--lime); }
   }
   .nav-item { width: 100%; }
   .nav-trigger { width: 100%; text-align: left; }
-  .nav-drop {
+  .nav-drop,
+  .nav-drop.is-fixed {
     position: static;
+    left: auto;
+    top: auto;
     translate: none;
     display: none;
     margin-top: 8px;

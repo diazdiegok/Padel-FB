@@ -171,10 +171,31 @@ const inTorneos = path.includes("/torneos");
         siteNav?.classList.remove("open");
         menuBtn?.setAttribute("aria-expanded", "false");
       }
+      const canHover = () => window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+      function clearDropPos(item) {
+        const drop = item?.querySelector(".nav-drop");
+        if (!drop) return;
+        drop.classList.remove("is-fixed");
+        drop.style.left = "";
+        drop.style.top = "";
+      }
+      function placeDrop(item) {
+        const drop = item?.querySelector(".nav-drop");
+        const btn = item?.querySelector("[data-nav-drop]");
+        if (!drop || !btn || !canHover() || siteNav?.classList.contains("open")) {
+          clearDropPos(item);
+          return;
+        }
+        const r = btn.getBoundingClientRect();
+        drop.classList.add("is-fixed");
+        drop.style.left = `${r.left + r.width / 2}px`;
+        drop.style.top = `${r.bottom - 2}px`;
+      }
       function closeNavDrops() {
         document.querySelectorAll(".nav-item.open").forEach((el) => {
           el.classList.remove("open");
           el.querySelector("[data-nav-drop]")?.setAttribute("aria-expanded", "false");
+          clearDropPos(el);
         });
       }
       menuBtn?.addEventListener("click", (e) => {
@@ -183,7 +204,6 @@ const inTorneos = path.includes("/torneos");
         menuBtn.setAttribute("aria-expanded", String(open));
         if (!open) closeNavDrops();
       });
-      const canHover = () => window.matchMedia("(hover: hover) and (pointer: fine)").matches;
       document.querySelectorAll("[data-nav-drop]").forEach((btn) => {
         btn.addEventListener("click", (e) => {
           e.preventDefault();
@@ -196,10 +216,13 @@ const inTorneos = path.includes("/torneos");
             if (el === item) return;
             el.classList.remove("open");
             el.querySelector("[data-nav-drop]")?.setAttribute("aria-expanded", "false");
+            clearDropPos(el);
           });
           if (item) {
             item.classList.toggle("open", !open);
             btn.setAttribute("aria-expanded", open ? "false" : "true");
+            if (!open) placeDrop(item);
+            else clearDropPos(item);
           }
         });
         btn.addEventListener("keydown", (e) => {
@@ -209,6 +232,7 @@ const inTorneos = path.includes("/torneos");
             if (!item?.classList.contains("open")) {
               item?.classList.add("open");
               btn.setAttribute("aria-expanded", "true");
+              placeDrop(item);
             }
             item?.querySelector(".nav-drop a")?.focus();
           }
@@ -222,15 +246,27 @@ const inTorneos = path.includes("/torneos");
           closeNavDrops();
           item.classList.add("open");
           btn?.setAttribute("aria-expanded", "true");
+          placeDrop(item);
         });
         item.addEventListener("mouseleave", () => {
           if (!canHover() || siteNav?.classList.contains("open")) return;
           item.classList.remove("open");
           btn?.setAttribute("aria-expanded", "false");
+          clearDropPos(item);
         });
       });
       siteNav?.querySelector(".nav-links")?.addEventListener("click", (e) => {
         e.stopPropagation();
+      });
+      window.addEventListener("scroll", () => {
+        if (!canHover()) return;
+        document.querySelectorAll(".nav-item.open").forEach((item) => placeDrop(item));
+      }, { passive: true });
+      window.addEventListener("resize", () => {
+        document.querySelectorAll(".nav-item.open").forEach((item) => {
+          if (canHover()) placeDrop(item);
+          else clearDropPos(item);
+        });
       });
       /* Cerrar al tocar el fondo oscuro o fuera del menú */
       document.addEventListener("click", (e) => {
