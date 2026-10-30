@@ -68,8 +68,12 @@ export function createCms(ctx, api, shell) {
     return `<div class="cms-photo cms-photo-empty">Sin foto</div>`;
   }
 
-  function cmsMedia(src, alt, actions) {
-    return `<div class="cms-media">${photoBox(src, alt)}<div class="cms-card-actions">${actions}</div></div>`;
+  function cmsMedia(src, alt) {
+    return `<div class="cms-media">${photoBox(src, alt)}</div>`;
+  }
+
+  function cmsToolbar(inner) {
+    return `<div class="cms-card-actions cms-span">${inner}</div>`;
   }
 
   function moveInList(list, index, dir) {
@@ -119,19 +123,18 @@ export function createCms(ctx, api, shell) {
     root.innerHTML = list
       .map(
         (s, i) => `<article class="cms-card cms-card-sponsor" data-sponsor="${i}">
-          ${cmsMedia(
-            s._preview || s.image,
-            s.name || "Sponsor",
-            `<label class="btn cms-btn">Cambiar foto
-              <input data-photo="sponsor" type="file" accept="image/*" hidden />
-            </label>
-            <button class="btn cms-btn cms-btn-del" type="button" data-sponsor-del="${i}">Quitar</button>`
-          )}
+          ${cmsMedia(s._preview || s.image, s.name || "Sponsor")}
           <div class="cms-fields">
+            ${cmsToolbar(`
+              ${cmsMoveBtns("sponsor", i, list.length)}
+              <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
+                <input data-photo="sponsor" type="file" accept="image/*" hidden />
+              </label>
+              <button class="btn cms-btn cms-btn-del" type="button" data-sponsor-del="${i}">Quitar</button>
+            `)}
             <label class="sponsor-name-field">Nombre
               <input data-s="name" value="${escAttr(s.name || "")}" placeholder="Ej. EVOXX" />
             </label>
-            ${cmsMoveBtns("sponsor", i, list.length)}
           </div>
         </article>`
       )
@@ -214,18 +217,15 @@ export function createCms(ctx, api, shell) {
     $("staff-list").innerHTML = ctx.siteData.staff
       .map(
         (p, i) => `<article class="cms-card" data-staff="${i}">
-          ${cmsMedia(
-            p._preview || p.image,
-            p.name,
-            `
-            ${cmsMoveBtns("staff", i, ctx.siteData.staff.length)}
-            <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
-              <input data-photo="staff" type="file" accept="image/*" hidden />
-            </label>
-            <button class="btn cms-btn cms-btn-del" type="button" data-staff-del="${i}">Quitar</button>
-          `
-          )}
+          ${cmsMedia(p._preview || p.image, p.name)}
           <div class="cms-fields">
+            ${cmsToolbar(`
+              ${cmsMoveBtns("staff", i, ctx.siteData.staff.length)}
+              <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
+                <input data-photo="staff" type="file" accept="image/*" hidden />
+              </label>
+              <button class="btn cms-btn cms-btn-del" type="button" data-staff-del="${i}">Quitar</button>
+            `)}
             <label>Nombre <input data-k="name" value="${escAttr(p.name)}" /></label>
             <label>Rol <input data-k="role" value="${escAttr(p.role)}" placeholder="Profe" /></label>
             <label class="cms-span">Texto <textarea data-k="bio" rows="3">${escAttr(p.bio)}</textarea></label>
@@ -240,7 +240,7 @@ export function createCms(ctx, api, shell) {
       .map(
         (pr, i) => `<article class="cms-card cms-card-plain" data-prog="${i}">
           <div class="cms-fields">
-            <div class="cms-card-actions cms-span">${cmsMoveBtns("prog", i, ctx.siteData.academia.programs.length)}</div>
+            ${cmsToolbar(cmsMoveBtns("prog", i, ctx.siteData.academia.programs.length))}
             <label>Programa <input data-k="title" value="${escAttr(pr.title)}" /></label>
             <label class="cms-span">Texto <textarea data-k="text" rows="2">${escAttr(pr.text)}</textarea></label>
           </div>
@@ -256,18 +256,15 @@ export function createCms(ctx, api, shell) {
     $("venue-list").innerHTML = ctx.siteData.venues
       .map(
         (v, i) => `<article class="cms-card" data-venue="${i}">
-          ${cmsMedia(
-            v._preview || v.image,
-            v.name,
-            `
-            ${cmsMoveBtns("venue", i, ctx.siteData.venues.length)}
-            <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
-              <input data-photo="venue" type="file" accept="image/*" hidden />
-            </label>
-            <button class="btn cms-btn cms-btn-del" type="button" data-venue-del="${i}">Quitar</button>
-          `
-          )}
+          ${cmsMedia(v._preview || v.image, v.name)}
           <div class="cms-fields">
+            ${cmsToolbar(`
+              ${cmsMoveBtns("venue", i, ctx.siteData.venues.length)}
+              <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
+                <input data-photo="venue" type="file" accept="image/*" hidden />
+              </label>
+              <button class="btn cms-btn cms-btn-del" type="button" data-venue-del="${i}">Quitar</button>
+            `)}
             <label>Nombre <input data-k="name" value="${escAttr(v.name)}" /></label>
             <label>Ciudad <input data-k="city" value="${escAttr(v.city)}" /></label>
             <label class="cms-span">Dirección <input data-k="address" value="${escAttr(v.address)}" /></label>
@@ -287,18 +284,15 @@ export function createCms(ctx, api, shell) {
     $("more-list").innerHTML = ctx.siteData.moreVenues
       .map(
         (v, i) => `<article class="cms-card" data-more="${i}">
-          ${cmsMedia(
-            v._preview || v.image,
-            v.name,
-            `
-            ${cmsMoveBtns("more", i, ctx.siteData.moreVenues.length)}
-            <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
-              <input data-photo="more" type="file" accept="image/*" hidden />
-            </label>
-            <button class="btn cms-btn cms-btn-del" type="button" data-more-del="${i}">Quitar</button>
-          `
-          )}
+          ${cmsMedia(v._preview || v.image, v.name)}
           <div class="cms-fields">
+            ${cmsToolbar(`
+              ${cmsMoveBtns("more", i, ctx.siteData.moreVenues.length)}
+              <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto
+                <input data-photo="more" type="file" accept="image/*" hidden />
+              </label>
+              <button class="btn cms-btn cms-btn-del" type="button" data-more-del="${i}">Quitar</button>
+            `)}
             <label class="cms-span">Nombre <input data-k="name" value="${escAttr(v.name)}" /></label>
           </div>
         </article>`
@@ -320,10 +314,10 @@ export function createCms(ctx, api, shell) {
       .map(
         (item, i) => `<article class="cms-card cms-card-plain" data-tn="${i}">
           <div class="cms-fields">
-            <div class="cms-card-actions cms-span">
+            ${cmsToolbar(`
               ${cmsMoveBtns("tn", i, (t.items || []).length)}
               <button class="btn cms-btn cms-btn-del" type="button" data-tn-del="${i}">Quitar</button>
-            </div>
+            `)}
             <label>Nombre <input data-k="title" value="${escAttr(item.title)}" /></label>
             <label>Cuándo <input data-k="when" value="${escAttr(item.when)}" placeholder="Ej. 20 de septiembre" /></label>
             <label class="cms-span">Texto <textarea data-k="text" rows="3">${escAttr(item.text)}</textarea></label>
@@ -351,10 +345,10 @@ export function createCms(ctx, api, shell) {
       .map(
         (g, i) => `<article class="cms-card cms-card-plain" data-kids-group="${i}">
           <div class="cms-fields">
-            <div class="cms-card-actions cms-span">
+            ${cmsToolbar(`
               ${cmsMoveBtns("kids-group", i, (k.groups || []).length)}
               <button class="btn cms-btn cms-btn-del" type="button" data-kids-group-del="${i}">Quitar</button>
-            </div>
+            `)}
             <label>Sede <input data-k="venue" list="kids-venue-options" value="${escAttr(g.venue)}" /></label>
             <label>Días <input data-k="when" value="${escAttr(g.when)}" placeholder="Lunes y jueves" /></label>
             <label class="cms-span">Horarios (un renglón: 17:00 hs | Avanzados)
@@ -372,10 +366,10 @@ export function createCms(ctx, api, shell) {
       .map(
         (p, i) => `<article class="cms-card cms-card-plain" data-kids-price="${i}">
           <div class="cms-fields">
-            <div class="cms-card-actions cms-span">
+            ${cmsToolbar(`
               ${cmsMoveBtns("kids-price", i, (k.prices || []).length)}
               <button class="btn cms-btn cms-btn-del" type="button" data-kids-price-del="${i}">Quitar</button>
-            </div>
+            `)}
             <label>Valor <input data-k="amount" value="${escAttr(p.amount)}" placeholder="$70.000" /></label>
             <label>Texto <input data-k="text" value="${escAttr(p.text)}" placeholder="Dos veces por semana" /></label>
           </div>

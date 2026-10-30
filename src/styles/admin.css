@@ -3,7 +3,7 @@
 :root {
   --admin-sidebar: 232px;
   --admin-max: 1080px;
-  --admin-form: 700px;
+  --admin-form: 820px;
 }
 
 body.is-admin {
@@ -522,9 +522,14 @@ body.is-admin main > .wrap {
 [data-section="academia"],
 [data-section="infantiles"],
 [data-section="sedes"],
-[data-section="torneos"] {
+[data-section="torneos"],
+[data-section="visitas"] {
   width: min(100%, var(--admin-form));
   margin-inline: auto;
+}
+
+[data-section="visitas"] {
+  width: min(100%, var(--admin-max));
 }
 
 [data-section="sitio"] #site-form {
@@ -2253,13 +2258,15 @@ body.is-admin main > .wrap {
 
 .cms-card {
   display: grid;
-  grid-template-columns: 120px 1fr;
+  grid-template-columns: 96px minmax(0, 1fr);
   gap: 12px;
   border: 1px solid rgba(214, 255, 47, 0.1);
   background: linear-gradient(165deg, #171d17 0%, #101510 100%);
   padding: 12px;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  align-items: start;
 }
 
 .cms-card-plain {
@@ -2267,15 +2274,15 @@ body.is-admin main > .wrap {
 }
 
 .cms-card-sponsor {
-  grid-template-columns: 88px minmax(0, 1fr);
+  grid-template-columns: 72px minmax(0, 1fr);
   align-items: start;
-  max-width: 420px;
+  max-width: 460px;
 }
 
 .cms-card-sponsor .cms-photo,
 .cms-card-sponsor .cms-photo-empty {
-  width: 88px;
-  min-height: 88px;
+  width: 72px;
+  min-height: 72px;
 }
 
 .sponsor-name-field {
@@ -2289,8 +2296,9 @@ body.is-admin main > .wrap {
 
 .cms-media {
   display: grid;
-  gap: 10px;
+  gap: 0;
   align-content: start;
+  min-width: 0;
 }
 
 .cms-photo {
@@ -2354,31 +2362,32 @@ body.is-admin main > .wrap {
 .cms-card-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
+  margin: 0 0 2px;
 }
 
 .cms-order {
-  display: flex;
+  display: inline-flex;
   gap: 6px;
-  flex: 1 1 100%;
+  flex: 0 0 auto;
 }
 
 .cms-btn {
   border-radius: 999px !important;
-  padding: 8px 14px !important;
+  padding: 6px 12px !important;
   font-size: 12px !important;
   justify-content: center;
-  flex: 1;
+  flex: 0 0 auto;
+  width: auto !important;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .cms-btn-move {
-  flex: 0 0 auto !important;
-  min-width: 0;
   background: var(--cream);
   border-color: var(--cream);
   color: #111;
-  font-size: 12px !important;
   letter-spacing: 0.04em;
   line-height: 1;
 }
@@ -2394,6 +2403,7 @@ body.is-admin main > .wrap {
 }
 
 .cms-btn-del {
+  margin-left: auto;
   background: transparent;
   border: 1px solid rgba(255, 138, 138, 0.35);
   color: #ff8a8a;
@@ -2412,14 +2422,14 @@ body.is-admin main > .wrap {
 .cms-chip {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
-  padding: 8px 14px;
+  padding: 6px 10px;
   border-radius: 999px;
   background: #0b0f0b;
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--cream);
-  font-size: 13px;
+  font-size: 12px;
   letter-spacing: 0.04em;
   text-transform: none;
   cursor: pointer;
