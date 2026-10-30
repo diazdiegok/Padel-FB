@@ -2626,7 +2626,7 @@ body.is-admin #site-form.form {
 }
 
 @media (max-width: 720px) {
-  .cms-card,
+  .cms-card-main,
   .cms-fields {
     grid-template-columns: 1fr;
   }
