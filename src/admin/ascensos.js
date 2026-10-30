@@ -109,21 +109,23 @@ export function createAscensos(ctx, api, shell) {
     root.innerHTML = rows
       .map(
         (item, i) => `<article class="cms-card" data-asc="${i}">
-          <div class="cms-media">${photoBox(item)}</div>
-          <div class="cms-fields">
-            <div class="cms-card-actions cms-span">
-              <div class="cms-order">
-                <button class="btn cms-btn cms-btn-move" type="button" data-asc-move="${i}" data-dir="-1" aria-label="Subir" ${i === 0 ? "disabled" : ""}>↑ Subir</button>
-                <button class="btn cms-btn cms-btn-move" type="button" data-asc-move="${i}" data-dir="1" aria-label="Bajar" ${i >= rows.length - 1 ? "disabled" : ""}>↓ Bajar</button>
-              </div>
-              <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto / Ctrl+V
-                <input data-asc-photo type="file" accept="image/*" hidden />
-              </label>
-              <button class="btn cms-btn cms-btn-del" type="button" data-asc-del="${i}">Quitar</button>
+          <div class="cms-card-actions">
+            <div class="cms-order">
+              <button class="btn cms-btn cms-btn-move" type="button" data-asc-move="${i}" data-dir="-1" aria-label="Subir" ${i === 0 ? "disabled" : ""}>↑ Subir</button>
+              <button class="btn cms-btn cms-btn-move" type="button" data-asc-move="${i}" data-dir="1" aria-label="Bajar" ${i >= rows.length - 1 ? "disabled" : ""}>↓ Bajar</button>
             </div>
-            <label class="cms-span">Nombre
-              <input data-k="title" value="${escAttr(item.title || "")}" placeholder="Ascensos Temporada 4" maxlength="120" />
+            <label class="btn btn-ghost cms-btn" style="cursor:pointer">Foto / Ctrl+V
+              <input data-asc-photo type="file" accept="image/*" hidden />
             </label>
+            <button class="btn cms-btn cms-btn-del" type="button" data-asc-del="${i}">Quitar</button>
+          </div>
+          <div class="cms-card-main">
+            <div class="cms-media">${photoBox(item)}</div>
+            <div class="cms-fields">
+              <label class="cms-span">Nombre
+                <input data-k="title" value="${escAttr(item.title || "")}" placeholder="Ascensos Temporada 4" maxlength="120" />
+              </label>
+            </div>
           </div>
         </article>`
       )

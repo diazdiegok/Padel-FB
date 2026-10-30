@@ -532,9 +532,12 @@ body.is-admin main > .wrap {
   width: min(100%, var(--admin-max));
 }
 
-[data-section="sitio"] #site-form {
+[data-section="sitio"] #site-form,
+body.is-admin .form.cms-form,
+body.is-admin #site-form.form {
   display: grid;
   gap: 12px;
+  max-width: none;
 }
 
 [data-section="academia"] .cms-form,
@@ -843,15 +846,24 @@ body.is-admin main > .wrap {
 .chk,
 .form label.chk,
 .admin-site-grid label.chk,
-.cms-form label.chk {
-  display: flex;
+.cms-form label.chk,
+.admin-check {
+  display: flex !important;
+  flex-direction: row !important;
   align-items: center;
   gap: 10px;
+  width: max-content;
+  max-width: 100%;
+  margin: 0;
   font-size: 13px;
-  color: var(--muted);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--cream);
+  grid-column: 1 / -1;
 }
 
-.chk input {
+.chk input,
+.admin-check input {
   width: 16px;
   height: 16px;
   margin: 0;
@@ -861,6 +873,14 @@ body.is-admin main > .wrap {
   background: transparent;
   border: 0;
   border-radius: 3px;
+}
+
+.admin-check span {
+  color: var(--cream);
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.35;
 }
 
 .admin-callout {
@@ -2164,8 +2184,8 @@ body.is-admin main > .wrap {
   font-size: 14px;
 }
 
-.cms-form label,
-.admin-site-grid label {
+.cms-form label:not(.chk):not(.admin-check),
+.admin-site-grid label:not(.chk):not(.admin-check):not(.cms-chip) {
   display: grid;
   gap: 5px;
   font-size: 11px;
@@ -2257,26 +2277,41 @@ body.is-admin main > .wrap {
 }
 
 .cms-card {
-  display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   border: 1px solid rgba(214, 255, 47, 0.1);
   background: linear-gradient(165deg, #171d17 0%, #101510 100%);
   padding: 12px;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
-  overflow: hidden;
+  min-width: 0;
+}
+
+.cms-card-main {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
   align-items: start;
+  min-width: 0;
 }
 
 .cms-card-plain {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cms-card-plain .cms-card-main {
   grid-template-columns: 1fr;
 }
 
 .cms-card-sponsor {
+  max-width: 480px;
+}
+
+.cms-card-sponsor .cms-card-main {
   grid-template-columns: 72px minmax(0, 1fr);
-  align-items: start;
-  max-width: 460px;
 }
 
 .cms-card-sponsor .cms-photo,
@@ -2364,7 +2399,8 @@ body.is-admin main > .wrap {
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
-  margin: 0 0 2px;
+  margin: 0;
+  min-width: 0;
 }
 
 .cms-order {

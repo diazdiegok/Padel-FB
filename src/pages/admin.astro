@@ -143,7 +143,10 @@ import "../styles/admin.css";
                 <label>Texto de inicio:
                   <textarea name="ligaIntro" rows="4"></textarea>
                 </label>
-                <label class="chk"><input name="showPlayoff" type="checkbox" /> Mostrar botón Ver playoff</label>
+                <label class="admin-check" for="show-playoff">
+                  <input id="show-playoff" name="showPlayoff" type="checkbox" />
+                  <span>Mostrar botón Ver playoff</span>
+                </label>
                 <p class="admin-help" id="site-playoff-help">Si está tildado, el inicio muestra Ver playoff y lleva al cuadro de la temporada en juego. Destildalo mientras se juega la fase regular; cuando armes el playoff, volvé a tildarlo.</p>
               </div>
               <div class="admin-site-block span-2">
