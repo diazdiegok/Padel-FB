@@ -45,9 +45,21 @@ export function createAscensos(ctx, api, shell) {
   function photoBox(item) {
     const src = item._preview || uploadedPreviews.get(item.image) || item.image;
     if (src) {
-      return `<img class="cms-photo" src="${escAttr(assetUrl(src))}" alt="${escAttr(item.title || "Ascensos")}" />`;
+      const url = escAttr(assetUrl(src));
+      const alt = escAttr(item.title || "Ascensos");
+      return `<button class="cms-photo-btn" type="button" data-asc-view="${url}" data-title="${alt}" aria-label="Ver ${alt}" title="Ver grande">
+        <img class="cms-photo" src="${url}" alt="${alt}" />
+      </button>`;
     }
     return `<div class="cms-photo cms-photo-empty">Sin foto · Ctrl+V</div>`;
+  }
+
+  function openPhoto(src, title) {
+    const box = $("pay-lightbox");
+    const body = $("pay-lightbox-body");
+    if (!box || !body) return;
+    body.innerHTML = `${title ? `<p class="pay-lightbox-title">${escAttr(title)}</p>` : ""}<img class="pay-img" src="${escAttr(src)}" alt="${escAttr(title || "Ascensos")}" />`;
+    box.showModal();
   }
 
   function attachPhoto(item, file) {
@@ -200,6 +212,11 @@ export function createAscensos(ctx, api, shell) {
     });
 
     $("asc-list")?.addEventListener("click", async (e) => {
+      const view = e.target.closest("[data-asc-view]");
+      if (view) {
+        openPhoto(view.dataset.ascView, view.dataset.title);
+        return;
+      }
       const move = e.target.closest("[data-asc-move]");
       if (move) {
         readFromDom();

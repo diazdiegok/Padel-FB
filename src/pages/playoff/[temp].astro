@@ -47,12 +47,16 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
               {categories.map((c, i) => (
                 <button class:list={["pill", { on: i === 0 }]} type="button" data-cat={slug(c.cat)}>{c.cat}</button>
               ))}
+              {categories.length > 1 && (
+                <button class="pill" type="button" data-cat="todas">Todas</button>
+              )}
             </div>
           </div>
         </div>
 
         {categories.map((c, i) => (
           <section class="po-cat" data-cat-panel={slug(c.cat)} hidden={i !== 0}>
+            <h2 class="po-cat-title">{c.cat}</h2>
             {c.champion && (
               <div class="po-winner">
                 <p class="kicker">🏆 Campeón · {c.cat}</p>
@@ -122,8 +126,12 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
     const buttons = document.querySelectorAll<HTMLButtonElement>("#po-cats [data-cat]");
     const panels = document.querySelectorAll<HTMLElement>("[data-cat-panel]");
     function show(cat: string) {
+      const all = cat === "todas";
       buttons.forEach((b) => b.classList.toggle("on", b.dataset.cat === cat));
-      panels.forEach((p) => (p.hidden = p.dataset.catPanel !== cat));
+      panels.forEach((p) => {
+        p.hidden = !all && p.dataset.catPanel !== cat;
+        p.classList.toggle("po-cat-all", all);
+      });
     }
     buttons.forEach((btn) =>
       btn.addEventListener("click", () => {
@@ -141,6 +149,19 @@ const where = (m: { venue: string; court: string }) => [m.venue, m.court].filter
   .po-back { color: inherit; }
   .po-back:hover { color: var(--cream); }
   .po-cat { padding: 8px 0 56px; }
+  .po-cat-title { display: none; }
+  .po-cat.po-cat-all {
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+  }
+  .po-cat.po-cat-all .po-cat-title {
+    display: block;
+    font-family: var(--display);
+    font-size: clamp(26px, 3.4vw, 40px);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin: 0 0 14px;
+  }
   .po-winner {
     border: 1px solid #ffc83c;
     background: rgba(255, 200, 60, 0.08);
