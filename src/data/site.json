@@ -123,7 +123,7 @@
     },
     {
       "id": "barrionuevo-sebastian",
-      "name": "Barrionuevo Sebastián",
+      "name": "Sebastián Barrionuevo",
       "role": "Profe",
       "image": "images/staff-barrionuevo-sebastian.png",
       "bio": "Preparador físico y director de la academia de menores.\nEntrenamiento personalizado.",
@@ -292,16 +292,46 @@
   "moreVenues": [],
   "sponsorsSpeed": 48,
   "sponsors": [
-    { "name": "EVOXX", "image": "/images/sponsors/evoxx.jpg" },
-    { "name": "Teccell", "image": "/images/sponsors/teccell.jpg" },
-    { "name": "ABBA Construcciones", "image": "/images/sponsors/abba.jpg" },
-    { "name": "Horax Reparaciones", "image": "/images/sponsors/horax.jpg" },
-    { "name": "La Casa del Paragolpe", "image": "/images/sponsors/lcdp.jpg" },
-    { "name": "Padel Pai", "image": "/images/sponsors/padel-pai.jpg" },
-    { "name": "Mundo Medias", "image": "/images/sponsors/mundo-medias.jpg" },
-    { "name": "Open Padel FB", "image": "/images/sponsors/open-padel-fb.jpg" },
-    { "name": "El Viejo Matero", "image": "/images/sponsors/el-viejo-matero.jpg" },
-    { "name": "Grupo Alfa", "image": "/images/sponsors/grupo-alfa.jpg" }
+    {
+      "name": "EVOXX",
+      "image": "/images/sponsors/evoxx.jpg"
+    },
+    {
+      "name": "Teccell",
+      "image": "/images/sponsors/teccell.jpg"
+    },
+    {
+      "name": "ABBA Construcciones",
+      "image": "/images/sponsors/abba.jpg"
+    },
+    {
+      "name": "Horax Reparaciones",
+      "image": "/images/sponsors/horax.jpg"
+    },
+    {
+      "name": "La Casa del Paragolpe",
+      "image": "/images/sponsors/lcdp.jpg"
+    },
+    {
+      "name": "Padel Pai",
+      "image": "/images/sponsors/padel-pai.jpg"
+    },
+    {
+      "name": "Mundo Medias",
+      "image": "/images/sponsors/mundo-medias.jpg"
+    },
+    {
+      "name": "Open Padel FB",
+      "image": "/images/sponsors/open-padel-fb.jpg"
+    },
+    {
+      "name": "El Viejo Matero",
+      "image": "/images/sponsors/el-viejo-matero.jpg"
+    },
+    {
+      "name": "Grupo Alfa",
+      "image": "/images/sponsors/grupo-alfa.jpg"
+    }
   ],
   "seasonVenues": {
     "T1": 3,
