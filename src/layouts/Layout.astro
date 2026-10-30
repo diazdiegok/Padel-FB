@@ -107,14 +107,14 @@ const inTorneos = path.includes("/torneos");
               <button class:list={["nav-trigger", { on: inLiga }]} type="button" data-nav-drop aria-expanded="false">Liga</button>
               <div class="nav-drop">
                 <div class="nav-drop-inner">
-                  <a href={page("liga/")}>Resumen</a>
-                  <a href={page("inscribir-pareja/")}>Inscripciones de parejas</a>
-                  <a href={page("fixture/")}>Fixture</a>
-                  <a href={page("resultados/")}>Resultados</a>
-                  <a href={page("ranking/")}>Ranking</a>
-                  <a href={page("playoff/")}>Playoff</a>
-                  <a href={page("ascensos/")}>Ascensos</a>
-                  <a href={page("sedes/")}>Sedes</a>
+                  <a href={page("liga/")} aria-current={path.replace(/\/$/, "").endsWith("/liga") ? "page" : undefined}>Resumen</a>
+                  <a href={page("inscribir-pareja/")} aria-current={path.includes("/inscribir-pareja") ? "page" : undefined}>Inscripciones de parejas</a>
+                  <a href={page("fixture/")} aria-current={path.includes("/fixture") ? "page" : undefined}>Fixture</a>
+                  <a href={page("resultados/")} aria-current={path.includes("/resultados") ? "page" : undefined}>Resultados</a>
+                  <a href={page("ranking/")} aria-current={path.includes("/ranking") ? "page" : undefined}>Ranking</a>
+                  <a href={page("playoff/")} aria-current={path.includes("/playoff") ? "page" : undefined}>Playoff</a>
+                  <a href={page("ascensos/")} aria-current={path.includes("/ascensos") ? "page" : undefined}>Ascensos</a>
+                  <a href={page("sedes/")} aria-current={path.includes("/sedes") && !path.includes("/academia") ? "page" : undefined}>Sedes</a>
                 </div>
               </div>
             </li>
