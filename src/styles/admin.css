@@ -563,6 +563,24 @@ body.is-admin #site-form.form {
   width: 100%;
   max-width: none;
   margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+}
+
+/* Tag vacío (sin datos) no deja una cajita suelta */
+body.is-admin .tag:empty {
+  display: none;
+}
+
+/* Sponsors del inicio en grilla de dos columnas */
+#sponsor-list.cms-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+
+#sponsor-list .cms-card-sponsor {
+  max-width: none;
 }
 
 .admin-nav-backdrop {
@@ -852,7 +870,7 @@ body.is-admin #site-form.form {
   flex-direction: row !important;
   align-items: center;
   gap: 10px;
-  width: max-content;
+  width: auto;
   max-width: 100%;
   margin: 0;
   font-size: 13px;
@@ -860,19 +878,30 @@ body.is-admin #site-form.form {
   text-transform: none;
   color: var(--cream);
   grid-column: 1 / -1;
+  cursor: pointer;
+}
+
+.admin-check span,
+.chk > span {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .chk input,
-.admin-check input {
-  width: 16px;
+.admin-check input,
+body.is-admin .admin-check input[type="checkbox"],
+body.is-admin .chk input[type="checkbox"] {
+  width: 16px !important;
+  min-width: 16px;
   height: 16px;
   margin: 0;
   padding: 0;
-  flex: 0 0 auto;
+  flex: 0 0 16px;
   accent-color: var(--lime);
   background: transparent;
   border: 0;
   border-radius: 3px;
+  cursor: pointer;
 }
 
 .admin-check span {
@@ -901,6 +930,11 @@ body.is-admin #site-form.form {
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.admin-callout b {
+  color: var(--cream);
+  font-weight: 700;
 }
 
 .admin-stepper {
@@ -1026,7 +1060,7 @@ body.is-admin #site-form.form {
 
 #season-list .admin-result-card {
   padding: 12px 14px;
-  gap: 8px;
+  gap: 6px;
 }
 
 #season-list .admin-result-card > p {
@@ -1039,6 +1073,41 @@ body.is-admin #site-form.form {
   margin: 0;
   font-size: 12px;
   line-height: 1.4;
+}
+
+/* Temporadas: fila compacta. Info a la izquierda, sedes a la derecha */
+.admin-season-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.admin-season-row > p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+#season-list .admin-season-venues {
+  margin: 0;
+  align-items: center;
+}
+
+#season-list .admin-season-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#season-list .admin-stepper button {
+  width: 34px;
+}
+
+#season-list .admin-season-venues input {
+  width: 44px;
+  padding: 7px 0;
 }
 
 .admin-result-card .muted {
@@ -2169,7 +2238,20 @@ body.is-admin #site-form.form {
   max-width: var(--admin-form);
   margin: 0 auto 14px;
   display: grid;
-  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-2);
+}
+
+/* Textareas y campos largos ocupan el ancho completo */
+.cms-form > label:has(textarea),
+.cms-form > label:has(select),
+.cms-form > .cms-span,
+.cms-form > p {
+  grid-column: 1 / -1;
 }
 
 .cms-form input,
@@ -2181,7 +2263,25 @@ body.is-admin #site-form.form {
   width: 100%;
   padding: 9px 11px;
   color: var(--cream);
+  font: inherit;
   font-size: 14px;
+  outline: none;
+}
+
+.cms-form input:focus,
+.cms-form textarea:focus,
+.cms-form select:focus {
+  border-color: var(--lime);
+}
+
+.cms-form select,
+.admin-site-block select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%239aa08e' d='M1 1l5 5 5-5'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+  cursor: pointer;
 }
 
 .cms-form label:not(.chk):not(.admin-check),
@@ -2235,6 +2335,12 @@ body.is-admin #site-form.form {
 .admin-range-row input[type="range"] {
   flex: 1;
   min-width: 0;
+  accent-color: var(--lime);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  height: 24px;
+  cursor: pointer;
 }
 .admin-range-val {
   min-width: 3.2rem;
@@ -2626,14 +2732,29 @@ body.is-admin #site-form.form {
 }
 
 @media (max-width: 720px) {
-  .cms-card-main,
-  .cms-fields {
+  .cms-fields,
+  .cms-form {
+    grid-template-columns: 1fr;
+  }
+
+  .cms-card-main {
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .cms-card-plain .cms-card-main {
     grid-template-columns: 1fr;
   }
 
   .cms-photo,
   .cms-photo-empty {
-    width: min(100%, 220px);
+    width: 100%;
+    min-height: 80px;
+  }
+
+  .admin-season-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .admin-sticky-bar {

@@ -137,18 +137,20 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
             </div>
             ${badge}
           </div>
-          <p>${count} pareja${count === 1 ? "" : "s"} en el ranking.</p>
-          ${phaseHint}
-          <div class="admin-season-venues">
-            <div class="admin-season-field">
-              <span>Sedes de la liga:</span>
-              <span class="admin-stepper">
-                <button type="button" data-season-step="${escAttr(temp)}" data-dir="-1" aria-label="Una sede menos">−</button>
-                <input type="number" min="0" step="1" inputmode="numeric" aria-label="Sedes de la liga" data-season-venues="${escAttr(temp)}" value="${venuesFor(temp)}" />
-                <button type="button" data-season-step="${escAttr(temp)}" data-dir="1" aria-label="Una sede más">+</button>
-              </span>
+          <div class="admin-season-row">
+            <p>${count} pareja${count === 1 ? "" : "s"} en el ranking.</p>
+            <div class="admin-season-venues">
+              <div class="admin-season-field">
+                <span>Sedes de la liga:</span>
+                <span class="admin-stepper">
+                  <button type="button" data-season-step="${escAttr(temp)}" data-dir="-1" aria-label="Una sede menos">−</button>
+                  <input type="number" min="0" step="1" inputmode="numeric" aria-label="Sedes de la liga" data-season-venues="${escAttr(temp)}" value="${venuesFor(temp)}" />
+                  <button type="button" data-season-step="${escAttr(temp)}" data-dir="1" aria-label="Una sede más">+</button>
+                </span>
+              </div>
             </div>
           </div>
+          ${phaseHint}
         </article>`;
       })
       .join("");
