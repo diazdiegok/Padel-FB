@@ -2110,7 +2110,7 @@ footer strong { color: var(--cream); }
 .splash {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: 5000;
   display: grid;
   place-items: center;
   background:
