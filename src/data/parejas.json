@@ -160,5 +160,21 @@
       "Jueves": "16:00 - 22:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmvvjub0z2050",
+    "createdAt": "2026-10-30T22:34:00.659Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "ATUM CYNTHIA NATALIA ANTONELLA",
+    "p2": "HEREÑU CYNTHIA PAMELA",
+    "days": {
+      "Lunes": "17:30 - 21:00",
+      "Martes": "17:30 - 21:00",
+      "Miércoles": "18:00 - 21:00",
+      "Jueves": "17:30 - 21:00",
+      "Viernes": "18:00 - 21:00"
+    },
+    "note": "Preferimos , por cercanía las canchas: open, terrazas o palermo."
   }
 ]
