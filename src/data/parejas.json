@@ -207,5 +207,21 @@
       "Viernes": "20:30 - 23:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmvwgf0731e7f",
+    "createdAt": "2026-10-31T13:45:54.111Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "manuela vinuales",
+    "p2": "delfina vinuales",
+    "days": {
+      "Martes": "08:00 - 21:00",
+      "Miércoles": "11:00 - 21:00",
+      "Jueves": "08:00 - 20:00",
+      "Viernes": "08:00 - 19:00",
+      "Sábado": "08:00 - 14:00"
+    },
+    "note": ""
   }
 ]
