@@ -192,5 +192,20 @@
       "Sábado": "16:00 - 18:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmvvunhd11339",
+    "createdAt": "2026-10-31T03:36:38.053Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Sanchez Maximiliano Ivan",
+    "p2": "Mangona Ezequiel",
+    "days": {
+      "Martes": "20:00 - 23:00",
+      "Miércoles": "20:00 - 23:00",
+      "Jueves": "20:00 - 23:00",
+      "Viernes": "20:30 - 23:00"
+    },
+    "note": ""
   }
 ]
