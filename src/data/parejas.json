@@ -176,5 +176,21 @@
       "Viernes": "18:00 - 21:00"
     },
     "note": "Preferimos , por cercanía las canchas: open, terrazas o palermo."
+  },
+  {
+    "id": "pmvvs5c7d246c",
+    "createdAt": "2026-10-31T02:26:32.329Z",
+    "temp": "T5",
+    "cat": "B Femenino",
+    "p1": "CAVALLARO florencia",
+    "p2": "Yancovich Luisina",
+    "days": {
+      "Martes": "19:00 - 21:30",
+      "Miércoles": "18:30 - 21:30",
+      "Jueves": "19:00 - 21:30",
+      "Viernes": "18:00 - 20:00",
+      "Sábado": "16:00 - 18:00"
+    },
+    "note": ""
   }
 ]
