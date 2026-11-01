@@ -223,5 +223,21 @@
       "Sábado": "08:00 - 14:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmvx2qoqtbd25",
+    "createdAt": "2026-11-01T00:10:50.693Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Florencia Lell",
+    "p2": "Erica Aguiar",
+    "days": {
+      "Lunes": "17:00 - 00:00",
+      "Martes": "20:30 - 00:00",
+      "Miércoles": "17:00 - 00:00",
+      "Jueves": "20:30 - 00:00",
+      "Viernes": "18:00 - 00:00"
+    },
+    "note": ""
   }
 ]
