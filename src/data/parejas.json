@@ -299,5 +299,21 @@
       "Viernes": "17:30 - 22:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmvzc7nke734f",
+    "createdAt": "2026-11-02T14:11:31.214Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Sbarbaro Mario Martin",
+    "p2": "Fontana Ronaldo Antonio",
+    "days": {
+      "Lunes": "20:00 - 00:00",
+      "Martes": "20:00 - 00:00",
+      "Miércoles": "21:30 - 00:00",
+      "Jueves": "20:00 - 00:00",
+      "Viernes": "20:00 - 00:00"
+    },
+    "note": ""
   }
 ]
