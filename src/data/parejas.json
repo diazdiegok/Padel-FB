@@ -269,5 +269,20 @@
       "Jueves": "20:30 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmvzatpvw5939",
+    "createdAt": "2026-11-02T13:32:41.420Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Cauvet Brenda",
+    "p2": "Santamaria Valeria",
+    "days": {
+      "Lunes": "21:00 - 23:00",
+      "Martes": "21:00 - 23:00",
+      "Jueves": "21:00 - 23:30",
+      "Sábado": "13:00 - 18:00"
+    },
+    "note": ""
   }
 ]
