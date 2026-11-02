@@ -254,5 +254,20 @@
       "Jueves": "18:00 - 21:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmvzar5roa6d7",
+    "createdAt": "2026-11-02T13:30:42.036Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "milton Reatto",
+    "p2": "Joaquín lucero",
+    "days": {
+      "Lunes": "20:30 - 00:00",
+      "Martes": "20:30 - 00:00",
+      "Miércoles": "20:30 - 00:00",
+      "Jueves": "20:30 - 00:00"
+    },
+    "note": ""
   }
 ]
