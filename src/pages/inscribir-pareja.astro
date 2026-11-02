@@ -28,7 +28,7 @@ const TO_HOURS = HOURS.slice(3);
   title="Inscripciones de parejas | Padel FB"
   description="Inscribí tu pareja en la liga de Padel FB en Paraná. Se hace una sola vez por temporada."
 >
-  <div class="insc-splash" id="insc-splash" aria-hidden="true" hidden>
+  <div class="insc-splash" id="insc-splash" slot="splash" aria-hidden="true" hidden>
     <div class="insc-splash-stage">
       <span class="insc-ball"></span>
       <span class="insc-shock"></span>
@@ -38,6 +38,25 @@ const TO_HOURS = HOURS.slice(3);
       </span>
       <p class="insc-splash-text">Inscripciones de parejas <em>· {seasonLabel(site.currentSeason)}</em></p>
     </div>
+    <script is:inline>
+      // Pelotazo de entrada: corre apenas existe el overlay, antes de pintar el resto de la página.
+      (() => {
+        const splash = document.getElementById("insc-splash");
+        if (!splash) return;
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          splash.remove();
+          return;
+        }
+        splash.hidden = false;
+        splash.classList.add("play");
+        const done = () => {
+          splash.classList.add("out");
+          setTimeout(() => splash.remove(), 650);
+        };
+        setTimeout(done, 1900);
+        splash.addEventListener("click", done, { once: true });
+      })();
+    </script>
   </div>
 
   <div class="wrap">
@@ -169,25 +188,6 @@ const TO_HOURS = HOURS.slice(3);
     import site from "../data/site.json";
     import { DAYS, fold, validateDays, validateMail, buildMail } from "../lib/disponibilidad.js";
     import { closeStatus } from "../lib/cierre.js";
-
-    // Pelotazo de entrada: la pelota viene hacia la pantalla, pega y deja la marca con el logo.
-    (() => {
-      const splash = document.getElementById("insc-splash");
-      if (!splash) return;
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (reduce) {
-        splash.remove();
-        return;
-      }
-      splash.hidden = false;
-      splash.classList.add("play");
-      const done = () => {
-        splash.classList.add("out");
-        setTimeout(() => splash.remove(), 650);
-      };
-      setTimeout(done, 1900);
-      splash.addEventListener("click", done, { once: true });
-    })();
 
     const apiUrl = String(site.apiUrl || "").replace(/\/$/, "");
     const form = document.querySelector("#insc-form");
