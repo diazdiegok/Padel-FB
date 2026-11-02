@@ -284,5 +284,20 @@
       "Sábado": "13:00 - 18:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmvzc1g0jb679",
+    "createdAt": "2026-11-02T14:06:41.491Z",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "p1": "Agustin Grippo",
+    "p2": "Franco Sanchez",
+    "days": {
+      "Martes": "17:30 - 22:30",
+      "Miércoles": "17:30 - 22:30",
+      "Jueves": "17:30 - 22:30",
+      "Viernes": "17:30 - 22:00"
+    },
+    "note": ""
   }
 ]
