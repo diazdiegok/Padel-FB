@@ -239,5 +239,20 @@
       "Viernes": "18:00 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmvz79bja6feb",
+    "createdAt": "2026-11-02T11:52:50.854Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Martínez Alberto Javier",
+    "p2": "Starck José María",
+    "days": {
+      "Lunes": "18:30 - 21:30",
+      "Martes": "18:30 - 21:30",
+      "Miércoles": "18:30 - 21:30",
+      "Jueves": "18:00 - 21:00"
+    },
+    "note": ""
   }
 ]
