@@ -1848,12 +1848,28 @@ body.is-admin .chk input[type="checkbox"] {
 }
 
 .pairs-card {
+  position: relative;
   padding: 8px 10px;
   border: 1px solid rgba(214, 255, 47, 0.28);
   border-radius: 10px;
   background: var(--bg-2);
   display: grid;
   gap: 6px;
+}
+
+.pairs-when {
+  position: absolute;
+  top: -8px;
+  right: 12px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #0c100e;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
 }
 
 .pairs-card.is-dup {

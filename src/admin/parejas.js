@@ -262,7 +262,9 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       q && shown.length !== filterTotal
         ? `${shown.length} de ${filterTotal} pareja${filterTotal === 1 ? "" : "s"} en ${totalLabel}`
         : `${filterTotal} pareja${filterTotal === 1 ? "" : "s"} en ${totalLabel}`;
-    const rows = shown.slice().sort((a, b) => a.p.cat.localeCompare(b.p.cat, "es") || a.p.p1.localeCompare(b.p.p1, "es"));
+    // Última inscripta arriba: por fecha de alta y, si falta, por orden de carga.
+    const when = (p) => Date.parse(p.createdAt || "") || 0;
+    const rows = shown.slice().sort((a, b) => when(b.p) - when(a.p) || b.i - a.i);
     $("pairs-list").innerHTML = rows.length
       ? `<div class="pairs-rows">${rows
           .map(({ p, i }) => {
@@ -270,7 +272,12 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
             const pay = payment(p.id);
             const days = p.days && typeof p.days === "object" ? p.days : {};
             const dayCount = Object.keys(days).length;
+            const stamp = when(p);
+            const whenLabel = stamp
+              ? new Date(stamp).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "America/Argentina/Buenos_Aires" })
+              : "";
             return `<article class="pairs-card${dupKeys.get(pairKey(p)) > 1 ? " is-dup" : ""}${pay.verified ? " is-paid" : ""}" data-i="${i}" data-pair-id="${esc(p.id)}">
+              ${whenLabel ? `<span class="pairs-when" title="Fecha de inscripción">${esc(whenLabel)}</span>` : ""}
               <div class="pairs-row">
                 <input data-k="p1" value="${esc(p.p1)}" placeholder="Integrante 1" aria-label="Integrante 1" />
                 <input data-k="tel1" value="${esc(c.tel1 || "")}" inputmode="tel" placeholder="WhatsApp" aria-label="WhatsApp integrante 1" />
