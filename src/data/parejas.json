@@ -361,5 +361,19 @@
       "Viernes": "19:00 - 22:00"
     },
     "note": "Sujeto a disponibilidad por viajes de trabajo"
+  },
+  {
+    "id": "pmw0vv38ae3df",
+    "createdAt": "2026-11-03T16:09:23.482Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Jeronimo acuña",
+    "p2": "lucio acuña",
+    "days": {
+      "Lunes": "16:30 - 20:30",
+      "Viernes": "16:00 - 21:00",
+      "Sábado": "15:00 - 20:00"
+    },
+    "note": ""
   }
 ]
