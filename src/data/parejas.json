@@ -390,5 +390,17 @@
       "Viernes": "20:00 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmw13xc0s77c3",
+    "createdAt": "2026-11-03T19:55:05.116Z",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "p1": "Martin Mendez",
+    "p2": "Diego Godoy",
+    "days": {
+      "Martes": "14:00 - 00:00"
+    },
+    "note": ""
   }
 ]
