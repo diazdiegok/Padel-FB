@@ -330,5 +330,21 @@
       "Sábado": "09:00 - 12:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmw0qss9e5edd",
+    "createdAt": "2026-11-03T13:47:37.874Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Zapata Jorge Antonio",
+    "p2": "Diaz Gonzalo Damian",
+    "days": {
+      "Lunes": "08:00 - 00:00",
+      "Martes": "20:30 - 00:00",
+      "Miércoles": "08:00 - 18:30",
+      "Jueves": "08:00 - 17:00",
+      "Viernes": "08:00 - 00:00"
+    },
+    "note": ""
   }
 ]
