@@ -402,5 +402,19 @@
       "Martes": "14:00 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmw18sv5ae434",
+    "createdAt": "2026-11-03T22:11:34.702Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Feltes Rocio",
+    "p2": "Kamlopky Sofia",
+    "days": {
+      "Lunes": "18:00 - 21:00",
+      "Miércoles": "18:00 - 21:00",
+      "Sábado": "17:00 - 20:00"
+    },
+    "note": ""
   }
 ]
