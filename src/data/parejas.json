@@ -416,5 +416,20 @@
       "Sábado": "17:00 - 20:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmw19haaa30d0",
+    "createdAt": "2026-11-03T22:30:34.066Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Melina Soledad",
+    "p2": "Karen Hillairet",
+    "days": {
+      "Lunes": "08:30 - 11:30",
+      "Martes": "16:30 - 21:30",
+      "Miércoles": "13:00 - 15:30",
+      "Jueves": "17:30 - 22:00"
+    },
+    "note": ""
   }
 ]
