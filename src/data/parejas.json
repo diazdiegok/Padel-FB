@@ -375,5 +375,20 @@
       "Sábado": "15:00 - 20:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmw114cigc429",
+    "createdAt": "2026-11-03T18:36:33.496Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Martinez Francisco",
+    "p2": "Lanzi Lucas",
+    "days": {
+      "Martes": "20:00 - 00:00",
+      "Miércoles": "20:00 - 00:00",
+      "Jueves": "20:00 - 00:00",
+      "Viernes": "20:00 - 00:00"
+    },
+    "note": ""
   }
 ]
