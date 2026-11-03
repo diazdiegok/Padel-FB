@@ -60,6 +60,14 @@ const inTorneos = path.includes("/torneos");
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Oswald:wght@500;600&display=swap" rel="stylesheet" />
+    <script is:inline>
+      // Al recargar (F5) siempre arrancar arriba, salvo que la URL tenga un ancla (#id).
+      if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+      if (!location.hash) {
+        window.scrollTo(0, 0);
+        window.addEventListener("pageshow", () => window.scrollTo(0, 0), { once: true });
+      }
+    </script>
   </head>
   <body class:list={["court", { "is-admin": noindex, "is-home": isHome }]}>
     <a class="skip-link" href="#main-content">Saltar al contenido</a>
