@@ -315,5 +315,20 @@
       "Viernes": "20:00 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmvzzpwe8d7c5",
+    "createdAt": "2026-11-03T01:09:33.632Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Nestor sione",
+    "p2": "Almarante Ulises",
+    "days": {
+      "Lunes": "21:00 - 23:00",
+      "Jueves": "21:00 - 23:00",
+      "Viernes": "21:00 - 23:00",
+      "Sábado": "09:00 - 12:00"
+    },
+    "note": ""
   }
 ]
