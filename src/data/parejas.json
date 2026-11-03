@@ -346,5 +346,20 @@
       "Viernes": "08:00 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmw0tcjz62e7c",
+    "createdAt": "2026-11-03T14:58:59.490Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Juan Leban",
+    "p2": "German Truffer",
+    "days": {
+      "Martes": "19:00 - 22:00",
+      "Miércoles": "19:00 - 22:00",
+      "Jueves": "19:00 - 22:00",
+      "Viernes": "19:00 - 22:00"
+    },
+    "note": "Sujeto a disponibilidad por viajes de trabajo"
   }
 ]
