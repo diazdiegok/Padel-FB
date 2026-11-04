@@ -489,9 +489,9 @@ async function registerPair(env, raw) {
     const saved = await writeData(env, PAIRS_PATH, [...file.json, pair], file.sha, `Inscribe a ${pair.p1} / ${pair.p2} en ${pair.cat}.`);
     if (saved) {
       await caches.default.delete(PAIRS_CACHE);
+      await addToRanking(env, pair).catch(() => {});
       await env.AUTH_KV.put(`contact:${pair.id}`, "", { metadata: contact });
       await savePayment(env, pair.id, { receiptMime, receiptData });
-      await addToRanking(env, pair).catch(() => {});
       return { ok: true, pair: { id: pair.id, p1: pair.p1, p2: pair.p2, cat: pair.cat } };
     }
     await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
@@ -500,12 +500,12 @@ async function registerPair(env, raw) {
 }
 
 async function addToRanking(env, pair) {
-  for (let attempt = 0; attempt < 4; attempt++) {
+  for (let attempt = 0; attempt < 8; attempt++) {
     const file = await readData(env, RANK_PATH, []);
     const rows = Array.isArray(file.json) ? file.json : [];
     if (!addPairsToRanking(rows, [pair]).length) return;
     if (await writeData(env, RANK_PATH, rows, file.sha, `Suma a ${pair.p1} / ${pair.p2} al ranking de ${pair.cat}.`)) return;
-    await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
+    await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
   }
 }
 
