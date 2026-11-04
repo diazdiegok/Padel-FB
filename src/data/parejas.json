@@ -491,5 +491,19 @@
       "Sábado": "10:00 - 18:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmw27hfll0785",
+    "createdAt": "2026-11-04T14:22:27.897Z",
+    "temp": "T5",
+    "cat": "B Femenino",
+    "p1": "Gabirondo Valentina",
+    "p2": "Balla Delfina",
+    "days": {
+      "Lunes": "20:00 - 22:30",
+      "Martes": "20:00 - 22:30",
+      "Viernes": "20:00 - 23:00"
+    },
+    "note": "Puede ser que podamos antes algunos días, pero el problema soy yo que trabajo con pacientes y a veces no me llegan a horario, o me suspenden y me libero antes de tiempo."
   }
 ]
