@@ -462,5 +462,19 @@
       "Sábado": "13:00 - 22:00"
     },
     "note": "Envío comprobante del pago de inscripción por wsp, dado que cada jugador hizo transferencia y solo deja subir un comprobante."
+  },
+  {
+    "id": "pmw248p95fcb5",
+    "createdAt": "2026-11-04T12:51:41.657Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Bregant Sebastian",
+    "p2": "Valla Luis",
+    "days": {
+      "Martes": "21:00 - 00:00",
+      "Jueves": "21:00 - 00:00",
+      "Viernes": "21:00 - 00:00"
+    },
+    "note": "Jugamos Liga anterior"
   }
 ]
