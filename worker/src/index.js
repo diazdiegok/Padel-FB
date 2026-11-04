@@ -459,12 +459,20 @@ function copyFields(json) {
     .replace(/\s+/g, "")
     .replace(/[^a-z0-9._-]/g, "")
     .slice(0, 60);
+  const fee = (value, fallback) =>
+    String(value || "")
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/[^\d.,]/g, "")
+      .slice(0, 20) || fallback;
   return {
     title: clip(json.title, 80),
     intro: clip(json.intro, 400),
     hint: clip(json.hint, 300),
     cta: clip(json.cta, 40),
     alias: alias || "ligafbpadel",
+    feeReturning: fee(json.feeReturning, "10.000"),
+    feeNew: fee(json.feeNew, "20.000"),
   };
 }
 

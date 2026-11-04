@@ -2110,6 +2110,24 @@ body.is-admin .chk input[type="checkbox"] {
   color: var(--cream);
 }
 
+.tag.ok {
+  border-color: rgba(214, 255, 47, 0.45);
+  color: var(--lime);
+}
+.tag.warn {
+  border-color: rgba(255, 170, 60, 0.55);
+  color: #ffc46b;
+}
+#pairs-rank-box ul {
+  margin: 4px 0 0;
+  padding-left: 1.15em;
+  display: grid;
+  gap: 2px;
+}
+#pairs-rank-box[hidden] {
+  display: none !important;
+}
+
 .pairs-filters {
   display: flex;
   flex-direction: column;

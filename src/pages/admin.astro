@@ -400,14 +400,23 @@ import "../styles/admin.css";
               <label>Alias de pago (Mercado Pago / banco):
                 <input id="pairs-alias" maxlength="60" placeholder="ligafbpadel" autocomplete="off" spellcheck="false" />
               </label>
+              <label>Precio temporada anterior (por jugador):
+                <input id="pairs-fee-returning" maxlength="20" placeholder="10.000" inputmode="decimal" autocomplete="off" />
+              </label>
+              <label>Precio nuevos (por jugador):
+                <input id="pairs-fee-new" maxlength="20" placeholder="20.000" inputmode="decimal" autocomplete="off" />
+              </label>
             </div>
           </div>
           <div class="admin-section-tools">
             <button class="btn btn-ghost" type="button" id="pairs-reload">Actualizar lista</button>
             <button class="btn btn-ghost" type="button" id="pairs-add">+ Pareja</button>
             <button class="btn btn-ghost" type="button" id="pairs-export">Exportar con WhatsApp</button>
+            <button class="btn btn-ghost" type="button" id="pairs-align-rank" hidden>Alinear ranking</button>
             <span class="tag" id="pairs-count"></span>
+            <span class="tag" id="pairs-rank-tag" hidden></span>
           </div>
+          <div class="admin-callout" id="pairs-rank-box" hidden></div>
           <div class="pairs-filters">
             <div class="pills" id="pairs-cats"></div>
             <div class="pills" id="pairs-origins"></div>

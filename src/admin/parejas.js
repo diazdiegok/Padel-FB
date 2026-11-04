@@ -11,6 +11,7 @@ import {
 import {
   addPairsToRanking,
   findPairIndex,
+  pairsMatch,
   removePairsFromRanking,
   syncRankingToSeasonPairs,
 } from "../lib/scoring.js";
@@ -37,6 +38,8 @@ const COPY = {
   hint: "Escriban los nombres completos y bien: así aparecen en el fixture, los resultados y el ranking. WhatsApp y mails solo los ve la organización.",
   cta: "Inscribir pareja",
   alias: "ligafbpadel",
+  feeReturning: "10.000",
+  feeNew: "20.000",
 };
 
 function cleanAlias(value) {
@@ -46,6 +49,15 @@ function cleanAlias(value) {
     .replace(/\s+/g, "")
     .replace(/[^a-z0-9._-]/g, "")
     .slice(0, 60);
+}
+
+function cleanFee(value, fallback) {
+  const raw = String(value || "")
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/[^\d.,]/g, "")
+    .slice(0, 20);
+  return raw || fallback;
 }
 
 function hoursSelect(name, value, options, label) {
@@ -212,6 +224,8 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
     $("pairs-hint").value = cfg.hint || COPY.hint;
     $("pairs-cta").value = cfg.cta || COPY.cta;
     $("pairs-alias").value = cleanAlias(cfg.alias) || COPY.alias;
+    $("pairs-fee-returning").value = cleanFee(cfg.feeReturning, COPY.feeReturning);
+    $("pairs-fee-new").value = cleanFee(cfg.feeNew, COPY.feeNew);
     renderStatus();
   }
 
@@ -225,7 +239,57 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       hint: text("pairs-hint", 300, COPY.hint),
       cta: text("pairs-cta", 40, COPY.cta),
       alias: cleanAlias($("pairs-alias")?.value) || COPY.alias,
+      feeReturning: cleanFee($("pairs-fee-returning")?.value, COPY.feeReturning),
+      feeNew: cleanFee($("pairs-fee-new")?.value, COPY.feeNew),
     };
+  }
+
+  /** Compara inscriptas de la temporada vs ranking: faltantes y sobrantes. */
+  function rankingDiff() {
+    const temp = season();
+    const pairs = seasonPairs()
+      .map(({ p }) => p)
+      .filter((p) => p.p1 && p.p2 && p.cat);
+    const rankRows = (ctx.rows || []).filter((r) => String(r.temp || "").toUpperCase() === temp);
+    const missing = pairs.filter(
+      (p) => findPairIndex(rankRows, `${p.p1} / ${p.p2}`, p.cat, temp) < 0
+    );
+    const extra = rankRows.filter(
+      (r) => !pairs.some((p) => p.cat === r.cat && pairsMatch(r.name, `${p.p1} / ${p.p2}`))
+    );
+    return { missing, extra, temp };
+  }
+
+  function renderRankSync() {
+    const box = $("pairs-rank-box");
+    const tag = $("pairs-rank-tag");
+    const btn = $("pairs-align-rank");
+    if (!box || !tag || !btn) return;
+    const { missing, extra } = rankingDiff();
+    const ok = !missing.length && !extra.length;
+    btn.hidden = ok;
+    tag.hidden = false;
+    if (ok) {
+      tag.textContent = "Ranking al día";
+      tag.className = "tag ok";
+      box.hidden = true;
+      box.innerHTML = "";
+      return;
+    }
+    tag.textContent = `${missing.length ? `${missing.length} sin ranking` : ""}${missing.length && extra.length ? " · " : ""}${extra.length ? `${extra.length} de más` : ""}`;
+    tag.className = "tag warn";
+    const missList = missing.length
+      ? `<p><b>Inscriptas que no están en el ranking</b></p><ul>${missing
+          .map((p) => `<li>${esc(`${p.p1} / ${p.p2}`)} · ${esc(p.cat)}</li>`)
+          .join("")}</ul>`
+      : "";
+    const extraList = extra.length
+      ? `<p><b>En ranking sin inscripción vigente</b></p><ul>${extra
+          .map((r) => `<li>${esc(r.name)} · ${esc(r.cat)}</li>`)
+          .join("")}</ul>`
+      : "";
+    box.hidden = false;
+    box.innerHTML = `<span><b>Desfase con el ranking</b> · “Alinear ranking” corrige la tabla local; después Publicar parejas lo sube a la web.</span>${missList}${extraList}`;
   }
 
   function renderStatus({ keepOpen = false } = {}) {
@@ -253,6 +317,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
   function render() {
     const temp = season();
     renderSeasonBadge();
+    renderRankSync();
     const list = seasonPairs();
     const dupKeys = dupMap(list);
     renderCats(list, dupKeys);
@@ -472,7 +537,17 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
   }
 
   function bind() {
-    ["pairs-open", "pairs-deadline", "pairs-title", "pairs-intro", "pairs-hint", "pairs-cta", "pairs-alias"].forEach((id) => {
+    [
+      "pairs-open",
+      "pairs-deadline",
+      "pairs-title",
+      "pairs-intro",
+      "pairs-hint",
+      "pairs-cta",
+      "pairs-alias",
+      "pairs-fee-returning",
+      "pairs-fee-new",
+    ].forEach((id) => {
       $(id)?.addEventListener("change", () => {
         if (id === "pairs-open" && $(id).checked && deadlinePassed($("pairs-deadline").value)) {
           $("pairs-deadline").value = "";
@@ -480,6 +555,32 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         shell.markDirty("parejas");
         renderStatus({ keepOpen: id === "pairs-open" && $(id).checked });
       });
+    });
+    $("pairs-align-rank")?.addEventListener("click", () => {
+      const temp = season();
+      const pairs = seasonPairs()
+        .map(({ p }) => p)
+        .filter((p) => p.p1 && p.p2 && p.cat);
+      const dropped = syncRankingToSeasonPairs(ctx.rows || [], pairs, temp);
+      const added = addPairsToRanking(ctx.rows || [], pairs);
+      if (!dropped.length && !added.length) {
+        toast("El ranking ya estaba alineado", "ok");
+        renderRankSync();
+        return;
+      }
+      shell.markDirty("ranking");
+      shell.markDirty("parejas");
+      onRankingChanged?.();
+      render();
+      const bits = [];
+      if (added.length) bits.push(`+${added.length} al ranking`);
+      if (dropped.length) bits.push(`−${dropped.length} del ranking`);
+      toast(`Ranking alineado (${bits.join(", ")}). Publicá parejas para subirlo.`, "ok");
+      setMsg(
+        $("pairs-msg"),
+        `Ranking alineado en local (${bits.join(", ")}). Tocá Publicar parejas para que se vea en la web.`,
+        "ok"
+      );
     });
     $("pairs-deadline")?.addEventListener("input", renderStatus);
     $("pairs-search")?.addEventListener("input", (e) => {

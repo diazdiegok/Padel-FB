@@ -17,12 +17,20 @@ const payAlias = String(config.alias || "ligafbpadel")
   .replace(/\s+/g, "")
   .replace(/[^a-z0-9._-]/g, "")
   .slice(0, 60) || "ligafbpadel";
+const feeOf = (value, fallback) =>
+  String(value || "")
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/[^\d.,]/g, "")
+    .slice(0, 20) || fallback;
 const copy = {
   title: config.title || "Inscribí tu pareja",
   intro: config.intro || "Se hace una sola vez por temporada. Completá contactos, categoría y los días en los que pueden jugar; con eso se arman las fechas del fixture.",
   hint: config.hint || "Escriban los nombres completos y bien: así aparecen en el fixture, los resultados y el ranking. WhatsApp y mails solo los ve la organización.",
   cta: config.cta || "Inscribir pareja",
   alias: payAlias,
+  feeReturning: feeOf(config.feeReturning, "10.000"),
+  feeNew: feeOf(config.feeNew, "20.000"),
 };
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -150,8 +158,8 @@ const TO_HOURS = HOURS.slice(3);
       <fieldset class="form-set insc-pay" id="insc-pay">
         <legend>Pago / abono de inscripción</legend>
         <ul class="insc-pay-fees">
-          <li>Si jugó la temporada anterior: <strong>$10.000</strong> por jugador (50%).</li>
-          <li>Competidores nuevos: <strong>$20.000</strong> por jugador.</li>
+          <li>Si jugó la temporada anterior: <strong id="insc-fee-returning">{"$" + copy.feeReturning}</strong> por jugador (50%).</li>
+          <li>Competidores nuevos: <strong id="insc-fee-new">{"$" + copy.feeNew}</strong> por jugador.</li>
         </ul>
         <div class="insc-alias" id="insc-alias">
           <p class="insc-alias-label">Transferí al alias</p>
@@ -354,6 +362,14 @@ const TO_HOURS = HOURS.slice(3);
           if (state.hint) document.querySelector("#insc-hint").textContent = state.hint;
           if (state.cta) document.querySelector("#insc-send").textContent = state.cta;
           if (state.alias) setAlias(state.alias);
+          if (state.feeReturning) {
+            const el = document.querySelector("#insc-fee-returning");
+            if (el) el.textContent = `$${state.feeReturning}`;
+          }
+          if (state.feeNew) {
+            const el = document.querySelector("#insc-fee-new");
+            if (el) el.textContent = `$${state.feeNew}`;
+          }
           if (!state.open) return showClosed(state.message);
           form.hidden = false;
           document.querySelector("#insc-closed").hidden = true;
