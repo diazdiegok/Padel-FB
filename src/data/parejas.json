@@ -445,5 +445,22 @@
       "Miércoles": "13:00 - 22:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmw1zcol9195f",
+    "createdAt": "2026-11-04T10:34:49.341Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Gaston E. Enrique",
+    "p2": "Flematti Abel Alejandro",
+    "days": {
+      "Lunes": "13:00 - 22:00",
+      "Martes": "13:00 - 22:00",
+      "Miércoles": "13:00 - 22:00",
+      "Jueves": "13:00 - 22:00",
+      "Viernes": "13:00 - 22:00",
+      "Sábado": "13:00 - 22:00"
+    },
+    "note": "Envío comprobante del pago de inscripción por wsp, dado que cada jugador hizo transferencia y solo deja subir un comprobante."
   }
 ]
