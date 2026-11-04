@@ -11,11 +11,18 @@ const base = import.meta.env.BASE_URL;
 const logo = asset("images/Logo-FB-blanco-sin-fondo-02.png");
 const deadline = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(config.deadline || "") ? config.deadline : "";
 const closedAtBuild = config.open === false || (Boolean(deadline) && Date.now() > Date.parse(`${deadline}:00-03:00`));
+const payAlias = String(config.alias || "ligafbpadel")
+  .trim()
+  .toLowerCase()
+  .replace(/\s+/g, "")
+  .replace(/[^a-z0-9._-]/g, "")
+  .slice(0, 60) || "ligafbpadel";
 const copy = {
   title: config.title || "Inscribí tu pareja",
   intro: config.intro || "Se hace una sola vez por temporada. Completá contactos, categoría y los días en los que pueden jugar; con eso se arman las fechas del fixture.",
   hint: config.hint || "Escriban los nombres completos y bien: así aparecen en el fixture, los resultados y el ranking. WhatsApp y mails solo los ve la organización.",
   cta: config.cta || "Inscribir pareja",
+  alias: payAlias,
 };
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -149,8 +156,8 @@ const TO_HOURS = HOURS.slice(3);
         <div class="insc-alias" id="insc-alias">
           <p class="insc-alias-label">Transferí al alias</p>
           <div class="insc-alias-row">
-            <code class="insc-alias-value" id="insc-alias-value">ligafbpadel</code>
-            <button class="btn btn-lime insc-alias-copy" type="button" id="insc-alias-copy" aria-label="Copiar alias ligafbpadel">Copiar alias</button>
+            <code class="insc-alias-value" id="insc-alias-value">{copy.alias}</code>
+            <button class="btn btn-lime insc-alias-copy" type="button" id="insc-alias-copy" aria-label={`Copiar alias ${copy.alias}`}>Copiar alias</button>
           </div>
           <p class="insc-alias-hint">Mercado Pago, banco o billetera: pegá el alias tal cual, sin espacios.</p>
         </div>
@@ -283,17 +290,29 @@ const TO_HOURS = HOURS.slice(3);
     }
 
     const aliasCopy = document.querySelector("#insc-alias-copy");
-    const aliasValue = document.querySelector("#insc-alias-value")?.textContent?.trim() || "ligafbpadel";
+    const aliasNode = document.querySelector("#insc-alias-value");
+    const currentAlias = () => aliasNode?.textContent?.trim() || "ligafbpadel";
+    function setAlias(value) {
+      const next = String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "")
+        .replace(/[^a-z0-9._-]/g, "")
+        .slice(0, 60);
+      if (!next || !aliasNode) return;
+      aliasNode.textContent = next;
+      if (aliasCopy) aliasCopy.setAttribute("aria-label", `Copiar alias ${next}`);
+    }
     aliasCopy?.addEventListener("click", async () => {
+      const aliasValue = currentAlias();
       let ok = false;
       try {
         await navigator.clipboard.writeText(aliasValue);
         ok = true;
       } catch {
-        const range = document.createRange();
-        const node = document.querySelector("#insc-alias-value");
-        if (node) {
-          range.selectNodeContents(node);
+        if (aliasNode) {
+          const range = document.createRange();
+          range.selectNodeContents(aliasNode);
           const sel = window.getSelection();
           sel?.removeAllRanges();
           sel?.addRange(range);
@@ -334,6 +353,7 @@ const TO_HOURS = HOURS.slice(3);
           if (state.intro) document.querySelector("#insc-intro").textContent = state.intro;
           if (state.hint) document.querySelector("#insc-hint").textContent = state.hint;
           if (state.cta) document.querySelector("#insc-send").textContent = state.cta;
+          if (state.alias) setAlias(state.alias);
           if (!state.open) return showClosed(state.message);
           form.hidden = false;
           document.querySelector("#insc-closed").hidden = true;

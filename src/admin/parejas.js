@@ -36,7 +36,17 @@ const COPY = {
     "Se hace una sola vez por temporada. Completá contactos, categoría y los días en los que pueden jugar; con eso se arman las fechas del fixture.",
   hint: "Escriban los nombres completos y bien: así aparecen en el fixture, los resultados y el ranking. WhatsApp y mails solo los ve la organización.",
   cta: "Inscribir pareja",
+  alias: "ligafbpadel",
 };
+
+function cleanAlias(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[^a-z0-9._-]/g, "")
+    .slice(0, 60);
+}
 
 function hoursSelect(name, value, options, label) {
   const [from = "", to = ""] = String(value || "")
@@ -201,6 +211,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
     $("pairs-intro").value = cfg.intro || COPY.intro;
     $("pairs-hint").value = cfg.hint || COPY.hint;
     $("pairs-cta").value = cfg.cta || COPY.cta;
+    $("pairs-alias").value = cleanAlias(cfg.alias) || COPY.alias;
     renderStatus();
   }
 
@@ -213,6 +224,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       intro: text("pairs-intro", 400, COPY.intro),
       hint: text("pairs-hint", 300, COPY.hint),
       cta: text("pairs-cta", 40, COPY.cta),
+      alias: cleanAlias($("pairs-alias")?.value) || COPY.alias,
     };
   }
 
@@ -460,7 +472,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
   }
 
   function bind() {
-    ["pairs-open", "pairs-deadline", "pairs-title", "pairs-intro", "pairs-hint", "pairs-cta"].forEach((id) => {
+    ["pairs-open", "pairs-deadline", "pairs-title", "pairs-intro", "pairs-hint", "pairs-cta", "pairs-alias"].forEach((id) => {
       $(id)?.addEventListener("change", () => {
         if (id === "pairs-open" && $(id).checked && deadlinePassed($("pairs-deadline").value)) {
           $("pairs-deadline").value = "";

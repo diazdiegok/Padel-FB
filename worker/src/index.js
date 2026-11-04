@@ -453,11 +453,18 @@ function cleanPhone(value) {
 
 function copyFields(json) {
   const clip = (value, max) => String(value || "").replace(/\s+/g, " ").trim().slice(0, max);
+  const alias = String(json.alias || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[^a-z0-9._-]/g, "")
+    .slice(0, 60);
   return {
     title: clip(json.title, 80),
     intro: clip(json.intro, 400),
     hint: clip(json.hint, 300),
     cta: clip(json.cta, 40),
+    alias: alias || "ligafbpadel",
   };
 }
 
