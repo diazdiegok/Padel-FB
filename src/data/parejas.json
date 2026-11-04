@@ -505,5 +505,19 @@
       "Viernes": "20:00 - 23:00"
     },
     "note": "Puede ser que podamos antes algunos días, pero el problema soy yo que trabajo con pacientes y a veces no me llegan a horario, o me suspenden y me libero antes de tiempo."
+  },
+  {
+    "id": "pmw2nb7th1588",
+    "createdAt": "2026-11-04T21:45:31.733Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Yanina Pecker",
+    "p2": "Sandra ripari",
+    "days": {
+      "Martes": "19:00 - 22:00",
+      "Miércoles": "19:00 - 22:00",
+      "Jueves": "19:00 - 22:00"
+    },
+    "note": ""
   }
 ]
