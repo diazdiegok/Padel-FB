@@ -389,6 +389,51 @@ async function writeData(env, file, json, sha, message) {
   throw new Error(data.message || "No se pudo guardar.");
 }
 
+/** Un solo commit con varios archivos: o salen todos o no sale ninguno. */
+async function writeFiles(env, files, message) {
+  const prefix = `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}`;
+  const refRes = await github(env, `${prefix}/git/refs/heads/main`);
+  const ref = await refRes.json();
+  if (!refRes.ok) throw new Error(ref.message || "No se pudo leer main.");
+  const baseSha = ref.object?.sha;
+  if (!baseSha) throw new Error("No se encontró el commit actual de main.");
+
+  const commitRes = await github(env, `${prefix}/git/commits/${baseSha}`);
+  const baseCommit = await commitRes.json();
+  if (!commitRes.ok) throw new Error(baseCommit.message || "No se pudo leer el commit base.");
+
+  const treeRes = await github(env, `${prefix}/git/trees`, {
+    method: "POST",
+    body: JSON.stringify({
+      base_tree: baseCommit.tree.sha,
+      tree: files.map((f) => ({
+        path: f.path,
+        mode: "100644",
+        type: "blob",
+        content: typeof f.content === "string" ? f.content : JSON.stringify(f.content, null, 2) + "\n",
+      })),
+    }),
+  });
+  const tree = await treeRes.json();
+  if (!treeRes.ok) throw new Error(tree.message || "No se pudo armar el commit.");
+
+  const newCommitRes = await github(env, `${prefix}/git/commits`, {
+    method: "POST",
+    body: JSON.stringify({ message, tree: tree.sha, parents: [baseSha] }),
+  });
+  const newCommit = await newCommitRes.json();
+  if (!newCommitRes.ok) throw new Error(newCommit.message || "No se pudo crear el commit.");
+
+  const patchRes = await github(env, `${prefix}/git/refs/heads/main`, {
+    method: "PATCH",
+    body: JSON.stringify({ sha: newCommit.sha, force: false }),
+  });
+  if (patchRes.ok) return true;
+  if (patchRes.status === 409 || patchRes.status === 422) return false;
+  const patch = await patchRes.json().catch(() => ({}));
+  throw new Error(patch.message || "No se pudo actualizar main.");
+}
+
 async function readAvailability(env) {
   return readData(env, DISP_PATH);
 }
@@ -480,33 +525,35 @@ async function registerPair(env, raw) {
   if (!receiptLooksValid(receiptMime, receiptData)) {
     throw new Error("El archivo no parece una imagen o PDF válido. Probá con otra foto del comprobante.");
   }
-  for (let attempt = 0; attempt < 4; attempt++) {
+  for (let attempt = 0; attempt < 6; attempt++) {
     const file = await readPairs(env);
     const same = file.json.find((row) => row.temp === pair.temp && pairKey(row) === pairKey(pair));
     if (same) {
       throw new Error(`Esta pareja ya está inscrita en ${same.cat}: no hace falta inscribirla de nuevo.`);
     }
-    const saved = await writeData(env, PAIRS_PATH, [...file.json, pair], file.sha, `Inscribe a ${pair.p1} / ${pair.p2} en ${pair.cat}.`);
+    const nextPairs = [...file.json, pair];
+    const rankFile = await readData(env, RANK_PATH, []);
+    const rankRows = Array.isArray(rankFile.json) ? structuredClone(rankFile.json) : [];
+    const added = addPairsToRanking(rankRows, [pair]);
+    // Parejas + ranking en el MISMO commit: no puede quedar una sin la otra.
+    const files = [{ path: PAIRS_PATH, content: nextPairs }];
+    if (added.length) files.push({ path: RANK_PATH, content: rankRows });
+    const saved = await writeFiles(
+      env,
+      files,
+      added.length
+        ? `Inscribe a ${pair.p1} / ${pair.p2} en ${pair.cat} y lo suma al ranking.`
+        : `Inscribe a ${pair.p1} / ${pair.p2} en ${pair.cat}.`
+    );
     if (saved) {
       await caches.default.delete(PAIRS_CACHE);
-      await addToRanking(env, pair).catch(() => {});
       await env.AUTH_KV.put(`contact:${pair.id}`, "", { metadata: contact });
       await savePayment(env, pair.id, { receiptMime, receiptData });
       return { ok: true, pair: { id: pair.id, p1: pair.p1, p2: pair.p2, cat: pair.cat } };
     }
-    await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
-  }
-  throw new Error("Hubo muchos envíos juntos. Probá de nuevo en unos segundos.");
-}
-
-async function addToRanking(env, pair) {
-  for (let attempt = 0; attempt < 8; attempt++) {
-    const file = await readData(env, RANK_PATH, []);
-    const rows = Array.isArray(file.json) ? file.json : [];
-    if (!addPairsToRanking(rows, [pair]).length) return;
-    if (await writeData(env, RANK_PATH, rows, file.sha, `Suma a ${pair.p1} / ${pair.p2} al ranking de ${pair.cat}.`)) return;
     await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
   }
+  throw new Error("Hubo muchos envíos juntos. Probá de nuevo en unos segundos.");
 }
 
 async function listPairs(env) {
