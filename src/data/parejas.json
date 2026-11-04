@@ -431,5 +431,19 @@
       "Jueves": "17:30 - 22:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmw1et7669c92",
+    "createdAt": "2026-11-04T00:59:47.982Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Andrés Gasparrini",
+    "p2": "Tomas Zabala",
+    "days": {
+      "Lunes": "13:00 - 22:00",
+      "Martes": "13:00 - 22:00",
+      "Miércoles": "13:00 - 22:00"
+    },
+    "note": ""
   }
 ]
