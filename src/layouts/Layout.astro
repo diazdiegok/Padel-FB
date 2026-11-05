@@ -310,7 +310,8 @@ const inTorneos = path.includes("/torneos");
         if (!reduceMotion) {
           // Golpe seco de la paleta del inicio. No es el remate de inscripciones.
           const started = performance.now();
-          const hitAt = 660;
+          // Medido sobre la animación: la pelota se aplasta contra la pala a los 0,60 s.
+          const hitAt = 600;
           let heard = false;
           const pock = (ctx) => {
             if (heard) return;

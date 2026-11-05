@@ -2199,7 +2199,7 @@ footer strong { color: var(--cream); }
   position: relative;
   width: min(460px, 90vw);
   text-align: center;
-  animation: splash-kick 0.36s ease-out 0.66s both;
+  animation: splash-kick 0.36s ease-out 0.6s both;
 }
 .splash-scene::before {
   content: "";
@@ -2255,7 +2255,7 @@ footer strong { color: var(--cream); }
   box-shadow: 0 0 16px rgba(214, 255, 47, 0.45);
   opacity: 0;
   transform-origin: center;
-  animation: splash-hit 0.5s ease-out 0.66s forwards;
+  animation: splash-hit 0.5s ease-out 0.6s forwards;
   pointer-events: none;
 }
 .splash-mark {
