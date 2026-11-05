@@ -519,5 +519,22 @@
       "Jueves": "19:00 - 22:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmw2w3l8he6ca",
+    "createdAt": "2026-11-05T01:51:32.417Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Diego Ramirez",
+    "p2": "Martin Rondan",
+    "days": {
+      "Lunes": "16:00 - 00:00",
+      "Martes": "16:00 - 00:00",
+      "Miércoles": "16:00 - 00:00",
+      "Jueves": "16:00 - 00:00",
+      "Viernes": "16:00 - 00:00",
+      "Sábado": "16:00 - 00:00"
+    },
+    "note": "Disponibilidad todos los dias de acuerdo a nuestros horarios rotativos."
   }
 ]
