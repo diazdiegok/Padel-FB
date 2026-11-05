@@ -398,12 +398,17 @@ const inTorneos = path.includes("/torneos");
           }
         }
         let splashTimer = 0;
-        function clearPreSplash() {
+        function disarmPreSplash() {
           clearTimeout(splashTimer);
           splashTimer = 0;
+        }
+        function clearPreSplash() {
+          disarmPreSplash();
           document.querySelectorAll("[data-insc-pre]").forEach((el) => el.remove());
         }
-        window.addEventListener("pagehide", clearPreSplash);
+        // Al irse, solo se apaga el temporizador. Si se saca la pelota acá,
+        // se ve la página de abajo hasta que carga la siguiente.
+        window.addEventListener("pagehide", disarmPreSplash);
         window.addEventListener("pageshow", (e) => {
           if (e.persisted) clearPreSplash();
         });
@@ -418,10 +423,11 @@ const inTorneos = path.includes("/torneos");
           const go = () => {
             if (left) return;
             left = true;
-            clearPreSplash();
+            disarmPreSplash();
             try { sessionStorage.setItem("fb-insc-smash", "1"); } catch {}
             location.href = href;
           };
+          try { fetch(href, { credentials: "same-origin" }).catch(() => {}); } catch {}
           const splash = document.createElement("div");
           splash.className = "insc-splash play";
           splash.setAttribute("data-insc-pre", "1");
