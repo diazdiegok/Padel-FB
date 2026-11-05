@@ -44,6 +44,19 @@ const TO_HOURS = HOURS.slice(3);
   description="Inscribí tu pareja en la liga de Padel FB en Paraná. Se hace una sola vez por temporada."
 >
   <div class="insc-splash" id="insc-splash" slot="splash" aria-hidden="true" hidden>
+    <svg class="insc-crack" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M50 50 L63 37 L71 41 L86 19" />
+      <path d="M50 50 L39 34 L27 28 L14 12" />
+      <path d="M50 50 L61 63 L74 71 L91 82" />
+      <path d="M50 50 L34 61 L22 76 L8 88" />
+      <path d="M50 50 L49 31 L46 14" />
+      <path d="M50 50 L71 51 L94 47" />
+      <path d="M50 50 L31 49 L6 54" />
+      <path d="M63 37 L74 28" />
+      <path d="M39 34 L33 18" />
+      <path d="M61 63 L78 58" />
+      <path d="M34 61 L18 66" />
+    </svg>
     <div class="insc-splash-stage">
       <span class="insc-ball"></span>
       <span class="insc-shock"></span>
@@ -616,7 +629,7 @@ const TO_HOURS = HOURS.slice(3);
     place-items: center;
     overflow: hidden;
     background:
-      radial-gradient(ellipse 60% 45% at 50% 50%, rgba(214, 255, 47, 0.1), transparent 70%),
+      radial-gradient(ellipse 48% 36% at 50% 42%, rgba(214, 255, 47, 0.16), transparent 70%),
       #070907;
     transition: opacity 0.6s ease;
     cursor: pointer;
@@ -628,7 +641,9 @@ const TO_HOURS = HOURS.slice(3);
     background-image:
       linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-    background-size: 48px 48px;
+    background-size: 56px 56px;
+    -webkit-mask-image: radial-gradient(ellipse 50% 46% at 50% 42%, #000 15%, transparent 72%);
+    mask-image: radial-gradient(ellipse 50% 46% at 50% 42%, #000 15%, transparent 72%);
     pointer-events: none;
   }
   .insc-splash[hidden] { display: none; }
@@ -741,7 +756,7 @@ const TO_HOURS = HOURS.slice(3);
   .insc-splash.play .insc-splash-text { animation: insc-rise 0.5s ease 1.15s both; }
 
   @keyframes insc-fly {
-    0% { opacity: 0; transform: translate(140px, -110px) scale(0.04); }
+    0% { opacity: 0; transform: translate(var(--from-x, 140px), var(--from-y, -110px)) scale(var(--from-scale, 0.04)); }
     12% { opacity: 1; }
     100% { opacity: 1; transform: translate(0, 0) scale(1); }
   }

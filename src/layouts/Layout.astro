@@ -364,10 +364,43 @@ const inTorneos = path.includes("/torneos");
             }
           } catch {}
         }
+        const hitBall = document.querySelector(".home-hit-ball");
+        const releaseAt = !reduceMotion && hitBall ? 720 : 2500;
         setTimeout(() => {
+          if (!reduceMotion && hitBall && splash.isConnected) {
+            const fromBall = splash.querySelector(".splash-ball");
+            const from = fromBall?.getBoundingClientRect();
+            const to = hitBall.getBoundingClientRect();
+            if (from && from.width > 8 && to.width > 4) {
+              const flyer = fromBall.cloneNode(true);
+              flyer.className = "splash-carry";
+              const w = from.width;
+              const h = from.height || w;
+              flyer.style.width = w + "px";
+              flyer.style.height = h + "px";
+              const fx = from.left + w / 2;
+              const fy = from.top + h / 2;
+              flyer.style.left = fx + "px";
+              flyer.style.top = fy + "px";
+              document.body.appendChild(flyer);
+              fromBall.style.visibility = "hidden";
+              const dx = to.left + to.width / 2 - fx;
+              const dy = to.top + to.height / 2 - fy;
+              const endScale = Math.max(0.22, Math.min(0.7, to.width / w));
+              const lift = Math.min(-48, dy * 0.2 - 64);
+              flyer.animate([
+                { transform: "translate(-50%, -50%) scale(1)" },
+                { transform: `translate(calc(-50% + ${dx * 0.42}px), calc(-50% + ${dy * 0.25 + lift}px)) scale(0.62)`, offset: 0.48 },
+                { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(${endScale})` },
+              ], { duration: 1100, easing: "cubic-bezier(0.42, 0.04, 0.22, 1)", fill: "forwards" }).finished.then(() => {
+                flyer.remove();
+                document.querySelector(".scoreboard.is-inscribe")?.classList.add("ball-caught");
+              }).catch(() => flyer.remove());
+            }
+          }
           splash.classList.add("out");
           setTimeout(() => splash.remove(), 560);
-        }, 2500);
+        }, releaseAt);
       } else {
         splash?.remove();
       }
@@ -473,15 +506,26 @@ const inTorneos = path.includes("/torneos");
           };
           try { fetch(href, { credentials: "same-origin" }).catch(() => {}); } catch {}
           const splash = document.createElement("div");
-          splash.className = "insc-splash play";
+          splash.className = "insc-splash";
           splash.setAttribute("data-insc-pre", "1");
           splash.innerHTML =
+            '<svg class="insc-crack" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M50 50 L63 37 L71 41 L86 19"/><path d="M50 50 L39 34 L27 28 L14 12"/><path d="M50 50 L61 63 L74 71 L91 82"/><path d="M50 50 L34 61 L22 76 L8 88"/><path d="M50 50 L49 31 L46 14"/><path d="M50 50 L71 51 L94 47"/><path d="M50 50 L31 49 L6 54"/><path d="M63 37 L74 28"/><path d="M39 34 L33 18"/><path d="M61 63 L78 58"/><path d="M34 61 L18 66"/></svg>' +
             '<div class="insc-splash-stage"><span class="insc-ball"></span><span class="insc-shock"></span><span class="insc-mark"><span class="insc-mark-seam"></span><img class="insc-mark-logo" alt="" src="' +
             logoUrl +
             '"></span><p class="insc-splash-text">Inscripciones de parejas <em>· ' +
             seasonLabel +
             "</em></p></div>";
           document.body.appendChild(splash);
+          const ballEl = splash.querySelector(".insc-ball");
+          const stage = splash.querySelector(".insc-splash-stage");
+          if (ballEl && stage) {
+            const from = a.getBoundingClientRect();
+            const dest = stage.getBoundingClientRect();
+            ballEl.style.setProperty("--from-x", (from.left + from.width / 2 - (dest.left + dest.width / 2)) + "px");
+            ballEl.style.setProperty("--from-y", (from.top + from.height / 2 - (dest.top + dest.height / 2)) + "px");
+            ballEl.style.setProperty("--from-scale", "0.14");
+          }
+          splash.classList.add("play");
           try {
             const Ctx = window.AudioContext || window.webkitAudioContext;
             if (Ctx) {
