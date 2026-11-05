@@ -309,15 +309,13 @@ const inTorneos = path.includes("/torneos");
         const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         if (!reduceMotion) {
           // Golpe seco de la paleta del inicio. No es el remate de inscripciones.
-          const started = performance.now();
-          // Medido sobre la animación: la pelota se aplasta contra la pala a los 0,60 s.
-          const hitAt = 600;
+          // El reloj del sonido sigue a la animación: el aplastamiento está a los 0,63 s de splash-flight.
+          const impactAt = 630;
           let heard = false;
           const pock = (ctx) => {
             if (heard) return;
             heard = true;
-            const wait = Math.max(0, (hitAt - (performance.now() - started)) / 1000);
-            const hit = ctx.currentTime + wait;
+            const hit = ctx.currentTime + 0.012;
             const body = ctx.createOscillator();
             body.type = "triangle";
             body.frequency.setValueAtTime(150, hit);
@@ -354,19 +352,33 @@ const inTorneos = path.includes("/torneos");
             const Ctx = window.AudioContext || window.webkitAudioContext;
             if (Ctx) {
               const ctx = new Ctx();
-              const play = () => ctx.resume().then(() => { if (ctx.state === "running") pock(ctx); }).catch(() => {});
-              play();
-              if (ctx.state !== "running") {
-                const unlock = () => play();
-                window.addEventListener("pointerdown", unlock, { once: true });
-                window.addEventListener("keydown", unlock, { once: true });
-              }
+              const ball = splash.querySelector(".splash-ball");
+              let sawFlight = false;
+              const tryPlay = () => {
+                if (heard || ctx.state !== "running") return;
+                const anim = ball?.getAnimations?.().find((a) => a.animationName === "splash-flight");
+                if (!anim) return;
+                sawFlight = true;
+                if (Number(anim.currentTime) >= impactAt) pock(ctx);
+              };
+              const watch = () => {
+                if (heard || !splash.isConnected) return;
+                ctx.resume().then(tryPlay).catch(() => {});
+                requestAnimationFrame(watch);
+              };
+              watch();
+              setTimeout(() => { if (!heard && !sawFlight && ctx.state === "running") pock(ctx); }, 1200);
+              const unlock = () => ctx.resume().then(tryPlay).catch(() => {});
+              window.addEventListener("pointerdown", unlock, { once: true });
+              window.addEventListener("keydown", unlock, { once: true });
             }
           } catch {}
         }
         const hitBall = document.querySelector(".home-hit-ball");
-        const releaseAt = !reduceMotion && hitBall ? 720 : 2500;
-        setTimeout(() => {
+        let released = false;
+        const release = () => {
+          if (released) return;
+          released = true;
           if (!reduceMotion && hitBall && splash.isConnected) {
             const fromBall = splash.querySelector(".splash-ball");
             const from = fromBall?.getBoundingClientRect();
@@ -388,19 +400,41 @@ const inTorneos = path.includes("/torneos");
               const dy = to.top + to.height / 2 - fy;
               const endScale = Math.max(0.22, Math.min(0.7, to.width / w));
               const lift = Math.min(-48, dy * 0.2 - 64);
-              flyer.animate([
-                { transform: "translate(-50%, -50%) scale(1)" },
-                { transform: `translate(calc(-50% + ${dx * 0.42}px), calc(-50% + ${dy * 0.25 + lift}px)) scale(0.62)`, offset: 0.48 },
-                { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(${endScale})` },
-              ], { duration: 1100, easing: "cubic-bezier(0.42, 0.04, 0.22, 1)", fill: "forwards" }).finished.then(() => {
+              let landed = false;
+              const land = () => {
+                if (landed) return;
+                landed = true;
                 flyer.remove();
                 document.querySelector(".scoreboard.is-inscribe")?.classList.add("ball-caught");
-              }).catch(() => flyer.remove());
+              };
+              const flight = flyer.animate([
+                { left: fx + "px", top: fy + "px", transform: "translate(-50%, -50%) scale(1)" },
+                { left: (fx + dx * 0.42) + "px", top: (fy + dy * 0.25 + lift) + "px", transform: "translate(-50%, -50%) scale(0.62)", offset: 0.48 },
+                { left: (fx + dx) + "px", top: (fy + dy) + "px", transform: "translate(-50%, -50%) scale(" + endScale + ")" },
+              ], { duration: 1100, easing: "cubic-bezier(0.42, 0.04, 0.22, 1)", fill: "forwards" });
+              flight.finished.then(land).catch(land);
+              setTimeout(land, 1250);
             }
           }
           splash.classList.add("out");
           setTimeout(() => splash.remove(), 560);
-        }, releaseAt);
+        };
+        if (!reduceMotion && hitBall) {
+          const waitRelease = () => {
+            if (released || !splash.isConnected) return;
+            const anim = splash.querySelector(".splash-ball")?.getAnimations?.().find((a) => a.animationName === "splash-flight");
+            const t = Number(anim?.currentTime);
+            if (!anim || t < 700) {
+              requestAnimationFrame(waitRelease);
+              return;
+            }
+            release();
+          };
+          requestAnimationFrame(waitRelease);
+          setTimeout(release, 1100);
+        } else {
+          setTimeout(release, 2500);
+        }
       } else {
         splash?.remove();
       }
@@ -509,7 +543,6 @@ const inTorneos = path.includes("/torneos");
           splash.className = "insc-splash";
           splash.setAttribute("data-insc-pre", "1");
           splash.innerHTML =
-            '<svg class="insc-crack" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M50 50 L63 37 L71 41 L86 19"/><path d="M50 50 L39 34 L27 28 L14 12"/><path d="M50 50 L61 63 L74 71 L91 82"/><path d="M50 50 L34 61 L22 76 L8 88"/><path d="M50 50 L49 31 L46 14"/><path d="M50 50 L71 51 L94 47"/><path d="M50 50 L31 49 L6 54"/><path d="M63 37 L74 28"/><path d="M39 34 L33 18"/><path d="M61 63 L78 58"/><path d="M34 61 L18 66"/></svg>' +
             '<div class="insc-splash-stage"><span class="insc-ball"></span><span class="insc-shock"></span><span class="insc-mark"><span class="insc-mark-seam"></span><img class="insc-mark-logo" alt="" src="' +
             logoUrl +
             '"></span><p class="insc-splash-text">Inscripciones de parejas <em>· ' +
