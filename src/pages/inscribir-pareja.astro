@@ -58,6 +58,11 @@ const TO_HOURS = HOURS.slice(3);
       (() => {
         const splash = document.getElementById("insc-splash");
         if (!splash) return;
+        const dropSplash = () => splash.remove();
+        window.addEventListener("pagehide", dropSplash);
+        window.addEventListener("pageshow", (e) => {
+          if (e.persisted) dropSplash();
+        });
         try {
           if (sessionStorage.getItem("fb-insc-smash") === "1") {
             sessionStorage.removeItem("fb-insc-smash");
