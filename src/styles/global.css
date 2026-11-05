@@ -1335,6 +1335,7 @@ footer strong { color: var(--cream); }
   animation: home-orbit-in 0.85s cubic-bezier(0.2, 0.85, 0.25, 1) 0.35s both;
 }
 .home-open.home-play.home-spin .scoreboard.is-inscribe .home-hit-orbit {
+  opacity: 1;
   animation: home-orbit-spin 3.4s linear infinite;
 }
 .home-open.home-play.home-spin .scoreboard.is-inscribe .home-hit-ball {
