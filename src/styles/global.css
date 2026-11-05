@@ -2217,7 +2217,7 @@ footer strong { color: var(--cream); }
 .splash-play {
   position: relative;
   width: min(250px, 62vw);
-  aspect-ratio: 503 / 900;
+  aspect-ratio: 483 / 900;
   margin: 0 auto 8px;
 }
 .splash-racket {
