@@ -374,67 +374,10 @@ const inTorneos = path.includes("/torneos");
             }
           } catch {}
         }
-        const hitBall = document.querySelector(".home-hit-ball");
-        let released = false;
-        const release = () => {
-          if (released) return;
-          released = true;
-          if (!reduceMotion && hitBall && splash.isConnected) {
-            const fromBall = splash.querySelector(".splash-ball");
-            const from = fromBall?.getBoundingClientRect();
-            const to = hitBall.getBoundingClientRect();
-            if (from && from.width > 8 && to.width > 4) {
-              const flyer = fromBall.cloneNode(true);
-              flyer.className = "splash-carry";
-              const w = from.width;
-              const h = from.height || w;
-              flyer.style.width = w + "px";
-              flyer.style.height = h + "px";
-              const fx = from.left + w / 2;
-              const fy = from.top + h / 2;
-              flyer.style.left = fx + "px";
-              flyer.style.top = fy + "px";
-              document.body.appendChild(flyer);
-              fromBall.style.visibility = "hidden";
-              const dx = to.left + to.width / 2 - fx;
-              const dy = to.top + to.height / 2 - fy;
-              const endScale = Math.max(0.22, Math.min(0.7, to.width / w));
-              const lift = Math.max(-36, Math.min(-18, dy * 0.15));
-              let landed = false;
-              const land = () => {
-                if (landed) return;
-                landed = true;
-                flyer.remove();
-                document.querySelector(".scoreboard.is-inscribe")?.classList.add("ball-caught");
-              };
-              const flight = flyer.animate([
-                { left: fx + "px", top: fy + "px", transform: "translate(-50%, -50%) scale(0.92)" },
-                { left: (fx + dx * 0.55) + "px", top: (fy + dy * 0.42 + lift) + "px", transform: "translate(-50%, -50%) scale(0.72)", offset: 0.42 },
-                { left: (fx + dx) + "px", top: (fy + dy) + "px", transform: "translate(-50%, -50%) scale(" + endScale + ")" },
-              ], { duration: 560, easing: "cubic-bezier(0.16, 0.84, 0.32, 1)", fill: "forwards" });
-              flight.finished.then(land).catch(land);
-              setTimeout(land, 640);
-            }
-          }
+        setTimeout(() => {
           splash.classList.add("out");
-          setTimeout(() => splash.remove(), 300);
-        };
-        if (!reduceMotion && hitBall) {
-          const waitRelease = () => {
-            if (released || !splash.isConnected) return;
-            const anim = splash.querySelector(".splash-ball")?.getAnimations?.().find((a) => a.animationName === "splash-flight");
-            const t = Number(anim?.currentTime);
-            if (!anim || t < 640) {
-              requestAnimationFrame(waitRelease);
-              return;
-            }
-            release();
-          };
-          requestAnimationFrame(waitRelease);
-          setTimeout(release, 780);
-        } else {
-          setTimeout(release, 2500);
-        }
+          setTimeout(() => splash.remove(), 560);
+        }, 2500);
       } else {
         splash?.remove();
       }
@@ -540,7 +483,7 @@ const inTorneos = path.includes("/torneos");
           };
           try { fetch(href, { credentials: "same-origin" }).catch(() => {}); } catch {}
           const splash = document.createElement("div");
-          splash.className = "insc-splash";
+          splash.className = "insc-splash play";
           splash.setAttribute("data-insc-pre", "1");
           splash.innerHTML =
             '<div class="insc-splash-stage"><span class="insc-ball"></span><span class="insc-shock"></span><span class="insc-mark"><span class="insc-mark-seam"></span><img class="insc-mark-logo" alt="" src="' +
@@ -549,16 +492,6 @@ const inTorneos = path.includes("/torneos");
             seasonLabel +
             "</em></p></div>";
           document.body.appendChild(splash);
-          const ballEl = splash.querySelector(".insc-ball");
-          const stage = splash.querySelector(".insc-splash-stage");
-          if (ballEl && stage) {
-            const from = a.getBoundingClientRect();
-            const dest = stage.getBoundingClientRect();
-            ballEl.style.setProperty("--from-x", (from.left + from.width / 2 - (dest.left + dest.width / 2)) + "px");
-            ballEl.style.setProperty("--from-y", (from.top + from.height / 2 - (dest.top + dest.height / 2)) + "px");
-            ballEl.style.setProperty("--from-scale", "0.14");
-          }
-          splash.classList.add("play");
           try {
             const Ctx = window.AudioContext || window.webkitAudioContext;
             if (Ctx) {
