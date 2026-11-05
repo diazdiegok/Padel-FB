@@ -550,5 +550,19 @@
       "Jueves": "18:00 - 22:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmw470mwl511e",
+    "createdAt": "2026-11-05T23:44:56.565Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Borsotti María Laura",
+    "p2": "Senger Celia Inmaculada",
+    "days": {
+      "Jueves": "17:00 - 21:00",
+      "Viernes": "16:00 - 21:00",
+      "Sábado": "11:00 - 15:00"
+    },
+    "note": ""
   }
 ]
