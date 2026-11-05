@@ -58,6 +58,13 @@ const TO_HOURS = HOURS.slice(3);
       (() => {
         const splash = document.getElementById("insc-splash");
         if (!splash) return;
+        try {
+          if (sessionStorage.getItem("fb-insc-smash") === "1") {
+            sessionStorage.removeItem("fb-insc-smash");
+            splash.remove();
+            return;
+          }
+        } catch {}
         if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
           splash.remove();
           return;

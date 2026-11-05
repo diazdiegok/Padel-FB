@@ -328,6 +328,110 @@ const inTorneos = path.includes("/torneos");
         splash?.remove();
       }
     </script>
+    <script is:inline define:vars={{ logoUrl: logo, seasonCode: site.currentSeason }}>
+      // El clic a "inscribir pareja" es el gesto que el navegador pide para el audio.
+      // El remate suena acá, con la pelota, y después se abre el formulario (sin pedirte otro toque).
+      (() => {
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const seasonLabel = /^T\d+$/i.test(String(seasonCode || ""))
+          ? "Temporada " + String(seasonCode).slice(1)
+          : String(seasonCode || "");
+        function smash(ctx) {
+          const now = ctx.currentTime;
+          const hit = now + 0.78;
+          const whooshLen = 0.72;
+          const noise = ctx.createBuffer(1, Math.floor(ctx.sampleRate * whooshLen), ctx.sampleRate);
+          const data = noise.getChannelData(0);
+          for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+          const whoosh = ctx.createBufferSource();
+          whoosh.buffer = noise;
+          const band = ctx.createBiquadFilter();
+          band.type = "bandpass";
+          band.Q.value = 0.8;
+          band.frequency.setValueAtTime(280, now);
+          band.frequency.exponentialRampToValueAtTime(2400, hit);
+          const whooshGain = ctx.createGain();
+          whooshGain.gain.setValueAtTime(0.001, now);
+          whooshGain.gain.exponentialRampToValueAtTime(0.16, hit - 0.04);
+          whooshGain.gain.exponentialRampToValueAtTime(0.001, hit + 0.04);
+          whoosh.connect(band);
+          band.connect(whooshGain);
+          whooshGain.connect(ctx.destination);
+          whoosh.start(now);
+          whoosh.stop(hit + 0.05);
+          const crackLen = 0.09;
+          const crackBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * crackLen), ctx.sampleRate);
+          const crackData = crackBuf.getChannelData(0);
+          for (let i = 0; i < crackData.length; i++) {
+            crackData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.012));
+          }
+          const crack = ctx.createBufferSource();
+          crack.buffer = crackBuf;
+          const high = ctx.createBiquadFilter();
+          high.type = "highpass";
+          high.frequency.value = 700;
+          const crackGain = ctx.createGain();
+          crackGain.gain.value = 0.62;
+          crack.connect(high);
+          high.connect(crackGain);
+          crackGain.connect(ctx.destination);
+          crack.start(hit);
+          const body = ctx.createOscillator();
+          body.type = "sine";
+          body.frequency.setValueAtTime(210, hit);
+          body.frequency.exponentialRampToValueAtTime(48, hit + 0.2);
+          const bodyGain = ctx.createGain();
+          bodyGain.gain.setValueAtTime(0.72, hit);
+          bodyGain.gain.exponentialRampToValueAtTime(0.001, hit + 0.24);
+          body.connect(bodyGain);
+          bodyGain.connect(ctx.destination);
+          body.start(hit);
+          body.stop(hit + 0.26);
+        }
+        function isInscribe(href) {
+          try {
+            const url = new URL(href, location.href);
+            if (url.origin !== location.origin) return false;
+            return url.pathname.replace(/\/$/, "").endsWith("/inscribir-pareja");
+          } catch {
+            return false;
+          }
+        }
+        document.addEventListener("click", (e) => {
+          if (reduce || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          const a = e.target instanceof Element ? e.target.closest("a[href]") : null;
+          if (!a || !isInscribe(a.href)) return;
+          if (isInscribe(location.href)) return;
+          e.preventDefault();
+          const href = a.href;
+          let left = false;
+          const go = () => {
+            if (left) return;
+            left = true;
+            try { sessionStorage.setItem("fb-insc-smash", "1"); } catch {}
+            location.href = href;
+          };
+          const splash = document.createElement("div");
+          splash.className = "insc-splash play";
+          splash.innerHTML =
+            '<div class="insc-splash-stage"><span class="insc-ball"></span><span class="insc-shock"></span><span class="insc-mark"><span class="insc-mark-seam"></span><img class="insc-mark-logo" alt="" src="' +
+            logoUrl +
+            '"></span><p class="insc-splash-text">Inscripciones de parejas <em>· ' +
+            seasonLabel +
+            "</em></p></div>";
+          document.body.appendChild(splash);
+          try {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (Ctx) {
+              const ctx = new Ctx();
+              ctx.resume().then(() => smash(ctx)).catch(() => {});
+            }
+          } catch {}
+          splash.addEventListener("click", go, { once: true });
+          setTimeout(go, 1900);
+        }, true);
+      })();
+    </script>
     {!noindex && site.apiUrl && (
       <script define:vars={{ apiUrl: String(site.apiUrl || "").replace(/\/$/, ""), basePath }}>
         (() => {
