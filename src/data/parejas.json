@@ -536,5 +536,19 @@
       "Sábado": "16:00 - 00:00"
     },
     "note": "Disponibilidad todos los dias de acuerdo a nuestros horarios rotativos."
+  },
+  {
+    "id": "pmw3vubve86e7",
+    "createdAt": "2026-11-05T18:32:06.554Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Cristian Fontana",
+    "p2": "Pablo Ramos",
+    "days": {
+      "Lunes": "18:00 - 22:00",
+      "Miércoles": "18:00 - 22:00",
+      "Jueves": "18:00 - 22:00"
+    },
+    "note": ""
   }
 ]
