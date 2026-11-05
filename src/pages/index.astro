@@ -193,22 +193,40 @@ const seasonVenues = Object.fromEntries(
     const root = document.querySelector(".home-open");
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (root && !reduce) {
-      const arm = () => root.classList.add("home-play");
-      const splash = document.getElementById("splash");
-      setTimeout(() => {
-        if (!splash || splash.hidden || !splash.isConnected) {
-          arm();
-          return;
-        }
-        const watch = new MutationObserver(() => {
-          if (splash.classList.contains("out") || !splash.isConnected) arm();
-        });
-        watch.observe(splash, { attributes: true, attributeFilter: ["class"] });
-        setTimeout(() => {
-          arm();
-          watch.disconnect();
-        }, 3400);
-      }, 0);
+      let spinTimer = 0;
+      let waitTimer = 0;
+      const onOrbitEnd = (e) => {
+        if (e.animationName !== "home-orbit-in") return;
+        root.classList.add("home-spin");
+      };
+      const replay = () => {
+        if (document.hidden) return;
+        clearTimeout(spinTimer);
+        root.removeEventListener("animationend", onOrbitEnd);
+        root.classList.remove("home-spin");
+        root.classList.remove("home-play");
+        void root.offsetWidth;
+        root.classList.add("home-play");
+        root.addEventListener("animationend", onOrbitEnd);
+        spinTimer = setTimeout(() => root.classList.add("home-spin"), 1300);
+      };
+      const schedule = () => {
+        clearTimeout(waitTimer);
+        waitTimer = setTimeout(() => {
+          const splash = document.getElementById("splash");
+          if (splash && splash.isConnected && !splash.hidden) {
+            schedule();
+            return;
+          }
+          if (document.hidden) return;
+          replay();
+        }, 60);
+      };
+      schedule();
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && !root.classList.contains("home-spin")) schedule();
+      });
+      window.addEventListener("pageshow", schedule);
     }
   </script>
 
