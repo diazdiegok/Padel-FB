@@ -2216,7 +2216,7 @@ footer strong { color: var(--cream); }
 }
 .splash-play {
   position: relative;
-  width: min(250px, 62vw);
+  width: min(200px, 48vw);
   aspect-ratio: 499 / 900;
   margin: 0 auto 8px;
 }
