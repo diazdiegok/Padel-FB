@@ -2214,56 +2214,49 @@ footer strong { color: var(--cream); }
   pointer-events: none;
   animation: splash-glow 1.2s ease-out both;
 }
-.splash-art {
+.splash-play {
   position: relative;
+  width: min(250px, 62vw);
+  aspect-ratio: 503 / 900;
+  margin: 0 auto 8px;
+}
+.splash-racket {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto;
-  overflow: visible;
-}
-.splash-baseline {
-  fill: none;
-  stroke: url("#splash-line");
-  stroke-width: 1.4;
-  stroke-linecap: round;
-  opacity: 0;
-  animation: splash-in 0.7s ease 0.12s forwards;
-}
-.splash-paddle,
-.splash-paddle-ghost {
-  transform-box: view-box;
-  transform-origin: 150px 218px;
-}
-.splash-paddle {
+  height: 100%;
+  object-fit: contain;
+  transform-origin: 50% 96%;
   animation: splash-swing 1.08s linear both;
+  pointer-events: none;
 }
-.splash-paddle-ghost {
-  filter: blur(5px);
+.splash-racket.is-ghost {
+  filter: blur(8px);
   animation: splash-swing-ghost 1.08s linear 0.03s both;
 }
 .splash-ball {
-  transform-box: fill-box;
+  position: absolute;
+  width: 23%;
+  height: auto;
+  left: 76%;
+  top: 18%;
   transform-origin: center;
   animation: splash-flight 0.5s cubic-bezier(0.4, 0.05, 0.2, 1) 0.18s both;
+  pointer-events: none;
 }
-.splash-trail {
-  fill: var(--lime);
+.splash-flash {
+  position: absolute;
+  left: 68%;
+  top: 16%;
+  width: 26%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid var(--lime);
+  box-shadow: 0 0 16px rgba(214, 255, 47, 0.45);
   opacity: 0;
-  transform-box: fill-box;
   transform-origin: center;
-  animation: splash-trail 0.5s ease 0.18s both;
-}
-.splash-hit {
-  fill: none;
-  stroke: var(--lime);
-  stroke-width: 1.6;
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: splash-hit 0.5s ease-out 0.66s both;
-}
-.splash-hit-2 {
-  stroke: #fff;
-  animation-delay: 0.74s;
+  animation: splash-hit 0.5s ease-out 0.66s forwards;
+  pointer-events: none;
 }
 .splash-mark {
   position: relative;
@@ -2299,33 +2292,27 @@ footer strong { color: var(--cream); }
   from { opacity: 0; transform: translate(-50%, -50%) scale(0.65); }
   to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
-@keyframes splash-in { to { opacity: 1; } }
 @keyframes splash-swing {
-  0% { transform: rotate(-52deg); }
-  30% { transform: rotate(-48deg); }
-  48% { transform: rotate(-18deg); }
-  62% { transform: rotate(8deg); }
-  74% { transform: rotate(-2deg); }
-  100% { transform: rotate(1deg); }
+  0% { transform: rotate(-36deg); }
+  32% { transform: rotate(-32deg); }
+  50% { transform: rotate(-10deg); }
+  64% { transform: rotate(5deg); }
+  76% { transform: rotate(-1deg); }
+  100% { transform: none; }
 }
 @keyframes splash-swing-ghost {
-  0% { transform: rotate(-66deg); opacity: 0.42; }
-  30% { transform: rotate(-60deg); opacity: 0.32; }
-  52% { transform: rotate(-24deg); opacity: 0.2; }
-  70% { transform: rotate(4deg); opacity: 0.06; }
-  100% { transform: rotate(1deg); opacity: 0; }
+  0% { transform: rotate(-48deg); opacity: 0.4; }
+  32% { transform: rotate(-42deg); opacity: 0.28; }
+  54% { transform: rotate(-16deg); opacity: 0.16; }
+  72% { transform: rotate(2deg); opacity: 0.05; }
+  100% { transform: none; opacity: 0; }
 }
 @keyframes splash-flight {
-  0% { transform: translate(140px, 42px) scale(0.45); opacity: 0; }
-  12% { opacity: 1; }
-  76% { transform: translate(12px, 2px) scale(1); opacity: 1; }
-  90% { transform: scale(0.82, 1.16); opacity: 1; }
+  0% { transform: translate(92px, 34px) scale(0.5); opacity: 0; }
+  14% { opacity: 1; }
+  76% { transform: translate(10px, 2px) scale(1); opacity: 1; }
+  90% { transform: scale(0.84, 1.14); opacity: 1; }
   100% { transform: none; opacity: 1; }
-}
-@keyframes splash-trail {
-  0% { transform: translate(70px, 16px) scaleX(1.4); opacity: 0; }
-  30% { opacity: 0.45; }
-  100% { transform: translate(16px, 4px) scaleX(1); opacity: 0; }
 }
 @keyframes splash-hit {
   0% { opacity: 0.95; transform: scale(0.3); }
