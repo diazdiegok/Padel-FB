@@ -195,38 +195,38 @@ const seasonVenues = Object.fromEntries(
     if (root && !reduce) {
       let spinTimer = 0;
       let waitTimer = 0;
+      let started = false;
       const onOrbitEnd = (e) => {
         if (e.animationName !== "home-orbit-in") return;
         root.classList.add("home-spin");
       };
-      const replay = () => {
-        if (document.hidden) return;
-        clearTimeout(spinTimer);
-        root.removeEventListener("animationend", onOrbitEnd);
-        root.classList.remove("home-spin");
-        root.classList.remove("home-play");
-        void root.offsetWidth;
+      const begin = () => {
+        if (started || document.hidden) return;
+        started = true;
         root.classList.add("home-play");
         root.addEventListener("animationend", onOrbitEnd);
         spinTimer = setTimeout(() => root.classList.add("home-spin"), 1300);
       };
       const schedule = () => {
+        if (started) return;
         clearTimeout(waitTimer);
         waitTimer = setTimeout(() => {
           const splash = document.getElementById("splash");
-          if (splash && splash.isConnected && !splash.hidden) {
+          const covering = splash && splash.isConnected && !splash.hidden && !splash.classList.contains("out");
+          if (covering) {
             schedule();
             return;
           }
-          if (document.hidden) return;
-          replay();
+          begin();
         }, 60);
       };
       schedule();
       document.addEventListener("visibilitychange", () => {
-        if (!document.hidden && !root.classList.contains("home-spin")) schedule();
+        if (!document.hidden && !started) schedule();
       });
-      window.addEventListener("pageshow", schedule);
+      window.addEventListener("pageshow", () => {
+        if (!started) schedule();
+      });
     }
   </script>
 
