@@ -2189,7 +2189,7 @@ footer strong { color: var(--cream); }
   background:
     radial-gradient(ellipse 48% 36% at 50% 42%, rgba(214, 255, 47, 0.16), transparent 70%),
     #070907;
-  transition: opacity 0.55s ease;
+  transition: opacity 0.28s ease;
 }
 .splash::before {
   content: "";

@@ -399,7 +399,7 @@ const inTorneos = path.includes("/torneos");
               const dx = to.left + to.width / 2 - fx;
               const dy = to.top + to.height / 2 - fy;
               const endScale = Math.max(0.22, Math.min(0.7, to.width / w));
-              const lift = Math.min(-48, dy * 0.2 - 64);
+              const lift = Math.max(-36, Math.min(-18, dy * 0.15));
               let landed = false;
               const land = () => {
                 if (landed) return;
@@ -408,30 +408,30 @@ const inTorneos = path.includes("/torneos");
                 document.querySelector(".scoreboard.is-inscribe")?.classList.add("ball-caught");
               };
               const flight = flyer.animate([
-                { left: fx + "px", top: fy + "px", transform: "translate(-50%, -50%) scale(1)" },
-                { left: (fx + dx * 0.42) + "px", top: (fy + dy * 0.25 + lift) + "px", transform: "translate(-50%, -50%) scale(0.62)", offset: 0.48 },
+                { left: fx + "px", top: fy + "px", transform: "translate(-50%, -50%) scale(0.92)" },
+                { left: (fx + dx * 0.55) + "px", top: (fy + dy * 0.42 + lift) + "px", transform: "translate(-50%, -50%) scale(0.72)", offset: 0.42 },
                 { left: (fx + dx) + "px", top: (fy + dy) + "px", transform: "translate(-50%, -50%) scale(" + endScale + ")" },
-              ], { duration: 1100, easing: "cubic-bezier(0.42, 0.04, 0.22, 1)", fill: "forwards" });
+              ], { duration: 560, easing: "cubic-bezier(0.16, 0.84, 0.32, 1)", fill: "forwards" });
               flight.finished.then(land).catch(land);
-              setTimeout(land, 1250);
+              setTimeout(land, 640);
             }
           }
           splash.classList.add("out");
-          setTimeout(() => splash.remove(), 560);
+          setTimeout(() => splash.remove(), 300);
         };
         if (!reduceMotion && hitBall) {
           const waitRelease = () => {
             if (released || !splash.isConnected) return;
             const anim = splash.querySelector(".splash-ball")?.getAnimations?.().find((a) => a.animationName === "splash-flight");
             const t = Number(anim?.currentTime);
-            if (!anim || t < 700) {
+            if (!anim || t < 640) {
               requestAnimationFrame(waitRelease);
               return;
             }
             release();
           };
           requestAnimationFrame(waitRelease);
-          setTimeout(release, 1100);
+          setTimeout(release, 780);
         } else {
           setTimeout(release, 2500);
         }
