@@ -661,6 +661,7 @@ footer .wrap { display: flex; justify-content: space-between; gap: 24px; flex-wr
 footer a:hover { color: var(--lime); }
 
 .page-hero { padding: 56px 0 32px; border-bottom: 1px solid var(--line); }
+.page-hero-open { border-bottom: none; padding-bottom: 28px; }
 .page-hero p { color: var(--muted); margin-top: 12px; max-width: 60ch; }
 .rank-rules {
   margin: 24px 0 8px;
