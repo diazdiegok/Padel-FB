@@ -576,5 +576,20 @@
       "Viernes": "14:00 - 22:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmw54ghvl292c",
+    "createdAt": "2026-11-06T15:21:03.873Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "morena Jaureguiberry",
+    "p2": "Jaureguiberry Mariela",
+    "days": {
+      "Lunes": "18:00 - 23:00",
+      "Miércoles": "18:00 - 23:00",
+      "Jueves": "18:00 - 23:00",
+      "Viernes": "18:00 - 23:00"
+    },
+    "note": ""
   }
 ]
