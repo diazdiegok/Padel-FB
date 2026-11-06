@@ -564,5 +564,17 @@
       "Sábado": "11:00 - 15:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmw4ajj2w0fed",
+    "createdAt": "2026-11-06T01:23:36.920Z",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "p1": "Denis Márquez",
+    "p2": "Ramira omar",
+    "days": {
+      "Viernes": "14:00 - 22:00"
+    },
+    "note": ""
   }
 ]
