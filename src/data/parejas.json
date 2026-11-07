@@ -621,5 +621,21 @@
       "Sábado": "14:00 - 18:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmw6xe5ief84d",
+    "createdAt": "2026-11-07T21:38:49.574Z",
+    "temp": "T5",
+    "cat": "B Femenino",
+    "p1": "Valentina Laikan",
+    "p2": "Bernardita Cuello",
+    "days": {
+      "Lunes": "15:00 - 18:00",
+      "Martes": "09:00 - 18:00",
+      "Jueves": "09:00 - 17:00",
+      "Viernes": "15:00 - 19:00",
+      "Sábado": "09:00 - 12:00"
+    },
+    "note": ""
   }
 ]
