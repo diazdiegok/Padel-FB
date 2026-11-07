@@ -606,5 +606,20 @@
       "Sábado": "19:00 - 20:30"
     },
     "note": ""
+  },
+  {
+    "id": "pmw6pdnj168ff",
+    "createdAt": "2026-11-07T17:54:29.341Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Milagros Solaro",
+    "p2": "Ana Paula Croce",
+    "days": {
+      "Lunes": "19:30 - 22:30",
+      "Martes": "19:30 - 22:30",
+      "Miércoles": "19:00 - 20:30",
+      "Sábado": "14:00 - 18:00"
+    },
+    "note": ""
   }
 ]
