@@ -637,5 +637,21 @@
       "Sábado": "09:00 - 12:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmw8h06vr6f0e",
+    "createdAt": "2026-11-08T23:35:36.663Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Juan Ignacio Oldani",
+    "p2": "Lo cascio Jose Carlos",
+    "days": {
+      "Lunes": "18:30 - 23:00",
+      "Miércoles": "18:30 - 23:00",
+      "Jueves": "20:30 - 00:00",
+      "Viernes": "18:30 - 00:00",
+      "Sábado": "10:00 - 14:30"
+    },
+    "note": ""
   }
 ]
