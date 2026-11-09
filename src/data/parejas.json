@@ -653,5 +653,20 @@
       "Sábado": "10:00 - 14:30"
     },
     "note": ""
+  },
+  {
+    "id": "pmw9ix5ou54ee",
+    "createdAt": "2026-11-09T17:17:00.558Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Gobatto Lucas",
+    "p2": "Rodriguez Larrosa Mateo",
+    "days": {
+      "Miércoles": "20:00 - 21:30",
+      "Jueves": "19:00 - 21:00",
+      "Viernes": "18:00 - 20:00",
+      "Sábado": "14:00 - 17:00"
+    },
+    "note": ""
   }
 ]
