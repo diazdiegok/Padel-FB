@@ -707,5 +707,21 @@
       "Viernes": "19:00 - 21:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwb4iy6r50d2",
+    "createdAt": "2026-11-10T20:09:35.379Z",
+    "temp": "T5",
+    "cat": "B Femenino",
+    "p1": "Migueles Abril Diamela",
+    "p2": "Bertotti Yamila",
+    "days": {
+      "Lunes": "18:00 - 22:00",
+      "Martes": "17:00 - 22:00",
+      "Jueves": "17:00 - 22:00",
+      "Viernes": "18:00 - 22:00",
+      "Sábado": "09:00 - 17:00"
+    },
+    "note": "Los fin de semanas largos(viernes y sabado) no nos encontramos en Parana, por lo que es preferible jugarlo en la semana."
   }
 ]
