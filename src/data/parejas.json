@@ -694,5 +694,18 @@
       "Viernes": "19:00 - 23:00"
     },
     "note": "Miércoles podemos jugar en palermo / américa o open, viernes solamente podemos jugar en open"
+  },
+  {
+    "id": "pmwb1ad4j7611",
+    "createdAt": "2026-11-10T18:38:55.987Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Robledo Marien",
+    "p2": "Valeria joubert",
+    "days": {
+      "Lunes": "19:00 - 21:00",
+      "Viernes": "19:00 - 21:00"
+    },
+    "note": ""
   }
 ]
