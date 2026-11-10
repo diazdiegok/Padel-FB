@@ -681,5 +681,18 @@
       "Viernes": "20:00 - 22:30"
     },
     "note": ""
+  },
+  {
+    "id": "pmwaxrzx692ec",
+    "createdAt": "2026-11-10T17:00:40.218Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Claudio Roldán",
+    "p2": "Joaquin Roldán",
+    "days": {
+      "Miércoles": "19:00 - 22:00",
+      "Viernes": "19:00 - 23:00"
+    },
+    "note": "Miércoles podemos jugar en palermo / américa o open, viernes solamente podemos jugar en open"
   }
 ]
