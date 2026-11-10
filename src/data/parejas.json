@@ -668,5 +668,18 @@
       "Sábado": "14:00 - 17:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwaw7qvu5853",
+    "createdAt": "2026-11-10T16:16:55.770Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Beltzer Valentin",
+    "p2": "Jaureguiberry Ariel",
+    "days": {
+      "Lunes": "20:30 - 22:30",
+      "Viernes": "20:00 - 22:30"
+    },
+    "note": ""
   }
 ]
