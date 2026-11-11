@@ -737,5 +737,20 @@
       "Viernes": "20:00 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwccdtjqa0ed",
+    "createdAt": "2026-11-11T16:37:19.190Z",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "p1": "Mariano Markowsky",
+    "p2": "Niki García",
+    "days": {
+      "Martes": "17:00 - 21:00",
+      "Miércoles": "17:00 - 21:00",
+      "Viernes": "17:00 - 21:00",
+      "Sábado": "14:00 - 20:00"
+    },
+    "note": "Por favor, acordar los días y horarios antes de fijar fecha. Gracias!."
   }
 ]
