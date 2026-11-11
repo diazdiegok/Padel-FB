@@ -723,5 +723,19 @@
       "Sábado": "09:00 - 17:00"
     },
     "note": "Los fin de semanas largos(viernes y sabado) no nos encontramos en Parana, por lo que es preferible jugarlo en la semana."
+  },
+  {
+    "id": "pmwca2jred723",
+    "createdAt": "2026-11-11T15:32:34.058Z",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "p1": "Imanol Agnoli",
+    "p2": "Hernan Masine",
+    "days": {
+      "Lunes": "20:00 - 00:00",
+      "Martes": "20:00 - 00:00",
+      "Viernes": "20:00 - 00:00"
+    },
+    "note": ""
   }
 ]
