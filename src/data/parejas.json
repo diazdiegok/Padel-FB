@@ -765,5 +765,19 @@
       "Viernes": "18:00 - 21:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwclz1mg452a",
+    "createdAt": "2026-11-11T21:05:45.976Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Loizate luciano",
+    "p2": "Carlos dinamo",
+    "days": {
+      "Lunes": "20:30 - 23:30",
+      "Miércoles": "20:30 - 23:00",
+      "Viernes": "20:30 - 00:00"
+    },
+    "note": ""
   }
 ]
