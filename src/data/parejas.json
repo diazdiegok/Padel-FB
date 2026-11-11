@@ -752,5 +752,18 @@
       "Sábado": "14:00 - 20:00"
     },
     "note": "Por favor, acordar los días y horarios antes de fijar fecha. Gracias!."
+  },
+  {
+    "id": "pmwcecdgc9a96",
+    "createdAt": "2026-11-11T17:32:10.908Z",
+    "temp": "T5",
+    "cat": "B Femenino",
+    "p1": "Antonella Croce",
+    "p2": "Jessie Morley",
+    "days": {
+      "Jueves": "18:00 - 21:00",
+      "Viernes": "18:00 - 21:00"
+    },
+    "note": ""
   }
 ]
