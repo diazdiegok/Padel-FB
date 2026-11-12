@@ -779,5 +779,20 @@
       "Viernes": "20:30 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwdgj0ro4858",
+    "createdAt": "2026-11-12T11:21:06.468Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Garbarino Jorgelina",
+    "p2": "Ramírez Kunzi Laura",
+    "days": {
+      "Miércoles": "18:00 - 00:00",
+      "Jueves": "18:00 - 00:00",
+      "Viernes": "18:00 - 00:00",
+      "Sábado": "10:00 - 18:00"
+    },
+    "note": ""
   }
 ]
