@@ -287,6 +287,20 @@
       "liga": true,
       "academia": false,
       "infantiles": false
+    },
+    {
+      "id": "sede-1794480625537",
+      "name": "La manzana Padel",
+      "address": "Alameda de la Federación 651",
+      "city": "Paraná",
+      "type": "Canchas abiertas - Alfombra",
+      "image": "/images/la-manzana-padel-1794480846409.jpg",
+      "maps": "https://www.google.com/maps/place/La+Manzana+F%C3%BAtbol+5/@-33.1143411,-60.973388,8z/data=!4m10!1m2!2m1!1sla+manzana!3m6!1s0x95b4528a70089f75:0x1be8da5d0c578e99!8m2!3d-31.7208372!4d-60.5364429!15sCgpsYSBtYW56YW5hkgEMc29jY2VyX2ZpZWxk4AEA!16s%2Fg%2F11b_1k8fmw?entry=ttu&g_ep=EgoyMDI2MTEwOS4wIKXMDSoASAFQAw%3D%3D",
+      "instagram": "https://www.instagram.com/lamanzana.padel/",
+      "whatsapp": "5493434660681",
+      "liga": true,
+      "academia": false,
+      "infantiles": false
     }
   ],
   "moreVenues": [],
