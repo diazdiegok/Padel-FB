@@ -5,7 +5,7 @@ assert.equal(weekFromName("Fecha 1.xlsx"), "Fecha 1");
 assert.equal(weekFromName("fecha-2-canchas.csv"), "Fecha 2");
 assert.equal(weekFromName("turnos.xlsx"), "");
 
-const s1 = parseCourtSlot({ complejo: "Terrazas", cancha: "1", horario: "Lunes 19:00 - 20:30" });
+const s1 = parseCourtSlot({ Complejo: "Terrazas", Cancha: "1", Dia: "Lunes", Horario: "19:00 - 20:30" });
 assert.equal(s1.day, "Lunes");
 assert.equal(s1.time, "19:00 - 20:30");
 assert.equal(s1.venue, "Terrazas");
@@ -15,10 +15,13 @@ const s2 = parseCourtSlot({ Complejo: "Open", Cancha: "2", Dia: "Martes", Horari
 assert.equal(s2.day, "Martes");
 assert.ok(s2.from < s2.to);
 
+assert.equal(parseCourtSlot({ Complejo: "Open", Cancha: "2", Horario: "20:00 - 21:30" }), null, "exige Dia");
+assert.equal(parseCourtSlot({ Complejo: "Open", Dia: "Martes", Horario: "20:00 - 21:30" }), null, "exige Cancha");
+
 const slots = parseCourtSlotRows([
-  { complejo: "Terrazas", cancha: "1", horario: "Lunes 19:00 - 20:30" },
-  { complejo: "Terrazas", cancha: "2", horario: "Lunes 19:00 - 20:30" },
-  { complejo: "Open", cancha: "1", horario: "Martes 20:00 - 21:30" },
+  { Complejo: "Terrazas", Cancha: "1", Dia: "Lunes", Horario: "19:00 - 20:30" },
+  { Complejo: "Terrazas", Cancha: "2", Dia: "Lunes", Horario: "19:00 - 20:30" },
+  { Complejo: "Open", Cancha: "1", Dia: "Martes", Horario: "20:00 - 21:30" },
 ]);
 assert.equal(slots.length, 3);
 

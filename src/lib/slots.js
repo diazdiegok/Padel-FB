@@ -47,8 +47,7 @@ export function weekFromName(name) {
 
 /**
  * Fila de Excel/CSV → slot de cancha.
- * Columnas: complejo, cancha, horario (+ dia opcional).
- * horario puede ser "19:00 - 20:30" o "Lunes 19:00 - 20:30".
+ * Columnas oficiales: Complejo, Cancha, Dia, Horario.
  */
 export function parseCourtSlot(raw = {}) {
   const map = {};
@@ -60,6 +59,7 @@ export function parseCourtSlot(raw = {}) {
   const venue = String(pick(map, ["complejo", "venue", "sede", "club"]) || "").trim();
   const court = String(pick(map, ["cancha", "court", "pista"]) || "").trim();
 
+  // Compat: si el día vino pegado al horario, lo separamos.
   const dayInTime = time.match(/^(lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado)\b\s*/i);
   if (dayInTime) {
     if (!day) day = normalizeDay(dayInTime[1]);
@@ -74,8 +74,8 @@ export function parseCourtSlot(raw = {}) {
     .replace(/\s+/g, " ")
     .trim();
 
-  if (!venue && !court && !time) return null;
-  if (!venue || !time) return null;
+  if (!venue && !court && !day && !time) return null;
+  if (!venue || !court || !day || !time) return null;
   const [from, to] = parseWindow(time);
   if (!(to > from)) return null;
   return { day, time, venue, court, from, to };

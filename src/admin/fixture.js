@@ -551,7 +551,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           weekHint: weekFromName(file.name) || weekFromName(sheetName),
         };
       }
-      throw new Error("Usá un archivo .xlsx, .xls o .csv con complejo, cancha y horario.");
+      throw new Error("Usá un archivo .xlsx, .xls o .csv con Complejo, Cancha, Dia y Horario.");
     }
 
     $("fx-slots")?.addEventListener("click", () => $("fx-slots-file")?.click());
@@ -590,7 +590,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         const ok = await confirmModal({
           title: `Asignar canchas · ${filterWeek}`,
           body:
-            `Se usan ${slots.length} turno${slots.length === 1 ? "" : "s"} del Excel (complejo, cancha, horario)` +
+            `Se usan ${slots.length} turno${slots.length === 1 ? "" : "s"} del Excel (Complejo, Cancha, Dia, Horario)` +
             (hasFilled
               ? ". Los partidos que ya tienen complejo/cancha no se pisan: para reasignarlos, borrá esos campos a mano y volvé a subir."
               : ".") +

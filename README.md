@@ -28,7 +28,7 @@ Panel en `/admin/` (acceso vía `/acceso-fb/`).
 | Área | Qué hace |
 |------|----------|
 | **Ranking** | Editar tabla, CSV (modelo / exportar / importar), publicar `ranking.json` |
-| **Fixture** | Armar fecha con parejas → subir Excel de canchas (`complejo, cancha, horario`) → retocar a mano → publicar |
+| **Fixture** | Armar fecha con parejas → subir Excel de canchas (`Complejo, Cancha, Dia, Horario`) → retocar a mano → publicar |
 | **Resultados** | Archivo de fechas jugadas + partidos live con resultado |
 | **Playoff** | Cuadro por categoría (se arma con el ranking), días, horarios y resultados; la ganadora pasa sola de ronda. Publica `playoff.json` → `/playoff/` (no suma al ranking) |
 | **Fecha** | Abrir/cerrar carga de disponibilidad (`/fecha/`) |
@@ -39,7 +39,7 @@ Panel en `/admin/` (acceso vía `/acceso-fb/`).
 
 CSV ranking: `name,cat,pts,pj,dif,pos,temp`
 
-Excel canchas por fecha: `complejo, cancha, horario` (`dia` opcional; el horario puede ir como `Lunes 19:00 - 20:30`). El archivo/hoja puede llamarse `Fecha 1`.
+Excel canchas por fecha: `Complejo, Cancha, Dia, Horario`. El archivo/hoja puede llamarse `Fecha 1`.
 
 ## Configurar
 

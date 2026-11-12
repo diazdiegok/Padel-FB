@@ -312,11 +312,11 @@ export function parseResultsImportText(text, currentSeason = "T4") {
   return parseResultsImportObjects(objects, currentSeason);
 }
 
-/** Filas de Excel/CSV → slots de cancha (complejo, cancha, horario [, dia]). */
+/** Filas de Excel/CSV → slots de cancha (Complejo, Cancha, Dia, Horario). */
 export function parseCourtSlotObjects(objects) {
   const slots = parseCourtSlotRows(objects || []);
   if (!slots.length) {
-    throw new Error("No encontré canchas. Columnas: complejo, cancha, horario (dia opcional).");
+    throw new Error("No encontré canchas. Columnas: Complejo, Cancha, Dia, Horario.");
   }
   return slots;
 }
@@ -332,7 +332,7 @@ export function parseCourtSlotText(text) {
     ["complejo", "venue", "sede", "cancha", "court", "horario", "hora", "time", "dia", "day"].includes(h)
   );
   if (!looksHeader) {
-    throw new Error("Falta la fila de títulos: complejo, cancha, horario.");
+    throw new Error("Falta la fila de títulos: Complejo, Cancha, Dia, Horario.");
   }
   const objects = lines.slice(1).map((line) => {
     const cols = splitLine(line, sep);
