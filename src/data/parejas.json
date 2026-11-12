@@ -794,5 +794,19 @@
       "Sábado": "10:00 - 18:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwdto2n7fa35",
+    "createdAt": "2026-11-12T17:28:57.187Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Enz Ernesto",
+    "p2": "Facundo Casals",
+    "days": {
+      "Lunes": "17:30 - 22:00",
+      "Martes": "17:30 - 22:00",
+      "Viernes": "17:30 - 22:00"
+    },
+    "note": ""
   }
 ]
