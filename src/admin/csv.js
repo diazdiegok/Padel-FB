@@ -1,4 +1,5 @@
 import { PENDING_AWAY, isPlaceholderPair } from "../lib/fixturer.js";
+import { parseCourtSlotRows } from "../lib/slots.js";
 import { CAT_MAP, CATS, FX_COLS, RANK_COLS, VENUE_MAP } from "./constants.js";
 import { num } from "./ui.js";
 
@@ -309,6 +310,39 @@ export function parseResultsImportText(text, currentSeason = "T4") {
     return obj;
   });
   return parseResultsImportObjects(objects, currentSeason);
+}
+
+/** Filas de Excel/CSV → slots de cancha (complejo, cancha, horario [, dia]). */
+export function parseCourtSlotObjects(objects) {
+  const slots = parseCourtSlotRows(objects || []);
+  if (!slots.length) {
+    throw new Error("No encontré canchas. Columnas: complejo, cancha, horario (dia opcional).");
+  }
+  return slots;
+}
+
+export function parseCourtSlotText(text) {
+  const raw = String(text || "").replace(/^\uFEFF/, "").trim();
+  if (!raw) throw new Error("El archivo está vacío.");
+  const first = raw.split(/\r?\n/, 1)[0] || "";
+  const sep = first.includes("\t") ? "\t" : first.includes(";") ? ";" : ",";
+  const lines = raw.split(/\r?\n/).filter((l) => l.trim());
+  const header = splitLine(lines[0], sep).map(foldHeader);
+  const looksHeader = header.some((h) =>
+    ["complejo", "venue", "sede", "cancha", "court", "horario", "hora", "time", "dia", "day"].includes(h)
+  );
+  if (!looksHeader) {
+    throw new Error("Falta la fila de títulos: complejo, cancha, horario.");
+  }
+  const objects = lines.slice(1).map((line) => {
+    const cols = splitLine(line, sep);
+    const obj = {};
+    header.forEach((h, i) => {
+      obj[h] = cols[i] || "";
+    });
+    return obj;
+  });
+  return parseCourtSlotObjects(objects);
 }
 
 export { RANK_COLS, FX_COLS, CATS };

@@ -218,7 +218,7 @@ import "../styles/admin.css";
         <section data-section="fixture" hidden>
           <div class="admin-callout">
             <strong>Cómo se arma</strong>
-            <span>Elegí la temporada, después la fecha. Armar fixture cruza las parejas inscriptas; las fechas anteriores quedan en Resultados.</span>
+            <span>Elegí la temporada y la fecha. 1) Armar fixture con las parejas. 2) Subí el Excel de canchas (complejo, cancha, horario) de esa fecha. 3) Retocá a mano si hace falta y publicá.</span>
           </div>
           <div class="admin-section-tools">
             <span class="tag" id="fx-summary">Sin partidos</span>
@@ -231,6 +231,8 @@ import "../styles/admin.css";
             <div class="admin-panel">
               <div class="admin-toolbar">
                 <button class="btn btn-lime" type="button" id="fx-build">Armar fixture</button>
+                <button class="btn btn-ghost" type="button" id="fx-slots">Subir canchas</button>
+                <input id="fx-slots-file" type="file" accept=".xlsx,.xls,.csv,.txt" hidden />
                 <button class="btn btn-ghost" type="button" id="fx-add">+ Partido</button>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { FIXTURE_PATH, PAIRS_PATH, RESULTS_PATH } from "./constants.js";
-import { cleanMatch } from "./csv.js";
+import { cleanMatch, parseCourtSlotObjects, parseCourtSlotText } from "./csv.js";
 import { pairLabel, validateDays } from "../lib/disponibilidad.js";
 import {
   MAX_PAIR_MATCHES,
@@ -12,6 +12,7 @@ import {
 } from "../lib/fixturer.js";
 import { latestWeek, listSeasons, mergeArchivedMatches, seasonLabel, weekKey, weekNumber } from "../lib/liga.js";
 import { pairsMatch } from "../lib/scoring.js";
+import { assignCourtSlots, weekFromName } from "../lib/slots.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
 const isPending = (m) => isPendingMatch(m);
@@ -187,9 +188,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const detail = $("fx-detail");
     if (detail) detail.hidden = false;
     const build = $("fx-build");
+    const slotsBtn = $("fx-slots");
     const add = $("fx-add");
     const bar = $("fx-publish")?.closest(".admin-sticky-bar");
     if (build) build.hidden = !live;
+    if (slotsBtn) slotsBtn.hidden = !live;
     if (add) add.hidden = !live;
     if (bar) bar.hidden = !live;
 
@@ -529,6 +532,95 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     });
 
     $("fx-build")?.addEventListener("click", buildFromFecha);
+
+    async function readSlotsFile(file) {
+      const lower = file.name.toLowerCase();
+      if (lower.endsWith(".csv") || lower.endsWith(".txt")) {
+        return { slots: parseCourtSlotText(await file.text()), weekHint: weekFromName(file.name) };
+      }
+      if (lower.endsWith(".xls") || lower.endsWith(".xlsx")) {
+        const XLSX = await import("xlsx");
+        const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+        const sheetName =
+          wb.SheetNames.find((n) => weekFromName(n)) ||
+          wb.SheetNames[0];
+        if (!sheetName) throw new Error("El Excel no tiene hojas.");
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
+        return {
+          slots: parseCourtSlotObjects(rows),
+          weekHint: weekFromName(file.name) || weekFromName(sheetName),
+        };
+      }
+      throw new Error("Usá un archivo .xlsx, .xls o .csv con complejo, cancha y horario.");
+    }
+
+    $("fx-slots")?.addEventListener("click", () => $("fx-slots-file")?.click());
+    $("fx-slots-file")?.addEventListener("change", async (e) => {
+      const input = e.target;
+      const file = input.files?.[0];
+      input.value = "";
+      if (!file) return;
+      if (!filterTemp || !filterWeek) {
+        toast("Entrá a la fecha del fixture antes de subir canchas.", "err");
+        return;
+      }
+      if ((await shell.setSection("fixture")) === false) return;
+      setBusy($("fx-slots"), true, "Asignando…");
+      try {
+        const { slots, weekHint } = await readSlotsFile(file);
+        if (weekHint && weekHint !== filterWeek) {
+          const ok = await confirmModal({
+            title: "Fecha del archivo",
+            body: `El archivo parece de ${weekHint} y estás en ${filterWeek}. ¿Asignar igual las canchas a ${filterWeek}?`,
+            confirmLabel: "Asignar igual",
+          });
+          if (!ok) return;
+        }
+        const weekMatches = ctx.fixture
+          .map((m, i) => ({ m, i }))
+          .filter(({ m }) => seasonOf(m) === filterTemp && (m.week || "") === filterWeek);
+        if (!weekMatches.some(({ m }) => isRealPairMatch(m))) {
+          setMsg($("fx-msg"), "No hay partidos armados en esta fecha. Primero tocá Armar fixture.", "err");
+          toast("Armá el fixture antes", "err");
+          return;
+        }
+        const hasFilled = weekMatches.some(
+          ({ m }) => isRealPairMatch(m) && (String(m.venue || "").trim() || String(m.court || "").trim())
+        );
+        const ok = await confirmModal({
+          title: `Asignar canchas · ${filterWeek}`,
+          body:
+            `Se usan ${slots.length} turno${slots.length === 1 ? "" : "s"} del Excel (complejo, cancha, horario)` +
+            (hasFilled
+              ? ". Los partidos que ya tienen complejo/cancha no se pisan: para reasignarlos, borrá esos campos a mano y volvé a subir."
+              : ".") +
+            " Después podés editar cualquier partido a mano.",
+          confirmLabel: "Asignar canchas",
+        });
+        if (!ok) return;
+
+        const weekList = weekMatches.map(({ m }) => m);
+        const result = assignCourtSlots(weekList, slots, { onlyEmpty: true });
+        result.matches.forEach((m, idx) => {
+          const globalI = weekMatches[idx].i;
+          ctx.fixture[globalI] = cleanMatch(m, {}, filterTemp);
+        });
+        shell.markDirty("fixture");
+        render();
+        const bits = [
+          `${result.assigned} asignado${result.assigned === 1 ? "" : "s"}`,
+          result.skipped ? `${result.skipped} sin cancha compatible` : null,
+          result.leftover ? `${result.leftover} turno${result.leftover === 1 ? "" : "s"} sin usar` : null,
+        ].filter(Boolean);
+        setMsg($("fx-msg"), `Canchas de ${filterWeek}: ${bits.join(" · ")}. Revisá y publicá.`, "ok");
+        toast("Canchas asignadas", "ok");
+      } catch (err) {
+        setMsg($("fx-msg"), err.message || "No se pudieron asignar las canchas.", "err");
+        toast(err.message || "Error al subir canchas", "err");
+      } finally {
+        setBusy($("fx-slots"), false);
+      }
+    });
 
     $("fx-add")?.addEventListener("click", () => {
       if (!filterTemp || !filterWeek) return;
