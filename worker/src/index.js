@@ -1,6 +1,12 @@
-import { addPairsToRanking } from "../../src/lib/scoring.js";
+import { addPairsToRanking, findPairIndex, pairsMatch } from "../../src/lib/scoring.js";
 import { closeStatus, deadlinePassed, validDeadline } from "../../src/lib/cierre.js";
-import { buildMail, cleanDays, validateDays, validateMail } from "../../src/lib/disponibilidad.js";
+import { buildMail, cleanDays, pairLabel, validateDays, validateMail } from "../../src/lib/disponibilidad.js";
+import {
+  MAX_PAIR_MATCHES,
+  PENDING_AWAY,
+  countPairMatches,
+  isPendingMatch,
+} from "../../src/lib/fixturer.js";
 
 const PASS_SALT = "liga-fb-admin-v1";
 // Cloudflare Workers: Web Crypto PBKDF2 topea en 100_000 iteraciones.
@@ -11,9 +17,12 @@ const RANK_PATH = "src/data/ranking.json";
 const DISP_PATH = "src/data/disponibilidad.json";
 const PAIRS_PATH = "src/data/parejas.json";
 const PAIRS_CONFIG_PATH = "src/data/inscripcion-parejas.json";
+const FIXTURE_PATH = "src/data/fixture.json";
+const RESULTS_PATH = "src/data/results.json";
 const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const CATS = ["A Masculina", "B Masculina", "C Masculina", "A Femenino", "B Femenino", "C Femenino"];
 const PAIRS_CACHE = "https://padel-fb-api.cache/pairs";
+const FIXTURE_CACHE = "https://padel-fb-api.cache/fixture";
 
 const DATA_FILE = /^src\/data\/[a-z0-9_-]+\.json$/;
 const IMAGE_FILE = /^public\/images\/[a-z0-9_-]+\.(png|jpg|webp|gif)$/;
@@ -1062,6 +1071,144 @@ async function appendAvailability(env, raw) {
   throw new Error("Hubo muchos envíos juntos. Probá de nuevo en unos segundos.");
 }
 
+async function readFixture(env) {
+  return readData(env, FIXTURE_PATH, []);
+}
+
+async function readResults(env) {
+  return readData(env, RESULTS_PATH, []);
+}
+
+function coverDisplayName(pair, rankingRows) {
+  const label = pairLabel(pair);
+  const idx = findPairIndex(Array.isArray(rankingRows) ? rankingRows : [], label, pair.cat, pair.temp);
+  return idx >= 0 ? rankingRows[idx].name || label : label;
+}
+
+/** Una pareja inscripta cubre un pendiente abierto de su misma categoría (doble jornada ok, tope 12 PJ). */
+async function coverPendingMatch(env, raw) {
+  const pairId = String(raw.pairId || "").trim();
+  const week = String(raw.week || "").trim();
+  const temp = String(raw.temp || "").trim().toUpperCase();
+  const cat = String(raw.cat || "").trim();
+  const home = String(raw.home || "").trim();
+  if (!pairId) throw new Error("Elegí tu pareja. Tiene que estar inscripta en la temporada.");
+  if (!week || !temp || !cat || !home) throw new Error("Faltan datos del partido pendiente.");
+  if (!CATS.includes(cat)) throw new Error("Categoría inválida.");
+
+  const pairs = await readPairs(env);
+  const pair = pairs.json.find((p) => p.id === pairId);
+  if (!pair) throw new Error("No encontramos esa pareja. Inscribila primero en Inscripción de parejas.");
+  if (String(pair.temp || "").toUpperCase() !== temp) {
+    throw new Error(`Esa pareja está en ${pair.temp || "otra temporada"} y el partido es de ${temp}.`);
+  }
+  if (pair.cat !== cat) {
+    throw new Error(`Solo puede cubrir una pareja de ${cat}. ${pair.p1} / ${pair.p2} está en ${pair.cat}.`);
+  }
+
+  const rankFile = await readData(env, RANK_PATH, []);
+  const rankingRows = Array.isArray(rankFile.json) ? rankFile.json : [];
+  const coverName = coverDisplayName(pair, rankingRows);
+  const label = pairLabel(pair);
+  if (pairsMatch(coverName, home) || pairsMatch(label, home)) {
+    throw new Error("No podés cubrir el partido de tu propia pareja pendiente.");
+  }
+
+  const results = await readResults(env);
+  const fixture = await readFixture(env);
+  const pools = [Array.isArray(results.json) ? results.json : [], Array.isArray(fixture.json) ? fixture.json : []];
+  const pj = Math.max(countPairMatches(coverName, cat, temp, pools), countPairMatches(label, cat, temp, pools));
+  if (pj >= MAX_PAIR_MATCHES) {
+    throw new Error(`Esta pareja ya llegó a ${MAX_PAIR_MATCHES} partidos y no puede cubrir más.`);
+  }
+
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const file = await readFixture(env);
+    const list = Array.isArray(file.json) ? structuredClone(file.json) : [];
+    const idx = list.findIndex(
+      (m) =>
+        isPendingMatch(m) &&
+        String(m.week || "") === week &&
+        String(m.temp || "").toUpperCase() === temp &&
+        String(m.cat || "") === cat &&
+        (pairsMatch(m.home, home) || String(m.home || "") === home)
+    );
+    if (idx < 0) {
+      throw new Error("Ese partido ya no está pendiente. Puede que alguien lo haya cubierto hace un momento.");
+    }
+    const next = {
+      ...list[idx],
+      away: coverName,
+      coveredBy: pairId,
+      coveredAt: new Date().toISOString(),
+    };
+    delete next.pending;
+    delete next.reason;
+    delete next.avail;
+    list[idx] = next;
+    const saved = await writeData(
+      env,
+      FIXTURE_PATH,
+      list,
+      file.sha,
+      `Cubre pendiente de ${week}: ${home} vs ${coverName} (${cat}).`
+    );
+    if (saved) {
+      await caches.default.delete(FIXTURE_CACHE);
+      return {
+        ok: true,
+        week,
+        temp,
+        cat,
+        home,
+        away: coverName,
+        pair: label,
+        message: `Listo: ${home} vs ${coverName}. El fixture se actualiza en ~1 minuto.`,
+      };
+    }
+    await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+  }
+  throw new Error("Hubo muchos envíos juntos. Probá de nuevo en unos segundos.");
+}
+
+async function listPendingCovers(env, tempFilter = "") {
+  const temp = String(tempFilter || "").toUpperCase();
+  const [fixture, results, pairs, rankFile] = await Promise.all([
+    readFixture(env),
+    readResults(env),
+    readPairs(env),
+    readData(env, RANK_PATH, []),
+  ]);
+  const fx = Array.isArray(fixture.json) ? fixture.json : [];
+  const res = Array.isArray(results.json) ? results.json : [];
+  const rankingRows = Array.isArray(rankFile.json) ? rankFile.json : [];
+  const pending = fx.filter((m) => isPendingMatch(m) && (!temp || String(m.temp || "").toUpperCase() === temp));
+  return pending.map((m) => {
+    const season = String(m.temp || "").toUpperCase();
+    const cat = m.cat || "";
+    const candidates = (pairs.json || [])
+      .filter((p) => String(p.temp || "").toUpperCase() === season && p.cat === cat && p.p1 && p.p2)
+      .map((p) => {
+        const label = pairLabel(p);
+        const name = coverDisplayName(p, rankingRows);
+        const pj = Math.max(countPairMatches(name, cat, season, [res, fx]), countPairMatches(label, cat, season, [res, fx]));
+        return { id: p.id, label: name, pj };
+      })
+      .filter((c) => c.pj < MAX_PAIR_MATCHES && !pairsMatch(c.label, m.home))
+      .sort((a, b) => a.label.localeCompare(b.label, "es"));
+    return {
+      week: m.week || "",
+      temp: season,
+      cat,
+      home: m.home || "",
+      away: PENDING_AWAY,
+      reason: m.reason || "",
+      avail: m.avail || "",
+      candidates,
+    };
+  });
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(request, env) });
@@ -1127,6 +1274,23 @@ export default {
           return response(request, env, { message: "Llegaste al límite de envíos por hoy. Probá mañana." }, 429);
         }
         return response(request, env, await appendAvailability(env, body));
+      }
+
+      if (url.pathname === "/fixture/pending" && request.method === "GET") {
+        const temp = String(url.searchParams.get("temp") || "").toUpperCase();
+        return response(request, env, await listPendingCovers(env, temp));
+      }
+
+      if (url.pathname === "/fixture/cover" && request.method === "POST") {
+        const body = await request.json();
+        if (body.website) return response(request, env, { ok: true });
+        if (!(await allowed(env.FORM_LIMITER, request, "form"))) {
+          return response(request, env, { message: "Muchos envíos seguidos. Esperá un minuto y probá de nuevo." }, 429);
+        }
+        if (!(await formDayOk(env, request, "form"))) {
+          return response(request, env, { message: "Llegaste al límite de envíos por hoy. Probá mañana." }, 429);
+        }
+        return response(request, env, await coverPendingMatch(env, body));
       }
 
       if (url.pathname === "/pairs" && request.method === "GET") {

@@ -8,6 +8,7 @@ import {
   parseResultsImportObjects,
   parseResultsImportText,
 } from "./csv.js";
+import { isRealPairMatch } from "../lib/fixturer.js";
 import { applyFixtureResults, describeResult, fold, pairsMatch, parseResult } from "../lib/scoring.js";
 import { combineResults, seasonLabel, seasonNumber, weekKey, weekNumber } from "../lib/liga.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
@@ -30,7 +31,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
         _source: "fixture",
         _i: i,
       }))
-      .filter((m) => m.home && m.away);
+      .filter((m) => isRealPairMatch(m));
     const liveKeys = new Set(live.map(weekKey));
     const archive = (ctx.results || [])
       .map((m, i) => ({ ...cleanMatch(m, {}, season), _source: "archive", _i: i }))

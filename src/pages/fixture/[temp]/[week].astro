@@ -4,8 +4,11 @@ import BackNav from "../../../components/BackNav.astro";
 import fixture from "../../../data/fixture.json";
 import results from "../../../data/results.json";
 import { site } from "../../../data/site";
+import { isPendingMatch, isRealPairMatch } from "../../../lib/fixturer.js";
 import { combineResults, seasonLabel, seasonSlug, weekSlug } from "../../../lib/liga.js";
 import { page } from "../../../lib/paths";
+
+const fxVisible = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) || isPendingMatch(m));
 
 export function getStaticPaths() {
   const DAY_ORDER = ["lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado", "domingo"];
@@ -13,7 +16,8 @@ export function getStaticPaths() {
     const i = DAY_ORDER.indexOf(String(d || "").trim().toLowerCase());
     return i < 0 ? 99 : i;
   };
-  const matches = combineResults(results, (fixture as any[]).filter((m) => m.home && m.away)).sort((a, b) => {
+  const live = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) || isPendingMatch(m));
+  const matches = combineResults(results, live).sort((a, b) => {
     const da = dayIdx(a.day);
     const db = dayIdx(b.day);
     if (da !== db) return da - db;
@@ -40,7 +44,7 @@ const dayIdx = (d: string) => {
   const i = DAY_ORDER.indexOf(String(d || "").trim().toLowerCase());
   return i < 0 ? 99 : i;
 };
-const list = combineResults(results, (fixture as any[]).filter((m) => m.home && m.away))
+const list = combineResults(results, fxVisible)
   .filter((m) => (m.temp || site.currentSeason || "T4") === tempCode && (m.week || "Sin fecha") === weekLabel)
   .sort((a, b) => {
     const da = dayIdx(a.day);
@@ -64,7 +68,7 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
       ]} />
       <p class="kicker">Fixture · {title}</p>
       <h1>{weekLabel}</h1>
-      <p>Partidos de la jornada.</p>
+      <p>Partidos de la jornada. Si ves <strong>Por cubrir</strong>, una pareja de la misma categoría puede anotarse desde acá.</p>
     </header>
 
     {list.length === 0 ? (
@@ -113,7 +117,12 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
     import { describeResult } from "../../../lib/scoring.js";
     window.__ligaScoring = { describeResult };
   </script>
-  <script define:vars={{ matches: list }}>
+  <script define:vars={{
+    matches: list,
+    apiUrl: String(site.apiUrl || "").replace(/\/$/, ""),
+    tempCode,
+    weekLabel,
+  }}>
     const q = document.querySelector("#q");
     const root = document.querySelector("#fixture-root");
     const empty = document.querySelector("#empty");
@@ -123,6 +132,9 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
     let day = "Todas";
     let cat = "Todas";
     let court = "Todas";
+    /** @type {Record<string, {id:string,label:string,pj:number}[]>} */
+    let candidatesByKey = {};
+    let pendingLoaded = false;
 
     function esc(s) {
       return String(s ?? "").replace(/[&<>"']/g, (c) =>
@@ -136,13 +148,39 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
     }
+    function isOpen(m) {
+      return !!(m.pending || m.away === "Pendiente / Pendiente");
+    }
+    function matchKey(m) {
+      return `${m.temp || tempCode}|${m.week || weekLabel}|${m.cat || ""}|${m.home || ""}`;
+    }
+
+    function coverBox(m) {
+      if (!isOpen(m)) return "";
+      const key = matchKey(m);
+      const options = candidatesByKey[key] || [];
+      const opts = options.length
+        ? options.map((c) => `<option value="${esc(c.id)}">${esc(c.label)} (${c.pj} PJ)</option>`).join("")
+        : `<option value="" disabled>${pendingLoaded ? "No hay parejas disponibles en esta categoría" : "Cargando parejas…"}</option>`;
+      return `<form class="fixture-cover" data-cover-key="${esc(key)}" data-home="${esc(m.home)}" data-cat="${esc(m.cat)}" data-week="${esc(m.week || weekLabel)}" data-temp="${esc(m.temp || tempCode)}">
+        <label>
+          <span>Cubrir con tu pareja de ${esc(m.cat)}</span>
+          <select name="pairId" required>
+            <option value="">Elegí tu pareja…</option>
+            ${opts}
+          </select>
+        </label>
+        <button class="btn" type="submit">Cubrir partido</button>
+        <p class="fixture-cover-msg" hidden></p>
+      </form>`;
+    }
 
     function render() {
       const term = fold((q?.value || "").trim());
       const rows = matches.filter((m) => {
-        const okDay = day === "Todas" || m.day === day;
+        const okDay = day === "Todas" || m.day === day || (isOpen(m) && !m.day);
         const okCat = cat === "Todas" || m.cat === cat;
-        const okCourt = court === "Todas" || m.venue === court;
+        const okCourt = court === "Todas" || m.venue === court || (isOpen(m) && !m.venue);
         const blob = fold([m.home, m.away].filter(Boolean).join(" "));
         return okDay && okCat && okCourt && (!term || blob.includes(term));
       });
@@ -151,10 +189,11 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
           ${rows
             .map((m) => {
               const info = describeResult(m.result);
-              return `<article class="fixture-row">
+              const open = isOpen(m);
+              return `<article class="fixture-row${open ? " is-cover" : ""}">
                 <div class="fixture-meta">
-                  <span>${esc(m.day || m.date)}</span>
-                  <span>${esc(m.time)}</span>
+                  <span>${esc(m.day || m.date || "A coordinar")}</span>
+                  <span>${esc(m.time || "—")}</span>
                   <span>${esc(m.cat)}</span>
                 </div>
                 <div class="fixture-vs">
@@ -173,13 +212,16 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
                 <div class="fixture-score">${
                   info
                     ? `<b>${esc(info.score)}</b><span>${info.label}</span>`
-                    : m.result
-                      ? `<b>${esc(m.result)}</b>`
-                      : `<span class="tag">Por jugar</span>`
+                    : open
+                      ? `<span class="tag">Por cubrir</span>`
+                      : m.result
+                        ? `<b>${esc(m.result)}</b>`
+                        : `<span class="tag">Por jugar</span>`
                 }</div>
                 <div class="fixture-place">
-                  <span>${esc(m.venue)}${m.court ? ` · ${esc(m.court)}` : ""}</span>
+                  <span>${esc(m.venue || (open ? "Sin sede aún" : ""))}${m.court ? ` · ${esc(m.court)}` : ""}</span>
                 </div>
+                ${coverBox(m)}
               </article>`;
             })
             .join("")}
@@ -200,10 +242,101 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
       });
     }
 
+    async function loadCandidates() {
+      if (!apiUrl) return;
+      try {
+        const res = await fetch(`${apiUrl}/fixture/pending?temp=${encodeURIComponent(tempCode)}`);
+        const data = res.ok ? await res.json() : [];
+        candidatesByKey = {};
+        for (const row of Array.isArray(data) ? data : []) {
+          if (String(row.week || "") !== String(weekLabel)) continue;
+          const key = `${row.temp}|${row.week}|${row.cat}|${row.home}`;
+          candidatesByKey[key] = row.candidates || [];
+        }
+      } catch {
+        candidatesByKey = {};
+      }
+      pendingLoaded = true;
+      render();
+    }
+
+    root.addEventListener("submit", async (e) => {
+      const form = e.target.closest("form.fixture-cover");
+      if (!form) return;
+      e.preventDefault();
+      const msg = form.querySelector(".fixture-cover-msg");
+      const btn = form.querySelector("button[type=submit]");
+      const pairId = form.pairId?.value || "";
+      if (!apiUrl) {
+        if (msg) {
+          msg.hidden = false;
+          msg.textContent = "La cobertura todavía no está configurada.";
+        }
+        return;
+      }
+      if (!pairId) return;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Guardando…";
+      }
+      if (msg) {
+        msg.hidden = true;
+        msg.textContent = "";
+      }
+      try {
+        const res = await fetch(`${apiUrl}/fixture/cover`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pairId,
+            week: form.dataset.week,
+            temp: form.dataset.temp,
+            cat: form.dataset.cat,
+            home: form.dataset.home,
+            website: "",
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || "No se pudo cubrir el partido.");
+        if (msg) {
+          msg.hidden = false;
+          msg.className = "fixture-cover-msg is-ok";
+          msg.textContent = data.message || "Partido cubierto. Se actualiza en ~1 minuto.";
+        }
+        form.querySelector("select")?.setAttribute("disabled", "true");
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Cubierto";
+        }
+        const i = matches.findIndex(
+          (m) =>
+            isOpen(m) &&
+            String(m.home || "") === String(form.dataset.home || "") &&
+            String(m.cat || "") === String(form.dataset.cat || "")
+        );
+        if (i >= 0) {
+          matches[i] = { ...matches[i], away: data.away || matches[i].away, pending: false };
+          delete matches[i].pending;
+        }
+        setTimeout(render, 1200);
+      } catch (err) {
+        if (msg) {
+          msg.hidden = false;
+          msg.className = "fixture-cover-msg is-err";
+          msg.textContent = err?.message || "No se pudo cubrir.";
+        }
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "Cubrir partido";
+        }
+      }
+    });
+
     q?.addEventListener("input", render);
     bind("[data-day]", "day", (v) => { day = v; });
     bind("[data-cat]", "cat", (v) => { cat = v; });
     bind("[data-court]", "court", (v) => { court = v; });
     render();
+    loadCandidates();
   </script>
 </Layout>

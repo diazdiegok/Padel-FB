@@ -1,3 +1,4 @@
+import { PENDING_AWAY, isPlaceholderPair } from "../lib/fixturer.js";
 import { CAT_MAP, CATS, FX_COLS, RANK_COLS, VENUE_MAP } from "./constants.js";
 import { num } from "./ui.js";
 
@@ -73,8 +74,9 @@ export function cleanMatch(m, defaults = {}, currentSeason = "T4") {
       ? splitPartido(m.partido)
       : { home: m.home, away: m.away };
   const away = String(fromPartido.away || "").trim();
+  const pendingAway = isPlaceholderPair(away) || (!!m.pending && !away);
   const extra = {};
-  if (m.pending && !away) {
+  if (pendingAway) {
     extra.pending = true;
     if (m.reason) extra.reason = String(m.reason).trim();
     if (m.avail) extra.avail = String(m.avail).trim();
@@ -91,7 +93,7 @@ export function cleanMatch(m, defaults = {}, currentSeason = "T4") {
     venue: normVenue(m.venue || m.complejo || m.sede || ""),
     court: String(m.court || m.cancha || "").trim(),
     home: String(fromPartido.home || "").trim(),
-    away,
+    away: pendingAway ? PENDING_AWAY : away,
     result: String(m.result || m.resultado || "").trim(),
     appliedResult: String(m.appliedResult || "").trim(),
   };

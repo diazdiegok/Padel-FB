@@ -1,12 +1,20 @@
 import { FIXTURE_PATH, PAIRS_PATH, RESULTS_PATH } from "./constants.js";
 import { cleanMatch } from "./csv.js";
-import { validateDays } from "../lib/disponibilidad.js";
-import { buildFixture } from "../lib/fixturer.js";
+import { pairLabel, validateDays } from "../lib/disponibilidad.js";
+import {
+  MAX_PAIR_MATCHES,
+  PENDING_AWAY,
+  buildFixture,
+  countPairMatches,
+  coverCandidates,
+  isPendingMatch,
+  isRealPairMatch,
+} from "../lib/fixturer.js";
 import { latestWeek, listSeasons, mergeArchivedMatches, seasonLabel, weekKey, weekNumber } from "../lib/liga.js";
 import { pairsMatch } from "../lib/scoring.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
-const isPending = (m) => !!m.pending && !String(m.away || "").trim();
+const isPending = (m) => isPendingMatch(m);
 
 export function createFixture(ctx, api, shell, { onRankingChanged }) {
   let buildCount = 0;
@@ -54,10 +62,14 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     return (ctx.fixture || []).some((m) => seasonOf(m) === temp && (m.week || "") === week);
   }
 
+  function matchPools() {
+    return [ctx.results || [], ctx.fixturePublished || [], ctx.fixture || []];
+  }
+
   function weekStats(temp, week) {
     const live = (ctx.fixture || []).filter((m) => seasonOf(m) === temp && (m.week || "") === week);
     const arch = (ctx.results || []).filter((m) => seasonOf(m) === temp && (m.week || "") === week);
-    const games = (live.length ? live : arch).filter((m) => !isPending(m) && m.home && m.away);
+    const games = (live.length ? live : arch).filter((m) => !isPending(m) && isRealPairMatch(m));
     const pending = live.filter(isPending).length;
     return { games, pending, live: live.length > 0, n: games.length };
   }
@@ -90,9 +102,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   }
 
   function previousMeetings(m) {
-    if (!m.home || !m.away) return [];
+    if (!isRealPairMatch(m)) return [];
     const played = [...(ctx.results || []), ...(ctx.fixturePublished || [])].filter(
-      (p) => p.home && p.away && p.temp === m.temp && p.cat === m.cat && p.week !== m.week
+      (p) => isRealPairMatch(p) && p.temp === m.temp && p.cat === m.cat && p.week !== m.week
     );
     const weeks = played
       .filter((p) => (pairsMatch(p.home, m.home) && pairsMatch(p.away, m.away)) || (pairsMatch(p.home, m.away) && pairsMatch(p.away, m.home)))
@@ -130,8 +142,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       return;
     }
     const cats = [...new Set(pending.map(({ m }) => m.cat || "Sin categoría"))];
+    const pools = matchPools();
     box.innerHTML = `<h3>Pendientes · ${pending.length}</h3>
-      <p class="admin-help">No se pudieron cruzar por día y horario. Se publican como pendientes. Si arreglan otro horario, emparejalas acá.</p>
+      <p class="admin-help">Quedaron sin rival por día/horario o por número impar. Se fixturean como <strong>${escAttr(PENDING_AWAY)}</strong>. En la <strong>web pública</strong> (Fixture) cualquier pareja de la misma categoría con menos de ${MAX_PAIR_MATCHES} PJ puede cubrirse sola; acá también podés hacerlo vos si hace falta.</p>
       ${cats
         .map((cat) => {
           const rows = pending.filter(({ m }) => (m.cat || "Sin categoría") === cat);
@@ -139,19 +152,26 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
             <h4>${escAttr(cat)}</h4>
             ${rows
               .map(({ m, i }) => {
-                const others = rows.filter((o) => o.i !== i);
+                const covers = coverCandidates({
+                  match: m,
+                  pairs: ctx.pairs || [],
+                  pools,
+                  temp: filterTemp,
+                });
                 return `<article class="fx-pending-card" data-i="${i}">
                   <strong>${escAttr(m.home)}</strong>
-                  <span class="admin-help">${escAttr(m.reason || "Sin rival")}${m.avail ? ` · ${escAttr(m.avail)}` : ""}${m.note ? ` · ${escAttr(m.note)}` : ""}</span>
+                  <span class="admin-help">vs ${escAttr(PENDING_AWAY)}${m.reason ? ` · ${escAttr(m.reason)}` : ""}${m.avail ? ` · ${escAttr(m.avail)}` : ""}${m.note ? ` · ${escAttr(m.note)}` : ""}</span>
                   <div class="fx-pending-actions">
-                    ${
-                      others.length
-                        ? `<select data-fx-pair="${i}" aria-label="Emparejar con">
-                            <option value="">Emparejar con…</option>
-                            ${others.map((o) => `<option value="${o.i}">${escAttr(o.m.home)}</option>`).join("")}
-                          </select>`
-                        : ""
-                    }
+                    <select data-fx-cover="${i}" aria-label="Cubrir con">
+                      <option value="">Cubrir con…</option>
+                      ${
+                        covers.length
+                          ? covers
+                              .map((c) => `<option value="${escAttr(c.label)}">${escAttr(c.label)} (${c.pj} PJ)</option>`)
+                              .join("")
+                          : `<option value="" disabled>No hay parejas disponibles en ${escAttr(cat)}</option>`
+                      }
+                    </select>
                     <button class="btn btn-ghost" type="button" data-fx-del="${i}">Quitar</button>
                   </div>
                 </article>`;
@@ -174,7 +194,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     if (bar) bar.hidden = !live;
 
     if (!live) {
-      const arch = (ctx.results || []).filter((m) => seasonOf(m) === filterTemp && (m.week || "") === filterWeek && m.home && m.away);
+      const arch = (ctx.results || []).filter(
+        (m) => seasonOf(m) === filterTemp && (m.week || "") === filterWeek && isRealPairMatch(m)
+      );
       const empty = $("fx-empty");
       if (empty) {
         empty.hidden = arch.length > 0;
@@ -344,19 +366,25 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   }
 
   function pairEntries(season) {
+    const pools = matchPools();
     return (ctx.pairs || [])
       .filter((p) => String(p.temp || "").toUpperCase() === String(season).toUpperCase() && p.p1 && p.p2 && p.cat)
       .map((p) => {
         const days = p.days && typeof p.days === "object" ? p.days : {};
         const valid = !validateDays(days);
+        const label = pairLabel(p);
+        const pj = countPairMatches(label, p.cat, season, pools);
+        const capped = pj >= MAX_PAIR_MATCHES;
         return {
           p1: p.p1,
           p2: p.p2,
           cat: p.cat,
-          days: valid ? days : {},
+          days: valid && !capped ? days : {},
           note: p.note || "",
-          bye: !valid,
+          bye: !valid || capped,
           recover: false,
+          _pj: pj,
+          _capped: capped,
         };
       });
   }
@@ -385,8 +413,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         return;
       }
       const warnings = [];
-      const withoutDays = entries.filter((e) => e.bye).length;
+      const capped = entries.filter((e) => e._capped).length;
+      const withoutDays = entries.filter((e) => e.bye && !e._capped).length;
       if (withoutDays) warnings.push(`${withoutDays} pareja${withoutDays === 1 ? "" : "s"} sin disponibilidad quedan afuera.`);
+      if (capped) warnings.push(`${capped} pareja${capped === 1 ? "" : "s"} ya llegaron a ${MAX_PAIR_MATCHES} PJ y no se fixturean.`);
       const unsaved = ctx.fixture.filter((m) => String(m.result || "").trim() !== String(m.appliedResult || "").trim());
       if (unsaved.length) {
         setMsg($("fx-msg"), `Hay ${unsaved.length} resultado${unsaved.length === 1 ? "" : "s"} sin publicar. Publicalos en Resultados antes de armar la fecha nueva.`, "err");
@@ -408,41 +438,50 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       });
       if (!ok) return;
 
-      const history = [...ctx.results, ...ctx.fixture].filter((m) => m.temp === temp && m.week !== week && m.home && m.away);
+      const history = [...(ctx.results || []), ...(ctx.fixture || [])].filter(
+        (m) => m.temp === temp && m.week !== week && isRealPairMatch(m)
+      );
       buildCount += 1;
       const out = buildFixture({ entries, ranking: ctx.rows, history, week, temp, seed: buildCount });
-      const matches = out.matches.map((m) => cleanMatch(m, {}, season));
-      const pending = out.pending.map((p) =>
-        cleanMatch(
+      const built = out.matches.map((m) => {
+        const cleaned = cleanMatch(m, {}, season);
+        if (!cleaned.pending) return cleaned;
+        return cleanMatch(
           {
-            week,
-            temp,
-            cat: p.cat,
-            home: p.home,
-            away: "",
+            ...cleaned,
             pending: true,
-            reason: p.reason,
-            avail: Object.entries(p.days || {})
-              .map(([d, h]) => `${d} ${h}`)
-              .join(" · "),
-            note: p.note || "",
+            away: PENDING_AWAY,
+            reason: m.reason || cleaned.reason || "",
+            avail:
+              cleaned.avail ||
+              Object.entries(m.days || {})
+                .map(([d, h]) => `${d} ${h}`)
+                .join(" · "),
+            note: m.note || cleaned.note || "",
           },
           {},
           season
-        )
+        );
+      });
+      const real = built.filter((m) => !isPending(m));
+      const pending = built.filter(isPending);
+      const keepOther = (ctx.fixture || []).filter(
+        (m) => isPending(m) && seasonOf(m) === season && (m.week || "") !== week
       );
-      ctx.fixture = [...matches, ...pending];
+      ctx.fixture = [...keepOther, ...built];
       filterTemp = season;
       filterWeek = week;
       if ($("fx-week")) $("fx-week").value = week;
       shell.markDirty("fixture");
       render();
-      const rematches = out.matches.filter((m) => m.rematch).length;
+      const rematches = out.matches.filter((m) => m.rematch && !m.pending).length;
       const parts = [
-        `${matches.length} partido${matches.length === 1 ? "" : "s"}`,
+        `${real.length} partido${real.length === 1 ? "" : "s"}`,
         pending.length ? `${pending.length} pendiente${pending.length === 1 ? "" : "s"}` : "sin pendientes",
       ];
-      if (out.byes.length) parts.push(`${out.byes.length} sin disponibilidad`);
+      const byesNoCap = out.byes.filter((e) => !e._capped);
+      if (byesNoCap.length) parts.push(`${byesNoCap.length} sin disponibilidad`);
+      if (capped) parts.push(`${capped} en tope ${MAX_PAIR_MATCHES} PJ`);
       if (rematches) parts.push(`${rematches} repite rival, mirá el aviso Revisar`);
       setMsg($("fx-msg"), `${week} armada: ${parts.join(" · ")}. Completá complejo y cancha, revisá y publicá.`, "ok");
       toast(`${week} armada`, "ok");
@@ -532,20 +571,43 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     });
 
     $("fx-pending")?.addEventListener("change", (e) => {
-      const sel = e.target.closest("[data-fx-pair]");
+      const sel = e.target.closest("[data-fx-cover]");
       if (!sel || sel.value === "") return;
-      const a = ctx.fixture[Number(sel.dataset.fxPair)];
-      const b = ctx.fixture[Number(sel.value)];
-      if (!a || !b) return;
-      const match = cleanMatch(
-        { week: a.week, temp: a.temp, cat: a.cat, day: "", time: "", venue: "", court: "", home: a.home, away: b.home, result: "" },
+      const i = Number(sel.dataset.fxCover);
+      const slot = ctx.fixture[i];
+      if (!slot || !isPending(slot)) return;
+      const cover = String(sel.value || "").trim();
+      const allowed = coverCandidates({
+        match: slot,
+        pairs: ctx.pairs || [],
+        pools: matchPools(),
+        temp: filterTemp || slot.temp,
+      });
+      if (!allowed.some((c) => pairsMatch(c.label, cover) || c.label === cover)) {
+        toast("Esa pareja no puede cubrir (otra categoría o ya tiene 12 PJ).", "err");
+        sel.value = "";
+        return;
+      }
+      const next = cleanMatch(
+        {
+          ...slot,
+          away: cover,
+          pending: false,
+          reason: "",
+          avail: "",
+          note: slot.note || "",
+          result: "",
+        },
         {},
         filterTemp || ctx.siteData.currentSeason || "T4"
       );
-      ctx.fixture = ctx.fixture.filter((m) => m !== a && m !== b).concat(match);
+      delete next.pending;
+      delete next.reason;
+      delete next.avail;
+      ctx.fixture[i] = next;
       shell.markDirty("fixture");
       render();
-      toast("Partido creado. Completá día y horario en la tabla.", "ok");
+      toast("Rival cubierto. Completá día y horario en la tabla si falta.", "ok");
     });
 
     const onDelete = async (e) => {
@@ -581,17 +643,21 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         return;
       }
       const season = filterTemp || ctx.siteData.currentSeason || "T4";
-      const nextFixture = ctx.fixture.map((m) => cleanMatch(m, {}, season)).filter((m) => m.home || m.away);
-      const incomplete = nextFixture.filter((m) => !m.pending && (!m.home || !m.away || !m.day || !m.time));
-      const repeated = nextFixture.filter((m) => previousMeetings(m).length).length;
+      const draft = ctx.fixture.map((m) => cleanMatch(m, {}, season)).filter((m) => m.home || m.away);
+      const incomplete = draft.filter((m) => !isPending(m) && (!isRealPairMatch(m) || !m.day || !m.time));
+      const openPending = draft.filter(isPending).length;
+      const repeated = draft.filter((m) => isRealPairMatch(m) && previousMeetings(m).length).length;
       const ok = await confirmModal({
         title: "Publicar fixture",
         body:
           (incomplete.length
             ? `Ojo: ${incomplete.length} partido${incomplete.length === 1 ? "" : "s"} sin pareja, día u horario. `
             : "") +
+          (openPending
+            ? `${openPending} pendiente${openPending === 1 ? "" : "s"} quedan abiertos para cubrir. `
+            : "") +
           (repeated ? `${repeated} cruce${repeated === 1 ? "" : "s"} ya se jugó en esta temporada (ver Revisar). ` : "") +
-          "Se publica esta fecha. Las fechas que salgan del fixture quedan guardadas en Resultados, sin mezclar los scores. El sitio se actualiza en ~1 minuto.",
+          "Se publica esta fecha. Las fechas que salgan del fixture quedan guardadas en Resultados (solo partidos con ambas parejas). El sitio se actualiza en ~1 minuto.",
         confirmLabel: "Publicar fixture",
         danger: incomplete.length > 0,
       });
@@ -602,10 +668,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       try {
         const remoteFixture = await api.readRemoteJson(FIXTURE_PATH, []);
         const remoteResults = await api.readRemoteJson(RESULTS_PATH, []);
+        const remoteClean = (Array.isArray(remoteFixture) ? remoteFixture : []).map((m) => cleanMatch(m, {}, season));
+        const draftKeys = new Set(draft.map(weekKey));
+        const carryPending = remoteClean.filter((m) => isPending(m) && !draftKeys.has(weekKey(m)));
+        const nextFixture = [...carryPending, ...draft];
         const newWeeks = new Set(nextFixture.map(weekKey));
-        const toArchive = (Array.isArray(remoteFixture) ? remoteFixture : [])
-          .map((m) => cleanMatch(m, {}, season))
-          .filter((m) => m.home && m.away && !newWeeks.has(weekKey(m)));
+        const toArchive = remoteClean.filter((m) => isRealPairMatch(m) && !newWeeks.has(weekKey(m)));
         const nextResults = mergeArchivedMatches(
           (Array.isArray(remoteResults) ? remoteResults : []).map((m) => cleanMatch(m, {}, season)),
           toArchive

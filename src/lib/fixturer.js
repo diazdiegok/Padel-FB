@@ -1,11 +1,73 @@
 import { DAYS, pairLabel } from "./disponibilidad.js";
-import { findPairIndex, pairsMatch } from "./scoring.js";
+import { findPairIndex, fold, pairsMatch } from "./scoring.js";
 
 export const MATCH_MINUTES = 90;
+export const PENDING_AWAY = "Pendiente / Pendiente";
+export const MAX_PAIR_MATCHES = 12;
 const DAY_START = 8 * 60;
 const DAY_END = 24 * 60;
 const REMATCH_COST = 1000;
 const TRIES = 400;
+
+export function isPlaceholderPair(name) {
+  const raw = String(name || "").trim();
+  if (!raw) return true;
+  return fold(raw) === fold(PENDING_AWAY);
+}
+
+export function isPendingMatch(m) {
+  if (!m) return false;
+  return !!m.pending || isPlaceholderPair(m.away);
+}
+
+export function isRealPairMatch(m) {
+  return Boolean(m && String(m.home || "").trim() && !isPlaceholderPair(m.home) && !isPlaceholderPair(m.away));
+}
+
+/** Partidos contables (ambas puntas reales) de una pareja en la temporada. */
+export function countPairMatches(name, cat, temp, pools = []) {
+  if (!String(name || "").trim() || isPlaceholderPair(name)) return 0;
+  const season = String(temp || "").toUpperCase();
+  let n = 0;
+  const seen = new Set();
+  for (const pool of pools) {
+    for (const m of Array.isArray(pool) ? pool : []) {
+      if (!isRealPairMatch(m)) continue;
+      if (String(m.temp || "").toUpperCase() !== season) continue;
+      if (cat && m.cat && m.cat !== cat) continue;
+      const plays = pairsMatch(m.home, name) || pairsMatch(m.away, name);
+      if (!plays) continue;
+      const key = `${m.week || ""}|${m.day || ""}|${m.time || ""}|${fold(m.home)}|${fold(m.away)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      n += 1;
+    }
+  }
+  return n;
+}
+
+/** Candidatas de la misma categoría para cubrir un pendiente (doble jornada ok; tope 12 PJ). */
+export function coverCandidates({ match, pairs = [], pools = [], temp = "" } = {}) {
+  if (!match || !String(match.home || "").trim()) return [];
+  const season = String(temp || match.temp || "").toUpperCase();
+  const cat = match.cat || "";
+  const out = [];
+  const seen = new Set();
+  for (const p of pairs) {
+    if (!p?.p1 || !p?.p2 || !p?.cat) continue;
+    if (cat && p.cat !== cat) continue;
+    if (String(p.temp || "").toUpperCase() !== season) continue;
+    const label = pairLabel(p);
+    if (isPlaceholderPair(label) || pairsMatch(label, match.home)) continue;
+    const key = fold(label);
+    if (seen.has(key)) continue;
+    const pj = countPairMatches(label, cat, season, pools);
+    if (pj >= MAX_PAIR_MATCHES) continue;
+    seen.add(key);
+    out.push({ label, pj, cat: p.cat });
+  }
+  return out.sort((a, b) => a.label.localeCompare(b.label, "es"));
+}
 
 function clock(min) {
   const h = Math.floor(min / 60);
@@ -183,10 +245,33 @@ export function buildFixture({ entries = [], ranking = [], history = [], week = 
           : p.options === 0
             ? "No coincide en día y horario con ninguna pareja de su categoría."
             : "Las parejas con las que coincide ya tienen partido.";
-      pending.push({ week, temp, cat, home: p.name, reason, days: p.entry.days, note: p.entry.note || "" });
+      const slot = {
+        week,
+        temp,
+        cat,
+        day: "",
+        time: "",
+        venue: "",
+        court: "",
+        home: p.name,
+        away: PENDING_AWAY,
+        result: "",
+        pending: true,
+        reason,
+        days: p.entry.days,
+        note: p.entry.note || "",
+      };
+      matches.push(slot);
+      pending.push(slot);
     }
   }
 
-  matches.sort((x, y) => DAYS.indexOf(x.day) - DAYS.indexOf(y.day) || x.time.localeCompare(y.time) || x.cat.localeCompare(y.cat, "es"));
+  matches.sort(
+    (x, y) =>
+      Number(!!x.pending) - Number(!!y.pending) ||
+      DAYS.indexOf(x.day) - DAYS.indexOf(y.day) ||
+      x.time.localeCompare(y.time) ||
+      x.cat.localeCompare(y.cat, "es")
+  );
   return { matches, pending, byes: entries.filter((e) => e.bye) };
 }

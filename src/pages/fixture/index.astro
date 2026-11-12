@@ -4,10 +4,12 @@ import BackNav from "../../components/BackNav.astro";
 import fixture from "../../data/fixture.json";
 import results from "../../data/results.json";
 import { site } from "../../data/site";
+import { isPendingMatch, isRealPairMatch, PENDING_AWAY } from "../../lib/fixturer.js";
 import { combineResults, seasonLabel, seasonNumber, seasonSlug } from "../../lib/liga.js";
 import { page } from "../../lib/paths";
 
-const all = combineResults(results, (fixture as any[]).filter((m) => m.home && m.away));
+const liveFx = (fixture as any[]) || [];
+const all = combineResults(results, liveFx.filter((m) => isRealPairMatch(m) || isPendingMatch(m)));
 const seasons = [...new Set(all.map((m) => m.temp || site.currentSeason || "T4"))].sort(
   (a, b) => seasonNumber(b) - seasonNumber(a)
 );
@@ -23,10 +25,11 @@ const seasonBlocks = seasons.map((temp) => {
   };
 });
 
-const pending = (fixture as any[])
-  .filter((m) => !!m.pending && !String(m.away || "").trim())
+const pending = liveFx
+  .filter((m) => isPendingMatch(m))
   .sort((a, b) => String(a.cat).localeCompare(String(b.cat), "es") || String(a.home).localeCompare(String(b.home), "es"));
 const pendingCats = [...new Set(pending.map((m) => m.cat || "Sin categoría"))];
+const apiUrl = String(site.apiUrl || "").replace(/\/$/, "");
 ---
 <Layout
   title="Fixture | Padel FB"
@@ -55,17 +58,39 @@ const pendingCats = [...new Set(pending.map((m) => m.cat || "Sin categoría"))];
     )}
 
     {pending.length > 0 && (
-      <section class="fixture-pending">
+      <section class="fixture-pending" id="fixture-pending-live">
         <h2>Pendientes · {pending.length}</h2>
-        <p>Estas parejas se anotaron pero no coincidieron en día y horario con otra de su categoría.</p>
+        <p>
+          Partidos abiertos: la pareja anotada espera rival ({PENDING_AWAY}). Cualquier pareja de la <strong>misma categoría</strong> puede cubrirse acá (doble jornada ok, máximo 12 partidos).
+        </p>
         {pendingCats.map((cat) => (
           <div class="fixture-pending-cat">
             <h3>{cat}</h3>
             <ul>
               {pending.filter((m) => (m.cat || "Sin categoría") === cat).map((m) => (
-                <li>
-                  <strong>{m.home}</strong>
-                  {m.avail && <span>{m.avail}</span>}
+                <li
+                  class="fixture-pending-item"
+                  data-week={m.week || ""}
+                  data-temp={m.temp || site.currentSeason}
+                  data-cat={m.cat || ""}
+                  data-home={m.home || ""}
+                >
+                  <div class="fixture-pending-head">
+                    <strong>{m.home}</strong>
+                    <span>vs {PENDING_AWAY}</span>
+                    {m.week && <span>{m.week}</span>}
+                    {m.avail && <span>{m.avail}</span>}
+                  </div>
+                  <form class="fixture-cover">
+                    <label>
+                      <span>Cubrir con tu pareja</span>
+                      <select name="pairId" required>
+                        <option value="">Cargando…</option>
+                      </select>
+                    </label>
+                    <button class="btn" type="submit">Cubrir partido</button>
+                    <p class="fixture-cover-msg" hidden></p>
+                  </form>
                 </li>
               ))}
             </ul>
@@ -74,4 +99,99 @@ const pendingCats = [...new Set(pending.map((m) => m.cat || "Sin categoría"))];
       </section>
     )}
   </div>
+
+  {pending.length > 0 && apiUrl && (
+    <script define:vars={{ apiUrl, season: site.currentSeason || "T5" }}>
+      const root = document.querySelector("#fixture-pending-live");
+      if (!root) throw new Error("pending cover");
+
+      function esc(s) {
+        return String(s ?? "").replace(/[&<>"']/g, (c) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+        );
+      }
+
+      async function boot() {
+        let rows = [];
+        try {
+          const res = await fetch(`${apiUrl}/fixture/pending?temp=${encodeURIComponent(season)}`);
+          rows = res.ok ? await res.json() : [];
+        } catch {
+          rows = [];
+        }
+        const byKey = {};
+        for (const row of Array.isArray(rows) ? rows : []) {
+          byKey[`${row.temp}|${row.week}|${row.cat}|${row.home}`] = row.candidates || [];
+        }
+        root.querySelectorAll(".fixture-pending-item").forEach((item) => {
+          const key = `${item.dataset.temp}|${item.dataset.week}|${item.dataset.cat}|${item.dataset.home}`;
+          const select = item.querySelector("select");
+          if (!select) return;
+          const options = byKey[key] || [];
+          select.innerHTML = options.length
+            ? `<option value="">Elegí tu pareja…</option>${options
+                .map((c) => `<option value="${esc(c.id)}">${esc(c.label)} (${c.pj} PJ)</option>`)
+                .join("")}`
+            : `<option value="">No hay parejas disponibles</option>`;
+        });
+      }
+
+      root.addEventListener("submit", async (e) => {
+        const form = e.target.closest("form.fixture-cover");
+        if (!form) return;
+        e.preventDefault();
+        const item = form.closest(".fixture-pending-item");
+        const msg = form.querySelector(".fixture-cover-msg");
+        const btn = form.querySelector("button[type=submit]");
+        const pairId = form.pairId?.value || "";
+        if (!item || !pairId) return;
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Guardando…";
+        }
+        if (msg) {
+          msg.hidden = true;
+          msg.textContent = "";
+        }
+        try {
+          const res = await fetch(`${apiUrl}/fixture/cover`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              pairId,
+              week: item.dataset.week,
+              temp: item.dataset.temp,
+              cat: item.dataset.cat,
+              home: item.dataset.home,
+              website: "",
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.message || "No se pudo cubrir el partido.");
+          if (msg) {
+            msg.hidden = false;
+            msg.className = "fixture-cover-msg is-ok";
+            msg.textContent = data.message || "Partido cubierto. Se actualiza en ~1 minuto.";
+          }
+          form.querySelector("select")?.setAttribute("disabled", "true");
+          if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Cubierto";
+          }
+        } catch (err) {
+          if (msg) {
+            msg.hidden = false;
+            msg.className = "fixture-cover-msg is-err";
+            msg.textContent = err?.message || "No se pudo cubrir.";
+          }
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = "Cubrir partido";
+          }
+        }
+      });
+
+      boot();
+    </script>
+  )}
 </Layout>

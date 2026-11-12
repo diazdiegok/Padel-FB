@@ -230,8 +230,11 @@ export function applyFixtureResults(ranking, matches) {
     const next = String(match.result || "").trim();
     const prev = String(match.appliedResult || "").trim();
     if (next === prev) continue;
-    if (!String(match.home || "").trim() || !String(match.away || "").trim()) {
-      if (next) unmatched.push(`Falta una de las parejas en ${match.cat || "un partido"} (${match.home || match.away || "sin nombre"}).`);
+    const homeName = String(match.home || "").trim();
+    const awayName = String(match.away || "").trim();
+    const placeholder = (name) => !name || fold(name) === fold("Pendiente / Pendiente");
+    if (!homeName || !awayName || placeholder(homeName) || placeholder(awayName)) {
+      if (next) unmatched.push(`Falta una de las parejas en ${match.cat || "un partido"} (${homeName || awayName || "sin nombre"}).`);
       continue;
     }
 

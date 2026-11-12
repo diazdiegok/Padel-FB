@@ -1,5 +1,14 @@
 import assert from "node:assert/strict";
-import { buildFixture, parseWindow } from "./fixturer.js";
+import {
+  PENDING_AWAY,
+  MAX_PAIR_MATCHES,
+  buildFixture,
+  parseWindow,
+  countPairMatches,
+  coverCandidates,
+  isPendingMatch,
+  isRealPairMatch,
+} from "./fixturer.js";
 
 assert.deepEqual(parseWindow("19:00 - 22:00"), [1140, 1320]);
 assert.deepEqual(parseWindow("19 a 22"), [1140, 1320]);
@@ -25,15 +34,19 @@ const entries = [
 const history = [{ temp: "T5", cat: "A Masculina", home: "Gea Sánchez, Julián / Gea Sánchez, Joaquín", away: "Fusse, Bruno / Rodríguez, Marcos" }];
 
 const out = buildFixture({ entries, ranking, history, week: "Fecha 3", temp: "T5" });
-console.log(out.matches.map((m) => `${m.cat} | ${m.day} ${m.time} | ${m.home} vs ${m.away}${m.rematch ? " (revancha)" : ""}`).join("\n"));
+console.log(out.matches.map((m) => `${m.cat} | ${m.day || "—"} ${m.time || "—"} | ${m.home} vs ${m.away}${m.rematch ? " (revancha)" : ""}${m.pending ? " [pendiente]" : ""}`).join("\n"));
 console.log("--- pendientes");
-console.log(out.pending.map((p) => `${p.cat} | ${p.home} | ${p.reason}`).join("\n"));
+console.log(out.pending.map((p) => `${p.cat} | ${p.home} vs ${p.away} | ${p.reason}`).join("\n"));
 
-assert.equal(out.matches.length, 1);
-assert.ok(!out.matches[0].rematch, "evita repetir rival cuando hay otra opción");
+assert.equal(out.matches.filter((m) => !m.pending).length, 1);
+assert.ok(!out.matches.find((m) => !m.pending)?.rematch, "evita repetir rival cuando hay otra opción");
 assert.equal(out.pending.length, 3);
-assert.ok(out.matches.every((m) => m.home.includes(",") && m.away.includes(",")), "usa los nombres del ranking");
+assert.ok(out.pending.every((p) => p.away === PENDING_AWAY && p.pending), "pendientes salen como vs Pendiente / Pendiente");
+assert.ok(out.matches.filter((m) => m.pending).every(isPendingMatch));
+assert.ok(out.matches.filter((m) => !m.pending).every(isRealPairMatch));
+assert.ok(out.matches.some((m) => !m.pending && m.home.includes(",") && m.away.includes(",")), "usa los nombres del ranking");
 assert.ok(!out.pending.some((p) => p.home.includes("Caro")), "los que no juegan no quedan pendientes");
+
 const rec = buildFixture({
   entries: [
     e("A", "B", "C Masculina", { Lunes: "18 a 23" }, { recover: true }),
@@ -42,11 +55,12 @@ const rec = buildFixture({
   ],
   temp: "T5",
 });
-assert.equal(rec.matches.length, 2, "la que recupera juega dos");
-const [m1, m2] = rec.matches;
+assert.equal(rec.matches.filter((m) => !m.pending).length, 2, "la que recupera juega dos");
+const [m1, m2] = rec.matches.filter((m) => !m.pending);
 assert.notEqual(m1.time, m2.time, "no le superpone horarios");
 console.log("--- recupera");
-console.log(rec.matches.map((m) => `${m.day} ${m.time} | ${m.home} vs ${m.away}`).join("\n"));
+console.log(rec.matches.filter((m) => !m.pending).map((m) => `${m.day} ${m.time} | ${m.home} vs ${m.away}`).join("\n"));
+
 const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const big = [];
 for (const cat of ["A Masculina", "B Masculina", "C Masculina", "B Femenino", "C Femenino"]) {
@@ -57,6 +71,47 @@ for (const cat of ["A Masculina", "B Masculina", "C Masculina", "B Femenino", "C
 }
 const t0 = Date.now();
 const res = buildFixture({ entries: big, temp: "T5" });
-console.log(`--- 150 parejas: ${res.matches.length} partidos, ${res.pending.length} pendientes, ${Date.now() - t0} ms`);
+console.log(`--- 150 parejas: ${res.matches.filter((m) => !m.pending).length} partidos, ${res.pending.length} pendientes, ${Date.now() - t0} ms`);
 assert.ok(Date.now() - t0 < 5000, "arma rápido");
+
+// Tope 12 PJ + cover candidates
+const played = Array.from({ length: MAX_PAIR_MATCHES }, (_, i) => ({
+  temp: "T5",
+  cat: "A Masculina",
+  week: `Fecha ${i + 1}`,
+  home: "Gea Sánchez, Julián / Gea Sánchez, Joaquín",
+  away: `Rival ${i}a / Rival ${i}b`,
+}));
+assert.equal(countPairMatches("Gea Sánchez, Julián / Gea Sánchez, Joaquín", "A Masculina", "T5", [played]), MAX_PAIR_MATCHES);
+assert.equal(
+  countPairMatches("Gea Sánchez, Julián / Gea Sánchez, Joaquín", "A Masculina", "T5", [
+    [...played, { temp: "T5", cat: "A Masculina", week: "Fecha X", home: "X", away: PENDING_AWAY, pending: true }],
+  ]),
+  MAX_PAIR_MATCHES,
+  "pendientes no suman PJ"
+);
+
+const pendingSlot = {
+  temp: "T5",
+  cat: "A Masculina",
+  week: "Fecha 3",
+  home: "Enrique, Ariel / Enrique, Marcelo",
+  away: PENDING_AWAY,
+  pending: true,
+};
+const pairs = [
+  { temp: "T5", cat: "A Masculina", p1: "Bruno Fusse", p2: "Marcos Rodríguez" },
+  { temp: "T5", cat: "A Masculina", p1: "Julián Gea Sánchez", p2: "Joaquín Gea Sánchez" },
+  { temp: "T5", cat: "A Masculina", p1: "Imanol Agnoli", p2: "Roman Rodriguez" },
+  { temp: "T5", cat: "B Masculina", p1: "Otro", p2: "Masculino" },
+  { temp: "T5", cat: "A Masculina", p1: "Ariel Enrique", p2: "Marcelo Enrique" },
+];
+const covers = coverCandidates({ match: pendingSlot, pairs, pools: [played], temp: "T5" });
+assert.ok(covers.every((c) => c.cat === "A Masculina"), "solo misma categoría");
+assert.ok(!covers.some((c) => c.label.includes("Gea")), "excluye quien ya tiene 12 PJ");
+assert.ok(!covers.some((c) => c.label.includes("Enrique")), "excluye a la pareja home");
+assert.ok(!covers.some((c) => c.label.includes("Otro")), "no mezcla B Masculina en A Masculina");
+assert.ok(covers.some((c) => c.label.includes("Fusse")), "incluye rivales con PJ < 12");
+console.log("--- cover", covers.map((c) => `${c.label} (${c.pj})`).join(" · "));
+
 console.log("ok");

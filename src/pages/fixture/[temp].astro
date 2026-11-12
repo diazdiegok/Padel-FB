@@ -4,11 +4,15 @@ import BackNav from "../../components/BackNav.astro";
 import fixture from "../../data/fixture.json";
 import results from "../../data/results.json";
 import { site } from "../../data/site";
+import { isPendingMatch, isRealPairMatch } from "../../lib/fixturer.js";
 import { combineResults, seasonLabel, seasonSlug, weekNumber, weekSlug } from "../../lib/liga.js";
 import { page } from "../../lib/paths";
 
+const fxList = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) || isPendingMatch(m));
+
 export function getStaticPaths() {
-  const pool = combineResults(results, (fixture as any[]).filter((m) => m.home && m.away));
+  const live = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) || isPendingMatch(m));
+  const pool = combineResults(results, live);
   const seasons = [...new Set(pool.map((m) => m.temp || site.currentSeason || "T4"))];
   return seasons.map((temp) => ({
     params: { temp: seasonSlug(temp) },
@@ -17,12 +21,8 @@ export function getStaticPaths() {
 }
 
 const { tempCode } = Astro.props;
-const all = combineResults(results, (fixture as any[]).filter((m) => m.home && m.away));
-const liveKeys = new Set(
-  (fixture as any[])
-    .filter((m) => m.home && m.away)
-    .map((m) => `${m.temp || ""}|${m.week || ""}`)
-);
+const all = combineResults(results, fxList);
+const liveKeys = new Set(fxList.map((m) => `${m.temp || ""}|${m.week || ""}`));
 const list = all.filter((m) => (m.temp || site.currentSeason || "T4") === tempCode);
 const weeks = [...new Set(list.map((m) => m.week || "Sin fecha"))].sort(
   (a, b) => weekNumber(b) - weekNumber(a) || String(a).localeCompare(String(b), "es")
