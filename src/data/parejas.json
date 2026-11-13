@@ -822,5 +822,19 @@
       "Viernes": "20:00 - 00:00"
     },
     "note": "Solo este lunes 16/11 no podemos despues si."
+  },
+  {
+    "id": "pmwfgf1yaaf02",
+    "createdAt": "2026-11-13T20:53:33.730Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Andrini Guillermo",
+    "p2": "Diaz Dario",
+    "days": {
+      "Lunes": "20:30 - 23:00",
+      "Martes": "21:00 - 23:00",
+      "Jueves": "20:30 - 23:00"
+    },
+    "note": ""
   }
 ]
