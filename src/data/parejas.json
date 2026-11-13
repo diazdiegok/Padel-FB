@@ -808,5 +808,19 @@
       "Viernes": "17:30 - 22:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwf5xwt4c35b",
+    "createdAt": "2026-11-13T16:00:17.752Z",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "p1": "Perez Iván",
+    "p2": "Munguia Fernando",
+    "days": {
+      "Lunes": "20:00 - 23:00",
+      "Martes": "20:00 - 22:00",
+      "Viernes": "20:00 - 00:00"
+    },
+    "note": "Solo este lunes 16/11 no podemos despues si."
   }
 ]
