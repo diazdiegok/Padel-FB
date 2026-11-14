@@ -881,5 +881,20 @@
       "Viernes": "17:00 - 22:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwfopxhma389",
+    "createdAt": "2026-11-14T00:45:58.090Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Choco muñoz",
+    "p2": "Felipe muñoz",
+    "days": {
+      "Lunes": "17:00 - 19:00",
+      "Martes": "21:00 - 00:00",
+      "Miércoles": "14:00 - 00:00",
+      "Viernes": "14:00 - 00:00"
+    },
+    "note": ""
   }
 ]
