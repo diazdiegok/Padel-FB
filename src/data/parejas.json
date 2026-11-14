@@ -995,5 +995,18 @@
       "Sábado": "11:30 - 16:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwfqf8uo3328",
+    "createdAt": "2026-11-14T01:33:38.832Z",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "p1": "Carrere Mariano",
+    "p2": "Castillo Tomas",
+    "days": {
+      "Martes": "16:00 - 21:00",
+      "Jueves": "16:00 - 21:00"
+    },
+    "note": ""
   }
 ]
