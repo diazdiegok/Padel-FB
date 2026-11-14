@@ -940,5 +940,19 @@
       "Viernes": "19:30 - 21:30"
     },
     "note": ""
+  },
+  {
+    "id": "pmwfpb6rg9325",
+    "createdAt": "2026-11-14T01:02:29.884Z",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "p1": "Romero adrian",
+    "p2": "Roberto challol",
+    "days": {
+      "Lunes": "19:00 - 22:00",
+      "Miércoles": "19:00 - 22:00",
+      "Viernes": "18:00 - 22:00"
+    },
+    "note": ""
   }
 ]
