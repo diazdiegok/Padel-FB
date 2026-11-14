@@ -911,5 +911,21 @@
       "Viernes": "18:00 - 22:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwfowsfk4493",
+    "createdAt": "2026-11-14T00:51:18.128Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Sebastian Rodriguez",
+    "p2": "Gonzalo Barbero",
+    "days": {
+      "Lunes": "19:30 - 00:00",
+      "Martes": "19:30 - 00:00",
+      "Miércoles": "19:30 - 00:00",
+      "Jueves": "19:30 - 00:00",
+      "Viernes": "19:30 - 00:00"
+    },
+    "note": ""
   }
 ]
