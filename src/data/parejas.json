@@ -854,19 +854,17 @@
     "note": ""
   },
   {
-    "id": "pmwfoknnx491b",
-    "createdAt": "2026-11-14T00:41:52.077Z",
+    "id": "pmwfoksg1ac42",
+    "createdAt": "2026-11-14T00:41:58.273Z",
     "temp": "T5",
     "cat": "C Femenino",
-    "p1": "FERREYRA ARACELI",
-    "p2": "BONILLA AGOSTINA",
+    "p1": "Martinez Rocio",
+    "p2": "Candelaria Villarraza Girard",
     "days": {
-      "Lunes": "20:00 - 00:00",
-      "Martes": "20:00 - 00:00",
-      "Miércoles": "21:00 - 00:00",
-      "Jueves": "20:00 - 00:00",
-      "Viernes": "20:00 - 00:00",
-      "Sábado": "08:00 - 22:00"
+      "Lunes": "18:30 - 21:30",
+      "Martes": "18:30 - 21:30",
+      "Miércoles": "18:30 - 21:30",
+      "Viernes": "18:30 - 21:30"
     },
     "note": ""
   }
