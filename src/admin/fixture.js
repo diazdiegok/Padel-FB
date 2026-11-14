@@ -221,6 +221,66 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     return pairEntries(season).filter((e) => !e.bye).length;
   }
 
+  /** Cupo de la fecha: 1 partido por pareja jugable → floor(n/2). Dinámico (35, 20, …). */
+  function matchesNeeded() {
+    const pairs = playablePairCount();
+    return pairs ? Math.floor(pairs / 2) : 0;
+  }
+
+  function effectiveChosen(plan, summary) {
+    const byVenue = new Map(summary.map((s) => [s.venue, s]));
+    let chosen = 0;
+    for (const p of plan) {
+      const row = byVenue.get(p.venue);
+      if (!row) continue;
+      const days = new Set(p.days || []);
+      const availOnDays = row.days.filter((d) => days.has(d.day)).reduce((n, d) => n + d.count, 0);
+      chosen += Math.max(0, Math.min(Number(p.count) || 0, availOnDays || row.total));
+    }
+    return chosen;
+  }
+
+  /** Suma de «Partidos a usar» ≤ need; cada complejo ≤ capacidad del Sheet. Orden = orden del summary. */
+  function clampCountsToNeed(counts, venues, need) {
+    const out = {};
+    let left = Math.max(0, Number(need) || 0);
+    for (const row of venues) {
+      const sheetCap = Math.max(0, Number(row.total) || 0);
+      const want = Math.max(0, Number(counts[row.venue]) || 0);
+      const next = Math.min(want, sheetCap, left);
+      out[row.venue] = next;
+      left -= next;
+    }
+    return out;
+  }
+
+  function syncVenueCountInputs() {
+    const list = $("fx-advanced-list");
+    const summary = summarizeCourtSlots(loadedSlots);
+    if (!list || !summary.length) return;
+    const need = matchesNeeded();
+    const cards = [...list.querySelectorAll("[data-fx-venue]")];
+    const raw = {};
+    for (const card of cards) {
+      const venue = card.dataset.fxVenue || "";
+      raw[venue] = Number(card.querySelector("[data-fx-count]")?.value || 0);
+    }
+    const clamped = clampCountsToNeed(raw, summary, need);
+    for (const card of cards) {
+      const venue = card.dataset.fxVenue || "";
+      const row = summary.find((s) => s.venue === venue);
+      const input = card.querySelector("[data-fx-count]");
+      if (!row || !input) continue;
+      const value = clamped[venue] ?? 0;
+      const sumOthers = summary
+        .filter((s) => s.venue !== venue)
+        .reduce((n, s) => n + (clamped[s.venue] || 0), 0);
+      const max = Math.max(0, Math.min(row.total, need - sumOthers));
+      input.max = String(max);
+      if (Number(input.value) !== value) input.value = String(value);
+    }
+  }
+
   function updatePlanSummary() {
     const el = $("fx-plan-summary");
     const status = $("fx-slots-status");
@@ -232,31 +292,22 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
       return;
     }
+    syncVenueCountInputs();
     const plan = readVenuePlanFromDom();
-    const byVenue = new Map(summary.map((s) => [s.venue, s]));
-    let chosen = 0;
-    let dayCap = 0;
-    for (const p of plan) {
-      const row = byVenue.get(p.venue);
-      if (!row) continue;
-      const days = new Set(p.days || []);
-      const availOnDays = row.days.filter((d) => days.has(d.day)).reduce((n, d) => n + d.count, 0);
-      dayCap += availOnDays;
-      chosen += Math.max(0, Math.min(Number(p.count) || 0, availOnDays || row.total));
-    }
+    const chosen = effectiveChosen(plan, summary);
     const sheetTotal = summary.reduce((n, s) => n + s.total, 0);
-    const leftSheet = Math.max(0, sheetTotal - chosen);
     const pairs = playablePairCount();
-    const need = pairs ? Math.floor(pairs / 2) : 0;
+    const need = matchesNeeded();
     const leftNeed = Math.max(0, need - chosen);
-    const text =
-      `Elegidos: ${chosen}` +
-      ` · Quedan del Sheet: ${leftSheet}` +
-      (need ? ` · Para ${pairs} parejas hacen falta ~${need} partidos` + (leftNeed ? ` (faltan ${leftNeed})` : " (completo)") : "");
+    const text = need
+      ? `Asignados: ${chosen} / ${need}` +
+        (leftNeed ? ` · Quedan por asignar: ${leftNeed}` : " · completo") +
+        ` · ${pairs} parejas jugables (máx. ${MAX_PAIR_MATCHES} PJ c/u) · Sheet: ${sheetTotal} posibles`
+      : `Sin parejas jugables (o todas en tope de ${MAX_PAIR_MATCHES} PJ) · Sheet: ${sheetTotal} posibles`;
     if (el) {
       el.hidden = false;
       el.textContent = text;
-      el.className = "fx-plan-summary" + (need && chosen >= need ? " is-ok" : "");
+      el.className = "fx-plan-summary" + (need && chosen === need ? " is-ok" : "");
     }
     if (status && loadedSlots.length) {
       status.hidden = false;
@@ -285,11 +336,18 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       updatePlanSummary();
       return;
     }
+    const need = matchesNeeded();
     const prev = Object.fromEntries(readVenuePlanFromDom().map((p) => [p.venue, p]));
+    const rawCounts = Object.fromEntries(summary.map((row) => [row.venue, prev[row.venue]?.count ?? 0]));
+    const counts = clampCountsToNeed(rawCounts, summary, need);
     list.innerHTML = summary
       .map((row) => {
         const saved = prev[row.venue];
-        const count = saved?.count ?? row.total;
+        const count = counts[row.venue] ?? 0;
+        const sumOthers = summary
+          .filter((s) => s.venue !== row.venue)
+          .reduce((n, s) => n + (counts[s.venue] || 0), 0);
+        const max = Math.max(0, Math.min(row.total, need - sumOthers));
         const selectedDays = new Set(saved?.days?.length ? saved.days : row.days.map((d) => d.day));
         const dayChecks = DAYS.map((day) => {
           const avail = row.daySet.has(day);
@@ -305,11 +363,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           <div class="fx-venue-top">
             <div>
               <strong>${escAttr(row.venue)}</strong>
-              <p class="admin-help">${row.total} partidos de 1:30 posibles en el Sheet · elegí cuántos usar</p>
+              <p class="admin-help">${row.total} posibles en el Sheet · cupo de la fecha: ${need} · no superés el total asignado</p>
             </div>
             <label class="fx-venue-count">
               <span>Partidos a usar</span>
-              <input type="number" min="0" max="${row.total}" data-fx-count value="${count}" />
+              <input type="number" min="0" max="${max}" data-fx-count value="${count}" />
             </label>
           </div>
           <div class="fx-venue-days">
@@ -560,10 +618,31 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       advancedOpen = true;
       renderAdvanced();
     }
-    const plan = readVenuePlanFromDom().filter((p) => p.count > 0 && p.days.length);
+    syncVenueCountInputs();
+    const summary = summarizeCourtSlots(loadedSlots);
+    const need = matchesNeeded();
+    const rawPlan = readVenuePlanFromDom();
+    const clamped = clampCountsToNeed(
+      Object.fromEntries(rawPlan.map((p) => [p.venue, p.count])),
+      summary,
+      need
+    );
+    const plan = rawPlan
+      .map((p) => ({ ...p, count: clamped[p.venue] ?? 0 }))
+      .filter((p) => p.count > 0 && p.days.length);
     if (!plan.length) {
-      setMsg($("fx-msg"), "En Fixtureo complejos avanzado poné cantidad de partidos y al menos un día por complejo.", "err");
+      setMsg($("fx-msg"), "Poné cantidad de partidos (sin pasar el cupo de la fecha) y al menos un día por complejo.", "err");
       toast("Configurá los complejos", "err");
+      return;
+    }
+    const chosen = effectiveChosen(plan, summary);
+    if (need && chosen > need) {
+      setMsg(
+        $("fx-msg"),
+        `Esta fecha pide ${need} partido${need === 1 ? "" : "s"}; la suma de «Partidos a usar» no puede ser mayor.`,
+        "err"
+      );
+      toast(`Tope: ${need} partidos`, "err");
       return;
     }
     const plannedSlots = applyVenuePlan(loadedSlots, plan);
