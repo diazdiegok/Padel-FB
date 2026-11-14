@@ -867,5 +867,19 @@
       "Viernes": "18:30 - 21:30"
     },
     "note": ""
+  },
+  {
+    "id": "pmwfoma8h8673",
+    "createdAt": "2026-11-14T00:43:07.985Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Daiana Bastidas",
+    "p2": "Jesica michelin",
+    "days": {
+      "Martes": "17:00 - 22:00",
+      "Jueves": "17:00 - 22:00",
+      "Viernes": "17:00 - 22:00"
+    },
+    "note": ""
   }
 ]
