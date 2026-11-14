@@ -954,5 +954,19 @@
       "Viernes": "18:00 - 22:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwfpgck3ff90",
+    "createdAt": "2026-11-14T01:06:30.675Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Screpis Miguel Darío",
+    "p2": "Capatto Facundo Roberto",
+    "days": {
+      "Lunes": "20:00 - 21:30",
+      "Miércoles": "20:00 - 21:30",
+      "Viernes": "20:00 - 21:30"
+    },
+    "note": ""
   }
 ]
