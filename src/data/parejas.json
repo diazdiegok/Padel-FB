@@ -927,5 +927,18 @@
       "Viernes": "19:30 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwfoxkbac61b",
+    "createdAt": "2026-11-14T00:51:54.262Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Bruno Baarts",
+    "p2": "Thomas Pereira",
+    "days": {
+      "Lunes": "19:00 - 21:30",
+      "Viernes": "19:30 - 21:30"
+    },
+    "note": ""
   }
 ]
