@@ -896,5 +896,20 @@
       "Viernes": "14:00 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwfovcmh3820",
+    "createdAt": "2026-11-14T00:50:10.985Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Joaquin Alberto Ijalba",
+    "p2": "Tulio Felipe Ijalba",
+    "days": {
+      "Lunes": "18:00 - 20:30",
+      "Martes": "18:00 - 21:00",
+      "Jueves": "18:30 - 20:00",
+      "Viernes": "18:00 - 22:00"
+    },
+    "note": ""
   }
 ]
