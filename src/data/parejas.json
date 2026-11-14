@@ -1008,5 +1008,19 @@
       "Jueves": "16:00 - 21:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwfs2a9t2373",
+    "createdAt": "2026-11-14T02:19:33.377Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Lucia Rausch",
+    "p2": "Marconi Luciana",
+    "days": {
+      "Jueves": "18:00 - 20:00",
+      "Viernes": "20:00 - 22:30",
+      "Sábado": "09:00 - 13:00"
+    },
+    "note": ""
   }
 ]
