@@ -346,28 +346,55 @@ export function assignCourtSlots(matches = [], slots = [], { onlyEmpty = true, v
     }
   }
 
+  function isPendingMatch(m) {
+    return !!m.pending || fold(m.away) === fold("Pendiente / Pendiente");
+  }
+
+  /** Bonus si el pendiente declara disponibilidad ese día (m.days). */
+  function pendingAvailScore(slot, match) {
+    const days = match.days;
+    if (!days || typeof days !== "object") return 0;
+    const day = slot.day;
+    if (!(day in days)) return -8;
+    const win = parseCourtWindow(days[day]);
+    if (!win) return 12;
+    if (windowsOverlap(slot.from, slot.to, win.from, win.to)) return 18;
+    return 4;
+  }
+
   for (let i = 0; i < next.length; i++) {
     const m = next[i];
-    const hasAway = String(m.away || "").trim() && fold(m.away) !== fold("Pendiente / Pendiente");
-    if (!hasAway || m.pending) continue;
+    const pending = isPendingMatch(m);
+    const hasRealAway = String(m.away || "").trim() && !pending;
+    // Partidos reales y pendientes reservan cancha; filas vacías no.
+    if (!hasRealAway && !pending) continue;
     const filled = String(m.venue || "").trim() && String(m.time || "").trim();
     if (onlyEmpty && filled) continue;
+    const scoreOf = (slot) => fitScore(slot, m) + (pending ? pendingAvailScore(slot, m) : 0);
     const strict = pool
-      .map((slot, si) => ({ slot, si, score: fitScore(slot, m) }))
+      .map((slot, si) => ({ slot, si, score: scoreOf(slot) }))
       .filter(({ slot }) => !slot.used && slotFitsMatch(slot, m))
       .sort((a, b) => b.score - a.score || a.slot.from - b.slot.from);
     const options =
       preferPlan && !strict.length
         ? pool
-            .map((slot, si) => ({ slot, si, score: fitScore(slot, m) + (normalizeDay(m.day) === slot.day ? 10 : 0) }))
+            .map((slot, si) => ({
+              slot,
+              si,
+              score: scoreOf(slot) + (normalizeDay(m.day) === slot.day ? 10 : 0),
+            }))
             .filter(({ slot }) => !slot.used)
             .sort((a, b) => b.score - a.score || a.slot.from - b.slot.from)
         : strict;
-    candidates.push({ i, options });
+    candidates.push({ i, options, pending });
   }
 
+  // Primero partidos con pocas opciones; los pendientes (suelen matchear muchos slots) al final.
   candidates.sort(
-    (a, b) => a.options.length - b.options.length || String(next[a.i].cat || "").localeCompare(String(next[b.i].cat || ""), "es")
+    (a, b) =>
+      Number(!!a.pending) - Number(!!b.pending) ||
+      a.options.length - b.options.length ||
+      String(next[a.i].cat || "").localeCompare(String(next[b.i].cat || ""), "es")
   );
 
   let assigned = 0;

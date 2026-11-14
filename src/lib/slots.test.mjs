@@ -82,6 +82,21 @@ assert.equal(out.matches[0].venue, "Terrazas Padel");
 assert.ok(out.matches[0].court);
 assert.equal(out.matches[2].venue, "Open Padel");
 assert.ok(out.matches[3].pending);
+assert.equal(out.matches[3].venue || "", "", "sin cupo libre el pendiente queda sin cancha");
+
+const spareSlots = parseCourtSlotRows([
+  { Complejo: "Terrazas", Cancha: "1", Dia: "Lunes", Horario: "19:00 - 20:30" },
+  { Complejo: "Terrazas", Cancha: "2", Dia: "Lunes", Horario: "19:00 - 20:30" },
+  { Complejo: "Open", Cancha: "1", Dia: "Martes", Horario: "20:00 - 21:30" },
+  { Complejo: "Palermo", Cancha: "1", Dia: "Miércoles", Horario: "18:00 - 19:30" },
+]);
+const withPending = assignCourtSlots(matches, spareSlots, { onlyEmpty: true, preferPlan: true });
+assert.equal(withPending.assigned, 4);
+assert.ok(withPending.matches[3].pending);
+assert.ok(withPending.matches[3].venue, "pendiente reserva complejo");
+assert.ok(withPending.matches[3].day, "pendiente reserva día");
+assert.ok(withPending.matches[3].time, "pendiente reserva horario");
+assert.ok(withPending.matches[3].court, "pendiente reserva cancha");
 
 // Dentro de 16:30-21:00 caben 3 partidos sin solapar en la misma cancha
 const manzana = parseCourtSlotRows([

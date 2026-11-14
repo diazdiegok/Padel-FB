@@ -167,7 +167,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const cats = [...new Set(pending.map(({ m }) => m.cat || "Sin categoría"))];
     const pools = matchPools();
     box.innerHTML = `<h3>Pendientes · ${pending.length}</h3>
-      <p class="admin-help">Quedaron sin rival por día/horario o por número impar. Se fixturean como <strong>${escAttr(PENDING_AWAY)}</strong>. En la <strong>web pública</strong> (Fixture) cualquier pareja de la misma categoría con menos de ${MAX_PAIR_MATCHES} PJ puede cubrirse sola; acá también podés hacerlo vos si hace falta.</p>
+      <p class="admin-help">Quedaron sin rival (impar, horarios o rivales ocupados). Van como <strong>${escAttr(PENDING_AWAY)}</strong> pero <strong>con complejo, cancha, día y horario ya reservados</strong>. Al cubrir, la pareja entra en ese turno. En la web pública también pueden cubrirse (misma categoría, menos de ${MAX_PAIR_MATCHES} PJ).</p>
       ${cats
         .map((cat) => {
           const rows = pending.filter(({ m }) => (m.cat || "Sin categoría") === cat);
@@ -183,7 +183,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
                 });
                 return `<article class="fx-pending-card" data-i="${i}">
                   <strong>${escAttr(m.home)}</strong>
-                  <span class="admin-help">vs ${escAttr(PENDING_AWAY)}${m.reason ? ` · ${escAttr(m.reason)}` : ""}${m.avail ? ` · ${escAttr(m.avail)}` : ""}${m.note ? ` · ${escAttr(m.note)}` : ""}</span>
+                  <span class="admin-help">vs ${escAttr(PENDING_AWAY)}${
+                    m.venue || m.day || m.time
+                      ? ` · ${escAttr([m.day, m.time, m.venue, m.court].filter(Boolean).join(" · "))}`
+                      : " · sin cancha asignada"
+                  }${m.reason ? ` · ${escAttr(m.reason)}` : ""}${m.avail ? ` · disp. ${escAttr(m.avail)}` : ""}${m.note ? ` · ${escAttr(m.note)}` : ""}</span>
                   <div class="fx-pending-actions">
                     <select data-fx-cover="${i}" aria-label="Cubrir con">
                       <option value="">Cubrir con…</option>
@@ -707,28 +711,36 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       let built = out.matches.map((m) => {
         const cleaned = cleanMatch(m, {}, season);
         if (!cleaned.pending) return cleaned;
-        return cleanMatch(
-          {
-            ...cleaned,
-            pending: true,
-            away: PENDING_AWAY,
-            reason: m.reason || cleaned.reason || "",
-            avail:
-              cleaned.avail ||
-              Object.entries(m.days || {})
-                .map(([d, h]) => `${d} ${h}`)
-                .join(" · "),
-            note: m.note || cleaned.note || "",
-          },
-          {},
-          season
-        );
+        // days se pasa a assignCourtSlots para preferir turnos de su disponibilidad; luego se limpia.
+        return {
+          ...cleanMatch(
+            {
+              ...cleaned,
+              pending: true,
+              away: PENDING_AWAY,
+              reason: m.reason || cleaned.reason || "",
+              avail:
+                cleaned.avail ||
+                Object.entries(m.days || {})
+                  .map(([d, h]) => `${d} ${h}`)
+                  .join(" · "),
+              note: m.note || cleaned.note || "",
+            },
+            {},
+            season
+          ),
+          days: m.days && typeof m.days === "object" ? m.days : undefined,
+        };
       });
       const venueCaps = Object.fromEntries(plan.map((p) => [p.venue, p.count]));
       const assigned = assignCourtSlots(built, plannedSlots, { onlyEmpty: true, venueCaps, preferPlan: true });
-      built = assigned.matches.map((m) => cleanMatch(m, {}, season));
+      built = assigned.matches.map((m) => {
+        const { days: _days, ...rest } = m;
+        return cleanMatch(rest, {}, season);
+      });
       const real = built.filter((m) => !isPending(m));
       const pending = built.filter(isPending);
+      const pendingBare = pending.filter((m) => !String(m.venue || "").trim() || !String(m.day || "").trim() || !String(m.time || "").trim());
       const keepOther = (ctx.fixture || []).filter(
         (m) => isPending(m) && seasonOf(m) === season && (m.week || "") !== week
       );
@@ -744,6 +756,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         `${assigned.assigned} con cancha`,
         pending.length ? `${pending.length} pendiente${pending.length === 1 ? "" : "s"}` : "sin pendientes",
       ];
+      if (pendingBare.length) {
+        parts.push(`${pendingBare.length} pendiente${pendingBare.length === 1 ? "" : "s"} sin cancha (faltó cupo del plan)`);
+      }
       if (assigned.skipped) parts.push(`${assigned.skipped} sin cancha compatible`);
       const byesNoCap = out.byes.filter((e) => !e._capped);
       if (byesNoCap.length) parts.push(`${byesNoCap.length} sin disponibilidad`);
@@ -1032,7 +1047,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       ctx.fixture[i] = next;
       shell.markDirty("fixture");
       render();
-      toast("Rival cubierto. Completá día y horario en la tabla si falta.", "ok");
+      toast(
+        slot.venue && slot.day && slot.time
+          ? `Rival cubierto · ${slot.day} ${slot.time} · ${slot.venue}${slot.court ? ` ${slot.court}` : ""}`
+          : "Rival cubierto. Completá complejo, día y horario en la tabla si falta.",
+        "ok"
+      );
     });
 
     const onDelete = async (e) => {
