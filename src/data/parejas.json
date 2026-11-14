@@ -982,5 +982,18 @@
       "Jueves": "16:30 - 19:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwfpsydn52bc",
+    "createdAt": "2026-11-14T01:16:18.827Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Scoreanzi Andrea",
+    "p2": "Mansilla Gisela",
+    "days": {
+      "Viernes": "18:00 - 21:00",
+      "Sábado": "11:30 - 16:00"
+    },
+    "note": ""
   }
 ]
