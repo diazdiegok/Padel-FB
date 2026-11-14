@@ -968,5 +968,19 @@
       "Viernes": "20:00 - 21:30"
     },
     "note": ""
+  },
+  {
+    "id": "pmwfpjgu799a4",
+    "createdAt": "2026-11-14T01:08:56.191Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "López José Luis",
+    "p2": "Leguizamón Martín",
+    "days": {
+      "Lunes": "16:30 - 19:00",
+      "Martes": "16:30 - 19:00",
+      "Jueves": "16:30 - 19:00"
+    },
+    "note": ""
   }
 ]
