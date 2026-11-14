@@ -1022,5 +1022,20 @@
       "Sábado": "09:00 - 13:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwg2iljt5fd2",
+    "createdAt": "2026-11-14T07:12:10.649Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Cerdan Pablo",
+    "p2": "Oviedo Mario",
+    "days": {
+      "Lunes": "20:00 - 23:00",
+      "Miércoles": "19:30 - 23:00",
+      "Jueves": "19:00 - 23:00",
+      "Viernes": "18:00 - 19:30"
+    },
+    "note": ""
   }
 ]
