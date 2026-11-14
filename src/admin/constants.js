@@ -1,4 +1,4 @@
-export const AUTH_KEY = "liga-fb-admin-ok";
+export const AUTH_KEY = "padel-fb-admin-ok";
 export const HIDDEN_CATS = new Set(["S Masculina"]);
 export const RANK_PATH = "src/data/ranking.json";
 export const SITE_PATH = "src/data/site.json";
@@ -27,10 +27,13 @@ export const CAT_MAP = {
   "C MASCULINA": "C Masculina",
   "A FEM": "A Femenino",
   "A FEMENINO": "A Femenino",
+  "A FEMENINA": "A Femenino",
   "B FEM": "B Femenino",
   "B FEMENINO": "B Femenino",
+  "B FEMENINA": "B Femenino",
   "C FEM": "C Femenino",
   "C FEMENINO": "C Femenino",
+  "C FEMENINA": "C Femenino",
 };
 export const VENUE_MAP = {
   OPEN: "Open Padel",
@@ -45,6 +48,9 @@ export const VENUE_MAP = {
   "TERRAZAS PADEL": "Terrazas Padel",
   BENGURION: "Bengurion Padel",
   "BEN GURION": "Bengurion Padel",
+  "LA MANZANA": "La manzana Padel",
+  "LA MANZANA PADEL": "La manzana Padel",
+  MANZANA: "La manzana Padel",
 };
 
 export const SECTIONS = {
@@ -55,7 +61,7 @@ export const SECTIONS = {
     help: "Solo la temporada del sistema tiene Próximamente / En juego. Las anteriores quedan Finalizadas. Al cerrar inscripción pasa a En juego.",
   },
   ranking: { group: "Liga", title: "Ranking", help: "Entrá a la temporada, corregí a mano si hace falta y publicá. La tabla se arma con las parejas inscriptas y los resultados." },
-  fixture: { group: "Liga", title: "Fixture", help: "Entrá a la temporada, armá Fecha 1, Fecha 2… con las parejas inscriptas, revisá y publicá. Las fechas anteriores quedan en Resultados." },
+  fixture: { group: "Liga", title: "Fixture", help: "Entrá a la fecha, leé el Google Sheet (pestaña Fecha N), configurá partidos/días por complejo y armá. Las fechas anteriores quedan en Resultados." },
   resultados: { group: "Liga", title: "Resultados", help: "Cargá el score de cada partido. Al publicar se actualiza el ranking." },
   playoff: { group: "Liga", title: "Playoff", help: "Armá el cuadro de cada categoría. Las temporadas anteriores quedan en el historial de /playoff/. Con Editar cambiás una pareja a mano." },
   ascensos: {

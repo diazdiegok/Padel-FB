@@ -155,6 +155,8 @@ export function createRanking(ctx, api, shell) {
   }
 
   function refresh() {
+    // Otras secciones (parejas) pueden reemplazar ctx.rows con el JSON remoto.
+    for (const r of ctx.rows) known.add(rowKey(r));
     render();
   }
 
@@ -219,7 +221,7 @@ export function createRanking(ctx, api, shell) {
 
     $("csv-export")?.addEventListener("click", () => {
       downloadCsv(
-        "ranking-liga-fb.csv",
+        "ranking-padel-fb.csv",
         RANK_COLS,
         ctx.rows.map((r) => cleanRow(r, ctx.siteData.currentSeason || "T4"))
       );

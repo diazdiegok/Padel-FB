@@ -60,15 +60,30 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
 ---
 <Layout title={`${weekLabel} · Fixture ${title} | Padel FB`} description={`Partidos de ${weekLabel} · ${title}.`}>
   <div class="wrap">
-    <header class="page-hero">
+    <header class="page-hero fixture-week-hero">
       <BackNav crumbs={[
         { label: title, href: `fixture/${seasonSlug(tempCode)}/` },
         { label: "Fixture", href: "fixture/" },
         { label: "Liga", href: "liga/" },
       ]} />
-      <p class="kicker">Fixture · {title}</p>
-      <h1>{weekLabel}</h1>
-      <p>Partidos de la jornada. Si ves <strong>Por cubrir</strong>, una pareja de la misma categoría puede anotarse desde acá.</p>
+      <div class="fixture-week-top">
+        <div>
+          <p class="kicker">Fixture · {title}</p>
+          <h1>{weekLabel}</h1>
+          <p>Partidos de la jornada. Si ves <strong>Por cubrir</strong>, una pareja de la misma categoría puede anotarse desde acá.</p>
+        </div>
+        {list.length > 0 && (
+          <div class="fixture-dl">
+            <label for="fx-public-dl-sort">Descargar Excel</label>
+            <select id="fx-public-dl-sort" aria-label="Orden del Excel">
+              <option value="complejo">Por complejo</option>
+              <option value="fecha">Por fecha</option>
+              <option value="pareja">Por pareja</option>
+            </select>
+            <button class="btn btn-ghost" type="button" id="fx-public-dl">Bajar</button>
+          </div>
+        )}
+      </div>
     </header>
 
     {list.length === 0 ? (
@@ -336,6 +351,54 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
     bind("[data-day]", "day", (v) => { day = v; });
     bind("[data-cat]", "cat", (v) => { cat = v; });
     bind("[data-court]", "court", (v) => { court = v; });
+
+    const DAY_ORD = ["lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado", "domingo"];
+    const dayI = (d) => {
+      const i = DAY_ORD.indexOf(String(d || "").trim().toLowerCase());
+      return i < 0 ? 99 : i;
+    };
+    document.querySelector("#fx-public-dl")?.addEventListener("click", async () => {
+      const mode = document.querySelector("#fx-public-dl-sort")?.value || "complejo";
+      const rows = matches.slice().sort((a, b) => {
+        const byFecha =
+          dayI(a.day) - dayI(b.day) ||
+          String(a.time || "").localeCompare(String(b.time || ""), "es") ||
+          String(a.venue || "").localeCompare(String(b.venue || ""), "es");
+        if (mode === "complejo") {
+          return (
+            String(a.venue || "").localeCompare(String(b.venue || ""), "es") ||
+            byFecha ||
+            String(a.home || "").localeCompare(String(b.home || ""), "es")
+          );
+        }
+        if (mode === "pareja") {
+          return (
+            String(a.home || "").localeCompare(String(b.home || ""), "es") ||
+            String(a.away || "").localeCompare(String(b.away || ""), "es") ||
+            byFecha
+          );
+        }
+        return byFecha || String(a.cat || "").localeCompare(String(b.cat || ""), "es");
+      });
+      const data = rows.map((m) => ({
+        fecha: m.week || weekLabel,
+        dia: m.day || "",
+        horario: m.time || "",
+        categoria: m.cat || "",
+        complejo: m.venue || "",
+        cancha: m.court || "",
+        pareja1: m.home || "",
+        pareja2: m.away || "",
+        resultado: m.result || "",
+      }));
+      const XLSX = await import("xlsx");
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, String(weekLabel || "Fixture").slice(0, 31));
+      const file = `${String(weekLabel || "fixture").replace(/\s+/g, "-").toLowerCase()}-${mode}.xlsx`;
+      XLSX.writeFile(wb, file);
+    });
+
     render();
     loadCandidates();
   </script>

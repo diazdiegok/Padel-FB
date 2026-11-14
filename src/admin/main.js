@@ -112,7 +112,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
     $("gate").hidden = true;
     $("app").hidden = false;
     document.body.classList.add("admin-ready");
-    sessionStorage.removeItem("liga-fb-gh-token");
+    sessionStorage.removeItem("padel-fb-gh-token");
     ctx.token = api.getPublishToken();
     try {
       await seasons.load();

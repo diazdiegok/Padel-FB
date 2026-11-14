@@ -28,7 +28,7 @@ Panel en `/admin/` (acceso vía `/acceso-fb/`).
 | Área | Qué hace |
 |------|----------|
 | **Ranking** | Editar tabla, CSV (modelo / exportar / importar), publicar `ranking.json` |
-| **Fixture** | Armar fecha con parejas → subir Excel de canchas (`Complejo, Cancha, Dia, Horario`) → retocar a mano → publicar |
+| **Fixture** | Leer Google Sheet (pestaña Fecha N) → fixtureo por complejo (cupos/días) → armar → publicar |
 | **Resultados** | Archivo de fechas jugadas + partidos live con resultado |
 | **Playoff** | Cuadro por categoría (se arma con el ranking), días, horarios y resultados; la ganadora pasa sola de ronda. Publica `playoff.json` → `/playoff/` (no suma al ranking) |
 | **Fecha** | Abrir/cerrar carga de disponibilidad (`/fecha/`) |

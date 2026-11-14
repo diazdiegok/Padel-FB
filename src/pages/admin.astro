@@ -218,7 +218,7 @@ import "../styles/admin.css";
         <section data-section="fixture" hidden>
           <div class="admin-callout">
             <strong>Cómo se arma</strong>
-            <span>Elegí la temporada y la fecha. 1) Armar fixture con las parejas. 2) Subí el Excel de canchas (Complejo, Cancha, Dia, Horario) de esa fecha. 3) Retocá a mano si hace falta y publicá.</span>
+            <span>1) Leer Drive toma la pestaña del Google Sheet con el mismo nombre que la fecha (Fecha 1, Fecha 2…). Un horario solo = 1:30; un rango (16:30-21:00) = ventana para partidos de 1:30. 2) Fixtureo complejos avanzado: cupos y días. 3) Armar fixture y publicar.</span>
           </div>
           <div class="admin-section-tools">
             <span class="tag" id="fx-summary">Sin partidos</span>
@@ -229,15 +229,36 @@ import "../styles/admin.css";
           <div class="res-boxes hub-like" id="fx-boxes"></div>
           <div id="fx-detail" hidden>
             <div class="admin-panel">
-              <div class="admin-toolbar">
-                <button class="btn btn-lime" type="button" id="fx-build">Armar fixture</button>
-                <button class="btn btn-ghost" type="button" id="fx-slots">Subir canchas</button>
-                <input id="fx-slots-file" type="file" accept=".xlsx,.xls,.csv,.txt" hidden />
-                <button class="btn btn-ghost" type="button" id="fx-add">+ Partido</button>
+              <div class="admin-toolbar fx-toolbar">
+                <div class="fx-toolbar-main">
+                  <button class="btn btn-lime" type="button" id="fx-drive">Leer Drive</button>
+                  <button class="btn btn-ghost" type="button" id="fx-slots">Subir archivo</button>
+                  <input id="fx-slots-file" type="file" accept=".xlsx,.xls,.csv,.txt" hidden />
+                  <button class="btn btn-lime" type="button" id="fx-build" hidden>Armar fixture</button>
+                  <button class="btn btn-ghost" type="button" id="fx-add" hidden>+ Partido</button>
+                </div>
+                <div class="fx-download" id="fx-download-wrap" hidden>
+                  <label class="fx-download-label" for="fx-dl-sort">Descargar Excel</label>
+                  <select id="fx-dl-sort" aria-label="Orden del Excel">
+                    <option value="complejo">Por complejo</option>
+                    <option value="fecha">Por fecha</option>
+                    <option value="pareja">Por pareja</option>
+                  </select>
+                  <button class="btn btn-ghost" type="button" id="fx-dl">Bajar</button>
+                </div>
+              </div>
+              <p class="admin-help" id="fx-slots-status" hidden></p>
+              <div class="fx-advanced" id="fx-advanced" hidden>
+                <div class="fx-advanced-head">
+                  <strong>Complejos y días</strong>
+                  <span class="admin-help">En cada complejo poné cuántos partidos querés. El número al lado del día (ej. Jueves · 4 disp.) es cuántos de 1:30 <b>caben ese día en el Sheet</b>. Marcá los días con la pelota y después Armar fixture.</span>
+                  <p class="fx-plan-summary" id="fx-plan-summary" hidden></p>
+                </div>
+                <div class="fx-advanced-list" id="fx-advanced-list"></div>
               </div>
             </div>
             <div class="admin-empty" id="fx-empty" hidden>
-              <p>Todavía no hay partidos. Usá Armar fixture o + Partido.</p>
+              <p>Todavía no hay partidos. Cargá el Excel, configurá complejos y armá el fixture.</p>
             </div>
             <div class="fx-warnings" id="fx-warnings" role="status" hidden></div>
             <div class="fx-pending" id="fx-pending" hidden></div>

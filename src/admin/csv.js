@@ -16,6 +16,81 @@ export function downloadCsv(filename, cols, data) {
   a.click();
 }
 
+/** Descarga .xlsx con SheetJS (columnas + filas de objetos). */
+export async function downloadXlsx(filename, cols, data, sheetName = "Fixture") {
+  const XLSX = await import("xlsx");
+  const rows = (data || []).map((row) => {
+    const out = {};
+    for (const c of cols) out[c] = row[c] ?? "";
+    return out;
+  });
+  const ws = XLSX.utils.json_to_sheet(rows, { header: cols });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, String(sheetName || "Fixture").slice(0, 31));
+  XLSX.writeFile(wb, filename.endsWith(".xlsx") ? filename : `${filename}.xlsx`);
+}
+
+const DAY_ORDER_DL = ["lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado", "domingo"];
+
+function dayIdxDl(d) {
+  const i = DAY_ORDER_DL.indexOf(String(d || "").trim().toLowerCase());
+  return i < 0 ? 99 : i;
+}
+
+/** Ordena partidos para export: fecha (día+hora) | complejo | pareja. */
+export function sortMatchesForExport(matches = [], mode = "fecha") {
+  const list = (matches || []).slice();
+  const byFecha = (a, b) =>
+    dayIdxDl(a.day) - dayIdxDl(b.day) ||
+    String(a.time || "").localeCompare(String(b.time || ""), "es") ||
+    String(a.venue || "").localeCompare(String(b.venue || ""), "es");
+  if (mode === "complejo") {
+    return list.sort(
+      (a, b) =>
+        String(a.venue || "").localeCompare(String(b.venue || ""), "es") ||
+        byFecha(a, b) ||
+        String(a.home || "").localeCompare(String(b.home || ""), "es")
+    );
+  }
+  if (mode === "pareja") {
+    return list.sort(
+      (a, b) =>
+        String(a.home || "").localeCompare(String(b.home || ""), "es") ||
+        String(a.away || "").localeCompare(String(b.away || ""), "es") ||
+        byFecha(a, b)
+    );
+  }
+  return list.sort(
+    (a, b) => byFecha(a, b) || String(a.cat || "").localeCompare(String(b.cat || ""), "es")
+  );
+}
+
+export function fixtureExportRows(matches = []) {
+  return matches.map((m) => ({
+    fecha: m.week || "",
+    dia: m.day || "",
+    horario: m.time || "",
+    categoria: m.cat || "",
+    complejo: m.venue || "",
+    cancha: m.court || "",
+    pareja1: m.home || "",
+    pareja2: m.away || "",
+    resultado: m.result || "",
+  }));
+}
+
+export const FX_EXPORT_COLS = [
+  "fecha",
+  "dia",
+  "horario",
+  "categoria",
+  "complejo",
+  "cancha",
+  "pareja1",
+  "pareja2",
+  "resultado",
+];
+
 export function splitLine(line, sep) {
   const out = [];
   let cur = "";
@@ -321,7 +396,7 @@ export function parseCourtSlotObjects(objects) {
   return slots;
 }
 
-export function parseCourtSlotText(text) {
+export function courtSlotObjectsFromText(text) {
   const raw = String(text || "").replace(/^\uFEFF/, "").trim();
   if (!raw) throw new Error("El archivo está vacío.");
   const first = raw.split(/\r?\n/, 1)[0] || "";
@@ -334,7 +409,7 @@ export function parseCourtSlotText(text) {
   if (!looksHeader) {
     throw new Error("Falta la fila de títulos: Complejo, Cancha, Dia, Horario.");
   }
-  const objects = lines.slice(1).map((line) => {
+  return lines.slice(1).map((line) => {
     const cols = splitLine(line, sep);
     const obj = {};
     header.forEach((h, i) => {
@@ -342,7 +417,10 @@ export function parseCourtSlotText(text) {
     });
     return obj;
   });
-  return parseCourtSlotObjects(objects);
+}
+
+export function parseCourtSlotText(text) {
+  return parseCourtSlotObjects(courtSlotObjectsFromText(text));
 }
 
 export { RANK_COLS, FX_COLS, CATS };

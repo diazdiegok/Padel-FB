@@ -1,4 +1,4 @@
-import { CATS, PAIRS_CONFIG_PATH, PAIRS_PATH, RANK_PATH, SITE_PATH } from "./constants.js";
+import { CATS, HIDDEN_CATS, PAIRS_CONFIG_PATH, PAIRS_PATH, RANK_PATH, SITE_PATH } from "./constants.js";
 import {
   DAYS,
   MAIL_DOMAINS,
@@ -276,10 +276,10 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       box.innerHTML = "";
       return;
     }
-    tag.textContent = `${missing.length ? `${missing.length} sin ranking` : ""}${missing.length && extra.length ? " · " : ""}${extra.length ? `${extra.length} de más` : ""}`;
+    tag.textContent = `${missing.length ? `${missing.length} sin match en ranking` : ""}${missing.length && extra.length ? " · " : ""}${extra.length ? `${extra.length} de más` : ""}`;
     tag.className = "tag warn";
     const missList = missing.length
-      ? `<p><b>Inscriptas que no están en el ranking</b></p><ul>${missing
+      ? `<p><b>Inscriptas cuyo nombre no matchea una fila del ranking</b> (el ranking puede tener ${ (ctx.rows || []).filter((r) => String(r.temp || "").toUpperCase() === season()).length } filas; acá falló la comparación de nombres/categoría)</p><ul>${missing
           .map((p) => `<li>${esc(`${p.p1} / ${p.p2}`)} · ${esc(p.cat)}</li>`)
           .join("")}</ul>`
       : "";
@@ -289,7 +289,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
           .join("")}</ul>`
       : "";
     box.hidden = false;
-    box.innerHTML = `<span><b>Desfase con el ranking</b> · “Alinear ranking” corrige la tabla local; después Publicar parejas lo sube a la web.</span>${missList}${extraList}`;
+    box.innerHTML = `<span><b>Desfase por nombre</b> · No significa que falten en la web del ranking: son inscriptas que no coinciden 1 a 1 con una fila. “Alinear ranking” las agrega/corrige en local; después Publicar parejas lo sube.</span>${missList}${extraList}`;
   }
 
   function renderStatus({ keepOpen = false } = {}) {
@@ -478,15 +478,21 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       return;
     }
     try {
-      const [remote, config] = await Promise.all([
+      const syncRank = !ctx.dirty.has("ranking");
+      const [remote, config, remoteRank] = await Promise.all([
         api.readRemoteJson(PAIRS_PATH, []),
         api.readRemoteJson(PAIRS_CONFIG_PATH, { open: true, deadline: "" }),
+        syncRank ? api.readRemoteJson(RANK_PATH, null) : Promise.resolve(null),
       ]);
       ctx.pairs = Array.isArray(remote) ? remote : [];
       ctx.pairsConfig = { open: true, deadline: "", ...config };
       knownIds = new Set(ctx.pairs.map((p) => p.id));
       deleted.clear();
       contactsDirty.clear();
+      if (syncRank && Array.isArray(remoteRank)) {
+        ctx.rows = remoteRank.filter((r) => r && !HIDDEN_CATS.has(r.cat));
+        onRankingChanged?.();
+      }
       await Promise.all([
         loadContacts().catch((err) => setMsg($("pairs-msg"), `No pude leer los contactos: ${err.message}`, "err")),
         loadPayments().catch(() => {
@@ -776,9 +782,9 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
               : "Cierra la inscripción de parejas."
             : "Actualiza parejas inscriptas desde el admin."
         );
-        const localDropped = syncRankingToSeasonPairs(ctx.rows || [], seasonPairs, season());
-        const localAdded = addPairsToRanking(ctx.rows || [], seasonPairs);
-        if (localDropped.length || localAdded.length) onRankingChanged?.();
+        // El admin a veces tiene ranking viejo del build; alineamos al JSON remoto publicado.
+        ctx.rows = rankRows.filter((r) => r && !HIDDEN_CATS.has(r.cat));
+        if (rankingChanged || dropped.length || toRanking.length) onRankingChanged?.();
         ctx.pairs = next;
         ctx.pairsConfig = config;
         knownIds = new Set(next.map((p) => p.id));

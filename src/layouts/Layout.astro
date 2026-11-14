@@ -280,7 +280,7 @@ const inTorneos = path.includes("/torneos");
         closeMobileMenu();
         menuBtn?.focus();
       });
-      const AUTH_KEY = "liga-fb-admin-ok";
+      const AUTH_KEY = "padel-fb-admin-ok";
       const logoutBtn = document.getElementById("nav-logout");
       function adminLoggedIn() {
         try {
@@ -510,7 +510,7 @@ const inTorneos = path.includes("/torneos");
           if (!apiUrl || typeof navigator === "undefined") return;
           const path = (location.pathname.replace(new RegExp("^" + basePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), "") || "/") || "/";
           const day = new Date().toISOString().slice(0, 10);
-          const key = `liga-fb-hit:${day}:${path}`;
+          const key = `padel-fb-hit:${day}:${path}`;
           try {
             if (sessionStorage.getItem(key)) return;
             sessionStorage.setItem(key, "1");

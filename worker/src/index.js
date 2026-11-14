@@ -8,6 +8,7 @@ import {
   isPendingMatch,
 } from "../../src/lib/fixturer.js";
 
+// No renombrar: el hash de la clave admin depende de este salt histórico.
 const PASS_SALT = "liga-fb-admin-v1";
 // Cloudflare Workers: Web Crypto PBKDF2 topea en 100_000 iteraciones.
 const PBKDF2_ITERS = 100_000;
@@ -1209,6 +1210,226 @@ async function listPendingCovers(env, tempFilter = "") {
   });
 }
 
+function pemToArrayBuffer(pem) {
+  const b64 = String(pem || "")
+    .replace(/-----BEGIN [^-]+-----/g, "")
+    .replace(/-----END [^-]+-----/g, "")
+    .replace(/\s+/g, "");
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+function csvEscape(cell) {
+  const s = String(cell ?? "");
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function sheetValuesToCsv(values = []) {
+  return values.map((row) => (row || []).map(csvEscape).join(",")).join("\n");
+}
+
+async function googleServiceAccount(env) {
+  const raw = String(env.GOOGLE_SERVICE_ACCOUNT || "").trim();
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const err = new Error("El secret GOOGLE_SERVICE_ACCOUNT no es un JSON válido.");
+    err.status = 500;
+    throw err;
+  }
+}
+
+async function googleAccessToken(sa) {
+  const now = Math.floor(Date.now() / 1000);
+  const header = encodeBase64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const claim = encodeBase64Url(
+    JSON.stringify({
+      iss: sa.client_email,
+      scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
+      aud: "https://oauth2.googleapis.com/token",
+      iat: now,
+      exp: now + 3600,
+    })
+  );
+  const unsigned = `${header}.${claim}`;
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    pemToArrayBuffer(sa.private_key),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
+  const jwt = `${unsigned}.${encodeBase64Url(new Uint8Array(sig))}`;
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwt,
+    }),
+  });
+  const tokenJson = await tokenRes.json().catch(() => ({}));
+  if (!tokenRes.ok || !tokenJson.access_token) {
+    const err = new Error(tokenJson.error_description || tokenJson.error || "No se pudo autenticar con Google.");
+    err.status = 502;
+    throw err;
+  }
+  return tokenJson.access_token;
+}
+
+/** Google a veces guarda horas como Date(1899,11,30,14,30,0); usamos f o parseamos v. */
+function gvizCellText(cell) {
+  if (!cell) return "";
+  if (cell.f != null && String(cell.f).trim() !== "") return String(cell.f).trim();
+  const v = cell.v;
+  if (v == null || v === "") return "";
+  if (typeof v === "string") {
+    const m = v.match(/^Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)$/);
+    if (m) {
+      const hh = String(Number(m[4])).padStart(2, "0");
+      const mm = String(Number(m[5])).padStart(2, "0");
+      return `${hh}:${mm}`;
+    }
+    return v.trim();
+  }
+  if (typeof v === "number" && v > 0 && v < 1) {
+    // fracción de día
+    const mins = Math.round(v * 24 * 60);
+    return `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
+  }
+  return String(v).trim();
+}
+
+function gvizTableToCsv(table) {
+  const cols = (table?.cols || []).map((c) => c.label || c.id || "");
+  const rows = (table?.rows || []).map((r) => (r.c || []).map(gvizCellText));
+  const header = cols.length ? cols : ["Complejo", "Cancha", "Dia", "Horario"];
+  return sheetValuesToCsv([header, ...rows]);
+}
+
+/** Mapa nombre de pestaña → gid desde la vista pública (export CSV necesita gid, no el título). */
+async function resolvePublicSheetGid(sheetId, week) {
+  const want = String(week || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  if (!want) return null;
+  const url = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(sheetId)}/htmlview`;
+  const res = await fetch(url, {
+    redirect: "follow",
+    headers: { "User-Agent": "padel-fb-api/1.0", Accept: "text/html,*/*" },
+  });
+  const html = await res.text();
+  if (!res.ok || /accounts\.google\.com/i.test(html) || /Sign in/i.test(html)) return null;
+  const re = /items\.push\(\{name:\s*"([^"]+)"[\s\S]*?gid:\s*"(\d+)"/g;
+  let m;
+  while ((m = re.exec(html))) {
+    const name = String(m[1] || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    if (name === want) return m[2];
+  }
+  return null;
+}
+
+/**
+ * Lee pestaña Fecha N.
+ * Preferimos export?format=csv&gid=… (respeta rangos tipo 16:30 - 18:00).
+ * gviz pierde Horario cuando la columna es datetime; queda de respaldo con SA.
+ */
+async function readCourtsSheetCsv(env, sheetId, week) {
+  let exportFailed = false;
+  try {
+    const gid = await resolvePublicSheetGid(sheetId, week);
+    if (gid != null) {
+      const exportUrl =
+        `https://docs.google.com/spreadsheets/d/${encodeURIComponent(sheetId)}/export` +
+        `?format=csv&gid=${encodeURIComponent(gid)}`;
+      const exportRes = await fetch(exportUrl, {
+        redirect: "follow",
+        headers: { "User-Agent": "padel-fb-api/1.0", Accept: "text/csv,text/plain,*/*" },
+      });
+      const exportCsv = await exportRes.text();
+      const exportHtml =
+        /<!DOCTYPE html>/i.test(exportCsv) ||
+        /accounts\.google\.com/i.test(exportCsv) ||
+        /Sign in/i.test(exportCsv);
+      if (exportRes.ok && !exportHtml && String(exportCsv || "").trim()) return exportCsv;
+      exportFailed = true;
+    } else {
+      exportFailed = true;
+    }
+  } catch {
+    exportFailed = true;
+  }
+
+  const jsonUrl =
+    `https://docs.google.com/spreadsheets/d/${encodeURIComponent(sheetId)}/gviz/tq` +
+    `?tqx=out:json&sheet=${encodeURIComponent(week)}`;
+  const jsonRes = await fetch(jsonUrl, {
+    redirect: "follow",
+    headers: { "User-Agent": "padel-fb-api/1.0", Accept: "application/json,text/plain,*/*" },
+  });
+  const raw = await jsonRes.text();
+  const looksHtml = /<!DOCTYPE html>/i.test(raw) || /accounts\.google\.com/i.test(raw) || /Sign in/i.test(raw);
+  if (jsonRes.ok && !looksHtml) {
+    const m = raw.match(/setResponse\((\{[\s\S]*\})\);?\s*$/);
+    if (m) {
+      try {
+        const payload = JSON.parse(m[1]);
+        if (payload?.table) return gvizTableToCsv(payload.table);
+      } catch {
+        /* sigue con CSV gviz */
+      }
+    }
+  }
+
+  const csvUrl =
+    `https://docs.google.com/spreadsheets/d/${encodeURIComponent(sheetId)}/gviz/tq` +
+    `?tqx=out:csv&sheet=${encodeURIComponent(week)}`;
+  const upstream = await fetch(csvUrl, {
+    redirect: "follow",
+    headers: { "User-Agent": "padel-fb-api/1.0", Accept: "text/csv,text/plain,*/*" },
+  });
+  const csv = await upstream.text();
+  const csvHtml = /<!DOCTYPE html>/i.test(csv) || /accounts\.google\.com/i.test(csv) || /Sign in/i.test(csv);
+  if (upstream.ok && !csvHtml && String(csv || "").trim()) return csv;
+
+  const sa = await googleServiceAccount(env);
+  if (!sa?.client_email || !sa?.private_key) {
+    const err = new Error(
+      looksHtml || csvHtml || exportFailed || !upstream.ok
+        ? `No se pudo leer «${week}». Compartí el Sheet como «Cualquiera con el enlace» (Lector) y que la pestaña se llame exactamente «${week}».`
+        : `La hoja «${week}» está vacía o no existe.`
+    );
+    err.status = looksHtml || csvHtml || exportFailed ? 403 : upstream.ok ? 404 : 502;
+    throw err;
+  }
+  const accessToken = await googleAccessToken(sa);
+  const range = `'${String(week).replace(/'/g, "''")}'!A:D`;
+  const apiUrl =
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sheetId)}/values/` +
+    `${encodeURIComponent(range)}?majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`;
+  const res = await fetch(apiUrl, {
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = data.error?.message || `Google Sheets ${res.status}`;
+    const err = new Error(msg);
+    err.status = res.status === 404 ? 404 : 502;
+    throw err;
+  }
+  return sheetValuesToCsv(data.values || []);
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(request, env) });
@@ -1274,6 +1495,30 @@ export default {
           return response(request, env, { message: "Llegaste al límite de envíos por hoy. Probá mañana." }, 429);
         }
         return response(request, env, await appendAvailability(env, body));
+      }
+
+      if (url.pathname === "/fixture/courts" && request.method === "GET") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        const week = String(url.searchParams.get("week") || "").trim();
+        // Sheet fijo de canchas (Complejos); pestañas = Fecha 1, Fecha 2…
+        const FIXED_COURTS_SHEET = "1OHnpx9ganzFR805yv8f5mmyYH_-o-2bNsOn9agmJcvg";
+        const sheetId = String(url.searchParams.get("sheetId") || env.COURTS_SHEET_ID || FIXED_COURTS_SHEET)
+          .trim()
+          .replace(/^.*\/spreadsheets\/d\//i, "")
+          .replace(/\/.*$/, "") || FIXED_COURTS_SHEET;
+        if (!week) return response(request, env, { message: "Falta la fecha (ej. Fecha 1)." }, 400);
+        if (!/^[a-zA-Z0-9-_]{20,}$/.test(sheetId)) {
+          return response(request, env, { message: "ID de Google Sheet inválido." }, 400);
+        }
+        try {
+          const csv = await readCourtsSheetCsv(env, sheetId, week);
+          if (!String(csv || "").trim()) {
+            return response(request, env, { message: `La hoja «${week}» está vacía o no existe en el Sheet.` }, 404);
+          }
+          return response(request, env, { ok: true, week, sheetId, csv });
+        } catch (err) {
+          return response(request, env, { message: err.message || "No se pudo leer el Sheet." }, err.status || 502);
+        }
       }
 
       if (url.pathname === "/fixture/pending" && request.method === "GET") {
