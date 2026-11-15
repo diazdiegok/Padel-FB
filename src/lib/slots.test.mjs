@@ -2,12 +2,15 @@ import assert from "node:assert/strict";
 import {
   applyVenuePlan,
   assignCourtSlots,
+  attachPairDaysFromPairs,
   courtKey,
   driveCourtOptions,
   findCourtConflicts,
   isCourtTaken,
   matchStartsInWindow,
+  matchViolatesAvailability,
   pairsSharePlayableWindow,
+  parkAvailabilityViolations,
   parkBareMatchesAsPending,
   parseCourtSlot,
   parseCourtSlotRows,
@@ -666,6 +669,68 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
     true,
     "18-21 ∩ 19-22 = 19-21 → 90' ok"
   );
+}
+
+// Nunca fixturear fuera de la inscripción (caso Benedetich Lunes 16:30).
+{
+  const stefDays = { Lunes: "19:00 - 22:00", Viernes: "19:00 - 22:00" };
+  const lauraDays = {
+    Lunes: "16:30 - 20:30",
+    Martes: "16:30 - 20:30",
+    Viernes: "16:30 - 21:00",
+    Sábado: "19:00 - 20:30",
+  };
+  const bad = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "C Femenino",
+    day: "Lunes",
+    time: "16:30 - 18:00",
+    venue: "Palermo Padel",
+    court: "Cancha 2",
+    home: "Laura Martínez / Dalila Sosa",
+    away: "Stefania Benedetich / Florencia Benedetich",
+    homeDays: lauraDays,
+    awayDays: stefDays,
+  };
+  assert.equal(matchViolatesAvailability(bad), true, "16:30 no entra en 19:00-22:00 de Benedetich");
+  const slot = { day: "Lunes", time: "16:30 - 18:00", from: 16 * 60 + 30, to: 18 * 60 };
+  assert.equal(slotFitsPairAvailability(slot, bad), false);
+  const okSlot = { day: "Lunes", time: "19:00 - 20:30", from: 19 * 60, to: 20 * 60 + 30 };
+  assert.equal(slotFitsPairAvailability(okSlot, bad), true, "19:00-20:30 sí entra en ambas");
+
+  const pairs = [
+    { temp: "T5", cat: "C Femenino", p1: "Laura Martínez", p2: "Dalila Sosa", days: lauraDays },
+    { temp: "T5", cat: "C Femenino", p1: "Stefania Benedetich", p2: "Florencia Benedetich", days: stefDays },
+  ];
+  const attached = attachPairDaysFromPairs([{ ...bad, homeDays: undefined, awayDays: undefined }], pairs)[0];
+  assert.ok(attached.homeDays && attached.awayDays);
+  const parked = parkAvailabilityViolations([attached]);
+  assert.equal(parked.parked, 1);
+  assert.equal(parked.matches.filter(isPendingMatch).length, 2);
+  assert.ok(parked.matches.every((m) => !m.venue));
+}
+
+// Cubrir sin softAway: no ofrecer turno que solo entra a la pendiente.
+{
+  const sheet = [
+    parseCourtSlot({ Complejo: "Palermo", Cancha: "2", Dia: "Lunes", Horario: "16:30 - 18:00" }),
+    parseCourtSlot({ Complejo: "Palermo", Cancha: "2", Dia: "Lunes", Horario: "19:00 - 20:30" }),
+  ];
+  const opts = driveCourtOptions(
+    {
+      home: "Laura",
+      away: "Stefania",
+      pending: false,
+      homeDays: { Lunes: "16:30 - 20:30" },
+      awayDays: { Lunes: "19:00 - 22:00" },
+    },
+    sheet,
+    [],
+    { softAway: false }
+  );
+  assert.ok(!opts.some((o) => o.time === "16:30 - 18:00"), "16:30 queda fuera");
+  assert.ok(opts.some((o) => o.time === "19:00 - 20:30"), "19:00 entra");
 }
 
 console.log("slots ok");

@@ -303,13 +303,152 @@ function daysMapFitsSlot(days, slot) {
 
 /** Respetar inscripción de ambas parejas (o days del pendiente). */
 export function slotFitsPairAvailability(slot, match, { pending = false } = {}) {
+  // Si hay mapa de ambas puntas, SIEMPRE tienen que entrar las dos
+  // (aunque el partido figure como pendiente / softAway viejo).
+  const hasHome = match?.homeDays && typeof match.homeDays === "object" && Object.keys(match.homeDays).length;
+  const hasAway = match?.awayDays && typeof match.awayDays === "object" && Object.keys(match.awayDays).length;
+  if (hasHome && hasAway) {
+    return daysMapFitsSlot(match.homeDays, slot) && daysMapFitsSlot(match.awayDays, slot);
+  }
   if (pending) {
     if (match?.days && typeof match.days === "object") return daysMapFitsSlot(match.days, slot);
+    if (hasHome) return daysMapFitsSlot(match.homeDays, slot);
     return true;
   }
   const homeOk = daysMapFitsSlot(match?.homeDays, slot);
   const awayOk = daysMapFitsSlot(match?.awayDays, slot);
   return homeOk && awayOk;
+}
+
+/**
+ * Adjunta homeDays/awayDays/days desde inscripciones.
+ * Sin eso, assignCourtSlots trata “sin mapa” como legado y puede meter cualquier turno.
+ */
+export function attachPairDaysFromPairs(matches = [], pairs = []) {
+  const list = Array.isArray(pairs) ? pairs : [];
+  function daysFor(name, cat, temp) {
+    const label = String(name || "").trim();
+    if (!label || isPlaceholderPairName(label)) return undefined;
+    const season = String(temp || "").toUpperCase();
+    const hit =
+      list.find(
+        (p) =>
+          String(p.temp || "").toUpperCase() === season &&
+          (!cat || !p.cat || p.cat === cat) &&
+          pairsMatch(`${p.p1 || ""} / ${p.p2 || ""}`, label)
+      ) ||
+      list.find(
+        (p) => String(p.temp || "").toUpperCase() === season && pairsMatch(`${p.p1 || ""} / ${p.p2 || ""}`, label)
+      );
+    const days = hit?.days;
+    if (!days || typeof days !== "object" || !Object.keys(days).length) return undefined;
+    return days;
+  }
+  return (matches || []).map((m) => {
+    const temp = m.temp || "";
+    const cat = m.cat || "";
+    const homeDays = daysFor(m.home, cat, temp) || (m.homeDays && typeof m.homeDays === "object" ? m.homeDays : undefined);
+    const awayDays = daysFor(m.away, cat, temp) || (m.awayDays && typeof m.awayDays === "object" ? m.awayDays : undefined);
+    const pending = isPendingMatch(m);
+    const days =
+      pending && homeDays
+        ? homeDays
+        : m.days && typeof m.days === "object"
+          ? m.days
+          : homeDays;
+    return {
+      ...m,
+      ...(homeDays ? { homeDays } : {}),
+      ...(awayDays ? { awayDays } : {}),
+      ...(pending && days ? { days, avail: availText(days) } : {}),
+    };
+  });
+}
+
+function isPlaceholderPairName(name) {
+  const raw = String(name || "").trim();
+  if (!raw) return true;
+  return fold(raw) === fold(PENDING_AWAY);
+}
+
+/** True si el partido tiene sede/horario y alguna punta no puede jugar ahí. */
+export function matchViolatesAvailability(match) {
+  if (!match || !isRealPairMatch(match)) return false;
+  if (!String(match.day || "").trim() || !String(match.time || "").trim()) return false;
+  const win = parseCourtWindow(match.time);
+  if (!win || !(win.to > win.from)) return false;
+  const slot = {
+    day: match.day,
+    time: match.time,
+    venue: match.venue,
+    court: match.court,
+    from: win.from,
+    to: win.to,
+  };
+  const hasHome = match?.homeDays && typeof match.homeDays === "object" && Object.keys(match.homeDays).length;
+  const hasAway = match?.awayDays && typeof match.awayDays === "object" && Object.keys(match.awayDays).length;
+  // Solo marcamos violación cuando conocemos la disponibilidad de la punta.
+  if (!hasHome && !hasAway) return false;
+  return !slotFitsPairAvailability(slot, match, { pending: false });
+}
+
+/**
+ * Parte a pendientes los partidos reales cuyo horario no entra en la inscripción.
+ * Devuelve { matches, parked }.
+ */
+export function parkAvailabilityViolations(
+  matches = [],
+  { reason = "El horario del partido no entra en la disponibilidad de la inscripción." } = {}
+) {
+  const out = [];
+  let parked = 0;
+  for (const m of matches) {
+    if (!matchViolatesAvailability(m)) {
+      out.push(m);
+      continue;
+    }
+    parked += 1;
+    const homeDays = m.homeDays && typeof m.homeDays === "object" ? m.homeDays : undefined;
+    const awayDays = m.awayDays && typeof m.awayDays === "object" ? m.awayDays : undefined;
+    out.push({
+      ...m,
+      away: PENDING_AWAY,
+      pending: true,
+      venue: "",
+      court: "",
+      day: "",
+      time: "",
+      date: "",
+      result: "",
+      appliedResult: "",
+      reason,
+      avail: availText(homeDays),
+      days: homeDays,
+      homeDays,
+      awayDays: undefined,
+    });
+    if (String(m.away || "").trim() && !isPlaceholderPairName(m.away)) {
+      out.push({
+        ...m,
+        home: m.away,
+        away: PENDING_AWAY,
+        pending: true,
+        venue: "",
+        court: "",
+        day: "",
+        time: "",
+        date: "",
+        result: "",
+        appliedResult: "",
+        reason,
+        avail: availText(awayDays),
+        days: awayDays,
+        homeDays: awayDays,
+        awayDays: undefined,
+      });
+    }
+  }
+  return { matches: out, parked };
 }
 
 /**
