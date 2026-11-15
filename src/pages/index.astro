@@ -6,6 +6,7 @@ import fixtureJson from "../data/fixture.json";
 import playoffJson from "../data/playoff.json";
 import { normalizePlayoffs, playoffSlug, resolveCategory } from "../lib/playoff.js";
 import { listSeasons, seasonLabel, seasonSlug } from "../lib/liga.js";
+import { compareCats, sortCats } from "../lib/disponibilidad.js";
 import { asset, page } from "../lib/paths";
 
 const HIDDEN_CATS = new Set(["S Masculina"]);
@@ -25,13 +26,16 @@ const seasonStarted =
   phase === "live" ||
   (phase !== "soon" &&
     (live.some((p) => Number(p.pts) > 0 || Number(p.pj) > 0) || hasLiveFixture));
-const cats = [...new Set(live.map((p) => p.cat))];
+const cats = sortCats(live.map((p) => p.cat));
 const leaders = cats
   .map((cat) => live.filter((p) => p.cat === cat).sort((a, b) => a.pos - b.pos || b.pts - a.pts)[0])
   .filter(Boolean);
 const currentPlayoff = normalizePlayoffs(playoffJson).find((p) => p.temp === current && p.categories.length);
 const champions = currentPlayoff
-  ? currentPlayoff.categories.map(resolveCategory).filter((c) => c.champion)
+  ? currentPlayoff.categories
+      .map(resolveCategory)
+      .filter((c) => c.champion)
+      .sort((a, b) => compareCats(a.cat, b.cat))
   : [];
 const playoffDone = Boolean(currentPlayoff && champions.length > 0 && champions.length === currentPlayoff.categories.length);
 const boardRows = playoffDone

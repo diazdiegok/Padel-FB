@@ -1,13 +1,27 @@
 export const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
+/** Orden de visualización: A Masc → B Masc → B Fem → C Masc → C Fem (A Fem si aparece). */
 export const CATS = [
   "A Masculina",
-  "B Masculina",
-  "C Masculina",
   "A Femenino",
+  "B Masculina",
   "B Femenino",
+  "C Masculina",
   "C Femenino",
 ];
+
+export function catRank(cat) {
+  const i = CATS.indexOf(String(cat || "").trim());
+  return i >= 0 ? i : CATS.length + 1;
+}
+
+export function compareCats(a, b) {
+  return catRank(a) - catRank(b) || String(a || "").localeCompare(String(b || ""), "es");
+}
+
+export function sortCats(cats) {
+  return [...new Set((cats || []).filter(Boolean))].sort(compareCats);
+}
 
 export const MAIL_DOMAINS = [
   "gmail.com",

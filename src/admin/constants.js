@@ -10,12 +10,13 @@ export const PAIRS_CONFIG_PATH = "src/data/inscripcion-parejas.json";
 export const PAIRS_PATH = "src/data/parejas.json";
 export const RANK_COLS = ["name", "cat", "pts", "pj", "dif", "pos", "temp"];
 export const FX_COLS = ["categoria", "partido", "complejo", "cancha", "dia", "horario"];
+/** Mismo orden que src/lib/disponibilidad.js (líderes, ranking, admin). */
 export const CATS = [
   "A Masculina",
-  "B Masculina",
-  "C Masculina",
   "A Femenino",
+  "B Masculina",
   "B Femenino",
+  "C Masculina",
   "C Femenino",
 ];
 export const CAT_MAP = {

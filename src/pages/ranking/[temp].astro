@@ -4,6 +4,7 @@ import BackNav from "../../components/BackNav.astro";
 import ranking from "../../data/ranking.json";
 import { site } from "../../data/site";
 import { listSeasons, seasonLabel, seasonSlug } from "../../lib/liga.js";
+import { CATS, sortCats } from "../../lib/disponibilidad.js";
 import { page } from "../../lib/paths";
 
 export function getStaticPaths() {
@@ -18,7 +19,7 @@ export function getStaticPaths() {
 
 const { tempCode } = Astro.props;
 const rows = ranking.filter((p) => p.cat !== "S Masculina" && p.temp === tempCode);
-const cats = [...new Set(rows.map((p) => p.cat))].sort((a, b) => a.localeCompare(b, "es"));
+const cats = sortCats(rows.map((p) => p.cat));
 const title = seasonLabel(tempCode);
 const live = tempCode === site.currentSeason;
 ---
@@ -76,18 +77,24 @@ const live = tempCode === site.currentSeason;
     )}
   </div>
 
-  <script define:vars={{ players: rows }}>
+  <script define:vars={{ players: rows, catOrder: CATS }}>
     const q = document.querySelector("#q");
     const tbody = document.querySelector("#rows");
     const empty = document.querySelector("#empty");
     const count = document.querySelector("#count");
     if (!tbody) throw new Error("ranking season");
     let cat = "Todas";
+    const order = Array.isArray(catOrder) ? catOrder : [];
 
     function esc(s) {
       return String(s ?? "").replace(/[&<>"']/g, (c) =>
         ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
       );
+    }
+
+    function catRank(name) {
+      const i = order.indexOf(String(name || "").trim());
+      return i >= 0 ? i : order.length + 1;
     }
 
     function render() {
@@ -98,7 +105,12 @@ const live = tempCode === site.currentSeason;
           const okQ = !term || (p.name || "").toLowerCase().includes(term);
           return okCat && okQ;
         })
-        .sort((a, b) => Number(a.pos) - Number(b.pos) || Number(b.pts) - Number(a.pts));
+        .sort(
+          (a, b) =>
+            catRank(a.cat) - catRank(b.cat) ||
+            Number(a.pos) - Number(b.pos) ||
+            Number(b.pts) - Number(a.pts)
+        );
       tbody.innerHTML = list
         .map((p) => {
           const dif = `${Number(p.dif) > 0 ? "+" : ""}${esc(p.dif)}`;
