@@ -508,9 +508,14 @@ const inTorneos = path.includes("/torneos");
       <script define:vars={{ apiUrl: String(site.apiUrl || "").replace(/\/$/, ""), basePath }}>
         (() => {
           if (!apiUrl || typeof navigator === "undefined") return;
+          // No gastar cuota KV del Worker con previews / localhost.
+          const host = String(location.hostname || "");
+          if (host === "localhost" || host === "127.0.0.1") return;
+          if (host.endsWith(".vercel.app") && host !== "padel-fb.vercel.app") return;
           const path = (location.pathname.replace(new RegExp("^" + basePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), "") || "/") || "/";
           const day = new Date().toISOString().slice(0, 10);
-          const key = `padel-fb-hit:${day}:${path}`;
+          // 1 ping por pestaña/día (antes era 1 por cada ruta → quemaba el free tier de KV).
+          const key = `padel-fb-hit:${day}`;
           try {
             if (sessionStorage.getItem(key)) return;
             sessionStorage.setItem(key, "1");
