@@ -711,6 +711,58 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   assert.equal(parked.parked, 1);
   assert.equal(parked.matches.filter(isPendingMatch).length, 2);
   assert.ok(parked.matches.every((m) => !m.venue));
+  assert.ok(parked.details?.length >= 1, "explica por qué se aparcó");
+  assert.match(parked.details[0], /Stefania|19:00/i);
+}
+
+// Espacios / tildes en nombres y horarios NO disparan falso park.
+{
+  const pairs = [
+    {
+      temp: "T5",
+      cat: "C Femenino",
+      p1: "Laura Martínez",
+      p2: "Dalila Sosa",
+      days: { Lunes: "16:30-20:30", Viernes: "16:30 - 21:00" },
+    },
+    {
+      temp: "T5",
+      cat: "C Femenino",
+      p1: "Stefania Benedetich",
+      p2: "Florencia Benedetich",
+      days: { Lunes: "19:00 - 22:00", Viernes: "19:00-22:00" },
+    },
+  ];
+  const spaced = attachPairDaysFromPairs(
+    [
+      {
+        home: "  Laura  Martínez/Dalila Sosa ",
+        away: "stefania benedetich / florencia benedetich",
+        day: "Lunes",
+        time: "19:00-20:30",
+        cat: "C Femenino",
+        temp: "T5",
+        venue: "Open",
+        court: "1",
+      },
+    ],
+    pairs
+  )[0];
+  assert.ok(spaced.homeDays && spaced.awayDays, "adjunta days pese a espacios raros");
+  assert.equal(matchViolatesAvailability(spaced), false, "19:00-20:30 entra en ambas");
+
+  // Claves de días sin tilde también tienen que matchear.
+  const accent = {
+    home: "A",
+    away: "B",
+    day: "Miércoles",
+    time: "18:00 - 19:30",
+    homeDays: { Miercoles: "18:00 - 23:00" },
+    awayDays: { Miércoles: "17:00 - 22:00" },
+    venue: "X",
+    court: "1",
+  };
+  assert.equal(matchViolatesAvailability(accent), false, "Miercoles≈Miércoles");
 }
 
 // Cubrir sin softAway: no ofrecer turno que solo entra a la pendiente.

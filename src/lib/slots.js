@@ -286,6 +286,17 @@ function slotFitsMatch(slot, match) {
   return true;
 }
 
+/** Busca el horario de un día tolerando tildes (Miercoles ↔ Miércoles). */
+function daysRawForDay(days, dayName) {
+  if (!days || typeof days !== "object") return undefined;
+  const day = normalizeDay(dayName);
+  if (!day) return undefined;
+  if (Object.prototype.hasOwnProperty.call(days, day)) return days[day];
+  if (dayName && Object.prototype.hasOwnProperty.call(days, dayName)) return days[dayName];
+  const hit = Object.keys(days).find((k) => normalizeDay(k) === day);
+  return hit != null ? days[hit] : undefined;
+}
+
 /**
  * El partido de 90' tiene que entrar ENTERO en la ventana declarada ese día.
  * Sin datos de ese jugador → no bloquea (legado / carga manual).
@@ -294,8 +305,8 @@ function daysMapFitsSlot(days, slot) {
   if (!days || typeof days !== "object") return true;
   const day = normalizeDay(slot.day);
   if (!day) return false;
-  if (!(day in days) && !(slot.day in days)) return false;
-  const raw = days[day] ?? days[slot.day];
+  const raw = daysRawForDay(days, slot.day);
+  if (raw == null) return false;
   const win = parseCourtWindow(raw);
   if (!win || !(win.to > win.from)) return true;
   return Number(slot.from) >= win.from && Number(slot.to) <= win.to;
@@ -371,6 +382,35 @@ function isPlaceholderPairName(name) {
   return fold(raw) === fold(PENDING_AWAY);
 }
 
+/** Texto corto: por qué el horario no entra en la inscripción de cada punta. */
+export function availabilityMissDetail(match) {
+  if (!match || !isRealPairMatch(match)) return "";
+  if (match.flexAvail) return "";
+  const day = normalizeDay(match.day);
+  const time = String(match.time || "").trim();
+  if (!day || !time) return "";
+  const win = parseCourtWindow(time);
+  if (!win || !(win.to > win.from)) return "";
+  const slot = { day, time, venue: match.venue, court: match.court, from: win.from, to: win.to };
+  const hasHome = match?.homeDays && typeof match.homeDays === "object" && Object.keys(match.homeDays).length;
+  const hasAway = match?.awayDays && typeof match.awayDays === "object" && Object.keys(match.awayDays).length;
+  if (!hasHome && !hasAway) return "";
+  if (slotFitsPairAvailability(slot, match, { pending: false })) return "";
+  const bits = [];
+  const homeName = String(match.home || "").split("/")[0].trim() || "Local";
+  const awayName = String(match.away || "").split("/")[0].trim() || "Visitante";
+  if (hasHome && !daysMapFitsSlot(match.homeDays, slot)) {
+    const raw = daysRawForDay(match.homeDays, day);
+    bits.push(`${homeName}: ${raw ? `${day} ${raw}` : `sin ${day}`}`);
+  }
+  if (hasAway && !daysMapFitsSlot(match.awayDays, slot)) {
+    const raw = daysRawForDay(match.awayDays, day);
+    bits.push(`${awayName}: ${raw ? `${day} ${raw}` : `sin ${day}`}`);
+  }
+  if (!bits.length) return "";
+  return `${day} ${time} no entra · ${bits.join(" · ")}`;
+}
+
 /** True si el partido tiene sede/horario y alguna punta no puede jugar ahí. */
 export function matchViolatesAvailability(match) {
   if (!match || !isRealPairMatch(match)) return false;
@@ -396,13 +436,14 @@ export function matchViolatesAvailability(match) {
 
 /**
  * Parte a pendientes los partidos reales cuyo horario no entra en la inscripción.
- * Devuelve { matches, parked }.
+ * Devuelve { matches, parked, details } (details = por qué se aparcó cada cruce).
  */
 export function parkAvailabilityViolations(
   matches = [],
   { reason = "El horario del partido no entra en la disponibilidad de la inscripción." } = {}
 ) {
   const out = [];
+  const details = [];
   let parked = 0;
   for (const m of matches) {
     if (!matchViolatesAvailability(m)) {
@@ -410,6 +451,8 @@ export function parkAvailabilityViolations(
       continue;
     }
     parked += 1;
+    const detail = availabilityMissDetail(m);
+    if (detail) details.push(detail);
     const homeDays = m.homeDays && typeof m.homeDays === "object" ? m.homeDays : undefined;
     const awayDays = m.awayDays && typeof m.awayDays === "object" ? m.awayDays : undefined;
     out.push({
@@ -450,7 +493,7 @@ export function parkAvailabilityViolations(
       });
     }
   }
-  return { matches: out, parked };
+  return { matches: out, parked, details };
 }
 
 /**

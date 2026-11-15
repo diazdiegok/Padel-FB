@@ -52,4 +52,19 @@ import { addPairsToRanking, syncRankingToSeasonPairs } from "./scoring.js";
   console.log("ok: one pair cannot keep two ranking rows");
 }
 
+{
+  const { playersMatch, pairsMatch } = await import("./scoring.js");
+  assert.equal(playersMatch("Juan Perez", "Juan Pérez"), true);
+  assert.equal(playersMatch("Ana Paula Croce", "Ana Croce"), true);
+  assert.equal(playersMatch("Martin Mendez", "Martin Rondan"), false, "mismo nombre ≠ misma persona");
+  assert.equal(playersMatch("Diego Godoy", "Diego Ramirez"), false);
+  assert.equal(
+    pairsMatch("Martin Mendez / Diego Godoy", "Diego Ramirez / Martin Rondan"),
+    false,
+    "no cruzar A Masc con B Masc por nombre de pila"
+  );
+  assert.equal(pairsMatch("Laura  Martínez / Dalila Sosa", "Laura Martínez/Dalila Sosa"), true);
+  console.log("ok: playersMatch no confunde solo por nombre de pila");
+}
+
 console.log("scoring.test.mjs passed");
