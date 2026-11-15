@@ -8807,7 +8807,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 7,
+    "pos": 6,
     "temp": "T5"
   },
   {
@@ -8861,7 +8861,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 4,
+    "pos": 3,
     "temp": "T5"
   },
   {
@@ -8960,7 +8960,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 2,
+    "pos": 1,
     "temp": "T5"
   },
   {
@@ -9023,7 +9023,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 10,
+    "pos": 9,
     "temp": "T5"
   },
   {
@@ -9131,7 +9131,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 3,
+    "pos": 2,
     "temp": "T5"
   },
   {
@@ -9221,7 +9221,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 5,
+    "pos": 4,
     "temp": "T5"
   },
   {
@@ -9230,7 +9230,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 9,
+    "pos": 8,
     "temp": "T5"
   },
   {
@@ -9266,7 +9266,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 6,
+    "pos": 5,
     "temp": "T5"
   },
   {
@@ -9342,15 +9342,6 @@
     "temp": "T5"
   },
   {
-    "name": "Adrian Romero / Roberto Challol",
-    "cat": "A Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 1,
-    "temp": "T5"
-  },
-  {
     "name": "Miguel Darío Screpis / Facundo Roberto Capatto",
     "cat": "B Masculina",
     "pts": 0,
@@ -9383,7 +9374,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 8,
+    "pos": 7,
     "temp": "T5"
   },
   {
@@ -9446,7 +9437,16 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 11,
+    "pos": 10,
+    "temp": "T5"
+  },
+  {
+    "name": "Adrian Romero / Roberto Challol",
+    "cat": "B Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 27,
     "temp": "T5"
   }
 ]

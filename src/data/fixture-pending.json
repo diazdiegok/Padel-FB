@@ -1,6 +1,51 @@
 [
   {
     "pending": true,
+    "reason": "Cambió de categoría: el partido anterior quedó sin efecto.",
+    "avail": "Lunes 19:00 - 22:00 · Miércoles 19:00 - 22:00 · Viernes 18:00 - 22:00",
+    "days": {
+      "Lunes": "19:00 - 22:00",
+      "Miércoles": "19:00 - 22:00",
+      "Viernes": "18:00 - 22:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Adrian Romero / Roberto Challol",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Cambió de categoría: el partido anterior quedó sin efecto.",
+    "avail": "Martes 17:30 - 22:30 · Miércoles 17:30 - 22:30 · Jueves 17:30 - 22:30 · Viernes 17:30 - 22:00",
+    "days": {
+      "Martes": "17:30 - 22:30",
+      "Miércoles": "17:30 - 22:30",
+      "Jueves": "17:30 - 22:30",
+      "Viernes": "17:30 - 22:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Agustin Grippo / Franco Sanchez",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
     "reason": "Su rival ya no está inscripto.",
     "avail": "Martes 19:00 - 21:30 · Miércoles 18:30 - 21:30 · Jueves 19:00 - 21:30 · Viernes 18:00 - 20:00 · Sábado 16:00 - 18:00",
     "days": {
