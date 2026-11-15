@@ -1,5 +1,6 @@
 import { DAYS } from "./disponibilidad.js";
-import { MATCH_MINUTES, slotLabel } from "./fixturer.js";
+import { isPendingMatch, isRealPairMatch, MATCH_MINUTES, PENDING_AWAY, slotLabel } from "./fixturer.js";
+import { pairsMatch } from "./scoring.js";
 
 const VENUE_ALIASES = {
   OPEN: "Open Padel",
@@ -695,6 +696,173 @@ export function driveCourtOptions(match = {}, slots = [], taken = []) {
       String(a.court).localeCompare(String(b.court), "es", { numeric: true })
   );
   return out;
+}
+
+function withPairDays(base, home, away, homeDays, awayDays) {
+  return {
+    ...base,
+    home,
+    away,
+    homeDays,
+    awayDays,
+    venue: "",
+    court: "",
+    day: "",
+    time: "",
+    pending: false,
+    reason: "",
+    avail: "",
+  };
+}
+
+function courtAssignedCount(matches = []) {
+  return matches.filter((m) => String(m.venue || "").trim() && String(m.court || "").trim()).length;
+}
+
+/**
+ * Si un partido real quedó sin cancha, prueba cambiar el rival (con otro partido
+ * de la misma categoría, o con un pendiente) para que ambas puntas entren en un
+ * turno libre del plan/Sheet. No baja la cantidad de canchas ya asignadas.
+ */
+export function rematchForCourts(matches = [], slots = [], opts = {}) {
+  let current = matches.map((m) => ({ ...m }));
+  let assigned = assignCourtSlots(current, slots, opts);
+  current = assigned.matches;
+  let swaps = 0;
+  let guard = 0;
+
+  while (guard++ < Math.max(8, current.length * 2)) {
+    const bareIdx = current
+      .map((m, i) => i)
+      .filter((i) => isRealPairMatch(current[i]) && !String(current[i].venue || "").trim());
+    if (!bareIdx.length) break;
+
+    let improved = false;
+    for (const bi of bareIdx) {
+      const bare = current[bi];
+      const cat = bare.cat || "";
+
+      const realOthers = current
+        .map((m, i) => i)
+        .filter((i) => i !== bi && isRealPairMatch(current[i]) && (current[i].cat || "") === cat);
+
+      const variants = [];
+      for (const oi of realOthers) {
+        const other = current[oi];
+        const sides = [
+          [bare.home, bare.homeDays, bare.away, bare.awayDays],
+          [other.home, other.homeDays, other.away, other.awayDays],
+        ];
+        const [ah, ad, bh, bd] = [sides[0][0], sides[0][1], sides[0][2], sides[0][3]];
+        const [ch, cd, dh, dd] = [sides[1][0], sides[1][1], sides[1][2], sides[1][3]];
+        // A vs D y C vs B
+        variants.push({
+          oi,
+          left: withPairDays(bare, ah, dh, ad, dd),
+          right: withPairDays(other, ch, bh, cd, bd),
+        });
+        // A vs C y D vs B
+        variants.push({
+          oi,
+          left: withPairDays(bare, ah, ch, ad, cd),
+          right: withPairDays(other, dh, bh, dd, bd),
+        });
+      }
+
+      for (const pi of current.map((m, i) => i).filter((i) => i !== bi && isPendingMatch(current[i]) && (current[i].cat || "") === cat)) {
+        const pending = current[pi];
+        const cover = pending.home;
+        const coverDays = pending.days || pending.homeDays;
+        variants.push({
+          oi: pi,
+          left: withPairDays(bare, bare.home, cover, bare.homeDays, coverDays),
+          right: {
+            ...pending,
+            home: bare.away,
+            away: PENDING_AWAY,
+            pending: true,
+            days: bare.awayDays,
+            homeDays: bare.awayDays,
+            awayDays: undefined,
+            venue: "",
+            court: "",
+            day: "",
+            time: "",
+            reason: "Quedó libre al rearmar rivales por cancha.",
+          },
+        });
+        variants.push({
+          oi: pi,
+          left: withPairDays(bare, bare.away, cover, bare.awayDays, coverDays),
+          right: {
+            ...pending,
+            home: bare.home,
+            away: PENDING_AWAY,
+            pending: true,
+            days: bare.homeDays,
+            homeDays: bare.homeDays,
+            awayDays: undefined,
+            venue: "",
+            court: "",
+            day: "",
+            time: "",
+            reason: "Quedó libre al rearmar rivales por cancha.",
+          },
+        });
+      }
+
+      for (const variant of variants) {
+        if (pairsMatch(variant.left.home, variant.left.away)) continue;
+        if (isRealPairMatch(variant.right) && pairsMatch(variant.right.home, variant.right.away)) continue;
+
+        const trial = current.map((m) => ({ ...m }));
+        trial[bi] = variant.left;
+        trial[variant.oi] = variant.right;
+        // Libera las canchas de ambos para reasignar con el nuevo cruce.
+        for (const idx of [bi, variant.oi]) {
+          trial[idx] = {
+            ...trial[idx],
+            venue: "",
+            court: "",
+            day: trial[idx].day || "",
+            time: trial[idx].time || "",
+          };
+          if (isRealPairMatch(trial[idx])) {
+            trial[idx].day = "";
+            trial[idx].time = "";
+          }
+        }
+
+        const again = assignCourtSlots(trial, slots, { ...opts, onlyEmpty: true, preferPlan: true });
+        const before = courtAssignedCount(current);
+        const after = courtAssignedCount(again.matches);
+        const bareFixed = again.matches.some(
+          (m) =>
+            isRealPairMatch(m) &&
+            String(m.venue || "").trim() &&
+            ((pairsMatch(m.home, variant.left.home) && pairsMatch(m.away, variant.left.away)) ||
+              (pairsMatch(m.home, variant.left.away) && pairsMatch(m.away, variant.left.home)))
+        );
+        if (after > before || (after === before && bareFixed)) {
+          current = again.matches;
+          assigned = again;
+          swaps += 1;
+          improved = true;
+          break;
+        }
+      }
+      if (improved) break;
+    }
+    if (!improved) break;
+  }
+
+  return {
+    matches: current,
+    assigned: assigned.assigned,
+    skipped: assigned.skipped,
+    leftover: assigned.leftover,
+    swaps,
+  };
 }
 
 export { MATCH_MINUTES };

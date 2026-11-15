@@ -8,6 +8,7 @@ import {
   parseCourtSlot,
   parseCourtSlotRows,
   parseCourtWindow,
+  rematchForCourts,
   slotFitsPairAvailability,
   summarizeCourtSlots,
   weekFromName,
@@ -389,42 +390,48 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   );
 }
 
-// Sin plan avanzado: toda la hoja + disponibilidad alcanza para asignar canchas.
+// Si A-B no entra en cancha y C-D sí, cambiar rivales puede salvar ambos turnos.
 {
   const sheet = parseCourtSlotRows([
-    { Complejo: "Open", Cancha: "1", Dia: "Viernes", Horario: "16:00 - 22:00" },
-    { Complejo: "Open", Cancha: "2", Dia: "Viernes", Horario: "16:00 - 22:00" },
+    { Complejo: "Open", Cancha: "1", Dia: "Lunes", Horario: "18:00 - 19:30" },
+    { Complejo: "Open", Cancha: "1", Dia: "Martes", Horario: "18:00 - 19:30" },
   ]);
   const matches = [
     {
-      day: "Viernes",
+      cat: "C Femenino",
+      day: "Lunes",
       time: "18:00 - 19:30",
       home: "A1 / A2",
       away: "B1 / B2",
       venue: "",
       court: "",
-      homeDays: { Viernes: "17:00 - 21:00" },
-      awayDays: { Viernes: "17:00 - 21:00" },
+      // A solo lunes, B solo martes → este cruce nunca entra en cancha
+      homeDays: { Lunes: "17:00 - 21:00" },
+      awayDays: { Martes: "17:00 - 21:00" },
     },
     {
-      day: "Viernes",
+      cat: "C Femenino",
+      day: "Martes",
       time: "18:00 - 19:30",
       home: "C1 / C2",
       away: "D1 / D2",
       venue: "",
       court: "",
-      homeDays: { Viernes: "18:00 - 22:00" },
-      awayDays: { Viernes: "18:00 - 22:00" },
+      // C solo martes, D solo lunes → este cruce tampoco
+      homeDays: { Martes: "17:00 - 21:00" },
+      awayDays: { Lunes: "17:00 - 21:00" },
     },
   ];
-  const direct = assignCourtSlots(matches, sheet, { onlyEmpty: true, preferPlan: true });
-  assert.equal(direct.assigned, 2, "matchea directo con la hoja sin cupos por complejo");
-  assert.ok(direct.matches.every((m) => m.venue && m.court));
-  assert.notEqual(
-    `${direct.matches[0].venue}|${direct.matches[0].court}|${direct.matches[0].time}`,
-    `${direct.matches[1].venue}|${direct.matches[1].court}|${direct.matches[1].time}`,
-    "no doble-reserva la misma cancha y horario"
-  );
+  const stuck = assignCourtSlots(matches, sheet, { onlyEmpty: true, preferPlan: true });
+  assert.equal(stuck.assigned, 0, "sin cambiar rivales no hay cancha");
+  const fixed = rematchForCourts(matches, sheet, { onlyEmpty: true, preferPlan: true });
+  assert.ok(fixed.swaps >= 1, "cambia rivales");
+  assert.equal(fixed.assigned, 2, "después del cambio ambos tienen cancha");
+  assert.ok(fixed.matches.every((m) => m.venue && m.court));
+  const homes = fixed.matches.map((m) => m.home).sort();
+  const aways = fixed.matches.map((m) => m.away).sort();
+  assert.ok(homes.includes("A1 / A2") && homes.includes("C1 / C2"));
+  assert.ok(aways.includes("D1 / D2") && aways.includes("B1 / B2"));
 }
 
 console.log("slots ok");
