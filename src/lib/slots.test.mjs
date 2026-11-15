@@ -4,6 +4,7 @@ import {
   assignCourtSlots,
   courtKey,
   driveCourtOptions,
+  findCourtConflicts,
   isCourtTaken,
   matchStartsInWindow,
   parkBareMatchesAsPending,
@@ -467,6 +468,100 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   const keys = open20.map((m) => courtKey(m.court));
   assert.equal(new Set(keys).size, keys.length, "no repite la misma cancha a las 20:00");
   assert.ok(out.assigned >= 2, "al menos dos partidos entran (cancha 1 y 2)");
+}
+
+// onlyEmpty debe respetar canchas ya ocupadas (no pisar Open Cancha 1 a las 20:00).
+{
+  const sheet = parseCourtSlotRows([
+    { Complejo: "Open", Cancha: "Cancha 1", Dia: "Lunes", Horario: "20:00 - 21:30" },
+    { Complejo: "Open", Cancha: "Cancha 2", Dia: "Lunes", Horario: "20:00 - 21:30" },
+    { Complejo: "Open", Cancha: "Cancha 1", Dia: "Lunes", Horario: "21:30 - 23:00" },
+  ]);
+  const pool = applyVenuePlan(sheet, [{ venue: "Open Padel", count: 10, days: ["Lunes"] }], { mode: "pool" });
+  const out = assignCourtSlots(
+    [
+      {
+        day: "Lunes",
+        time: "20:00 - 21:30",
+        home: "A / B",
+        away: "C / D",
+        cat: "B Femenino",
+        venue: "Open Padel",
+        court: "Cancha 1",
+      },
+      { day: "Lunes", time: "20:00 - 21:30", home: "E / F", away: "G / H", cat: "B Masculina", venue: "", court: "" },
+      { day: "Lunes", time: "20:00 - 21:30", home: "I / J", away: "K / L", cat: "C Femenino", venue: "", court: "" },
+    ],
+    pool,
+    { onlyEmpty: true, preferPlan: true }
+  );
+  const open20 = out.matches.filter((m) => m.venue === "Open Padel" && m.time === "20:00 - 21:30");
+  const keys = open20.map((m) => courtKey(m.court));
+  assert.equal(new Set(keys).size, keys.length, "onlyEmpty no repite Cancha 1 ya ocupada");
+  assert.equal(
+    out.matches[0].court,
+    "Cancha 1",
+    "el partido que ya tenía cancha se mantiene"
+  );
+  assert.ok(
+    out.matches.filter((m) => courtKey(m.court) === "1" && m.time === "20:00 - 21:30").length === 1,
+    "una sola pareja en Cancha 1 a las 20:00"
+  );
+}
+
+// Si el fixture ya viene con doble book, onlyEmpty libera el exceso y reasigna.
+{
+  const sheet = parseCourtSlotRows([
+    { Complejo: "La Manzana", Cancha: "Cancha 1", Dia: "Jueves", Horario: "18:00" },
+    { Complejo: "La Manzana", Cancha: "Cancha 2", Dia: "Jueves", Horario: "16:30" },
+    { Complejo: "La Manzana", Cancha: "Cancha 2", Dia: "Jueves", Horario: "21:00" },
+  ]);
+  const pool = applyVenuePlan(sheet, [{ venue: "La manzana Padel", count: 10, days: ["Jueves"] }], { mode: "pool" });
+  const out = assignCourtSlots(
+    [
+      {
+        day: "Jueves",
+        time: "18:00 - 19:30",
+        home: "A / B",
+        away: "C / D",
+        cat: "B Masculina",
+        venue: "La manzana Padel",
+        court: "Cancha 1",
+        homeDays: { Jueves: "18:00 - 21:00" },
+        awayDays: { Jueves: "17:00 - 21:00" },
+      },
+      {
+        day: "Jueves",
+        time: "18:00 - 19:30",
+        home: "E / F",
+        away: "G / H",
+        cat: "C Femenino",
+        venue: "La manzana Padel",
+        court: "Cancha 1",
+        homeDays: { Jueves: "18:00 - 20:00" },
+        awayDays: { Jueves: "08:00 - 20:00" },
+      },
+      {
+        day: "Jueves",
+        time: "18:00 - 19:30",
+        home: "I / J",
+        away: "K / L",
+        cat: "C Femenino",
+        venue: "La manzana Padel",
+        court: "Cancha 1",
+        homeDays: { Jueves: "18:00 - 00:00" },
+        awayDays: { Jueves: "17:30 - 22:00" },
+      },
+    ],
+    pool,
+    { onlyEmpty: true, preferPlan: true }
+  );
+  assert.equal(findCourtConflicts(out.matches).length, 0, "sin conflictos después de reparar");
+  assert.equal(
+    out.matches.filter((m) => courtKey(m.court) === "1" && m.time === "18:00 - 19:30").length,
+    1,
+    "solo uno se queda en Manzana Cancha 1 18:00"
+  );
 }
 
 // Si A-B no entra en cancha y C-D sí, cambiar rivales puede salvar ambos turnos.

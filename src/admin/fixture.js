@@ -22,7 +22,17 @@ import {
 import { latestWeek, listSeasons, mergeArchivedMatches, seasonLabel, weekKey, weekNumber } from "../lib/liga.js";
 import { pairsMatch } from "../lib/scoring.js";
 import { courtsSheetIdForSeason } from "../lib/sheets.js";
-import { applyVenuePlan, driveCourtOptions, isCourtTaken, missingCourtHorarios, parkBareMatchesAsPending, rematchForCourts, summarizeCourtSlots, weekFromName } from "../lib/slots.js";
+import {
+  applyVenuePlan,
+  driveCourtOptions,
+  findCourtConflicts,
+  isCourtTaken,
+  missingCourtHorarios,
+  parkBareMatchesAsPending,
+  rematchForCourts,
+  summarizeCourtSlots,
+  weekFromName,
+} from "../lib/slots.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
 const isPending = (m) => isPendingMatch(m);
@@ -329,20 +339,43 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
 
   function renderWarnings(games) {
     const box = $("fx-warnings");
-    if (!box) return new Set();
+    if (!box) return { rematch: new Set(), conflict: new Set() };
     const list = games.map(({ m, i }) => ({ m, i, weeks: previousMeetings(m) })).filter((x) => x.weeks.length);
-    box.hidden = !list.length;
-    box.innerHTML = list.length
-      ? `<h3>Revisar · ${list.length} cruce${list.length === 1 ? "" : "s"} repetido${list.length === 1 ? "" : "s"}</h3>
+    const weekMatches = games.map(({ m }) => m);
+    const conflicts = findCourtConflicts(weekMatches);
+    const conflictIdx = new Set();
+    for (const g of conflicts) {
+      for (const m of g.matches) {
+        const hit = games.find((row) => row.m === m);
+        if (hit) conflictIdx.add(hit.i);
+      }
+    }
+    const parts = [];
+    if (conflicts.length) {
+      parts.push(`<h3>Cancha doble · ${conflicts.length} horario${conflicts.length === 1 ? "" : "s"}</h3>
+        <p class="admin-help">Hay más de un partido en la misma cancha, día y horario. Cambiá complejo/cancha o horario antes de publicar.</p>
+        <ul>${conflicts
+          .map((g) => {
+            const pairs = g.matches
+              .map((m) => `<strong>${escAttr(m.home)}</strong> vs <strong>${escAttr(m.away)}</strong>`)
+              .join(" · ");
+            return `<li><span>${escAttr(g.day)} ${escAttr(g.time)} · ${escAttr(g.venue)} · ${escAttr(g.court)}</span> — ${pairs}</li>`;
+          })
+          .join("")}</ul>`);
+    }
+    if (list.length) {
+      parts.push(`<h3>Revisar · ${list.length} cruce${list.length === 1 ? "" : "s"} repetido${list.length === 1 ? "" : "s"}</h3>
         <p class="admin-help">Estas parejas ya se enfrentaron en esta temporada. El fixtureador lo evita cuando hay otra opción; si está bien así, podés publicar igual.</p>
         <ul>${list
           .map(
             ({ m, weeks }) =>
               `<li><strong>${escAttr(m.home)}</strong> vs <strong>${escAttr(m.away)}</strong> <span>${escAttr(m.cat)} · ya jugaron en ${escAttr(weeks.join(", "))}</span></li>`
           )
-          .join("")}</ul>`
-      : "";
-    return new Set(list.map((x) => x.i));
+          .join("")}</ul>`);
+    }
+    box.hidden = !parts.length;
+    box.innerHTML = parts.join("");
+    return { rematch: new Set(list.map((x) => x.i)), conflict: conflictIdx };
   }
 
   function renderPending() {
@@ -689,7 +722,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       .map((m, i) => ({ m, i }))
       .filter(({ m }) => !isPending(m) && seasonOf(m) === filterTemp && (m.week || "") === filterWeek)
       .sort((a, b) => compareByDayTime(a.m, b.m));
-    const repeated = renderWarnings(games) || new Set();
+    const warnings = renderWarnings(games) || { rematch: new Set(), conflict: new Set() };
+    const repeated = warnings.rematch || new Set();
+    const conflicted = warnings.conflict || new Set();
     const empty = $("fx-empty");
     if (empty) {
       empty.hidden = games.length > 0 || ctx.fixture.some((m) => isPending(m) && (m.week || "") === filterWeek);
@@ -706,13 +741,20 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
             ? `<input data-k="${k}" value="${escAttr(m[k])}" placeholder="${placeholder}"${k === "venue" ? ' list="fx-venues"' : ""} />`
             : escAttr(m[k]);
         const titles = [];
+        if (conflicted.has(i)) titles.push("Misma cancha, día y horario que otro partido");
         if (repeated.has(i)) titles.push("Ya se enfrentaron en esta temporada");
         if (bare) {
           titles.push(
             "Sin cancha en el cupo elegido. El desplegable lista días y canchas del Drive donde puedan jugar ambas, aunque el complejo ya llegó a la cantidad."
           );
         }
-        const cls = [repeated.has(i) ? "is-rematch" : "", bare ? "is-uncourted" : ""].filter(Boolean).join(" ");
+        const cls = [
+          conflicted.has(i) ? "is-court-conflict" : "",
+          repeated.has(i) ? "is-rematch" : "",
+          bare ? "is-uncourted" : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
         return `<tr data-i="${i}"${cls ? ` class="${cls}"` : ""}${titles.length ? ` title="${escAttr(titles.join(" "))}"` : ""}>
           <td>${field("day", "Jueves")}</td>
           <td>${field("time", "19:00 - 20:30")}</td>
@@ -1450,6 +1492,20 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       const incomplete = draftLive.filter((m) => !isRealPairMatch(m) || !m.day || !m.time);
       const openPending = draftPending.length;
       const repeated = draftLive.filter((m) => isRealPairMatch(m) && previousMeetings(m).length).length;
+      const courtConflicts = findCourtConflicts(draftLive);
+      if (courtConflicts.length) {
+        const sample = courtConflicts
+          .slice(0, 3)
+          .map((g) => `${g.day} ${g.time} · ${g.venue} · ${g.court} (${g.matches.length} partidos)`)
+          .join("; ");
+        setMsg(
+          $("fx-msg"),
+          `No puedo publicar: ${courtConflicts.length} horario${courtConflicts.length === 1 ? "" : "s"} con cancha doble (${sample}).`,
+          "err"
+        );
+        toast("Hay partidos en la misma cancha y horario", "err");
+        return;
+      }
       const ok = await confirmModal({
         title: "Publicar fixture",
         body:

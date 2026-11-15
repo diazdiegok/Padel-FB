@@ -2196,8 +2196,18 @@ body.is-admin .chk input[type="checkbox"] {
   box-shadow: inset 3px 0 0 #f0b44c;
 }
 
-.admin-table tr.is-rematch.is-uncourted td:first-child {
-  box-shadow: inset 3px 0 0 #ff7a59;
+.admin-table tr.is-court-conflict td:first-child {
+  box-shadow: inset 3px 0 0 #ff4d4f;
+}
+
+.admin-table tr.is-court-conflict {
+  background: rgba(255, 77, 79, 0.08);
+}
+
+.admin-table tr.is-rematch.is-uncourted td:first-child,
+.admin-table tr.is-court-conflict.is-rematch td:first-child,
+.admin-table tr.is-court-conflict.is-uncourted td:first-child {
+  box-shadow: inset 3px 0 0 #ff4d4f;
 }
 
 .fx-court-fallback select {
