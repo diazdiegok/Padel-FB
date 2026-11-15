@@ -46,6 +46,28 @@ export function countPairMatches(name, cat, temp, pools = []) {
   return n;
 }
 
+/**
+ * Al cubrir un pendiente con otra pareja que también estaba pendiente,
+ * saca de la lista el pendiente de quien cubrió (y cualquier duplicado del local).
+ * `covered` es el partido ya convertido a cruce real.
+ */
+export function absorbCoveredPending(matches = [], covered, coverLabel = "") {
+  if (!covered || !Array.isArray(matches)) return matches.slice();
+  const week = covered.week || "";
+  const temp = String(covered.temp || "").toUpperCase();
+  const cover = String(coverLabel || covered.away || "").trim();
+  const home = String(covered.home || "").trim();
+  return matches.filter((m) => {
+    if (m === covered) return true;
+    if (!isPendingMatch(m)) return true;
+    if ((m.week || "") !== week) return true;
+    if (String(m.temp || "").toUpperCase() !== temp) return true;
+    if (home && pairsMatch(m.home, home)) return false;
+    if (cover && !isPlaceholderPair(cover) && pairsMatch(m.home, cover)) return false;
+    return true;
+  });
+}
+
 /** Candidatas de la misma categoría para cubrir un pendiente (doble jornada ok; tope 12 PJ). */
 export function coverCandidates({ match, pairs = [], pools = [], temp = "" } = {}) {
   if (!match || !String(match.home || "").trim()) return [];
