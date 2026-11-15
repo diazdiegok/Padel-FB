@@ -258,34 +258,70 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     return out;
   }
 
-  function syncVenueCountInputs() {
-    const list = $("fx-advanced-list");
-    const summary = summarizeCourtSlots(loadedSlots);
-    if (!list || !summary.length) return;
-    const need = matchesNeeded();
-    const cards = [...list.querySelectorAll("[data-fx-venue]")];
+  function rawVenueCounts(list) {
     const raw = {};
-    for (const card of cards) {
+    for (const card of list.querySelectorAll("[data-fx-venue]")) {
       const venue = card.dataset.fxVenue || "";
-      raw[venue] = Number(card.querySelector("[data-fx-count]")?.value || 0);
+      raw[venue] = Math.max(0, Math.floor(Number(card.querySelector("[data-fx-count]")?.value || 0)));
     }
-    const clamped = clampCountsToNeed(raw, summary, need);
-    for (const card of cards) {
-      const venue = card.dataset.fxVenue || "";
-      const row = summary.find((s) => s.venue === venue);
-      const input = card.querySelector("[data-fx-count]");
-      if (!row || !input) continue;
-      const value = clamped[venue] ?? 0;
-      const sumOthers = summary
-        .filter((s) => s.venue !== venue)
-        .reduce((n, s) => n + (clamped[s.venue] || 0), 0);
-      const max = Math.max(0, Math.min(row.total, need - sumOthers));
-      input.max = String(max);
-      if (Number(input.value) !== value) input.value = String(value);
-    }
+    return raw;
   }
 
-  function updatePlanSummary() {
+  function venueCountCap(venue, summary, need, counts) {
+    const row = summary.find((s) => s.venue === venue);
+    if (!row) return 0;
+    const sumOthers = summary
+      .filter((s) => s.venue !== venue)
+      .reduce((n, s) => n + Math.max(0, Number(counts[s.venue]) || 0), 0);
+    return Math.max(0, Math.min(Number(row.total) || 0, Math.max(0, need) - sumOthers));
+  }
+
+  /**
+   * Topea cada input al cupo de la fecha sin “robarle” partidos a otros complejos.
+   * Si se pasa el total, baja solo el complejo editado (o los que excedan) y puede avisar.
+   */
+  function syncVenueCountInputs({ editedVenue = null, announce = false } = {}) {
+    const list = $("fx-advanced-list");
+    const summary = summarizeCourtSlots(loadedSlots);
+    if (!list || !summary.length) return { overflow: false, need: 0 };
+    const need = matchesNeeded();
+    const raw = rawVenueCounts(list);
+    const order = editedVenue
+      ? [editedVenue, ...summary.map((s) => s.venue).filter((v) => v !== editedVenue)]
+      : summary.map((s) => s.venue);
+    const cardsByVenue = new Map(
+      [...list.querySelectorAll("[data-fx-venue]")].map((card) => [card.dataset.fxVenue || "", card])
+    );
+    let overflow = false;
+    for (const venue of order) {
+      const card = cardsByVenue.get(venue);
+      const input = card?.querySelector("[data-fx-count]");
+      if (!input) continue;
+      const max = venueCountCap(venue, summary, need, raw);
+      input.max = String(max);
+      input.setCustomValidity("");
+      let value = Math.max(0, Math.floor(Number(input.value || 0)));
+      if (value > max) {
+        overflow = true;
+        value = max;
+        raw[venue] = value;
+        input.value = String(value);
+        input.setCustomValidity(`Máximo ${max} (cupo de la fecha: ${need})`);
+      } else {
+        raw[venue] = value;
+      }
+    }
+    if (announce && overflow) {
+      const msg = need
+        ? `La suma de «Partidos a usar» no puede pasar ${need} (parejas jugables ÷ 2).`
+        : "No hay cupo de partidos para esta fecha.";
+      setMsg($("fx-msg"), msg, "err");
+      toast(need ? `Tope: ${need} partidos` : "Sin cupo", "err");
+    }
+    return { overflow, need };
+  }
+
+  function updatePlanSummary(opts = {}) {
     const el = $("fx-plan-summary");
     const status = $("fx-slots-status");
     const summary = summarizeCourtSlots(loadedSlots);
@@ -296,27 +332,36 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
       return;
     }
-    syncVenueCountInputs();
+    const { overflow } = syncVenueCountInputs(opts);
     const plan = readVenuePlanFromDom();
+    const assigned = plan.reduce((n, p) => n + Math.max(0, Number(p.count) || 0), 0);
     const chosen = effectiveChosen(plan, summary);
     const sheetTotal = summary.reduce((n, s) => n + s.total, 0);
     const pairs = playablePairCount();
     const need = matchesNeeded();
-    const leftNeed = Math.max(0, need - chosen);
+    const over = Boolean(need && assigned > need);
+    const leftNeed = Math.max(0, need - assigned);
     const text = need
-      ? `Asignados: ${chosen} / ${need}` +
-        (leftNeed ? ` · Quedan por asignar: ${leftNeed}` : " · completo") +
+      ? `Asignados: ${assigned} / ${need}` +
+        (over || overflow
+          ? ` · ¡Pasaste el cupo!`
+          : leftNeed
+            ? ` · Quedan por asignar: ${leftNeed}`
+            : " · completo") +
         ` · ${pairs} parejas jugables (máx. ${MAX_PAIR_MATCHES} PJ c/u) · Sheet: ${sheetTotal} posibles`
       : `Sin parejas jugables (o todas en tope de ${MAX_PAIR_MATCHES} PJ) · Sheet: ${sheetTotal} posibles`;
     if (el) {
       el.hidden = false;
       el.textContent = text;
-      el.className = "fx-plan-summary" + (need && chosen === need ? " is-ok" : "");
+      el.className =
+        "fx-plan-summary" + (over || overflow ? " is-err" : need && assigned === need ? " is-ok" : "");
     }
     if (status && loadedSlots.length) {
       status.hidden = false;
       status.textContent = `Drive${slotsFileName ? ` · ${slotsFileName}` : ""}: ${sheetTotal} posibles · ${summary.length} complejos · ${text}`;
     }
+    // chosen se usa al armar; assigned es lo que el usuario ve en los inputs
+    void chosen;
   }
 
   function renderAdvanced() {
@@ -343,15 +388,13 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const need = matchesNeeded();
     const prev = Object.fromEntries(readVenuePlanFromDom().map((p) => [p.venue, p]));
     const rawCounts = Object.fromEntries(summary.map((row) => [row.venue, prev[row.venue]?.count ?? 0]));
+    // Solo al re-render: si el DOM venía pasado de cupo, ajusta sin dejar suma > need.
     const counts = clampCountsToNeed(rawCounts, summary, need);
     list.innerHTML = summary
       .map((row) => {
         const saved = prev[row.venue];
         const count = counts[row.venue] ?? 0;
-        const sumOthers = summary
-          .filter((s) => s.venue !== row.venue)
-          .reduce((n, s) => n + (counts[s.venue] || 0), 0);
-        const max = Math.max(0, Math.min(row.total, need - sumOthers));
+        const max = venueCountCap(row.venue, summary, need, counts);
         const selectedDays = new Set(saved?.days?.length ? saved.days : row.days.map((d) => d.day));
         const dayChecks = DAYS.map((day) => {
           const avail = row.daySet.has(day);
@@ -367,11 +410,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           <div class="fx-venue-top">
             <div>
               <strong>${escAttr(row.venue)}</strong>
-              <p class="admin-help">${row.total} posibles en el Sheet · cupo de la fecha: ${need} · no superés el total asignado</p>
+              <p class="admin-help">${row.total} posibles en el Sheet · cupo de la fecha: ${need} · la suma de todos no puede pasar ${need}</p>
             </div>
             <label class="fx-venue-count">
               <span>Partidos a usar</span>
-              <input type="number" min="0" max="${max}" data-fx-count value="${count}" />
+              <input type="number" min="0" max="${max}" step="1" data-fx-count value="${count}" />
             </label>
           </div>
           <div class="fx-venue-days">
@@ -622,18 +665,22 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       advancedOpen = true;
       renderAdvanced();
     }
-    syncVenueCountInputs();
     const summary = summarizeCourtSlots(loadedSlots);
     const need = matchesNeeded();
     const rawPlan = readVenuePlanFromDom();
-    const clamped = clampCountsToNeed(
-      Object.fromEntries(rawPlan.map((p) => [p.venue, p.count])),
-      summary,
-      need
-    );
-    const plan = rawPlan
-      .map((p) => ({ ...p, count: clamped[p.venue] ?? 0 }))
-      .filter((p) => p.count > 0 && p.days.length);
+    const rawSum = rawPlan.reduce((n, p) => n + Math.max(0, Number(p.count) || 0), 0);
+    if (need && rawSum > need) {
+      syncVenueCountInputs({ announce: true });
+      updatePlanSummary();
+      setMsg(
+        $("fx-msg"),
+        `Esta fecha pide ${need} partido${need === 1 ? "" : "s"}; la suma de «Partidos a usar» no puede ser mayor (${rawSum}).`,
+        "err"
+      );
+      toast(`Tope: ${need} partidos`, "err");
+      return;
+    }
+    const plan = rawPlan.filter((p) => p.count > 0 && p.days.length);
     if (!plan.length) {
       setMsg($("fx-msg"), "Poné cantidad de partidos (sin pasar el cupo de la fecha) y al menos un día por complejo.", "err");
       toast("Configurá los complejos", "err");
@@ -923,6 +970,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     });
 
     $("fx-advanced-list")?.addEventListener("change", (e) => {
+      const countInput = e.target.closest("[data-fx-count]");
+      if (countInput) {
+        const venue = countInput.closest("[data-fx-venue]")?.dataset.fxVenue || null;
+        updatePlanSummary({ editedVenue: venue, announce: true });
+        return;
+      }
       const all = e.target.closest("[data-fx-days-all]");
       if (all) {
         const card = all.closest("[data-fx-venue]");
@@ -940,7 +993,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       updatePlanSummary();
     });
     $("fx-advanced-list")?.addEventListener("input", (e) => {
-      if (e.target.closest("[data-fx-count]")) updatePlanSummary();
+      const countInput = e.target.closest("[data-fx-count]");
+      if (!countInput) return;
+      const venue = countInput.closest("[data-fx-venue]")?.dataset.fxVenue || null;
+      updatePlanSummary({ editedVenue: venue, announce: true });
     });
 
     $("fx-dl")?.addEventListener("click", async () => {

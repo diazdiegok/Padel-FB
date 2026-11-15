@@ -2327,6 +2327,12 @@ body.is-admin .chk input[type="checkbox"] {
   background: rgba(80, 200, 120, 0.1);
 }
 
+.fx-plan-summary.is-err {
+  border-color: rgba(255, 107, 107, 0.55);
+  background: rgba(255, 107, 107, 0.12);
+  color: #ffc9c9;
+}
+
 .fx-advanced-list {
   display: grid;
   gap: 12px;
