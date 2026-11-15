@@ -193,6 +193,8 @@ export function cleanMatch(m, defaults = {}, currentSeason = "T4") {
     away: pendingAway ? PENDING_AWAY : away,
     result: String(m.result || m.resultado || "").trim(),
     appliedResult: String(m.appliedResult || "").trim(),
+    // Cubrir con “horario cercano” (admin confirmó aflojar inscripción).
+    ...(m.flexAvail ? { flexAvail: true } : {}),
   };
 }
 

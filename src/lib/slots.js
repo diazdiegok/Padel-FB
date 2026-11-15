@@ -374,6 +374,8 @@ function isPlaceholderPairName(name) {
 /** True si el partido tiene sede/horario y alguna punta no puede jugar ahí. */
 export function matchViolatesAvailability(match) {
   if (!match || !isRealPairMatch(match)) return false;
+  // Admin eligió a propósito un turno “cercano” (afloja inscripción).
+  if (match.flexAvail) return false;
   if (!String(match.day || "").trim() || !String(match.time || "").trim()) return false;
   const win = parseCourtWindow(match.time);
   if (!win || !(win.to > win.from)) return false;
@@ -924,6 +926,105 @@ function hasPairAvailability(match, pending) {
   if (match?.homeDays && typeof match.homeDays === "object" && Object.keys(match.homeDays).length) return true;
   if (match?.awayDays && typeof match.awayDays === "object" && Object.keys(match.awayDays).length) return true;
   return false;
+}
+
+/**
+ * Minutos del turno de 90' que quedan fuera de la ventana de inscripción ese día.
+ * Si ese día no figura en la inscripción → penalización fuerte (día + gap).
+ */
+export function slotAvailabilityMiss(days, slot) {
+  const from = Number(slot?.from);
+  const to = Number(slot?.to);
+  if (!Number.isFinite(from) || !Number.isFinite(to) || !(to > from)) return DAY_END;
+  if (!days || typeof days !== "object") return DAY_END;
+  const day = normalizeDay(slot.day);
+  if (!day) return DAY_END;
+  if (!(day in days) && !(slot.day in days)) return DAY_END + MATCH_MINUTES;
+  const raw = days[day] ?? days[slot.day];
+  const win = parseCourtWindow(raw);
+  if (!win || !(win.to > win.from)) return 0;
+  if (to <= win.from || from >= win.to) {
+    const gap = to <= win.from ? win.from - to : from - win.to;
+    return MATCH_MINUTES + Math.max(0, gap);
+  }
+  const overlap = Math.min(to, win.to) - Math.max(from, win.from);
+  return Math.max(0, MATCH_MINUTES - overlap);
+}
+
+function missLabel(mins) {
+  const n = Math.max(0, Math.round(Number(mins) || 0));
+  if (n === 0) return "ok";
+  if (n >= DAY_END) return "sin día";
+  const h = Math.floor(n / 60);
+  const m = n % 60;
+  if (h && m) return `+${h}h${String(m).padStart(2, "0")}`;
+  if (h) return `+${h}h`;
+  return `+${m}'`;
+}
+
+/**
+ * Canchas libres del Drive ordenadas por menor “distancia” a ambas inscripciones.
+ * Pensado para cuando no hay cruce estricto de 1:30: sugiere los turnos más cercanos.
+ */
+export function nearCoverCourtOptions({ homeDays, awayDays } = {}, slots = [], taken = [], { limit = 12 } = {}) {
+  if (!homeDays || !awayDays) return [];
+  const seen = new Set();
+  const out = [];
+  for (const slot of expandCourtCandidates(slots)) {
+    const slotDay = normalizeDay(slot.day);
+    const busy = (taken || []).some((other) => {
+      if (!other?.venue || !other?.court) return false;
+      if (fold(other.venue) !== fold(slot.venue) || courtKey(other.court) !== courtKey(slot.court)) return false;
+      if (normalizeDay(other.day) !== slotDay) return false;
+      const otherWin = parseCourtWindow(other.time);
+      if (!otherWin) return false;
+      return windowsOverlap(slot.from, slot.to, otherWin.from, otherWin.to);
+    });
+    if (busy) continue;
+
+    const homeMiss = slotAvailabilityMiss(homeDays, slot);
+    const awayMiss = slotAvailabilityMiss(awayDays, slot);
+    // Ya entra perfecto para ambas → lo maneja driveCourtOptions estricto.
+    if (homeMiss === 0 && awayMiss === 0) continue;
+
+    const key = courtOptionKey(slot);
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const bothHaveDay =
+      !!slotDay &&
+      ((slotDay in homeDays || slot.day in homeDays) && (slotDay in awayDays || slot.day in awayDays));
+    const miss = homeMiss + awayMiss;
+    const worst = Math.max(homeMiss, awayMiss);
+    out.push({
+      day: slot.day,
+      time: slot.time,
+      venue: slot.venue,
+      court: slot.court,
+      key,
+      near: true,
+      homeMiss,
+      awayMiss,
+      miss,
+      worst,
+      bothHaveDay,
+      fitsHome: homeMiss === 0,
+      fitsAway: awayMiss === 0,
+      nearLabel: `pendiente ${missLabel(homeMiss)} · cubre ${missLabel(awayMiss)}`,
+    });
+  }
+
+  out.sort(
+    (a, b) =>
+      a.miss - b.miss ||
+      a.worst - b.worst ||
+      Number(b.bothHaveDay) - Number(a.bothHaveDay) ||
+      DAYS.indexOf(a.day) - DAYS.indexOf(b.day) ||
+      a.time.localeCompare(b.time, "es") ||
+      a.venue.localeCompare(b.venue, "es") ||
+      String(a.court).localeCompare(String(b.court), "es", { numeric: true })
+  );
+  return out.slice(0, Math.max(1, Number(limit) || 12));
 }
 
 /**

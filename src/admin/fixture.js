@@ -39,6 +39,7 @@ import {
   isCourtTaken,
   matchViolatesAvailability,
   missingCourtHorarios,
+  nearCoverCourtOptions,
   pairsSharePlayableWindow,
   parkAvailabilityViolations,
   parkBareMatchesAsPending,
@@ -224,19 +225,22 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
    */
   function coverCourtChoices(match, coverLabel) {
     const cover = String(coverLabel || "").trim();
-    if (!cover) return { opts: [], homeDays: null, coverDays: null, bothPending: false, shareWindow: false };
+    if (!cover) {
+      return { opts: [], nearOpts: [], homeDays: null, coverDays: null, bothPending: false, shareWindow: false };
+    }
     // Inscripciones primero (no reusar days viejos del partido).
     const homeDays = daysOfPair(match.home, match.cat) || match.homeDays || match.days;
     const coverDays = daysOfPair(cover, match.cat) || undefined;
     const bothPending = coverIsAlsoPending(cover, match);
     const shareWindow = !!(homeDays && coverDays && pairsSharePlayableWindow(homeDays, coverDays));
     if (!homeDays) {
-      return { opts: [], homeDays: null, coverDays: coverDays || null, bothPending, shareWindow };
+      return { opts: [], nearOpts: [], homeDays: null, coverDays: coverDays || null, bothPending, shareWindow };
     }
     // Sin disponibilidad de quien cubre no ofrecemos turnos: evitar fixturear fuera de inscripción.
     if (!coverDays) {
-      return { opts: [], homeDays, coverDays: null, bothPending, shareWindow: false };
+      return { opts: [], nearOpts: [], homeDays, coverDays: null, bothPending, shareWindow: false };
     }
+    const taken = takenCourts(match);
     const opts = driveCourtOptions(
       {
         week: match.week,
@@ -253,10 +257,14 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         awayDays: coverDays,
       },
       loadedSlots,
-      takenCourts(match),
+      taken,
       { softAway: false }
     );
-    return { opts, homeDays, coverDays, bothPending, shareWindow };
+    const nearOpts =
+      opts.length > 0
+        ? []
+        : nearCoverCourtOptions({ homeDays, awayDays: coverDays }, loadedSlots, taken, { limit: 12 });
+    return { opts, nearOpts, homeDays, coverDays, bothPending, shareWindow };
   }
 
   function coverSlotSelect(i, match, coverLabel) {
@@ -264,14 +272,14 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     if (!loadedSlots.length) {
       return `<select disabled aria-label="${label}"><option>Leé el Drive para ver canchas</option></select>`;
     }
-    const { opts, homeDays, coverDays, bothPending, shareWindow } = coverCourtChoices(match, coverLabel);
+    const { opts, nearOpts, homeDays, coverDays, shareWindow } = coverCourtChoices(match, coverLabel);
     if (!homeDays) {
       return `<select disabled aria-label="${label}"><option>Falta la disponibilidad de la pareja pendiente</option></select>`;
     }
     if (!coverDays) {
       return `<select disabled aria-label="${label}" title="Falta la disponibilidad de quien cubre en Inscripciones"><option>Falta la disponibilidad de quien cubre</option></select>`;
     }
-    if (!opts.length) {
+    if (!opts.length && !nearOpts.length) {
       let empty = "Sin cancha libre del Drive donde puedan jugar ambas";
       let title = empty;
       if (coverDays && !shareWindow) {
@@ -280,31 +288,52 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
       return `<select disabled aria-label="${label}" title="${escAttr(title)}"><option>${escAttr(empty)}</option></select>`;
     }
-    const byDay = new Map();
-    for (const o of opts) {
-      const day = o.day || "Sin día";
-      if (!byDay.has(day)) byDay.set(day, []);
-      byDay.get(day).push(o);
-    }
-    const groups = [...byDay.entries()]
-      .map(
-        ([day, list]) =>
-          `<optgroup label="${escAttr(day)} · ${list.length} turno${list.length === 1 ? "" : "s"} libres">
-            ${list
-              .map((o) => {
-                const court = String(o.court || "").trim();
-                const courtTxt = /^cancha\b/i.test(court) ? court : court ? `Cancha ${court}` : "";
-                const text = [o.time, o.venue, courtTxt].filter(Boolean).join(" · ");
-                return `<option value="${escAttr(o.key)}">${escAttr(text)}</option>`;
-              })
-              .join("")}
+
+    const renderOpts = (list, { near = false } = {}) =>
+      list
+        .map((o) => {
+          const court = String(o.court || "").trim();
+          const courtTxt = /^cancha\b/i.test(court) ? court : court ? `Cancha ${court}` : "";
+          const base = [o.time, o.venue, courtTxt].filter(Boolean).join(" · ");
+          const text = near && o.nearLabel ? `${base} · ${o.nearLabel}` : base;
+          return `<option value="${escAttr(o.key)}">${escAttr(text)}</option>`;
+        })
+        .join("");
+
+    if (opts.length) {
+      const byDay = new Map();
+      for (const o of opts) {
+        const day = o.day || "Sin día";
+        if (!byDay.has(day)) byDay.set(day, []);
+        byDay.get(day).push(o);
+      }
+      const groups = [...byDay.entries()]
+        .map(
+          ([day, list]) =>
+            `<optgroup label="${escAttr(day)} · ${list.length} turno${list.length === 1 ? "" : "s"} libres">
+            ${renderOpts(list)}
           </optgroup>`
-      )
-      .join("");
-    const hint = "Solo turnos del Drive donde entran las dos parejas según Inscripciones.";
-    return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="${escAttr(hint)}">
+        )
+        .join("");
+      const hint = "Solo turnos del Drive donde entran las dos parejas según Inscripciones.";
+      return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="${escAttr(hint)}">
       <option value="">2. Elegir entre ${opts.length} turno${opts.length === 1 ? "" : "s"} libre${opts.length === 1 ? "" : "s"}…</option>
       ${groups}
+    </select>`;
+    }
+
+    // Sin 1:30 en común (o sin cancha estricta): sugerencias libres más cercanas.
+    const nearTitle = !shareWindow
+      ? "No coinciden en 1:30 · canchas libres más cercanas (alguna punta afloja)"
+      : "Sin cancha libre exacta · turnos libres más cercanos (alguna punta afloja)";
+    const nearHint = !shareWindow
+      ? "No comparten 1:30. Se listan canchas libres con la menor distancia a ambas disponibilidades."
+      : "No quedó cancha libre donde entren las dos exactas. Se listan las más cercanas.";
+    return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="${escAttr(nearHint)}">
+      <option value="">2. ${escAttr(nearTitle)}…</option>
+      <optgroup label="${escAttr(!shareWindow ? "No coinciden · sugerencias más cercanas" : "Sugerencias más cercanas")}">
+        ${renderOpts(nearOpts, { near: true })}
+      </optgroup>
     </select>`;
   }
 
@@ -1516,7 +1545,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       } else updateSummary();
     });
 
-    $("fx-pending")?.addEventListener("change", (e) => {
+    $("fx-pending")?.addEventListener("change", async (e) => {
       const coverSlot = e.target.closest("[data-fx-cover-slot]");
       if (coverSlot) {
         const i = Number(coverSlot.dataset.fxCoverSlot);
@@ -1524,11 +1553,27 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         const cover = coverDraft.get(i) || "";
         const key = coverSlot.value;
         if (!slot || !isPending(slot) || !cover || !key) return;
-        const opt = coverCourtChoices(slot, cover).opts.find((o) => o.key === key);
+        const choices = coverCourtChoices(slot, cover);
+        const opt = choices.opts.find((o) => o.key === key) || choices.nearOpts.find((o) => o.key === key);
         if (!opt) {
-          toast("Esa cancha ya no está libre para ambas parejas.", "err");
+          toast("Esa cancha ya no está libre.", "err");
           coverSlot.value = "";
           return;
+        }
+        if (opt.near) {
+          const okNear = await confirmModal({
+            title: "Cubrir con horario cercano",
+            body:
+              `No entran exactas en 1:30 según Inscripciones. El turno más cercano libre es ${courtOptionText(opt)}` +
+              (opt.nearLabel ? ` (${opt.nearLabel})` : "") +
+              ". Alguna pareja afloja su disponibilidad. ¿Lo usamos igual?",
+            confirmLabel: "Usar igual",
+            danger: true,
+          });
+          if (!okNear) {
+            coverSlot.value = "";
+            return;
+          }
         }
         const next = cleanMatch(
           {
@@ -1543,6 +1588,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
             avail: "",
             note: slot.note || "",
             result: "",
+            ...(opt.near ? { flexAvail: true } : {}),
           },
           {},
           filterTemp || ctx.siteData.currentSeason || "T4"
@@ -1550,6 +1596,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         delete next.pending;
         delete next.reason;
         delete next.avail;
+        if (!opt.near) delete next.flexAvail;
         ctx.fixture[i] = next;
         // Si quien cubre también estaba pendiente, sale de la lista (ambas van al partido).
         const before = ctx.fixture.length;
@@ -1561,7 +1608,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         toast(
           dropped
             ? `Cubierto · ambas pendientes → partido · ${courtOptionText(opt)}`
-            : `Cubierto · ${courtOptionText(opt)}`,
+            : opt.near
+              ? `Cubierto (cerca) · ${courtOptionText(opt)}`
+              : `Cubierto · ${courtOptionText(opt)}`,
           "ok"
         );
         return;

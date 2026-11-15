@@ -9,6 +9,7 @@ import {
   isCourtTaken,
   matchStartsInWindow,
   matchViolatesAvailability,
+  nearCoverCourtOptions,
   pairsSharePlayableWindow,
   parkAvailabilityViolations,
   parkBareMatchesAsPending,
@@ -16,6 +17,7 @@ import {
   parseCourtSlotRows,
   parseCourtWindow,
   rematchForCourts,
+  slotAvailabilityMiss,
   slotFitsPairAvailability,
   summarizeCourtSlots,
   weekFromName,
@@ -731,6 +733,42 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   );
   assert.ok(!opts.some((o) => o.time === "16:30 - 18:00"), "16:30 queda fuera");
   assert.ok(opts.some((o) => o.time === "19:00 - 20:30"), "19:00 entra");
+}
+
+// Sin 1:30 en común → sugerencias libres más cercanas (Cavallaro vs Laikan).
+{
+  const flo = {
+    Martes: "19:00 - 21:30",
+    Miércoles: "18:30 - 21:30",
+    Jueves: "19:00 - 21:30",
+    Viernes: "18:00 - 20:00",
+    Sábado: "16:00 - 18:00",
+  };
+  const vale = {
+    Lunes: "15:00 - 18:00",
+    Martes: "09:00 - 18:00",
+    Jueves: "09:00 - 17:00",
+    Viernes: "15:00 - 19:00",
+    Sábado: "09:00 - 12:00",
+  };
+  assert.equal(pairsSharePlayableWindow(flo, vale), false, "solo 60' el viernes → sin 1:30");
+  const sheet = [
+    parseCourtSlot({ Complejo: "Open", Cancha: "1", Dia: "Viernes", Horario: "17:30 - 19:00" }),
+    parseCourtSlot({ Complejo: "Open", Cancha: "1", Dia: "Viernes", Horario: "18:00 - 19:30" }),
+    parseCourtSlot({ Complejo: "Open", Cancha: "2", Dia: "Lunes", Horario: "16:00 - 17:30" }),
+    parseCourtSlot({ Complejo: "Open", Cancha: "1", Dia: "Martes", Horario: "19:00 - 20:30" }),
+  ];
+  const near = nearCoverCourtOptions({ homeDays: flo, awayDays: vale }, sheet, [], { limit: 6 });
+  assert.ok(near.length, "hay sugerencias cercanas");
+  assert.ok(near.every((o) => o.near && o.miss > 0));
+  // Viernes 18-19:30: Flo +0, Vale +30 → miss 30; mejor que Lunes (Flo sin día).
+  assert.equal(near[0].day, "Viernes", "prioriza el viernes (menor distancia)");
+  assert.ok(near[0].miss <= near[near.length - 1].miss);
+  const vie1830 = near.find((o) => o.time === "18:00 - 19:30");
+  assert.ok(vie1830);
+  assert.equal(slotAvailabilityMiss(flo, { day: "Viernes", from: 18 * 60, to: 19 * 60 + 30 }), 0, "Flo entra exacta 18-19:30");
+  assert.equal(slotAvailabilityMiss(vale, { day: "Viernes", from: 18 * 60, to: 19 * 60 + 30 }), 30, "Vale corta a las 19");
+  assert.equal(vie1830.miss, 30);
 }
 
 console.log("slots ok");
