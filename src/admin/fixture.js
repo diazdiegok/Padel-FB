@@ -22,7 +22,14 @@ import {
 import { latestWeek, listSeasons, mergeArchivedMatches, seasonLabel, weekKey, weekNumber } from "../lib/liga.js";
 import { pairsMatch } from "../lib/scoring.js";
 import { courtsSheetIdForSeason } from "../lib/sheets.js";
-import { applyVenuePlan, assignCourtSlots, missingCourtHorarios, summarizeCourtSlots, weekFromName } from "../lib/slots.js";
+import {
+  applyVenuePlan,
+  assignCourtSlots,
+  fillMissingCourtsFromSheet,
+  missingCourtHorarios,
+  summarizeCourtSlots,
+  weekFromName,
+} from "../lib/slots.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
 const isPending = (m) => isPendingMatch(m);
@@ -810,8 +817,27 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         };
       });
       const venueCaps = Object.fromEntries(plan.map((p) => [p.venue, p.count]));
-      const assigned = assignCourtSlots(built, plannedSlots, { onlyEmpty: true, venueCaps, preferPlan: true });
-      built = assigned.matches.map((m) => {
+      let assigned = assignCourtSlots(built, plannedSlots, { onlyEmpty: true, venueCaps, preferPlan: true });
+      built = assigned.matches;
+      // Si el plan de cupos no alcanzó, completar con CUALQUIER turno libre del Sheet
+      // (otros complejos / días / canchas), solo para los que quedaron sin cancha.
+      let sheetExtra = 0;
+      const stillBare = built.some(
+        (m) =>
+          (isRealPairMatch(m) || isPending(m)) &&
+          (!String(m.venue || "").trim() || !String(m.court || "").trim())
+      );
+      if (stillBare && loadedSlots.length) {
+        const fallback = fillMissingCourtsFromSheet(built, loadedSlots);
+        built = fallback.matches;
+        sheetExtra = fallback.filledExtra || 0;
+        assigned = {
+          ...assigned,
+          assigned: built.filter((m) => String(m.venue || "").trim() && String(m.court || "").trim()).length,
+          skipped: fallback.skipped,
+        };
+      }
+      built = built.map((m) => {
         const { days: _days, homeDays: _h, awayDays: _a, ...rest } = m;
         return cleanMatch(rest, {}, season);
       });
@@ -839,12 +865,15 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         `${assigned.assigned} con cancha`,
         pending.length ? `${pending.length} pendiente${pending.length === 1 ? "" : "s"}` : "sin pendientes",
       ];
+      if (sheetExtra) {
+        parts.push(`${sheetExtra} completado${sheetExtra === 1 ? "" : "s"} con cancha del Sheet (fuera del plan)`);
+      }
       if (pendingBare.length) {
         parts.push(`${pendingBare.length} pendiente${pendingBare.length === 1 ? "" : "s"} sin cancha (faltó cupo del plan)`);
       }
       if (bare.length) {
         parts.push(
-          `${bare.length} sin complejo/cancha (faltó cupo del plan o del Sheet en los días elegidos)`
+          `${bare.length} sin complejo/cancha (no hay turno libre en el Sheet compatible con la disponibilidad)`
         );
       }
       if (assigned.skipped && !bare.length) parts.push(`${assigned.skipped} sin cancha compatible`);
