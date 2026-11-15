@@ -1,4 +1,4 @@
-import { FIXTURE_PATH, FIXTURE_PENDING_PATH, PAIRS_PATH, RESULTS_PATH } from "./constants.js";
+import { CATS, FIXTURE_PATH, FIXTURE_PENDING_PATH, PAIRS_PATH, RESULTS_PATH } from "./constants.js";
 import {
   FX_EXPORT_COLS,
   cleanMatch,
@@ -19,9 +19,11 @@ import {
   countPairMatches,
   coverCandidates,
   isPendingMatch,
+  isPlaceholderPair,
   isRealPairMatch,
 } from "../lib/fixturer.js";
 import { latestWeek, listSeasons, mergeArchivedMatches, seasonLabel, weekKey, weekNumber } from "../lib/liga.js";
+import { rivalOptionsFromPairs, scheduleOptionsFromSlots, syncFixtureWithPairs } from "../lib/pair-fixture-sync.js";
 import { pairsMatch } from "../lib/scoring.js";
 import { courtsSheetIdForSeason } from "../lib/sheets.js";
 import {
@@ -694,6 +696,22 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     updatePlanSummary();
   }
 
+  function scheduleOpts() {
+    const ligaVenues = (ctx.siteData.venues || []).filter((v) => v.liga !== false).map((v) => v.name).filter(Boolean);
+    const base = scheduleOptionsFromSlots(loadedSlots, ctx.fixture || []);
+    const venues = [...new Set([...ligaVenues, ...base.venues])].sort((a, b) => a.localeCompare(b, "es"));
+    return { ...base, venues };
+  }
+
+  function selectField(k, value, options, { allowEmpty = false, emptyLabel = "—" } = {}) {
+    const opts = [...options];
+    if (value && !opts.some((o) => String(o) === String(value))) opts.unshift(value);
+    return `<select data-k="${k}" aria-label="${escAttr(k)}">
+      ${allowEmpty ? `<option value="">${escAttr(emptyLabel)}</option>` : ""}
+      ${opts.map((o) => `<option value="${escAttr(o)}"${String(o) === String(value) ? " selected" : ""}>${escAttr(o)}</option>`).join("")}
+    </select>`;
+  }
+
   function renderTable() {
     const live = isLiveWeek(filterTemp, filterWeek);
     const detail = $("fx-detail");
@@ -717,6 +735,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     if (dl) dl.hidden = !filterWeek;
     renderAdvanced();
     if (build) build.hidden = !(live && loadedSlots.length && advancedOpen);
+    const sched = scheduleOpts();
 
     if (!live) {
       const arch = (ctx.results || [])
@@ -766,10 +785,28 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       .map(({ m, i }) => {
         const on = editing === i;
         const bare = !on && needsCourt(m);
-        const field = (k, placeholder) =>
-          on
-            ? `<input data-k="${k}" value="${escAttr(m[k])}" placeholder="${placeholder}"${k === "venue" ? ' list="fx-venues"' : ""} />`
-            : escAttr(m[k]);
+        const rivals = rivalOptionsFromPairs({
+          pairs: ctx.pairs || [],
+          temp: filterTemp || m.temp,
+          cat: m.cat || "",
+        });
+        const courts = sched.courtsByVenue[m.venue] || [];
+        const field = (k, placeholder) => {
+          if (!on) return escAttr(m[k] || "");
+          if (k === "day") return selectField("day", m.day || "", sched.days, { allowEmpty: true, emptyLabel: "Día…" });
+          if (k === "time") return selectField("time", m.time || "", sched.times, { allowEmpty: true, emptyLabel: "Horario…" });
+          if (k === "cat") return selectField("cat", m.cat || "", CATS);
+          if (k === "venue") return selectField("venue", m.venue || "", sched.venues, { allowEmpty: true, emptyLabel: "Complejo…" });
+          if (k === "court") return selectField("court", m.court || "", courts, { allowEmpty: true, emptyLabel: "Cancha…" });
+          if (k === "home") {
+            return selectField("home", m.home || "", rivals, { allowEmpty: true, emptyLabel: "Pareja 1…" });
+          }
+          if (k === "away") {
+            const awayOpts = [PENDING_AWAY, ...rivals.filter((r) => !pairsMatch(r, m.home))];
+            return selectField("away", m.away || PENDING_AWAY, awayOpts);
+          }
+          return `<input data-k="${k}" value="${escAttr(m[k])}" placeholder="${placeholder}" />`;
+        };
         const titles = [];
         if (conflicted.has(i)) titles.push("Misma cancha, día y horario que otro partido");
         if (repeated.has(i)) titles.push("Ya se enfrentaron en esta temporada");
@@ -808,7 +845,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       .join("");
     if (focusEdit && editing >= 0) {
       focusEdit = false;
-      $("fx-body")?.querySelector(`tr[data-i="${editing}"] input`)?.focus();
+      $("fx-body")?.querySelector(`tr[data-i="${editing}"] select, tr[data-i="${editing}"] input`)?.focus();
     }
   }
 
@@ -1341,15 +1378,16 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
 
     $("fx-add")?.addEventListener("click", () => {
       if (!filterTemp || !filterWeek) return;
+      const sched = scheduleOpts();
       ctx.fixture.push(
         cleanMatch(
           {
             week: filterWeek,
-            day: "Jueves",
+            day: sched.days[0] || "",
             temp: filterTemp,
-            cat: "A Masculina",
-            time: "19:00 - 20:30",
-            venue: "",
+            cat: CATS[0] || "",
+            time: sched.times[0] || "",
+            venue: sched.venues[0] || "",
             court: "",
             home: "",
             away: "",
@@ -1376,25 +1414,57 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       const i = Number(tr.dataset.i);
       const k = e.target.dataset.k;
       if (!k) return;
-      const prev = ctx.fixture[i][k];
-      ctx.fixture[i][k] = e.target.value;
+      const match = ctx.fixture[i];
+      if (!match) return;
+      const prev = match[k];
+      const value = e.target.value;
+      match[k] = value;
+
+      if (k === "cat") {
+        // Rivales fuera de la nueva categoría se limpian.
+        const rivals = rivalOptionsFromPairs({ pairs: ctx.pairs || [], temp: filterTemp || match.temp, cat: value });
+        if (match.home && !rivals.some((r) => pairsMatch(r, match.home))) match.home = "";
+        if (match.away && !isPlaceholderPair(match.away) && !rivals.some((r) => pairsMatch(r, match.away))) {
+          match.away = PENDING_AWAY;
+        }
+      }
+      if (k === "venue") {
+        const courts = scheduleOpts().courtsByVenue[value] || [];
+        if (match.court && !courts.includes(match.court)) match.court = "";
+      }
+      if (k === "away" && isPlaceholderPair(value)) {
+        match.pending = true;
+        match.day = "";
+        match.time = "";
+        match.venue = "";
+        match.court = "";
+      } else if (k === "away" && match.pending) {
+        delete match.pending;
+        delete match.reason;
+        delete match.avail;
+      }
+      if (k === "home" && pairsMatch(match.home, match.away)) {
+        match.away = PENDING_AWAY;
+        match.pending = true;
+      }
+
       if (["day", "time", "venue", "court"].includes(k)) {
         const taken = (ctx.fixture || []).filter((other, idx) => {
           if (idx === i) return false;
           if (seasonOf(other) !== filterTemp || (other.week || "") !== filterWeek) return false;
           return String(other.venue || "").trim() && String(other.court || "").trim();
         });
-        if (isCourtTaken(ctx.fixture[i], taken)) {
-          ctx.fixture[i][k] = prev;
+        if (isCourtTaken(match, taken)) {
+          match[k] = prev;
           e.target.value = prev || "";
           toast("Esa cancha ya está en uso en ese horario.", "err");
           return;
         }
       }
       shell.markDirty("fixture");
-      if (["home", "away", "cat"].includes(k)) {
+      if (["home", "away", "cat", "venue"].includes(k)) {
         render();
-        $("fx-body")?.querySelector(`tr[data-i="${i}"] input[data-k="${k}"]`)?.focus();
+        $("fx-body")?.querySelector(`tr[data-i="${i}"] select[data-k="${k}"]`)?.focus();
       } else updateSummary();
     });
 
@@ -1641,5 +1711,38 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     });
   }
 
-  return { bind, render, fallbackWeek, syncWeek, buildFromFecha };
+  /**
+   * Alinea fixture/pendientes con las inscripciones (altas, bajas, cambio de cat).
+   * Marca dirty si hubo cambios. Pensado para llamarse desde Parejas.
+   */
+  function syncFromPairs({ toastResult = true } = {}) {
+    const temp = ctx.siteData.currentSeason || filterTemp || "T4";
+    const liveWeek =
+      filterWeek ||
+      latestWeek((ctx.fixture || []).filter((m) => seasonOf(m) === temp && !isPending(m))) ||
+      latestWeek((ctx.fixture || []).filter((m) => seasonOf(m) === temp)) ||
+      "Fecha 1";
+    const before = JSON.stringify(ctx.fixture || []);
+    const synced = syncFixtureWithPairs({
+      matches: ctx.fixture || [],
+      pairs: ctx.pairs || [],
+      temp,
+      liveWeek,
+    });
+    ctx.fixture = synced.matches.map((m) => cleanMatch(m, {}, temp));
+    const changed = JSON.stringify(ctx.fixture) !== before;
+    if (changed) {
+      shell.markDirty("fixture");
+      if (filterTemp === temp || !filterTemp) render();
+      const s = synced.stats;
+      const bits = [];
+      if (s.pendingFromRemoved) bits.push(`${s.pendingFromRemoved} rival${s.pendingFromRemoved === 1 ? "" : "es"} → pendiente`);
+      if (s.pendingFromCatChange) bits.push(`${s.pendingFromCatChange} por cambio de categoría`);
+      if (s.addedPending) bits.push(`${s.addedPending} pareja${s.addedPending === 1 ? "" : "s"} nueva${s.addedPending === 1 ? "" : "s"} en pendientes`);
+      if (toastResult && bits.length) toast(`Fixture sync · ${bits.join(" · ")}`, "ok");
+    }
+    return { changed, stats: synced.stats, liveWeek };
+  }
+
+  return { bind, render, fallbackWeek, syncWeek, buildFromFecha, syncFromPairs };
 }

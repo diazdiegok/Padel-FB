@@ -1,4 +1,13 @@
-import { CATS, HIDDEN_CATS, PAIRS_CONFIG_PATH, PAIRS_PATH, RANK_PATH, SITE_PATH } from "./constants.js";
+import {
+  CATS,
+  FIXTURE_PATH,
+  FIXTURE_PENDING_PATH,
+  HIDDEN_CATS,
+  PAIRS_CONFIG_PATH,
+  PAIRS_PATH,
+  RANK_PATH,
+  SITE_PATH,
+} from "./constants.js";
 import {
   DAYS,
   MAIL_DOMAINS,
@@ -8,6 +17,7 @@ import {
   splitMail,
   validateDays,
 } from "../lib/disponibilidad.js";
+import { isPendingMatch } from "../lib/fixturer.js";
 import {
   addPairsToRanking,
   findPairIndex,
@@ -129,7 +139,7 @@ function originLabel(id) {
   return ORIGINS.find((o) => o.id === id)?.label || id;
 }
 
-export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
+export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChanged } = {}) {
   let term = "";
   let filterCat = "";
   let filterOrigin = "";
@@ -673,11 +683,28 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         touchContactMail(card, pair);
       } else if (k === "note") {
         pair.note = e.target.value.replace(/\s+/g, " ").trim().slice(0, 500);
+      } else if (k === "cat") {
+        const prevCat = pair.cat;
+        const nextCat = e.target.value.replace(/\s+/g, " ").trim();
+        pair.cat = nextCat;
+        if (prevCat && nextCat && prevCat !== nextCat && pair.p1 && pair.p2) {
+          // Sacamos la fila vieja (otra cat) y la reinsertamos en la nueva con 0 pts.
+          if (removePairsFromRanking(ctx.rows || [], [{ ...pair, cat: prevCat }]).length) {
+            shell.markDirty("ranking");
+          }
+          if (addPairsToRanking(ctx.rows || [], [pair]).length) {
+            shell.markDirty("ranking");
+          }
+          onRankingChanged?.();
+        }
+        shell.markDirty("parejas");
+        onPairsChanged?.({ reason: "cat", pair: `${pair.p1 || ""} / ${pair.p2 || ""}`, cat: pair.cat });
+        render();
+        return;
       } else if (k) {
         pair[k] = e.target.value.replace(/\s+/g, " ").trim();
       }
       shell.markDirty("parejas");
-      if (k === "cat") render();
     });
     $("pay-lightbox-close")?.addEventListener("click", () => $("pay-lightbox")?.close());
     $("pay-lightbox")?.addEventListener("click", (e) => {
@@ -704,8 +731,8 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       const ok = await confirmModal({
         title: "Quitar pareja",
         body: hasStats
-          ? `${label} se quita de las inscripciones y del ranking (${Number(rankRow.pts) || 0} pts, ${Number(rankRow.pj) || 0} PJ). Publicá parejas para confirmarlo.`
-          : `${label} se quita de las inscripciones y del ranking. Publicá parejas para confirmarlo.`,
+          ? `${label} se quita de las inscripciones y del ranking (${Number(rankRow.pts) || 0} pts, ${Number(rankRow.pj) || 0} PJ). Si tenía partido en el fixture, el rival queda pendiente. Publicá parejas (y fixture si hace falta) para confirmarlo.`
+          : `${label} se quita de las inscripciones y del ranking. Si tenía partido, el rival queda pendiente. Publicá para confirmarlo.`,
         confirmLabel: "Quitar",
         danger: true,
       });
@@ -721,6 +748,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         onRankingChanged?.();
       }
       shell.markDirty("parejas");
+      onPairsChanged?.({ reason: "delete", pair: label });
       render();
     });
 
@@ -775,18 +803,31 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
           files.push({ path: SITE_PATH, content: JSON.stringify(nextSite, null, 2) + "\n" });
           Object.assign(ctx.siteData, nextSite);
         }
+        // Sync fixture con altas/bajas/categoría antes de publicar (pendientes + rivales).
+        ctx.pairs = next;
+        const fxSync = onPairsChanged?.({ reason: "publish", toastResult: false }) || null;
+        if (fxSync?.changed) {
+          const adminFixture = (ctx.fixture || []).map((m) => ({ ...m }));
+          const draftLive = adminFixture.filter((m) => !isPendingMatch(m));
+          const draftPending = adminFixture.filter((m) => isPendingMatch(m));
+          files.push(
+            { path: FIXTURE_PATH, content: JSON.stringify(draftLive, null, 2) + "\n" },
+            { path: FIXTURE_PENDING_PATH, content: JSON.stringify(draftPending, null, 2) + "\n" }
+          );
+        }
         await api.publishFiles(
           files,
           closing
             ? goLive
               ? "Cierra la inscripción de parejas y pone la temporada en juego."
               : "Cierra la inscripción de parejas."
-            : "Actualiza parejas inscriptas desde el admin."
+            : fxSync?.changed
+              ? "Actualiza parejas y alinea fixture/pendientes."
+              : "Actualiza parejas inscriptas desde el admin."
         );
         // El admin a veces tiene ranking viejo del build; alineamos al JSON remoto publicado.
         ctx.rows = rankRows.filter((r) => r && !HIDDEN_CATS.has(r.cat));
         if (rankingChanged) onRankingChanged?.();
-        ctx.pairs = next;
         ctx.pairsConfig = config;
         knownIds = new Set(next.map((p) => p.id));
         deleted.clear();
@@ -799,6 +840,10 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         if (fresh.length) await loadContacts().catch(() => {});
         shell.clearDirty("parejas");
         shell.clearDirty("ranking");
+        if (fxSync?.changed) {
+          ctx.fixturePublished = structuredClone(ctx.fixture || []);
+          shell.clearDirty("fixture");
+        }
         if (goLive) shell.clearDirty("temporadas");
         render();
         const extra = fresh.length
@@ -814,7 +859,8 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
           ? ` Se actualiz${renamed.length === 1 ? "ó 1 nombre" : `aron ${renamed.length} nombres`} en el ranking.`
           : "";
         const liveNote = goLive ? " La temporada pasó a En juego." : "";
-        setMsg($("pairs-msg"), "Parejas publicadas." + extra + ranked + unranked + renamedNote + liveNote, "ok");
+        const fxNote = fxSync?.changed ? " Fixture/pendientes alineados." : "";
+        setMsg($("pairs-msg"), "Parejas publicadas." + extra + ranked + unranked + renamedNote + liveNote + fxNote, "ok");
         toast(goLive ? "Inscripción cerrada · En juego" : "Parejas publicadas", "ok");
       } catch (err) {
         const m = api.publishError(err);

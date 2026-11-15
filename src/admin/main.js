@@ -126,6 +126,9 @@ export function bootAdmin({
       ranking.refresh();
       seasons?.render();
     },
+    onPairsChanged(opts = {}) {
+      return fixture?.syncFromPairs?.(opts) || null;
+    },
   });
 
   async function showApp() {
