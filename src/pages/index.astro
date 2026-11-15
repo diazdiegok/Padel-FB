@@ -5,7 +5,7 @@ import ranking from "../data/ranking.json";
 import fixtureJson from "../data/fixture.json";
 import playoffJson from "../data/playoff.json";
 import { normalizePlayoffs, playoffSlug, resolveCategory } from "../lib/playoff.js";
-import { listSeasons, seasonLabel } from "../lib/liga.js";
+import { listSeasons, seasonLabel, seasonSlug } from "../lib/liga.js";
 import { asset, page } from "../lib/paths";
 
 const HIDDEN_CATS = new Set(["S Masculina"]);
@@ -119,6 +119,14 @@ const seasonVenues = Object.fromEntries(
                 {!playoffDone && <span class="pts">{p.pts}</span>}
               </div>
             ))}
+            {boardRows.length > 0 && (
+              <a
+                class="home-rank-cta"
+                href={playoffDone ? page(`playoff/${playoffSlug(current)}/`) : page(`ranking/${seasonSlug(current)}/`)}
+              >
+                {playoffDone ? "Ver playoff completo 🏆" : "Ver ranking completo 🏆"}
+              </a>
+            )}
           </aside>
         </div>
       </header>

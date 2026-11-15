@@ -479,6 +479,27 @@ h3 { font-size: 22px; }
 .pos { font-family: var(--display); font-size: 22px; color: var(--lime); }
 .cat { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
 .pts { font-family: var(--display); font-size: 28px; }
+.scoreboard .home-rank-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 14px 12px 2px;
+  border-top: 1px solid var(--line);
+  color: var(--lime);
+  font-family: var(--display);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  text-align: center;
+  transition: color 0.15s ease, letter-spacing 0.15s ease;
+}
+.scoreboard .home-rank-cta:hover {
+  color: var(--cream);
+  letter-spacing: 0.09em;
+}
 
 .home-stats {
   margin: 28px 0 8px;
