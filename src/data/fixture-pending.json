@@ -1,6 +1,99 @@
 [
   {
     "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 16:00 - 00:00 · Martes 16:00 - 00:00 · Miércoles 16:00 - 00:00 · Jueves 16:00 - 00:00 · Viernes 16:00 - 00:00 · Sábado 16:00 - 00:00",
+    "days": {
+      "Lunes": "16:00 - 00:00",
+      "Martes": "16:00 - 00:00",
+      "Miércoles": "16:00 - 00:00",
+      "Jueves": "16:00 - 00:00",
+      "Viernes": "16:00 - 00:00",
+      "Sábado": "16:00 - 00:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Diego Ramirez / Martin Rondan",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 17:30 - 22:00 · Martes 17:30 - 22:00 · Viernes 17:30 - 22:00",
+    "days": {
+      "Lunes": "17:30 - 22:00",
+      "Martes": "17:30 - 22:00",
+      "Viernes": "17:30 - 22:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Ernesto Enz / Facundo Casals",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 20:00 - 00:00 · Martes 20:00 - 00:00 · Miércoles 21:30 - 00:00 · Jueves 20:00 - 00:00 · Viernes 20:00 - 00:00",
+    "days": {
+      "Lunes": "20:00 - 00:00",
+      "Martes": "20:00 - 00:00",
+      "Miércoles": "21:30 - 00:00",
+      "Jueves": "20:00 - 00:00",
+      "Viernes": "20:00 - 00:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Mario Martin Sbarbaro / Ronaldo Antonio Fontana",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 20:00 - 21:30 · Miércoles 20:00 - 21:30 · Viernes 20:00 - 21:30",
+    "days": {
+      "Lunes": "20:00 - 21:30",
+      "Miércoles": "20:00 - 21:30",
+      "Viernes": "20:00 - 21:30"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Miguel Darío Screpis / Facundo Roberto Capatto",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
     "reason": "Cambió de categoría: el partido anterior quedó sin efecto.",
     "avail": "Lunes 19:00 - 22:00 · Miércoles 19:00 - 22:00 · Viernes 18:00 - 22:00",
     "days": {

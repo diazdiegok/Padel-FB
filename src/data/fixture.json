@@ -15,20 +15,6 @@
   },
   {
     "week": "Fecha 1",
-    "day": "Lunes",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "17:30 - 19:00",
-    "venue": "Americas Padel",
-    "court": "Cancha 2",
-    "home": "Diego Ramirez / Martin Rondan",
-    "away": "Ernesto Enz / Facundo Casals",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "week": "Fecha 1",
     "day": "Martes",
     "date": "",
     "temp": "T5",
@@ -346,20 +332,6 @@
     "court": "Cancha 1",
     "home": "Valentin Beltzer / Ariel Jaureguiberry",
     "away": "Valentino Sánchez / Thiago Rivera",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "week": "Fecha 1",
-    "day": "Viernes",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "20:00 - 21:30",
-    "venue": "Open Padel",
-    "court": "Cancha 2",
-    "home": "Mario Martin Sbarbaro / Ronaldo Antonio Fontana",
-    "away": "Miguel Darío Screpis / Facundo Roberto Capatto",
     "result": "",
     "appliedResult": ""
   },
