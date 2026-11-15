@@ -247,10 +247,43 @@ async function formDayOk(env, request, scope) {
   const max = FORM_DAY_MAX[scope] ?? FORM_DAY_MAX.form;
   const day = new Date().toISOString().slice(0, 10);
   const key = `formday:${scope}:${clientIp(request)}:${day}`;
-  const n = Number((await env.AUTH_KV.get(key)) || 0);
-  if (n >= max) return false;
-  await env.AUTH_KV.put(key, String(n + 1), { expirationTtl: 90_000 });
-  return true;
+  // Preferir Cache API para no gastar puts KV en el contador anti-spam.
+  const cacheUrl = `https://padel-fb-api.cache/${key}`;
+  try {
+    const cache = caches.default;
+    const hit = await cache.match(cacheUrl);
+    const n = hit ? Number(await hit.text()) || 0 : Number((await env.AUTH_KV.get(key)) || 0);
+    if (n >= max) return false;
+    await cache.put(
+      cacheUrl,
+      new Response(String(n + 1), {
+        headers: { "Cache-Control": "max-age=90000", "Content-Type": "text/plain" },
+      })
+    );
+    // Espejo en KV como mucho 1 de cada 5 (auditoría), sin tumbar si la cuota está llena.
+    if ((n + 1) % 5 === 0) {
+      try {
+        await env.AUTH_KV.put(key, String(n + 1), { expirationTtl: 90_000 });
+      } catch {
+        /* cuota KV: el cache alcanza para el día */
+      }
+    }
+    return true;
+  } catch {
+    try {
+      const n = Number((await env.AUTH_KV.get(key)) || 0);
+      if (n >= max) return false;
+      await env.AUTH_KV.put(key, String(n + 1), { expirationTtl: 90_000 });
+      return true;
+    } catch (err) {
+      const msg = String(err?.message || err || "");
+      if (/limit exceeded/i.test(msg)) {
+        const e = new Error("KV put() limit exceeded for the day.");
+        throw e;
+      }
+      throw err;
+    }
+  }
 }
 
 function receiptLooksValid(mime, b64) {
@@ -892,6 +925,9 @@ async function hitRateOk(env, request) {
   return true;
 }
 
+/** Cuota free de KV: ~1000 puts/día. Visitas NO pueden escribir en cada hit. */
+const HIT_FLUSH_SECONDS = 300; // como mucho 1 flush KV / 5 min / colo
+
 async function recordHit(env, request, raw) {
   if (!env.AUTH_KV) return { ok: true };
   const country = String(request.cf?.country || "XX")
@@ -904,35 +940,95 @@ async function recordHit(env, request, raw) {
   const path = cleanHitPath(raw?.path || "/");
   const ref = referrerHost(raw?.ref || request.headers.get("Referer"), env);
   const ip = String(clientIp(request) || "anon").slice(0, 45);
-  const cur = (await env.AUTH_KV.get(key, "json")) || {
+  const cache = caches.default;
+  const bufUrl = `https://padel-fb-api.cache/hitbuf/${day}`;
+  const flushUrl = `https://padel-fb-api.cache/hitflush/${day}`;
+
+  // Acumular en Cache API (no gasta cuota KV).
+  let cur = {
     total: 0,
     countries: {},
     devices: {},
     paths: {},
     refs: {},
+    recent: [],
   };
+  try {
+    const prev = await cache.match(bufUrl);
+    if (prev) cur = { ...cur, ...(await prev.json()) };
+  } catch {
+    /* buffer vacío */
+  }
+  // Semilla desde KV solo si el buffer está frío (1 get, barato).
+  if (!cur.total) {
+    try {
+      const fromKv = (await env.AUTH_KV.get(key, "json")) || null;
+      if (fromKv && typeof fromKv === "object") {
+        cur.total = Number(fromKv.total || 0);
+        cur.countries = fromKv.countries || {};
+        cur.devices = fromKv.devices || {};
+        cur.paths = fromKv.paths || {};
+        cur.refs = fromKv.refs || {};
+      }
+    } catch {
+      /* si KV está bloqueado, seguimos solo con buffer */
+    }
+  }
   cur.total = Number(cur.total || 0) + 1;
   bump(cur.countries, country);
   bump(cur.devices, device);
   bump(cur.paths, path);
   bump(cur.refs, ref);
-  // 1 escritura fija por visita (totales del día).
-  const writes = [env.AUTH_KV.put(key, JSON.stringify(cur), { expirationTtl: STATS_TTL })];
-  // La lista con IP solo se actualiza ~1 de cada 4 visitas (ahorra cuota free).
-  if (cur.total % 4 === 1) {
-    const recentRaw = await env.AUTH_KV.get("stats:recent", "json");
-    const recentList = Array.isArray(recentRaw) ? recentRaw : [];
-    recentList.unshift({
-      at: new Date().toISOString(),
-      ip,
-      path,
-      country: COUNTRY_NAMES[country] || country,
-      device,
-      ref,
-    });
-    writes.push(env.AUTH_KV.put("stats:recent", JSON.stringify(recentList.slice(0, 50)), { expirationTtl: STATS_TTL }));
+  cur.recent = Array.isArray(cur.recent) ? cur.recent : [];
+  cur.recent.unshift({
+    at: new Date().toISOString(),
+    ip,
+    path,
+    country: COUNTRY_NAMES[country] || country,
+    device,
+    ref,
+  });
+  cur.recent = cur.recent.slice(0, 50);
+  try {
+    await cache.put(
+      bufUrl,
+      new Response(JSON.stringify(cur), {
+        headers: { "Cache-Control": "max-age=86400", "Content-Type": "application/json" },
+      })
+    );
+  } catch {
+    /* sin buffer no contamos */
   }
-  await Promise.all(writes);
+
+  // Flush a KV como mucho cada HIT_FLUSH_SECONDS (protege la cuota free).
+  try {
+    if (await cache.match(flushUrl)) return { ok: true };
+    await cache.put(
+      flushUrl,
+      new Response("1", { headers: { "Cache-Control": `max-age=${HIT_FLUSH_SECONDS}`, "Content-Type": "text/plain" } })
+    );
+  } catch {
+    return { ok: true };
+  }
+
+  try {
+    const payload = {
+      total: cur.total,
+      countries: cur.countries,
+      devices: cur.devices,
+      paths: cur.paths,
+      refs: cur.refs,
+    };
+    await env.AUTH_KV.put(key, JSON.stringify(payload), { expirationTtl: STATS_TTL });
+    if (cur.recent.length) {
+      await env.AUTH_KV.put("stats:recent", JSON.stringify(cur.recent.slice(0, 50)), { expirationTtl: STATS_TTL });
+    }
+  } catch (err) {
+    // Si se acabó la cuota del día, no tumbar el sitio: las visitas son best-effort.
+    const msg = String(err?.message || err || "");
+    if (/limit exceeded|429|put\(\) limit/i.test(msg)) return { ok: true };
+    throw err;
+  }
   return { ok: true };
 }
 
@@ -1912,7 +2008,20 @@ export default {
 
       return response(request, env, { message: "No encontrado." }, 404);
     } catch (error) {
-      return response(request, env, { message: error?.message || "Error inesperado." }, 400);
+      const raw = String(error?.message || error || "");
+      // Cuota free de Cloudflare KV (~1000 writes/día). Sin esto, login/inscripción/publish mueren con un mensaje críptico.
+      if (/KV put\(\) limit exceeded|put\(\) limit exceeded for the day/i.test(raw)) {
+        return response(
+          request,
+          env,
+          {
+            message:
+              "Se agotó la cuota diaria de Cloudflare KV (escrituras). Inscripción, login y comprobantes vuelven solas a las 00:00 UTC (~21:00 Argentina). No es Vercel ni falta de espacio en Google.",
+          },
+          503
+        );
+      }
+      return response(request, env, { message: raw || "Error inesperado." }, 400);
     }
   },
 };
