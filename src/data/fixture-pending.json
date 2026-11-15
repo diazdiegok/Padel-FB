@@ -23,29 +23,6 @@
   },
   {
     "pending": true,
-    "reason": "Cambió de categoría: el partido anterior quedó sin efecto.",
-    "avail": "Martes 17:30 - 22:30 · Miércoles 17:30 - 22:30 · Jueves 17:30 - 22:30 · Viernes 17:30 - 22:00",
-    "days": {
-      "Martes": "17:30 - 22:30",
-      "Miércoles": "17:30 - 22:30",
-      "Jueves": "17:30 - 22:30",
-      "Viernes": "17:30 - 22:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "A Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Agustin Grippo / Franco Sanchez",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
     "reason": "Su rival ya no está inscripto.",
     "avail": "Martes 19:00 - 21:30 · Miércoles 18:30 - 21:30 · Jueves 19:00 - 21:30 · Viernes 18:00 - 20:00 · Sábado 16:00 - 18:00",
     "days": {
@@ -110,30 +87,6 @@
     "venue": "",
     "court": "",
     "home": "Gauna Camila / Falcón Luana",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
-    "avail": "Martes 18:00 - 21:00 · Miércoles 20:30 - 22:00 · Jueves 17:30 - 21:30 · Viernes 17:00 - 22:00 · Sábado 15:00 - 20:00",
-    "days": {
-      "Martes": "18:00 - 21:00",
-      "Miércoles": "20:30 - 22:00",
-      "Jueves": "17:30 - 21:30",
-      "Viernes": "17:00 - 22:00",
-      "Sábado": "15:00 - 20:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "A Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Matias Minigutti / Omar Izza",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
