@@ -272,6 +272,32 @@ function slotFitsMatch(slot, match) {
   return true;
 }
 
+/**
+ * El partido de 90' tiene que entrar ENTERO en la ventana declarada ese día.
+ * Sin datos de ese jugador → no bloquea (legado / carga manual).
+ */
+function daysMapFitsSlot(days, slot) {
+  if (!days || typeof days !== "object") return true;
+  const day = normalizeDay(slot.day);
+  if (!day) return false;
+  if (!(day in days) && !(slot.day in days)) return false;
+  const raw = days[day] ?? days[slot.day];
+  const win = parseCourtWindow(raw);
+  if (!win || !(win.to > win.from)) return true;
+  return Number(slot.from) >= win.from && Number(slot.to) <= win.to;
+}
+
+/** Respetar inscripción de ambas parejas (o days del pendiente). */
+export function slotFitsPairAvailability(slot, match, { pending = false } = {}) {
+  if (pending) {
+    if (match?.days && typeof match.days === "object") return daysMapFitsSlot(match.days, slot);
+    return true;
+  }
+  const homeOk = daysMapFitsSlot(match?.homeDays, slot);
+  const awayOk = daysMapFitsSlot(match?.awayDays, slot);
+  return homeOk && awayOk;
+}
+
 function fitScore(slot, match) {
   let score = 0;
   const matchDay = normalizeDay(match.day);
@@ -358,7 +384,7 @@ export function assignCourtSlots(matches = [], slots = [], { onlyEmpty = true, v
     if (!(day in days)) return -8;
     const win = parseCourtWindow(days[day]);
     if (!win) return 12;
-    if (windowsOverlap(slot.from, slot.to, win.from, win.to)) return 18;
+    if (Number(slot.from) >= win.from && Number(slot.to) <= win.to) return 18;
     return 4;
   }
 
@@ -374,11 +400,18 @@ export function assignCourtSlots(matches = [], slots = [], { onlyEmpty = true, v
     return (usedByVenue.get(venueKey(v)) || 0) < Number(cap);
   }
 
-  /** Opciones estrictas (mismo día/horario) y, si preferPlan, cualquier cancha libre del plan. */
+  /**
+   * 1) Mismo día/horario del fixtureo, si hay cancha.
+   * 2) Si preferPlan: otro turno libre del plan SOLO si entra en la disponibilidad
+   *    de ambas parejas (nunca viernes 15:00 si anotaron 16:30-19:30).
+   */
   function optionsFor(m, pending) {
     const scored = pool
       .map((slot, si) => ({ slot, si, score: scoreOf(slot, m, pending) }))
-      .filter(({ slot }) => !slot.used && underCap(slot));
+      .filter(
+        ({ slot }) =>
+          !slot.used && underCap(slot) && slotFitsPairAvailability(slot, m, { pending })
+      );
     const strict = scored
       .filter(({ slot }) => slotFitsMatch(slot, m))
       .sort((a, b) => b.score - a.score || a.slot.from - b.slot.from);
@@ -416,8 +449,7 @@ export function assignCourtSlots(matches = [], slots = [], { onlyEmpty = true, v
   let assigned = 0;
   for (const { i, pending } of candidates) {
     const m = next[i];
-    // Recalcular al momento de asignar: si el horario del fixtureo ya no tiene cancha,
-    // con preferPlan se mueve a otro turno libre del plan (no deja complejo/cancha vacíos).
+    // Recalcular al asignar. preferPlan puede cambiar horario, pero nunca fuera de la inscripción.
     const options = optionsFor(m, pending);
     const pick = options[0];
     if (!pick) continue;

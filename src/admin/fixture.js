@@ -777,8 +777,14 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       const out = buildFixture({ entries, ranking: ctx.rows, history, week, temp, seed: buildCount });
       let built = out.matches.map((m) => {
         const cleaned = cleanMatch(m, {}, season);
-        if (!cleaned.pending) return cleaned;
-        // days se pasa a assignCourtSlots para preferir turnos de su disponibilidad; luego se limpia.
+        if (!cleaned.pending) {
+          return {
+            ...cleaned,
+            homeDays: m.homeDays && typeof m.homeDays === "object" ? m.homeDays : undefined,
+            awayDays: m.awayDays && typeof m.awayDays === "object" ? m.awayDays : undefined,
+          };
+        }
+        // days se pasa a assignCourtSlots para respetar disponibilidad; luego se limpia.
         return {
           ...cleanMatch(
             {
@@ -802,7 +808,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       const venueCaps = Object.fromEntries(plan.map((p) => [p.venue, p.count]));
       const assigned = assignCourtSlots(built, plannedSlots, { onlyEmpty: true, venueCaps, preferPlan: true });
       built = assigned.matches.map((m) => {
-        const { days: _days, ...rest } = m;
+        const { days: _days, homeDays: _h, awayDays: _a, ...rest } = m;
         return cleanMatch(rest, {}, season);
       });
       const real = built.filter((m) => !isPending(m));

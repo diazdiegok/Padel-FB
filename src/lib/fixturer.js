@@ -235,6 +235,9 @@ export function buildFixture({ entries = [], ranking = [], history = [], week = 
         away: away.name,
         result: "",
         rematch: edge.cost >= REMATCH_COST,
+        // Para assignCourtSlots: no mover a un turno fuera de la inscripción.
+        homeDays: home.entry?.days && typeof home.entry.days === "object" ? home.entry.days : undefined,
+        awayDays: away.entry?.days && typeof away.entry.days === "object" ? away.entry.days : undefined,
       });
     }
     for (const p of pairs) {

@@ -6,6 +6,7 @@ import {
   parseCourtSlot,
   parseCourtSlotRows,
   parseCourtWindow,
+  slotFitsPairAvailability,
   summarizeCourtSlots,
   weekFromName,
   windowCapacity,
@@ -135,5 +136,74 @@ const rescued = assignCourtSlots(crowded, crowdedSlots, { onlyEmpty: true, prefe
 assert.equal(rescued.assigned, 3, "los 3 consiguen cancha aunque peleen el mismo horario");
 assert.ok(rescued.matches.every((m) => m.venue && m.court && m.day && m.time));
 assert.equal(rescued.matches.filter((m) => m.time === "18:00 - 19:30").length, 1, "solo una cancha a las 18:00");
+
+// Disponibilidad: nunca viernes 15:00 si la pareja anotó 16:30-19:30 (caso Diaz/Fontanetto).
+const friEarly = {
+  venue: "La manzana Padel",
+  court: "Cancha 1",
+  day: "Viernes",
+  from: 15 * 60,
+  to: 16 * 60 + 30,
+  time: "15:00 - 16:30",
+};
+const friOk = {
+  venue: "Open Padel",
+  court: "Cancha 1",
+  day: "Viernes",
+  from: 17 * 60,
+  to: 18 * 60 + 30,
+  time: "17:00 - 18:30",
+};
+const diazDays = { Jueves: "16:30 - 19:30", Viernes: "16:30 - 19:30", Sábado: "16:30 - 19:30" };
+const rivalDays = { Viernes: "14:00 - 22:00" };
+assert.equal(
+  slotFitsPairAvailability(friEarly, { homeDays: rivalDays, awayDays: diazDays }),
+  false,
+  "15:00-16:30 no entra en 16:30-19:30"
+);
+assert.equal(slotFitsPairAvailability(friOk, { homeDays: rivalDays, awayDays: diazDays }), true);
+
+const availSlots = parseCourtSlotRows([
+  { Complejo: "La Manzana", Cancha: "1", Dia: "Viernes", Horario: "15:00 - 16:30" },
+  { Complejo: "La Manzana", Cancha: "1", Dia: "Viernes", Horario: "16:30 - 18:00" },
+  { Complejo: "Open", Cancha: "1", Dia: "Viernes", Horario: "17:00 - 18:30" },
+]);
+const diazMatch = {
+  day: "Viernes",
+  time: "16:30 - 18:00",
+  home: "Denis Márquez / Ramira Omar",
+  away: "Diego Diaz / Emiliano Fontanetto",
+  venue: "",
+  court: "",
+  cat: "A Masculina",
+  homeDays: rivalDays,
+  awayDays: diazDays,
+};
+// Otro partido se queda con 16:30; Diaz no puede caer en 15:00 aunque preferPlan busque otra cancha.
+const crowdedAvail = assignCourtSlots(
+  [
+    { day: "Viernes", time: "16:30 - 18:00", home: "A / B", away: "C / D", venue: "", court: "", cat: "B Masculina" },
+    diazMatch,
+  ],
+  availSlots,
+  { onlyEmpty: true, preferPlan: true }
+);
+assert.equal(crowdedAvail.assigned, 2);
+const diazRow = crowdedAvail.matches.find((m) => /Fontanetto/i.test(m.away));
+assert.ok(diazRow.venue, "Diaz consigue cancha");
+assert.notEqual(diazRow.time, "15:00 - 16:30", "no puede ir a las 15");
+assert.ok(
+  ["16:30 - 18:00", "17:00 - 18:30"].includes(diazRow.time),
+  `horario válido, got ${diazRow.time}`
+);
+
+const onlyEarly = assignCourtSlots(
+  [{ ...diazMatch, time: "16:30 - 18:00", venue: "", court: "" }],
+  parseCourtSlotRows([{ Complejo: "La Manzana", Cancha: "1", Dia: "Viernes", Horario: "15:00 - 16:30" }]),
+  { onlyEmpty: true, preferPlan: true }
+);
+assert.equal(onlyEarly.assigned, 0, "mejor sin cancha que fuera de disponibilidad");
+assert.equal(onlyEarly.matches[0].venue || "", "");
+assert.equal(onlyEarly.matches[0].time, "16:30 - 18:00");
 
 console.log("slots ok");
