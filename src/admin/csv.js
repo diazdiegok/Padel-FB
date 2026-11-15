@@ -76,17 +76,29 @@ export function sortMatchesForExport(matches = [], mode = "fecha") {
 }
 
 export function fixtureExportRows(matches = []) {
-  return matches.map((m) => ({
-    fecha: m.week || "",
-    dia: m.day || "",
-    horario: m.time || "",
-    categoria: m.cat || "",
-    complejo: m.venue || "",
-    cancha: m.court || "",
-    pareja1: m.home || "",
-    pareja2: m.away || "",
-    resultado: m.result || "",
-  }));
+  return matches.map((m) => {
+    const pending = isPendingMatch(m);
+    return {
+      fecha: m.week || "",
+      // Pendiente sin rival: no lleva día/horario/sede (aunque el admin haya reservado cancha).
+      dia: pending ? "" : m.day || "",
+      horario: pending ? "" : m.time || "",
+      categoria: m.cat || "",
+      complejo: pending ? "" : m.venue || "",
+      cancha: pending ? "" : m.court || "",
+      pareja1: m.home || "",
+      pareja2: pending ? PENDING_AWAY : m.away || "",
+      resultado: pending ? "" : m.result || "",
+    };
+  });
+}
+
+/** Etiqueta del Excel según orden: "Fecha 1- Complejos", "Fecha 1- Fecha", … */
+export function fixtureExportLabel(week = "", mode = "complejo") {
+  const fecha = String(week || "Fixture").trim() || "Fixture";
+  const suffix =
+    mode === "complejo" ? "Complejos" : mode === "pareja" ? "Parejas" : mode === "fecha" ? "Fecha" : mode || "Fixture";
+  return `${fecha}- ${suffix}`;
 }
 
 export const FX_EXPORT_COLS = [
