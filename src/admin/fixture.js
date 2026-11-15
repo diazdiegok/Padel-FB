@@ -175,15 +175,23 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     );
   }
 
+  function availHint(days) {
+    if (!days || typeof days !== "object") return "";
+    return Object.entries(days)
+      .map(([d, h]) => `${d} ${h}`)
+      .join(" · ");
+  }
+
   /**
-   * Turnos libres del Drive anclados a la pendiente.
-   * La pareja que cubre puede aflojar su horario: se priorizan turnos donde
-   * también entra, pero se listan todos los que sirven a la pendiente.
+   * Turnos libres del Drive anclados a la pendiente (cualquier categoría).
+   * Siempre prioriza la disponibilidad actual de Inscripciones.
+   * Quien cubre puede aflojar: se priorizan turnos donde también entra.
    */
   function coverCourtChoices(match, coverLabel) {
     const cover = String(coverLabel || "").trim();
     if (!cover) return { opts: [], homeDays: null, coverDays: null };
-    const homeDays = match.homeDays || match.days || daysOfPair(match.home, match.cat);
+    // Inscripciones primero (no reusar days viejos del partido).
+    const homeDays = daysOfPair(match.home, match.cat) || match.homeDays || match.days;
     const coverDays = daysOfPair(cover, match.cat) || undefined;
     if (!homeDays) {
       return { opts: [], homeDays: null, coverDays: coverDays || null };
@@ -369,8 +377,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
                   temp: filterTemp,
                 });
                 const draft = coverDraft.get(i) || "";
+                const pendingDays = daysOfPair(m.home, m.cat) || m.homeDays || m.days;
+                const daysTxt = availHint(pendingDays);
                 return `<article class="fx-pending-card" data-i="${i}">
                   <strong>${escAttr(m.home)}</strong>
+                  ${daysTxt ? `<p class="admin-help" style="margin:4px 0 0">Puede: ${escAttr(daysTxt)}</p>` : ""}
                   <div class="fx-pending-actions">
                     <select data-fx-cover="${i}" aria-label="Cubrir con">
                       <option value="">1. Cubrir con…</option>
