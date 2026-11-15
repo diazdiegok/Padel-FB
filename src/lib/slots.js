@@ -321,10 +321,16 @@ function venueKey(name) {
 /**
  * Filtra ventanas según plan avanzado y expande a candidatos de 90'.
  * plan: [{ venue, count, days: string[] }]
- * Devuelve hasta `count` candidatos no solapados por complejo (capacidad real).
+ *
+ * mode:
+ * - "pack" (default): hasta `count` turnos no solapados por complejo (los más tempranos).
+ * - "pool": TODOS los turnos posibles de esos días; el tope `count` lo aplica assignCourtSlots
+ *   con venueCaps. Así si las parejas solo pueden 16:30-19:30 no nos quedamos trabados
+ *   con canchas de las 15:00 que el pack agarró primero.
  */
-export function applyVenuePlan(slots = [], plan = []) {
+export function applyVenuePlan(slots = [], plan = [], { mode = "pack" } = {}) {
   if (!plan.length) return expandCourtCandidates(slots);
+  const loose = mode === "pool";
   const out = [];
   for (const row of plan) {
     const want = Math.max(0, Number(row.count) || 0);
@@ -340,6 +346,10 @@ export function applyVenuePlan(slots = [], plan = []) {
     const candidates = expandCourtCandidates(windows).sort(
       (a, b) => DAYS.indexOf(a.day) - DAYS.indexOf(b.day) || a.from - b.from || String(a.court).localeCompare(String(b.court), "es")
     );
+    if (loose) {
+      out.push(...candidates);
+      continue;
+    }
     const picked = [];
     for (const c of candidates) {
       if (picked.length >= want) break;

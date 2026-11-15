@@ -206,4 +206,37 @@ assert.equal(onlyEarly.assigned, 0, "mejor sin cancha que fuera de disponibilida
 assert.equal(onlyEarly.matches[0].venue || "", "");
 assert.equal(onlyEarly.matches[0].time, "16:30 - 18:00");
 
+// Pool vs pack: con disponibilidad 16:30-19:30 el pack temprano dejaba 15:00 y faltaban canchas;
+// el pool ofrece 18:00 y completa complejo/cancha sin violar inscripción.
+const rangeSlots = parseCourtSlotRows([
+  { Complejo: "Open", Cancha: "1", Dia: "Viernes", Horario: "15:00 - 21:00" },
+  { Complejo: "Open", Cancha: "2", Dia: "Viernes", Horario: "15:00 - 21:00" },
+]);
+const packedEarly = applyVenuePlan(rangeSlots, [{ venue: "Open Padel", count: 4, days: ["Viernes"] }]);
+assert.ok(
+  packedEarly.filter((s) => s.time === "15:00 - 16:30").length >= 2,
+  "pack agarra turnos tempranos"
+);
+const poolAll = applyVenuePlan(rangeSlots, [{ venue: "Open Padel", count: 4, days: ["Viernes"] }], { mode: "pool" });
+assert.ok(poolAll.some((s) => s.time === "18:00 - 19:30"), "pool incluye turnos tarde");
+const narrow = { Viernes: "16:30 - 19:30" };
+const fourNarrow = [0, 1, 2, 3].map((i) => ({
+  day: "Viernes",
+  time: "16:30 - 18:00",
+  home: `H${i}a / H${i}b`,
+  away: `A${i}a / A${i}b`,
+  venue: "",
+  court: "",
+  homeDays: narrow,
+  awayDays: narrow,
+}));
+const filled = assignCourtSlots(fourNarrow, poolAll, {
+  onlyEmpty: true,
+  preferPlan: true,
+  venueCaps: { "Open Padel": 4 },
+});
+assert.equal(filled.assigned, 4, "4 partidos con cancha respetando 16:30-19:30");
+assert.ok(filled.matches.every((m) => m.venue && m.court));
+assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
+
 console.log("slots ok");

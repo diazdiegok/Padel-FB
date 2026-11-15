@@ -716,8 +716,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       toast(`Tope: ${need} partidos`, "err");
       return;
     }
-    const plannedSlots = applyVenuePlan(loadedSlots, plan);
-    if (!plannedSlots.length) {
+    // pool = todos los turnos posibles de los días elegidos; venueCaps limita «Partidos a usar».
+    // Si usáramos solo el pack temprano, canchas de las 15:00 ocupaban el cupo y las parejas
+    // que solo pueden 16:30-19:30 quedaban sin complejo/cancha.
+    const plannedSlots = applyVenuePlan(loadedSlots, plan, { mode: "pool" });
+    const planCapacity = plan.reduce((n, p) => n + Math.max(0, Number(p.count) || 0), 0);
+    if (!plannedSlots.length || !planCapacity) {
       setMsg($("fx-msg"), "No hay disponibilidad que coincida con los días y cupos elegidos.", "err");
       toast("Sin cupos para el plan", "err");
       return;
@@ -763,9 +767,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       const ok = await confirmModal({
         title: `Armar ${week}`,
         body:
-          `Se arma ${week} (${seasonLabel(season)}) con ${playable.length} pareja${playable.length === 1 ? "" : "s"} y ${plannedSlots.length} cancha${plannedSlots.length === 1 ? "" : "s"} del plan (${planTxt}). ` +
+          `Se arma ${week} (${seasonLabel(season)}) con ${playable.length} pareja${playable.length === 1 ? "" : "s"} y ${planCapacity} cupo${planCapacity === 1 ? "" : "s"} de cancha (${planTxt}). ` +
           (warnings.length ? warnings.join(" ") + " " : "") +
-          "Nada se publica hasta que toques Publicar fixture.",
+          "Los horarios respetan la disponibilidad de cada pareja. Nada se publica hasta que toques Publicar fixture.",
         confirmLabel: "Armar fixture",
       });
       if (!ok) return;
