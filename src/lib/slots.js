@@ -486,15 +486,87 @@ export function assignCourtSlots(matches = [], slots = [], { onlyEmpty = true, v
     // day/time originales se reescriben al reasignar; si queda libre, se restauran abajo
   }
 
+  /** Índice del pool que coincide con el turno ya cargado, o -1. */
+  function poolIndexForMatch(m) {
+    const venue = String(m.venue || "").trim();
+    const court = String(m.court || "").trim();
+    const day = normalizeDay(m.day);
+    const win = parseCourtWindow(m.time);
+    if (!venue || !court || !day || !win || !(win.to > win.from)) return -1;
+    for (let si = 0; si < pool.length; si++) {
+      const slot = pool[si];
+      if (!sameCourt(slot, { venue, court, day })) continue;
+      if (Number(slot.from) === win.from && Number(slot.to) === win.to) return si;
+    }
+    return -1;
+  }
+
+  /** Si el partido ya tiene cancha pero no está en el pool, la agregamos para bloquear solapes. */
+  function ensurePoolSlotForMatch(m) {
+    const existing = poolIndexForMatch(m);
+    if (existing >= 0) return existing;
+    const venue = String(m.venue || "").trim();
+    const court = String(m.court || "").trim();
+    const day = normalizeDay(m.day);
+    const win = parseCourtWindow(m.time);
+    if (!venue || !court || !day || !win || !(win.to > win.from)) return -1;
+    const si = pool.length;
+    pool.push({
+      day,
+      venue,
+      court,
+      from: win.from,
+      to: win.to,
+      time: m.time || slotLabel(win.from),
+      _i: si,
+      _seeded: true,
+    });
+    return si;
+  }
+
   const needIdx = [];
+  const filledIdx = [];
   for (let i = 0; i < next.length; i++) {
     const m = next[i];
     const pending = isPendingMatch(m);
     const hasRealAway = String(m.away || "").trim() && !pending;
     if (!hasRealAway && !pending) continue;
-    const filled = String(m.venue || "").trim() && String(m.time || "").trim();
-    if (onlyEmpty && filled) continue;
+    const filled =
+      String(m.venue || "").trim() && String(m.court || "").trim() && String(m.time || "").trim() && String(m.day || "").trim();
+    if (onlyEmpty && filled) {
+      filledIdx.push(i);
+      continue;
+    }
     needIdx.push(i);
+  }
+
+  // onlyEmpty: las canchas ya asignadas tienen que ocupar el pool. Si dos partidos
+  // ya chocan (dato viejo / doble book), el primero se queda y el resto se reasigna.
+  if (onlyEmpty) {
+    for (const i of filledIdx) {
+      const si = ensurePoolSlotForMatch(next[i]);
+      if (si < 0) {
+        needIdx.push(i);
+        continue;
+      }
+      let blocked = false;
+      for (const [mi, osi] of owner) {
+        if (mi === i) continue;
+        const other = pool[osi];
+        if (sameCourt(pool[si], other) && windowsOverlap(pool[si].from, pool[si].to, other.from, other.to)) {
+          blocked = true;
+          break;
+        }
+      }
+      if (blocked) {
+        const m = next[i];
+        m.venue = "";
+        m.court = "";
+        needIdx.push(i);
+        continue;
+      }
+      owner.set(i, si);
+    }
   }
 
   // Snapshot del día/hora del fixtureo (para restaurar si no hay cancha).
@@ -593,7 +665,7 @@ export function assignCourtSlots(matches = [], slots = [], { onlyEmpty = true, v
     next[i].court = "";
   }
 
-  const assigned = owner.size;
+  const assigned = needIdx.filter((i) => owner.has(i)).length;
   // leftover: turnos del pool que no chocan con ninguno asignado (aprox. capacidad libre)
   let leftover = 0;
   for (let si = 0; si < pool.length; si++) {
@@ -615,6 +687,57 @@ export function assignCourtSlots(matches = [], slots = [], { onlyEmpty = true, v
     leftover,
     matches: next,
   };
+}
+
+/**
+ * Partidos de la misma fecha (week+temp) que comparten complejo/cancha en un horario solapado.
+ * Devuelve grupos [{ key, matches: [...] }, ...] con 2+ partidos.
+ */
+export function findCourtConflicts(matches = []) {
+  const indexed = (matches || [])
+    .map((m, index) => ({ m, index }))
+    .filter(({ m }) => {
+      if (!String(m?.venue || "").trim() || !String(m?.court || "").trim()) return false;
+      if (!normalizeDay(m.day)) return false;
+      const win = parseCourtWindow(m.time);
+      return !!(win && win.to > win.from);
+    });
+
+  const groups = [];
+  const seen = new Set();
+  for (let i = 0; i < indexed.length; i++) {
+    if (seen.has(indexed[i].index)) continue;
+    const a = indexed[i].m;
+    const aWin = parseCourtWindow(a.time);
+    const aWeek = String(a.week || "");
+    const aTemp = String(a.temp || "").toUpperCase();
+    const cluster = [indexed[i]];
+    for (let j = i + 1; j < indexed.length; j++) {
+      if (seen.has(indexed[j].index)) continue;
+      const b = indexed[j].m;
+      if (String(b.week || "") !== aWeek) continue;
+      if (String(b.temp || "").toUpperCase() !== aTemp) continue;
+      if (fold(a.venue) !== fold(b.venue) || courtKey(a.court) !== courtKey(b.court)) continue;
+      if (normalizeDay(a.day) !== normalizeDay(b.day)) continue;
+      const bWin = parseCourtWindow(b.time);
+      if (!bWin || !windowsOverlap(aWin.from, aWin.to, bWin.from, bWin.to)) continue;
+      cluster.push(indexed[j]);
+    }
+    if (cluster.length < 2) continue;
+    for (const c of cluster) seen.add(c.index);
+    groups.push({
+      key: `${aTemp}|${aWeek}|${normalizeDay(a.day)}|${a.time}|${a.venue}|${a.court}`,
+      day: normalizeDay(a.day),
+      time: a.time,
+      venue: a.venue,
+      court: a.court,
+      week: aWeek,
+      temp: aTemp,
+      matches: cluster.map((c) => c.m),
+      indexes: cluster.map((c) => c.index),
+    });
+  }
+  return groups;
 }
 
 function courtOptionKey(slot) {
