@@ -368,6 +368,49 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   assert.equal(driveCourtOptions({ time: "19:00 - 20:30" }, sheet, []).length, 0, "sin día ni disponibilidad no inventa turnos");
 }
 
+// Cubrir pendiente: TODOS los días/horarios libres del Drive donde puedan jugar ambas.
+{
+  const sheet = parseCourtSlotRows([
+    { Complejo: "Open", Cancha: "1", Dia: "Lunes", Horario: "19:00 - 20:30" },
+    { Complejo: "Open", Cancha: "2", Dia: "Lunes", Horario: "19:00 - 20:30" },
+    { Complejo: "Americas", Cancha: "1", Dia: "Miércoles", Horario: "18:00 - 19:30" },
+    { Complejo: "Terrazas", Cancha: "1", Dia: "Viernes", Horario: "19:00 - 20:30" },
+    { Complejo: "Terrazas", Cancha: "2", Dia: "Viernes", Horario: "19:00 - 20:30" },
+    { Complejo: "Open", Cancha: "1", Dia: "Sábado", Horario: "10:00 - 11:30" },
+  ]);
+  const pendingCover = {
+    day: "",
+    time: "",
+    venue: "",
+    court: "",
+    pending: false,
+    home: "Andrea / Carla",
+    away: "Marien / Sofi",
+    homeDays: {
+      Lunes: "18:00 - 22:00",
+      Miércoles: "18:00 - 22:00",
+      Viernes: "18:00 - 22:00",
+    },
+    awayDays: {
+      Lunes: "19:00 - 21:00",
+      Viernes: "18:00 - 22:00",
+      Sábado: "10:00 - 14:00",
+    },
+  };
+  const taken = [{ day: "Viernes", time: "19:00 - 20:30", venue: "Terrazas Padel", court: "1" }];
+  const coverOpts = driveCourtOptions(pendingCover, sheet, taken);
+  const keys = coverOpts.map((o) => `${o.day}|${o.time}|${o.venue}|${o.court}`);
+  assert.deepEqual(
+    keys,
+    [
+      "Lunes|19:00 - 20:30|Open Padel|1",
+      "Lunes|19:00 - 20:30|Open Padel|2",
+      "Viernes|19:00 - 20:30|Terrazas Padel|2",
+    ],
+    "al cubrir: lista todos los turnos libres compartidos (Lunes×2 + Viernes cancha libre); excluye miércoles (solo home), sábado (solo away) y cancha ya tomada"
+  );
+}
+
 {
   const taken = [{ day: "Viernes", time: "18:00 - 19:30", venue: "Open Padel", court: "1" }];
   assert.equal(
