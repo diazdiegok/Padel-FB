@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   applyVenuePlan,
   assignCourtSlots,
+  driveCourtOptions,
   matchStartsInWindow,
   parseCourtSlot,
   parseCourtSlotRows,
@@ -275,6 +276,53 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   const tarde = swap.matches.find((m) => /Tarde/.test(m.home));
   assert.ok(tarde.venue, "el de la tarde tiene complejo");
   assert.ok(Number(tarde.time.slice(0, 2)) >= 18 || tarde.time.startsWith("18:") || tarde.time.startsWith("19:"), tarde.time);
+}
+
+// Desplegable: canchas del Sheet para el mismo horario, sin tope de cupo y sin doble reserva.
+{
+  const sheet = parseCourtSlotRows([
+    { Complejo: "Americas", Cancha: "Cancha 1", Dia: "Lunes", Horario: "16:00 - 22:00" },
+    { Complejo: "Americas", Cancha: "Cancha 2", Dia: "Lunes", Horario: "19:00 - 20:30" },
+    { Complejo: "Open", Cancha: "Cancha 1", Dia: "Lunes", Horario: "19:00 - 20:30" },
+    { Complejo: "Open", Cancha: "Cancha 1", Dia: "Lunes", Horario: "19:00 - 20:30" },
+    { Complejo: "Open", Cancha: "Cancha 2", Dia: "Martes", Horario: "19:00 - 20:30" },
+    { Complejo: "Terrazas", Cancha: "Cancha 1", Dia: "Lunes", Horario: "21:00 - 22:30" },
+  ]);
+  const match = {
+    day: "Lunes",
+    time: "19:00 - 20:30",
+    home: "A / B",
+    away: "C / D",
+    venue: "",
+    court: "",
+    homeDays: { Lunes: "18:00 - 22:00" },
+    awayDays: { Lunes: "18:00 - 22:00" },
+  };
+  const opts = driveCourtOptions(match, sheet, [
+    { day: "Lunes", time: "16:30 - 18:00", venue: "Americas Padel", court: "Cancha 1" },
+  ]);
+  const labels = opts.map((o) => `${o.venue}|${o.court}`);
+  assert.deepEqual(
+    labels,
+    ["Americas Padel|Cancha 1", "Americas Padel|Cancha 2", "Open Padel|Cancha 1"],
+    "incluye canchas del Drive del mismo horario, aunque el cupo ya se haya usado"
+  );
+  assert.equal(opts.length, 3, "no duplica la misma cancha");
+
+  const blocked = driveCourtOptions(match, sheet, [
+    { day: "Lunes", time: "19:00 - 20:30", venue: "Americas Padel", court: "Cancha 1" },
+    { day: "Lunes", time: "18:30 - 20:00", venue: "Americas Padel", court: "Cancha 2" },
+    { day: "Lunes", time: "19:00 - 20:30", venue: "Open Padel", court: "Cancha 1" },
+  ]);
+  assert.equal(blocked.length, 0, "no ofrece una cancha ocupada en ese horario");
+
+  const outside = driveCourtOptions(
+    { ...match, homeDays: { Lunes: "16:00 - 18:00" }, awayDays: { Lunes: "16:00 - 18:00" } },
+    sheet,
+    []
+  );
+  assert.equal(outside.length, 0, "no ofrece un horario fuera de la inscripción");
+  assert.equal(driveCourtOptions({ time: "19:00 - 20:30" }, sheet, []).length, 0);
 }
 
 console.log("slots ok");

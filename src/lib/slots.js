@@ -603,4 +603,52 @@ export function assignCourtSlots(matches = [], slots = [], { onlyEmpty = true, v
   };
 }
 
+function courtOptionKey(slot) {
+  return [slot.day, slot.time, slot.venue, slot.court].map((part) => encodeURIComponent(part || "")).join("|");
+}
+
+/**
+ * Canchas del Sheet para el día y horario que ya tiene el partido.
+ * Ignora el tope de «Partidos a usar»: sirve cuando el plan no dejó turno libre.
+ * No ofrece una cancha ya ocupada (mismo complejo, cancha y horario solapado).
+ */
+export function driveCourtOptions(match = {}, slots = [], taken = []) {
+  const day = normalizeDay(match.day);
+  const win = parseCourtWindow(match.time);
+  if (!day || !win || !(win.to > win.from)) return [];
+  const pending = !!match.pending || fold(match.away) === fold("Pendiente / Pendiente");
+  const seen = new Set();
+  const out = [];
+  for (const slot of expandCourtCandidates(slots)) {
+    if (normalizeDay(slot.day) !== day) continue;
+    if (slot.from !== win.from || slot.to !== win.to) continue;
+    if (!slotFitsPairAvailability(slot, match, { pending })) continue;
+    const busy = (taken || []).some((other) => {
+      if (!other?.venue || !other?.court) return false;
+      if (fold(other.venue) !== fold(slot.venue) || fold(other.court) !== fold(slot.court)) return false;
+      if (normalizeDay(other.day) !== day) return false;
+      const otherWin = parseCourtWindow(other.time);
+      if (!otherWin) return false;
+      return windowsOverlap(slot.from, slot.to, otherWin.from, otherWin.to);
+    });
+    if (busy) continue;
+    const key = courtOptionKey(slot);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      day: slot.day,
+      time: slot.time,
+      venue: slot.venue,
+      court: slot.court,
+      key,
+    });
+  }
+  out.sort(
+    (a, b) =>
+      a.venue.localeCompare(b.venue, "es") ||
+      String(a.court).localeCompare(String(b.court), "es", { numeric: true })
+  );
+  return out;
+}
+
 export { MATCH_MINUTES };

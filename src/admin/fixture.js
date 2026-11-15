@@ -22,7 +22,7 @@ import {
 import { latestWeek, listSeasons, mergeArchivedMatches, seasonLabel, weekKey, weekNumber } from "../lib/liga.js";
 import { pairsMatch } from "../lib/scoring.js";
 import { courtsSheetIdForSeason } from "../lib/sheets.js";
-import { applyVenuePlan, assignCourtSlots, missingCourtHorarios, summarizeCourtSlots, weekFromName } from "../lib/slots.js";
+import { applyVenuePlan, assignCourtSlots, driveCourtOptions, missingCourtHorarios, summarizeCourtSlots, weekFromName } from "../lib/slots.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
 const isPending = (m) => isPendingMatch(m);
@@ -136,6 +136,82 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       : `Sin partidos en ${filterWeek}`;
   }
 
+  function needsCourt(m) {
+    return !String(m?.venue || "").trim() || !String(m?.court || "").trim();
+  }
+
+  function daysOfPair(label, cat) {
+    const season = String(filterTemp || "").toUpperCase();
+    const found = (ctx.pairs || []).find((p) => {
+      if (String(p.temp || "").toUpperCase() !== season) return false;
+      if (cat && p.cat && p.cat !== cat) return false;
+      return pairsMatch(pairLabel(p), label);
+    });
+    const days = found?.days;
+    if (!days || typeof days !== "object" || !Object.keys(days).length) return undefined;
+    return days;
+  }
+
+  /** Canchas del Drive para este horario, sin el tope de «Partidos a usar». */
+  function courtChoicesFor(match) {
+    const taken = (ctx.fixture || []).filter((other) => {
+      if (other === match) return false;
+      if (seasonOf(other) !== filterTemp || (other.week || "") !== filterWeek) return false;
+      return String(other.venue || "").trim() && String(other.court || "").trim();
+    });
+    return driveCourtOptions(
+      {
+        ...match,
+        homeDays: match.homeDays || daysOfPair(match.home, match.cat),
+        awayDays: match.awayDays || daysOfPair(match.away, match.cat),
+      },
+      loadedSlots,
+      taken
+    );
+  }
+
+  function courtOptionText(option) {
+    const court = String(option.court || "").trim();
+    const courtTxt = /^cancha\b/i.test(court) ? court : court ? `Cancha ${court}` : "";
+    return [option.venue, courtTxt].filter(Boolean).join(" · ");
+  }
+
+  function courtFallbackSelect(i, match) {
+    const label = "Elegir complejo y cancha";
+    if (!loadedSlots.length) {
+      return `<select disabled aria-label="${label}" title="Leé el Drive para ver canchas de este horario"><option>Leé el Drive para elegir cancha</option></select>`;
+    }
+    if (!String(match.day || "").trim() || !String(match.time || "").trim()) {
+      return `<select disabled aria-label="${label}"><option>Sin horario para buscar cancha</option></select>`;
+    }
+    const opts = courtChoicesFor(match);
+    if (!opts.length) {
+      return `<select disabled aria-label="${label}" title="En el Drive no quedó una cancha libre que coincida con este día y horario"><option>Sin cancha libre en el Drive para este horario</option></select>`;
+    }
+    return `<select data-fx-slot="${i}" aria-label="${label}" title="Canchas del Drive para este horario, aunque el complejo ya llegó a la cantidad de partidos.">
+      <option value="">Elegir complejo y cancha…</option>
+      ${opts.map((o) => `<option value="${escAttr(o.key)}">${escAttr(courtOptionText(o))}</option>`).join("")}
+    </select>`;
+  }
+
+  function applyCourtOption(i, key) {
+    const match = ctx.fixture[i];
+    if (!match || !key) return;
+    const opt = courtChoicesFor(match).find((o) => o.key === key);
+    if (!opt) {
+      toast("Esa cancha ya no está libre para este horario.", "err");
+      render();
+      return;
+    }
+    match.venue = opt.venue;
+    match.court = opt.court;
+    match.day = opt.day || match.day;
+    match.time = opt.time || match.time;
+    shell.markDirty("fixture");
+    render();
+    toast(courtOptionText(opt), "ok");
+  }
+
   function renderVenues() {
     const list = $("fx-venues");
     if (!list) return;
@@ -208,6 +284,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
                       : " · sin cancha asignada"
                   }${m.reason ? ` · ${escAttr(m.reason)}` : ""}${m.avail ? ` · disp. ${escAttr(m.avail)}` : ""}${m.note ? ` · ${escAttr(m.note)}` : ""}</span>
                   <div class="fx-pending-actions">
+                    ${needsCourt(m) ? `<span class="fx-court-fallback">${courtFallbackSelect(i, m)}</span>` : ""}
                     <select data-fx-cover="${i}" aria-label="Cubrir con">
                       <option value="">Cubrir con…</option>
                       ${
@@ -516,16 +593,29 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     $("fx-body").innerHTML = games
       .map(({ m, i }) => {
         const on = editing === i;
+        const bare = !on && needsCourt(m);
         const field = (k, placeholder) =>
           on
             ? `<input data-k="${k}" value="${escAttr(m[k])}" placeholder="${placeholder}"${k === "venue" ? ' list="fx-venues"' : ""} />`
             : escAttr(m[k]);
-        return `<tr data-i="${i}"${repeated.has(i) ? ' class="is-rematch" title="Ya se enfrentaron en esta temporada"' : ""}>
+        const titles = [];
+        if (repeated.has(i)) titles.push("Ya se enfrentaron en esta temporada");
+        if (bare) {
+          titles.push(
+            "Sin cancha en el cupo elegido. El desplegable lista canchas del Drive para este horario, aunque el complejo ya llegó a la cantidad."
+          );
+        }
+        const cls = [repeated.has(i) ? "is-rematch" : "", bare ? "is-uncourted" : ""].filter(Boolean).join(" ");
+        return `<tr data-i="${i}"${cls ? ` class="${cls}"` : ""}${titles.length ? ` title="${escAttr(titles.join(" "))}"` : ""}>
           <td>${field("day", "Jueves")}</td>
           <td>${field("time", "19:00 - 20:30")}</td>
           <td>${field("cat", "A Masculina")}</td>
-          <td>${field("venue", "Complejo")}</td>
-          <td>${field("court", "Cancha 1")}</td>
+          ${
+            bare
+              ? `<td class="fx-court-fallback" colspan="2">${courtFallbackSelect(i, m)}</td>`
+              : `<td>${field("venue", "Complejo")}</td>
+          <td>${field("court", "Cancha 1")}</td>`
+          }
           <td>${field("home", "Pareja 1")}</td>
           <td>${field("away", "Pareja 2")}</td>
           <td class="col-actions">
@@ -844,7 +934,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
       if (bare.length) {
         parts.push(
-          `${bare.length} sin complejo/cancha (faltó cupo del plan o del Sheet en los días elegidos)`
+          `${bare.length} sin complejo/cancha: en esa${bare.length === 1 ? " fila" : "s filas"} hay un desplegable con canchas del Drive para el mismo horario, aunque el complejo ya llegó a la cantidad`
         );
       }
       if (assigned.skipped && !bare.length) parts.push(`${assigned.skipped} sin cancha compatible`);
@@ -1094,6 +1184,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     });
 
     $("fx-body")?.addEventListener("change", (e) => {
+      const slotSel = e.target.closest("[data-fx-slot]");
+      if (slotSel) {
+        applyCourtOption(Number(slotSel.dataset.fxSlot), slotSel.value);
+        return;
+      }
       const tr = e.target.closest("tr");
       if (!tr) return;
       const i = Number(tr.dataset.i);
@@ -1108,6 +1203,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     });
 
     $("fx-pending")?.addEventListener("change", (e) => {
+      const slotSel = e.target.closest("[data-fx-slot]");
+      if (slotSel) {
+        applyCourtOption(Number(slotSel.dataset.fxSlot), slotSel.value);
+        return;
+      }
       const sel = e.target.closest("[data-fx-cover]");
       if (!sel || sel.value === "") return;
       const i = Number(sel.dataset.fxCover);

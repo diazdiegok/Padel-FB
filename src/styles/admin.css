@@ -2192,6 +2192,26 @@ body.is-admin .chk input[type="checkbox"] {
   box-shadow: inset 3px 0 0 #ff7a59;
 }
 
+.admin-table tr.is-uncourted td:first-child {
+  box-shadow: inset 3px 0 0 #f0b44c;
+}
+
+.admin-table tr.is-rematch.is-uncourted td:first-child {
+  box-shadow: inset 3px 0 0 #ff7a59;
+}
+
+.fx-court-fallback select {
+  width: 100%;
+  min-width: 240px;
+  max-width: 360px;
+  font-size: 13px;
+}
+
+.fx-court-fallback select:disabled {
+  opacity: 0.9;
+  cursor: default;
+}
+
 .fx-pending {
   margin: 0 0 18px;
   padding: 16px;
