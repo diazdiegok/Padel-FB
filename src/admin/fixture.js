@@ -23,7 +23,12 @@ import {
   isRealPairMatch,
 } from "../lib/fixturer.js";
 import { latestWeek, listSeasons, mergeArchivedMatches, seasonLabel, weekKey, weekNumber } from "../lib/liga.js";
-import { rivalOptionsFromPairs, scheduleOptionsFromSlots, syncFixtureWithPairs } from "../lib/pair-fixture-sync.js";
+import {
+  rivalOptionsFromPairs,
+  scheduleOptionsFromSlots,
+  splitMatchToPending,
+  syncFixtureWithPairs,
+} from "../lib/pair-fixture-sync.js";
 import { pairsMatch } from "../lib/scoring.js";
 import { courtsSheetIdForSeason } from "../lib/sheets.js";
 import {
@@ -838,6 +843,13 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
             <button class="admin-del admin-edit${on ? " on" : ""}" type="button" data-fx-edit="${i}" aria-label="${on ? "Cerrar edición" : "Editar"}">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16.5V20h3.5L18.8 8.7l-3.5-3.5L4 16.5zm15.7-9.2a1 1 0 0 0 0-1.4l-1.6-1.6a1 1 0 0 0-1.4 0l-1.1 1.1 3.5 3.5 1.6-1.6z"/></svg>
             </button>
+            <button
+              class="admin-del admin-pending"
+              type="button"
+              data-fx-to-pending="${i}"
+              aria-label="Marcar como pendiente"
+              title="Marcar como pendiente: ambas parejas quedan sin rival"
+            >P</button>
             <button class="admin-del" type="button" data-fx-del="${i}" aria-label="Eliminar">×</button>
           </td>
         </tr>`;
@@ -1589,6 +1601,35 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     };
     $("fx-body")?.addEventListener("click", onDelete);
     $("fx-pending")?.addEventListener("click", onDelete);
+
+    $("fx-body")?.addEventListener("click", async (e) => {
+      const pendBtn = e.target.closest("[data-fx-to-pending]");
+      if (!pendBtn) return;
+      const i = Number(pendBtn.dataset.fxToPending);
+      const match = ctx.fixture[i];
+      if (!match || isPending(match) || !isRealPairMatch(match)) {
+        toast("Ese partido ya está pendiente o incompleto.", "err");
+        return;
+      }
+      const ok = await confirmModal({
+        title: "Marcar como pendiente",
+        body: `Se anula el partido y ambas parejas quedan en pendientes (${match.home} y ${match.away}). Después podés cubrirlas de nuevo. Publicá fixture para confirmarlo.`,
+        confirmLabel: "A pendientes",
+        danger: false,
+      });
+      if (!ok) return;
+      const season = filterTemp || match.temp || ctx.siteData.currentSeason || "T4";
+      const pendingRows = splitMatchToPending(match, ctx.pairs || []).map((row) => cleanMatch(row, {}, season));
+      if (pendingRows.length < 2) {
+        toast("No se pudieron armar las dos pendientes.", "err");
+        return;
+      }
+      ctx.fixture.splice(i, 1, ...pendingRows);
+      editing = -1;
+      shell.markDirty("fixture");
+      render();
+      toast("Ambas parejas quedaron en pendientes", "ok");
+    });
 
     $("fx-body")?.addEventListener("click", (e) => {
       const edit = e.target.closest("[data-fx-edit]");

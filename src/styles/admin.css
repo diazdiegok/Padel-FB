@@ -764,7 +764,7 @@ body.is-admin .tag:empty {
 }
 
 .admin-table .col-actions {
-  width: 84px;
+  width: 116px;
   text-align: right;
   white-space: nowrap;
 }
@@ -803,6 +803,17 @@ body.is-admin .tag:empty {
 .admin-del:hover {
   background: rgba(255, 138, 138, 0.12);
   color: #ff8a8a;
+}
+
+.admin-pending {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.admin-pending:hover {
+  background: rgba(255, 196, 72, 0.14);
+  color: #ffc448;
 }
 
 .admin-msg {
