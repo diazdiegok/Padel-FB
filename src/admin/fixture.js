@@ -27,6 +27,25 @@ import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
 const isPending = (m) => isPendingMatch(m);
 
+/** Orden de tabla: Lunes→Sábado, luego horario de inicio, luego complejo/cancha. */
+function timeStartMinutes(time) {
+  const m = String(time || "").match(/(\d{1,2})\s*[:.]\s*(\d{2})/);
+  if (!m) return 99 * 60;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
+
+function compareByDayTime(a, b) {
+  const da = DAYS.indexOf(a?.day);
+  const db = DAYS.indexOf(b?.day);
+  return (
+    (da < 0 ? 99 : da) - (db < 0 ? 99 : db) ||
+    timeStartMinutes(a?.time) - timeStartMinutes(b?.time) ||
+    String(a?.venue || "").localeCompare(String(b?.venue || ""), "es") ||
+    String(a?.court || "").localeCompare(String(b?.court || ""), "es") ||
+    String(a?.cat || "").localeCompare(String(b?.cat || ""), "es")
+  );
+}
+
 const BALL_SVG = `<svg class="ball-check-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#c8f542"/><path d="M4.2 8.5c2.8 1 5.2 1.2 7.8 0M12 4.2c1.2 2.6 1.4 5.2.2 7.8M12 12c2.6 1.2 5.2 1.4 7.8.2M11.8 12.2c1 2.8 1.2 5.2 0 7.8" stroke="#1a3a0a" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>`;
 
 export function createFixture(ctx, api, shell, { onRankingChanged }) {
@@ -453,9 +472,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     if (build) build.hidden = !(live && loadedSlots.length && advancedOpen);
 
     if (!live) {
-      const arch = (ctx.results || []).filter(
-        (m) => seasonOf(m) === filterTemp && (m.week || "") === filterWeek && isRealPairMatch(m)
-      );
+      const arch = (ctx.results || [])
+        .filter((m) => seasonOf(m) === filterTemp && (m.week || "") === filterWeek && isRealPairMatch(m))
+        .slice()
+        .sort(compareByDayTime);
       const empty = $("fx-empty");
       if (empty) {
         empty.hidden = arch.length > 0;
@@ -481,7 +501,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     }
 
     renderPending();
-    const games = ctx.fixture.map((m, i) => ({ m, i })).filter(({ m }) => !isPending(m) && seasonOf(m) === filterTemp && (m.week || "") === filterWeek);
+    const games = ctx.fixture
+      .map((m, i) => ({ m, i }))
+      .filter(({ m }) => !isPending(m) && seasonOf(m) === filterTemp && (m.week || "") === filterWeek)
+      .sort((a, b) => compareByDayTime(a.m, b.m));
     const repeated = renderWarnings(games) || new Set();
     const empty = $("fx-empty");
     if (empty) {
@@ -793,6 +816,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       const keepOther = (ctx.fixture || []).filter(
         (m) => isPending(m) && seasonOf(m) === season && (m.week || "") !== week
       );
+      built.sort(compareByDayTime);
       ctx.fixture = [...keepOther, ...built];
       filterTemp = season;
       filterWeek = week;
