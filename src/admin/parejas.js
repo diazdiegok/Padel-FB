@@ -289,7 +289,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
           .join("")}</ul>`
       : "";
     box.hidden = false;
-    box.innerHTML = `<span><b>Desfase por nombre</b> · No significa que falten en la web del ranking: son inscriptas que no coinciden 1 a 1 con una fila. “Alinear ranking” las agrega/corrige en local; después Publicar parejas lo sube.</span>${missList}${extraList}`;
+    box.innerHTML = `<span><b>Desfase por nombre</b> · Inscriptas que no coinciden 1 a 1 con una fila del ranking (o al revés). “Alinear ranking” agrega, quita y renombra en local; después Publicar parejas lo sube.</span>${missList}${extraList}`;
   }
 
   function renderStatus({ keepOpen = false } = {}) {
@@ -567,9 +567,9 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       const pairs = seasonPairs()
         .map(({ p }) => p)
         .filter((p) => p.p1 && p.p2 && p.cat);
-      const dropped = syncRankingToSeasonPairs(ctx.rows || [], pairs, temp);
+      const { removed: dropped, renamed } = syncRankingToSeasonPairs(ctx.rows || [], pairs, temp);
       const added = addPairsToRanking(ctx.rows || [], pairs);
-      if (!dropped.length && !added.length) {
+      if (!dropped.length && !added.length && !renamed.length) {
         toast("El ranking ya estaba alineado", "ok");
         renderRankSync();
         return;
@@ -581,6 +581,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
       const bits = [];
       if (added.length) bits.push(`+${added.length} al ranking`);
       if (dropped.length) bits.push(`−${dropped.length} del ranking`);
+      if (renamed.length) bits.push(`${renamed.length} nombre${renamed.length === 1 ? "" : "s"} actualizado${renamed.length === 1 ? "" : "s"}`);
       toast(`Ranking alineado (${bits.join(", ")}). Publicá parejas para subirlo.`, "ok");
       setMsg(
         $("pairs-msg"),
@@ -758,9 +759,9 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         const seasonPairs = next.filter((p) => p.temp === season());
         const ranking = await api.readRemoteJson(RANK_PATH, []);
         const rankRows = Array.isArray(ranking) ? ranking : [];
-        const dropped = syncRankingToSeasonPairs(rankRows, seasonPairs, season());
+        const { removed: dropped, renamed } = syncRankingToSeasonPairs(rankRows, seasonPairs, season());
         const toRanking = addPairsToRanking(rankRows, seasonPairs);
-        const rankingChanged = dropped.length > 0 || toRanking.length > 0;
+        const rankingChanged = dropped.length > 0 || toRanking.length > 0 || renamed.length > 0;
         const closing = config.open === false;
         const goLive = closing && String(ctx.siteData.seasonPhase || "").toLowerCase() !== "live";
         const files = [
@@ -784,7 +785,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         );
         // El admin a veces tiene ranking viejo del build; alineamos al JSON remoto publicado.
         ctx.rows = rankRows.filter((r) => r && !HIDDEN_CATS.has(r.cat));
-        if (rankingChanged || dropped.length || toRanking.length) onRankingChanged?.();
+        if (rankingChanged) onRankingChanged?.();
         ctx.pairs = next;
         ctx.pairsConfig = config;
         knownIds = new Set(next.map((p) => p.id));
@@ -809,8 +810,11 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
         const unranked = dropped.length
           ? ` Se ${dropped.length === 1 ? "quitó 1 pareja" : `quitaron ${dropped.length} parejas`} del ranking.`
           : "";
+        const renamedNote = renamed.length
+          ? ` Se actualiz${renamed.length === 1 ? "ó 1 nombre" : `aron ${renamed.length} nombres`} en el ranking.`
+          : "";
         const liveNote = goLive ? " La temporada pasó a En juego." : "";
-        setMsg($("pairs-msg"), "Parejas publicadas." + extra + ranked + unranked + liveNote, "ok");
+        setMsg($("pairs-msg"), "Parejas publicadas." + extra + ranked + unranked + renamedNote + liveNote, "ok");
         toast(goLive ? "Inscripción cerrada · En juego" : "Parejas publicadas", "ok");
       } catch (err) {
         const m = api.publishError(err);
