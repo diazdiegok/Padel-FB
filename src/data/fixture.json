@@ -460,5 +460,33 @@
     "away": "Rocio Feltes / Sofia Kamlopky",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "week": "Fecha 1",
+    "day": "Lunes",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "16:30 - 18:00",
+    "venue": "Palermo Padel",
+    "court": "Cancha 2",
+    "home": "Laura Martínez / Dalila Sosa",
+    "away": "Stefania Benedetich / Florencia Benedetich",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "week": "Fecha 1",
+    "day": "Lunes",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "18:00 - 19:30",
+    "venue": "Open Padel",
+    "court": "Cancha 2",
+    "home": "Morena Jaureguiberry / Mariela Jaureguiberry",
+    "away": "Lucia Rausch / Luciana Marconi",
+    "result": "",
+    "appliedResult": ""
   }
 ]
