@@ -8784,12 +8784,12 @@
     "temp": "T4"
   },
   {
-    "name": "González Micaela / Romero Daiana",
+    "name": "Micaela González / Daiana Romero",
     "cat": "C Femenino",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 9,
+    "pos": 13,
     "temp": "T5"
   },
   {
@@ -8798,7 +8798,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 24,
+    "pos": 26,
     "temp": "T5"
   },
   {
@@ -8807,38 +8807,38 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 6,
+    "pos": 7,
     "temp": "T5"
   },
   {
-    "name": "Espinoza, Francisco / Rodriguez, Joaquin",
+    "name": "Francisco Espinoza / Joaquin Rodriguez",
     "cat": "B Masculina",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 12,
+    "pos": 8,
     "temp": "T5"
   },
   {
-    "name": "Benedetich Stefania / Benedetich Florencia",
+    "name": "Stefania Benedetich / Florencia Benedetich",
     "cat": "C Femenino",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 2,
+    "pos": 19,
     "temp": "T5"
   },
   {
-    "name": "Francisco Benedetich / Facundo llover",
+    "name": "Francisco Benedetich / Facundo Llover",
     "cat": "B Masculina",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 13,
+    "pos": 7,
     "temp": "T5"
   },
   {
-    "name": "Esquivel Florencia Gabriela / Frickel Natalia Ivana",
+    "name": "Florencia Gabriela Esquivel / Natalia Ivana Frickel",
     "cat": "C Femenino",
     "pts": 0,
     "pj": 0,
@@ -8847,16 +8847,16 @@
     "temp": "T5"
   },
   {
-    "name": "Diaz sebastian / Zarate pablo",
+    "name": "Sebastian Diaz / Pablo Zarate",
     "cat": "B Masculina",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 9,
+    "pos": 23,
     "temp": "T5"
   },
   {
-    "name": "Diaz Diego / Fontanetto Emiliano",
+    "name": "Diego Diaz / Emiliano Fontanetto",
     "cat": "A Masculina",
     "pts": 0,
     "pj": 0,
@@ -8865,12 +8865,12 @@
     "temp": "T5"
   },
   {
-    "name": "Montero claudio francisco / Federico mullor",
+    "name": "Claudio Francisco Montero / Federico Mullor",
     "cat": "C Masculina",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 8,
+    "pos": 3,
     "temp": "T5"
   },
   {
@@ -8879,74 +8879,11 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 9,
-    "temp": "T5"
-  },
-  {
-    "name": "ATUM CYNTHIA NATALIA ANTONELLA / HEREÑU CYNTHIA PAMELA",
-    "cat": "C Femenino",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 1,
-    "temp": "T5"
-  },
-  {
-    "name": "CAVALLARO florencia / Yancovich Luisina",
-    "cat": "B Femenino",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 2,
-    "temp": "T5"
-  },
-  {
-    "name": "Sanchez Maximiliano Ivan / Mangona Ezequiel",
-    "cat": "C Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
     "pos": 11,
     "temp": "T5"
   },
   {
-    "name": "manuela vinuales / delfina vinuales",
-    "cat": "C Femenino",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 11,
-    "temp": "T5"
-  },
-  {
-    "name": "Florencia Lell / Erica Aguiar",
-    "cat": "C Femenino",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 7,
-    "temp": "T5"
-  },
-  {
-    "name": "Martínez Alberto Javier / Starck José María",
-    "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 18,
-    "temp": "T5"
-  },
-  {
-    "name": "milton Reatto / Joaquín lucero",
-    "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 20,
-    "temp": "T5"
-  },
-  {
-    "name": "Cauvet Brenda / Santamaria Valeria",
+    "name": "Cynthia Atum / Cyhthia Hereñu",
     "cat": "C Femenino",
     "pts": 0,
     "pj": 0,
@@ -8955,26 +8892,26 @@
     "temp": "T5"
   },
   {
-    "name": "Agustin Grippo / Franco Sanchez",
-    "cat": "A Masculina",
+    "name": "Florencia Cavallaro / Luisina Yancovich",
+    "cat": "B Femenino",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 1,
+    "pos": 3,
     "temp": "T5"
   },
   {
-    "name": "Sbarbaro Mario Martin / Fontana Ronaldo Antonio",
-    "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 21,
-    "temp": "T5"
-  },
-  {
-    "name": "Nestor sione / Almarante Ulises",
+    "name": "Maximiliano Ivan Sanchez / Ezequiel Mangona",
     "cat": "C Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 9,
+    "temp": "T5"
+  },
+  {
+    "name": "Manuela Vinuales / Delfina Vinuales",
+    "cat": "C Femenino",
     "pts": 0,
     "pj": 0,
     "dif": 0,
@@ -8982,52 +8919,7 @@
     "temp": "T5"
   },
   {
-    "name": "Zapata Jorge Antonio / Diaz Gonzalo Damian",
-    "cat": "C Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 12,
-    "temp": "T5"
-  },
-  {
-    "name": "Juan Leban / German Truffer",
-    "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 15,
-    "temp": "T5"
-  },
-  {
-    "name": "Jeronimo acuña / lucio acuña",
-    "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 14,
-    "temp": "T5"
-  },
-  {
-    "name": "Martinez Francisco / Lanzi Lucas",
-    "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 19,
-    "temp": "T5"
-  },
-  {
-    "name": "Martin Mendez / Diego Godoy",
-    "cat": "A Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 8,
-    "temp": "T5"
-  },
-  {
-    "name": "Feltes Rocio / Kamlopky Sofia",
+    "name": "Florencia Lell / Erica Aguiar",
     "cat": "C Femenino",
     "pts": 0,
     "pj": 0,
@@ -9036,12 +8928,120 @@
     "temp": "T5"
   },
   {
+    "name": "Alberto Javier Martínez / José María Starck",
+    "cat": "B Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 1,
+    "temp": "T5"
+  },
+  {
+    "name": "Milton Reatto / Joaquín Lucero",
+    "cat": "B Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 19,
+    "temp": "T5"
+  },
+  {
+    "name": "Brenda Cauvet / Valeria Santamaria",
+    "cat": "C Femenino",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 2,
+    "temp": "T5"
+  },
+  {
+    "name": "Agustin Grippo / Franco Sanchez",
+    "cat": "A Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 2,
+    "temp": "T5"
+  },
+  {
+    "name": "Mario Martin Sbarbaro / Ronaldo Antonio Fontana",
+    "cat": "B Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 17,
+    "temp": "T5"
+  },
+  {
+    "name": "Nestor Sione / Ulises Almarante",
+    "cat": "C Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 12,
+    "temp": "T5"
+  },
+  {
+    "name": "Jorge Antonio Zapata / Gonzalo Damian Diaz",
+    "cat": "C Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 7,
+    "temp": "T5"
+  },
+  {
+    "name": "Juan Leban / German Truffer",
+    "cat": "B Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 13,
+    "temp": "T5"
+  },
+  {
+    "name": "Jeronimo Acuña / Lucio Acuña",
+    "cat": "B Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 11,
+    "temp": "T5"
+  },
+  {
+    "name": "Francisco Martinez / Lucas Lanzi",
+    "cat": "B Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 9,
+    "temp": "T5"
+  },
+  {
+    "name": "Martin Mendez / Diego Godoy",
+    "cat": "A Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 10,
+    "temp": "T5"
+  },
+  {
+    "name": "Rocio Feltes / Sofia Kamlopky",
+    "cat": "C Femenino",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 16,
+    "temp": "T5"
+  },
+  {
     "name": "Melina Soledad / Karen Hillairet",
     "cat": "C Femenino",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 14,
+    "pos": 12,
     "temp": "T5"
   },
   {
@@ -9054,21 +9054,21 @@
     "temp": "T5"
   },
   {
-    "name": "Gaston E. Enrique / Flematti Abel Alejandro",
+    "name": "Gaston Enrique / Abel Alejandro Flematti",
     "cat": "C Masculina",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 4,
+    "pos": 5,
     "temp": "T5"
   },
   {
-    "name": "Bregant Sebastian / Valla Luis",
+    "name": "Sebastian Bregant / Luis Valla",
     "cat": "B Masculina",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 5,
+    "pos": 22,
     "temp": "T5"
   },
   {
@@ -9077,20 +9077,20 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 1,
+    "pos": 2,
     "temp": "T5"
   },
   {
-    "name": "Gabirondo Valentina / Balla Delfina",
+    "name": "Valentina Gabirondo / Delfina Balla",
     "cat": "B Femenino",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 3,
+    "pos": 4,
     "temp": "T5"
   },
   {
-    "name": "Yanina Pecker / Sandra ripari",
+    "name": "Yanina Pecker / Sandra Ripari",
     "cat": "C Femenino",
     "pts": 0,
     "pj": 0,
@@ -9104,7 +9104,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 10,
+    "pos": 5,
     "temp": "T5"
   },
   {
@@ -9113,20 +9113,20 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 3,
-    "temp": "T5"
-  },
-  {
-    "name": "Borsotti María Laura / Senger Celia Inmaculada",
-    "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
     "pos": 4,
     "temp": "T5"
   },
   {
-    "name": "Denis Márquez / Ramira omar",
+    "name": "María Laura Borsotti / Celia Senger",
+    "cat": "B Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 16,
+    "temp": "T5"
+  },
+  {
+    "name": "Denis Márquez / Ramira Omar",
     "cat": "A Masculina",
     "pts": 0,
     "pj": 0,
@@ -9135,21 +9135,21 @@
     "temp": "T5"
   },
   {
-    "name": "morena Jaureguiberry / Jaureguiberry Mariela",
+    "name": "Morena Jaureguiberry / Mariela Jaureguiberry",
     "cat": "C Femenino",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 16,
+    "pos": 15,
     "temp": "T5"
   },
   {
-    "name": "Martínez Laura / Sosa Dalila",
+    "name": "Laura Martínez / Dalila Sosa",
     "cat": "C Femenino",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 12,
+    "pos": 8,
     "temp": "T5"
   },
   {
@@ -9158,7 +9158,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 15,
+    "pos": 14,
     "temp": "T5"
   },
   {
@@ -9171,21 +9171,21 @@
     "temp": "T5"
   },
   {
-    "name": "Juan Ignacio Oldani / Lo cascio Jose Carlos",
+    "name": "Juan Ignacio Oldani / Lo Cascio Jose Carlos",
     "cat": "C Masculina",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 6,
+    "pos": 8,
     "temp": "T5"
   },
   {
-    "name": "Beltzer Valentin / Jaureguiberry Ariel",
+    "name": "Valentin Beltzer / Ariel Jaureguiberry",
     "cat": "B Masculina",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 3,
+    "pos": 25,
     "temp": "T5"
   },
   {
@@ -9194,25 +9194,25 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 8,
+    "pos": 4,
     "temp": "T5"
   },
   {
-    "name": "Robledo Marien / Valeria joubert",
+    "name": "Marien Robledo / Valeria Joubert",
     "cat": "C Femenino",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 17,
+    "pos": 11,
     "temp": "T5"
   },
   {
-    "name": "Migueles Abril Diamela / Bertotti Yamila",
+    "name": "Abril Diamela Migueles / Yamila Bertotti",
     "cat": "B Femenino",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 4,
+    "pos": 1,
     "temp": "T5"
   },
   {
@@ -9230,7 +9230,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 7,
+    "pos": 9,
     "temp": "T5"
   },
   {
@@ -9239,57 +9239,21 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 1,
-    "temp": "T5"
-  },
-  {
-    "name": "Loizate luciano / Carlos dinamo",
-    "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 16,
-    "temp": "T5"
-  },
-  {
-    "name": "Garbarino Jorgelina / Ramírez Kunzi Laura",
-    "cat": "C Femenino",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 8,
-    "temp": "T5"
-  },
-  {
-    "name": "Enz Ernesto / Facundo Casals",
-    "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 11,
-    "temp": "T5"
-  },
-  {
-    "name": "Perez Iván / Munguia Fernando",
-    "cat": "A Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 9,
-    "temp": "T5"
-  },
-  {
-    "name": "Andrini Guillermo / Diaz Dario",
-    "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
     "pos": 2,
     "temp": "T5"
   },
   {
-    "name": "maximiliano satler / Daniel Grinovero",
-    "cat": "C Masculina",
+    "name": "Luciano Loizate / Carlos Dinamo",
+    "cat": "B Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 15,
+    "temp": "T5"
+  },
+  {
+    "name": "Jorgelina Garbarino / Laura Ramírez Kunzi",
+    "cat": "C Femenino",
     "pts": 0,
     "pj": 0,
     "dif": 0,
@@ -9297,52 +9261,7 @@
     "temp": "T5"
   },
   {
-    "name": "Martinez Rocio / Candelaria Villarraza Girard",
-    "cat": "C Femenino",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 13,
-    "temp": "T5"
-  },
-  {
-    "name": "Daiana Bastidas / Jesica michelin",
-    "cat": "C Femenino",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 4,
-    "temp": "T5"
-  },
-  {
-    "name": "Choco muñoz / Felipe muñoz",
-    "cat": "C Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 2,
-    "temp": "T5"
-  },
-  {
-    "name": "Joaquin Alberto Ijalba / Tulio Felipe Ijalba",
-    "cat": "C Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 5,
-    "temp": "T5"
-  },
-  {
-    "name": "Sebastian Rodriguez / Gonzalo Barbero",
-    "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 23,
-    "temp": "T5"
-  },
-  {
-    "name": "Bruno Baarts / Thomas Pereira",
+    "name": "Ernesto Enz / Facundo Casals",
     "cat": "B Masculina",
     "pts": 0,
     "pj": 0,
@@ -9351,8 +9270,17 @@
     "temp": "T5"
   },
   {
-    "name": "Romero adrian / Roberto challol",
+    "name": "Iván Perez / Fernando Munguia",
     "cat": "A Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 6,
+    "temp": "T5"
+  },
+  {
+    "name": "Guillermo Andrini / Dario Diaz",
+    "cat": "B Masculina",
     "pts": 0,
     "pj": 0,
     "dif": 0,
@@ -9360,17 +9288,17 @@
     "temp": "T5"
   },
   {
-    "name": "Screpis Miguel Darío / Capatto Facundo Roberto",
-    "cat": "B Masculina",
+    "name": "Maximiliano Satler / Daniel Grinovero",
+    "cat": "C Masculina",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 22,
+    "pos": 10,
     "temp": "T5"
   },
   {
-    "name": "López José Luis / Leguizamón Martín",
-    "cat": "B Masculina",
+    "name": "Rocio Martinez / Candelaria Villarraza Girard",
+    "cat": "C Femenino",
     "pts": 0,
     "pj": 0,
     "dif": 0,
@@ -9378,17 +9306,17 @@
     "temp": "T5"
   },
   {
-    "name": "Scoreanzi Andrea / Mansilla Gisela",
+    "name": "Daiana Bastidas / Jesica Michelin",
     "cat": "C Femenino",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 18,
+    "pos": 4,
     "temp": "T5"
   },
   {
-    "name": "Carrere Mariano / Castillo Tomas",
-    "cat": "A Masculina",
+    "name": "Choco Muñoz / Felipe Muñoz",
+    "cat": "C Masculina",
     "pts": 0,
     "pj": 0,
     "dif": 0,
@@ -9396,21 +9324,93 @@
     "temp": "T5"
   },
   {
-    "name": "Lucia Rausch / Marconi Luciana",
-    "cat": "C Femenino",
+    "name": "Joaquin Alberto Ijalba / Felipe Ijalba",
+    "cat": "C Masculina",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 10,
+    "pos": 6,
     "temp": "T5"
   },
   {
-    "name": "Cerdan Pablo / Oviedo Mario",
+    "name": "Sebastian Rodriguez / Gonzalo Barbero",
     "cat": "B Masculina",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 7,
+    "pos": 24,
+    "temp": "T5"
+  },
+  {
+    "name": "Bruno Baarts / Thomas Pereira",
+    "cat": "B Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 3,
+    "temp": "T5"
+  },
+  {
+    "name": "Adrian Romero / Roberto Challol",
+    "cat": "A Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 1,
+    "temp": "T5"
+  },
+  {
+    "name": "Miguel Darío Screpis / Facundo Roberto Capatto",
+    "cat": "B Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 18,
+    "temp": "T5"
+  },
+  {
+    "name": "José Luis López / Martín Leguizamón",
+    "cat": "B Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 12,
+    "temp": "T5"
+  },
+  {
+    "name": "Andrea Scoreanzi / Gisela Mansilla",
+    "cat": "C Femenino",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 1,
+    "temp": "T5"
+  },
+  {
+    "name": "Mariano Carrere / Tomas Castillo",
+    "cat": "A Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 8,
+    "temp": "T5"
+  },
+  {
+    "name": "Lucia Rausch / Luciana Marconi",
+    "cat": "C Femenino",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 9,
+    "temp": "T5"
+  },
+  {
+    "name": "Pablo Cerdan / Mario Oviedo",
+    "cat": "B Masculina",
+    "pts": 0,
+    "pj": 0,
+    "dif": 0,
+    "pos": 20,
     "temp": "T5"
   },
   {
@@ -9419,7 +9419,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 19,
+    "pos": 18,
     "temp": "T5"
   },
   {
@@ -9428,16 +9428,16 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 25,
+    "pos": 21,
     "temp": "T5"
   },
   {
-    "name": "Gobatto Lucas / Roldan Matias",
+    "name": "Lucas Gobatto / Matias Roldan",
     "cat": "B Masculina",
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 26,
+    "pos": 14,
     "temp": "T5"
   }
 ]
