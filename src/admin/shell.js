@@ -15,6 +15,8 @@ export function createShell(ctx, { onEnterSection, onDiscardSection }) {
 
   function setSection(id, { force = false } = {}) {
     if (!SECTIONS[id]) id = "sitio";
+    // Misma sección: no re-entrar (evita que Fixture borre la fecha al Leer Drive / Armar).
+    if (!force && ctx.currentSection === id) return Promise.resolve(true);
     if (!force && ctx.currentSection && ctx.currentSection !== id && ctx.dirty.has(ctx.currentSection)) {
       return confirmModal({
         title: "Cambios sin guardar",
