@@ -1815,13 +1815,18 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         shell.markDirty("fixture");
         render();
         const n = audited.parked;
+        const why = (audited.details || []).slice(0, 3).join(" | ");
         setMsg(
           $("fx-msg"),
-          `${n} partido${n === 1 ? "" : "s"} fuera de la disponibilidad de inscripción → pendientes. Revisá la grilla y tocá Publicar fixture de nuevo (los pendientes no salen al sitio).`,
+          `${n} partido${n === 1 ? "" : "s"} fuera de la disponibilidad de inscripción → pendientes` +
+            (why ? ` (${why})` : "") +
+            `. Revisá la grilla y tocá Publicar fixture de nuevo (los pendientes no salen al sitio).`,
           "err"
         );
         toast(
-          `${n} partido${n === 1 ? "" : "s"} → pendientes · revisá y publicá de nuevo`,
+          why
+            ? `${n} → pendientes · ${why}`
+            : `${n} partido${n === 1 ? "" : "s"} → pendientes · revisá y publicá de nuevo`,
           "err"
         );
         return;

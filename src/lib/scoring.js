@@ -27,11 +27,18 @@ export function playersMatch(a, b) {
   if (!ta.length || !tb.length) return false;
   const setA = new Set(ta);
   const setB = new Set(tb);
+  // Nombre más corto contenido en el más largo (typos / segundo nombre de más).
+  const [short, longSet] = ta.length <= tb.length ? [ta, setB] : [tb, setA];
+  if (short.every((t) => longSet.has(t))) return true;
   const overlap = ta.filter((t) => setB.has(t));
   const strong = overlap.filter((t) => t.length >= 4);
-  if (strong.length >= 1) return true;
-  const [short, long] = ta.length <= tb.length ? [ta, setB] : [tb, setA];
-  return short.length >= 2 && short.every((t) => long.has(t));
+  // Un solo nombre de pila compartido ("Martin", "Diego") NO alcanza: hace falta
+  // otro token fuerte o que coincida el apellido (último token).
+  if (strong.length >= 2) return true;
+  const lastA = ta[ta.length - 1];
+  const lastB = tb[tb.length - 1];
+  if (lastA.length >= 4 && lastA === lastB && overlap.length >= 1) return true;
+  return false;
 }
 
 export function pairsMatch(a, b) {
