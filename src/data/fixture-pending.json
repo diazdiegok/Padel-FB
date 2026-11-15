@@ -1,8 +1,39 @@
 [
   {
     "pending": true,
+    "reason": "Su rival ya no está inscripto.",
+    "avail": "Martes 19:00 - 21:30 · Miércoles 18:30 - 21:30 · Jueves 19:00 - 21:30 · Viernes 18:00 - 20:00 · Sábado 16:00 - 18:00",
+    "days": {
+      "Martes": "19:00 - 21:30",
+      "Miércoles": "18:30 - 21:30",
+      "Jueves": "19:00 - 21:30",
+      "Viernes": "18:00 - 20:00",
+      "Sábado": "16:00 - 18:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Florencia Cavallaro / Luisina Yancovich",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
     "reason": "Las parejas con las que coincide ya tienen partido.",
     "avail": "Lunes 15:00 - 18:00 · Martes 09:00 - 18:00 · Jueves 09:00 - 17:00 · Viernes 15:00 - 19:00 · Sábado 09:00 - 12:00",
+    "days": {
+      "Lunes": "15:00 - 18:00",
+      "Martes": "09:00 - 18:00",
+      "Jueves": "09:00 - 17:00",
+      "Viernes": "15:00 - 19:00",
+      "Sábado": "09:00 - 12:00"
+    },
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -12,6 +43,52 @@
     "venue": "",
     "court": "",
     "home": "Valentina Laikan / Bernardita Cuello",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Lunes 20:00 - 00:00 · Miércoles 20:00 - 00:00 · Viernes 20:00 - 00:00",
+    "days": {
+      "Lunes": "20:00 - 00:00",
+      "Miércoles": "20:00 - 00:00",
+      "Viernes": "20:00 - 00:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Gauna Camila / Falcón Luana",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Martes 18:00 - 21:00 · Miércoles 20:30 - 22:00 · Jueves 17:30 - 21:30 · Viernes 17:00 - 22:00 · Sábado 15:00 - 20:00",
+    "days": {
+      "Martes": "18:00 - 21:00",
+      "Miércoles": "20:30 - 22:00",
+      "Jueves": "17:30 - 21:30",
+      "Viernes": "17:00 - 22:00",
+      "Sábado": "15:00 - 20:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Matias Minigutti / Omar Izza",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""

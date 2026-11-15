@@ -804,9 +804,15 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
           Object.assign(ctx.siteData, nextSite);
         }
         // Sync fixture con altas/bajas/categoría antes de publicar (pendientes + rivales).
+        // Importante: el sync al borrar/cambiar cat puede haber dejado el fixture dirty
+        // en memoria; un segundo sync acá no “cambia” otra vez, pero igual hay que publicar.
         ctx.pairs = next;
         const fxSync = onPairsChanged?.({ reason: "publish", toastResult: false }) || null;
-        if (fxSync?.changed) {
+        const fixtureNeedsPublish =
+          Boolean(fxSync?.changed) ||
+          ctx.dirty.has("fixture") ||
+          JSON.stringify(ctx.fixture || []) !== JSON.stringify(ctx.fixturePublished || []);
+        if (fixtureNeedsPublish) {
           const adminFixture = (ctx.fixture || []).map((m) => ({ ...m }));
           const draftLive = adminFixture.filter((m) => !isPendingMatch(m));
           const draftPending = adminFixture.filter((m) => isPendingMatch(m));
@@ -821,7 +827,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
             ? goLive
               ? "Cierra la inscripción de parejas y pone la temporada en juego."
               : "Cierra la inscripción de parejas."
-            : fxSync?.changed
+            : fixtureNeedsPublish
               ? "Actualiza parejas y alinea fixture/pendientes."
               : "Actualiza parejas inscriptas desde el admin."
         );
@@ -840,7 +846,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
         if (fresh.length) await loadContacts().catch(() => {});
         shell.clearDirty("parejas");
         shell.clearDirty("ranking");
-        if (fxSync?.changed) {
+        if (fixtureNeedsPublish) {
           ctx.fixturePublished = structuredClone(ctx.fixture || []);
           shell.clearDirty("fixture");
         }
@@ -859,7 +865,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
           ? ` Se actualiz${renamed.length === 1 ? "ó 1 nombre" : `aron ${renamed.length} nombres`} en el ranking.`
           : "";
         const liveNote = goLive ? " La temporada pasó a En juego." : "";
-        const fxNote = fxSync?.changed ? " Fixture/pendientes alineados." : "";
+        const fxNote = fixtureNeedsPublish ? " Fixture/pendientes alineados." : "";
         setMsg($("pairs-msg"), "Parejas publicadas." + extra + ranked + unranked + renamedNote + liveNote + fxNote, "ok");
         toast(goLive ? "Inscripción cerrada · En juego" : "Parejas publicadas", "ok");
       } catch (err) {

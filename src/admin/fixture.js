@@ -1731,8 +1731,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     });
     ctx.fixture = synced.matches.map((m) => cleanMatch(m, {}, temp));
     const changed = JSON.stringify(ctx.fixture) !== before;
-    if (changed) {
+    const differsFromPublished =
+      JSON.stringify(ctx.fixture || []) !== JSON.stringify(ctx.fixturePublished || []);
+    if (changed || differsFromPublished) {
       shell.markDirty("fixture");
+    }
+    if (changed) {
       if (filterTemp === temp || !filterTemp) render();
       const s = synced.stats;
       const bits = [];
@@ -1741,7 +1745,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       if (s.addedPending) bits.push(`${s.addedPending} pareja${s.addedPending === 1 ? "" : "s"} nueva${s.addedPending === 1 ? "" : "s"} en pendientes`);
       if (toastResult && bits.length) toast(`Fixture sync · ${bits.join(" · ")}`, "ok");
     }
-    return { changed, stats: synced.stats, liveWeek };
+    return { changed: changed || differsFromPublished, stats: synced.stats, liveWeek };
   }
 
   return { bind, render, fallbackWeek, syncWeek, buildFromFecha, syncFromPairs };
