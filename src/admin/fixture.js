@@ -176,16 +176,17 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   }
 
   /**
-   * Todos los turnos libres del Drive (cualquier día/horario/cancha) donde
-   * el pendiente y la pareja que cubre puedan jugar ambas.
+   * Turnos libres del Drive anclados a la pendiente.
+   * La pareja que cubre puede aflojar su horario: se priorizan turnos donde
+   * también entra, pero se listan todos los que sirven a la pendiente.
    */
   function coverCourtChoices(match, coverLabel) {
     const cover = String(coverLabel || "").trim();
     if (!cover) return { opts: [], homeDays: null, coverDays: null };
     const homeDays = match.homeDays || match.days || daysOfPair(match.home, match.cat);
-    const coverDays = daysOfPair(cover, match.cat);
-    if (!homeDays || !coverDays) {
-      return { opts: [], homeDays: homeDays || null, coverDays: coverDays || null };
+    const coverDays = daysOfPair(cover, match.cat) || undefined;
+    if (!homeDays) {
+      return { opts: [], homeDays: null, coverDays: coverDays || null };
     }
     const opts = driveCourtOptions(
       {
@@ -203,9 +204,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         awayDays: coverDays,
       },
       loadedSlots,
-      takenCourts(match)
+      takenCourts(match),
+      { softAway: true }
     );
-    return { opts, homeDays, coverDays };
+    return { opts, homeDays, coverDays: coverDays || null };
   }
 
   function coverSlotSelect(i, match, coverLabel) {
@@ -213,12 +215,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     if (!loadedSlots.length) {
       return `<select disabled aria-label="${label}"><option>Leé el Drive para ver canchas</option></select>`;
     }
-    const { opts, homeDays, coverDays } = coverCourtChoices(match, coverLabel);
-    if (!homeDays || !coverDays) {
-      return `<select disabled aria-label="${label}"><option>Falta la disponibilidad de una de las parejas</option></select>`;
+    const { opts, homeDays } = coverCourtChoices(match, coverLabel);
+    if (!homeDays) {
+      return `<select disabled aria-label="${label}"><option>Falta la disponibilidad de la pareja pendiente</option></select>`;
     }
     if (!opts.length) {
-      return `<select disabled aria-label="${label}" title="No hay un turno libre del Drive donde puedan jugar ambas"><option>Sin cancha libre donde puedan jugar ambas</option></select>`;
+      return `<select disabled aria-label="${label}" title="No hay cancha libre del Drive en los días de la pendiente"><option>Sin cancha libre en los días de la pendiente</option></select>`;
     }
     const byDay = new Map();
     for (const o of opts) {
@@ -234,14 +236,15 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
               .map((o) => {
                 const court = String(o.court || "").trim();
                 const courtTxt = /^cancha\b/i.test(court) ? court : court ? `Cancha ${court}` : "";
-                const text = [o.time, o.venue, courtTxt].filter(Boolean).join(" · ");
+                const flex = o.fitsAway === false ? " · cubre flexible" : "";
+                const text = [o.time, o.venue, courtTxt].filter(Boolean).join(" · ") + flex;
                 return `<option value="${escAttr(o.key)}">${escAttr(text)}</option>`;
               })
               .join("")}
           </optgroup>`
       )
       .join("");
-    return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="Todos los días y horarios del Drive donde puedan jugar ambas, con cancha libre.">
+    return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="Turnos libres según la pendiente. La que cubre puede aflojar horario.">
       <option value="">2. Elegir entre ${opts.length} turno${opts.length === 1 ? "" : "s"} libre${opts.length === 1 ? "" : "s"}…</option>
       ${groups}
     </select>`;
@@ -351,7 +354,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const cats = [...new Set(pending.map(({ m }) => m.cat || "Sin categoría"))];
     const pools = matchPools();
     box.innerHTML = `<h3>Pendientes · ${pending.length}</h3>
-      <p class="admin-help">Quedaron sin rival (impar, horarios, rivales ocupados o sin cancha libre en el Drive). Primero elegí <strong>Cubrir con</strong> y después vas a ver <strong>todos los días y horarios</strong> del Drive donde puedan jugar ambas, con las canchas que siguen libres. En la web pública también pueden cubrirse (misma categoría, menos de ${MAX_PAIR_MATCHES} PJ).</p>
+      <p class="admin-help">Quedaron sin rival (impar, horarios, rivales ocupados o sin cancha libre en el Drive). Primero elegí <strong>Cubrir con</strong> y después el día/cancha libre según la <strong>pendiente</strong>; quien cubre puede aflojar un poco el horario. Los pendientes no se publican al sitio hasta cubrirlos.</p>
       ${cats
         .map((cat) => {
           const rows = pending.filter(({ m }) => (m.cat || "Sin categoría") === cat);
@@ -1388,19 +1391,26 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       coverDraft.set(i, cover);
       renderPending();
       if (!loadedSlots.length) {
-        toast("Leé el Drive para ver los turnos donde puedan jugar ambas.", "err");
+        toast("Leé el Drive para ver canchas libres.", "err");
         return;
       }
       const shared = coverCourtChoices(slot, cover);
-      if (!shared.homeDays || !shared.coverDays) {
-        toast("Falta la disponibilidad de una de las parejas en Inscripciones.", "err");
+      if (!shared.homeDays) {
+        toast("Falta la disponibilidad de la pareja pendiente en Inscripciones.", "err");
         return;
       }
       if (!shared.opts.length) {
-        toast("Esas dos parejas no tienen un turno libre en común en el Drive.", "err");
+        toast("No hay cancha libre del Drive en los días de la pendiente.", "err");
         return;
       }
-      toast(`${shared.opts.length} turno${shared.opts.length === 1 ? "" : "s"} libre${shared.opts.length === 1 ? "" : "s"} donde pueden jugar ambas`, "ok");
+      const both = shared.opts.filter((o) => o.fitsAway !== false).length;
+      const flex = shared.opts.length - both;
+      toast(
+        flex
+          ? `${shared.opts.length} turnos libres · ${flex} con horario flexible de quien cubre`
+          : `${shared.opts.length} turno${shared.opts.length === 1 ? "" : "s"} libre${shared.opts.length === 1 ? "" : "s"} para la pendiente`,
+        "ok"
+      );
     });
 
     const onDelete = async (e) => {
