@@ -1,4 +1,4 @@
-import { PENDING_AWAY, isPlaceholderPair } from "../lib/fixturer.js";
+import { PENDING_AWAY, isPendingMatch, isPlaceholderPair } from "../lib/fixturer.js";
 import { parseCourtSlotRows } from "../lib/slots.js";
 import { CAT_MAP, CATS, FX_COLS, RANK_COLS, VENUE_MAP } from "./constants.js";
 import { num } from "./ui.js";
@@ -37,9 +37,10 @@ function dayIdxDl(d) {
   return i < 0 ? 99 : i;
 }
 
-/** Ordena partidos para export: fecha (día+hora) | complejo | pareja. */
+/** Ordena partidos para export: fecha (día+hora) | complejo | pareja. Pendientes siempre arriba. */
 export function sortMatchesForExport(matches = [], mode = "fecha") {
   const list = (matches || []).slice();
+  const pendingFirst = (a, b) => Number(isPendingMatch(b)) - Number(isPendingMatch(a));
   const byFecha = (a, b) =>
     dayIdxDl(a.day) - dayIdxDl(b.day) ||
     String(a.time || "").localeCompare(String(b.time || ""), "es") ||
@@ -47,6 +48,7 @@ export function sortMatchesForExport(matches = [], mode = "fecha") {
   if (mode === "complejo") {
     return list.sort(
       (a, b) =>
+        pendingFirst(a, b) ||
         String(a.venue || "").localeCompare(String(b.venue || ""), "es") ||
         byFecha(a, b) ||
         String(a.home || "").localeCompare(String(b.home || ""), "es")
@@ -55,13 +57,14 @@ export function sortMatchesForExport(matches = [], mode = "fecha") {
   if (mode === "pareja") {
     return list.sort(
       (a, b) =>
+        pendingFirst(a, b) ||
         String(a.home || "").localeCompare(String(b.home || ""), "es") ||
         String(a.away || "").localeCompare(String(b.away || ""), "es") ||
         byFecha(a, b)
     );
   }
   return list.sort(
-    (a, b) => byFecha(a, b) || String(a.cat || "").localeCompare(String(b.cat || ""), "es")
+    (a, b) => pendingFirst(a, b) || byFecha(a, b) || String(a.cat || "").localeCompare(String(b.cat || ""), "es")
   );
 }
 
