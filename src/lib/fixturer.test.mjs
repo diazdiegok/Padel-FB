@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   PENDING_AWAY,
   MAX_PAIR_MATCHES,
+  absorbCoveredPending,
   buildFixture,
   parseWindow,
   countPairMatches,
@@ -113,5 +114,51 @@ assert.ok(!covers.some((c) => c.label.includes("Enrique")), "excluye a la pareja
 assert.ok(!covers.some((c) => c.label.includes("Otro")), "no mezcla B Masculina en A Masculina");
 assert.ok(covers.some((c) => c.label.includes("Fusse")), "incluye rivales con PJ < 12");
 console.log("--- cover", covers.map((c) => `${c.label} (${c.pj})`).join(" · "));
+
+// Cubrir pendiente con otra pendiente → ambas salen; queda el partido.
+{
+  const laura = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "C Femenino",
+    home: "Laura Martínez / Dalila Sosa",
+    away: PENDING_AWAY,
+    pending: true,
+  };
+  const stefania = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "C Femenino",
+    home: "Stefania Benedetich / Florencia Benedetich",
+    away: PENDING_AWAY,
+    pending: true,
+  };
+  const other = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "C Femenino",
+    home: "Marien Robledo / Valeria Joubert",
+    away: PENDING_AWAY,
+    pending: true,
+  };
+  const covered = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "C Femenino",
+    home: laura.home,
+    away: stefania.home,
+    day: "Viernes",
+    time: "19:00 - 20:30",
+    venue: "Open Padel",
+    court: "Cancha 1",
+  };
+  const list = [laura, stefania, other, covered];
+  const out = absorbCoveredPending(list, covered, stefania.home);
+  assert.equal(out.length, 2, "quedan el partido y el otro pendiente");
+  assert.ok(out.includes(covered), "queda el partido cubierto");
+  assert.ok(out.includes(other), "el pendiente ajeno sigue");
+  assert.ok(!out.some((m) => isPendingMatch(m) && m.home === laura.home), "laura ya no está pendiente");
+  assert.ok(!out.some((m) => isPendingMatch(m) && m.home === stefania.home), "stefania ya no está pendiente");
+}
 
 console.log("ok");

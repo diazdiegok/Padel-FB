@@ -14,6 +14,7 @@ import { DAYS, pairLabel, validateDays } from "../lib/disponibilidad.js";
 import {
   MAX_PAIR_MATCHES,
   PENDING_AWAY,
+  absorbCoveredPending,
   buildFixture,
   countPairMatches,
   coverCandidates,
@@ -1404,10 +1405,19 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         delete next.reason;
         delete next.avail;
         ctx.fixture[i] = next;
-        coverDraft.delete(i);
+        // Si quien cubre también estaba pendiente, sale de la lista (ambas van al partido).
+        const before = ctx.fixture.length;
+        ctx.fixture = absorbCoveredPending(ctx.fixture, next, cover);
+        coverDraft.clear();
         shell.markDirty("fixture");
         render();
-        toast(`Cubierto · ${courtOptionText(opt)}`, "ok");
+        const dropped = before - ctx.fixture.length;
+        toast(
+          dropped
+            ? `Cubierto · ambas pendientes → partido · ${courtOptionText(opt)}`
+            : `Cubierto · ${courtOptionText(opt)}`,
+          "ok"
+        );
         return;
       }
       const sel = e.target.closest("[data-fx-cover]");
