@@ -2,6 +2,30 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Martes 08:00 - 21:00 · Miércoles 11:00 - 21:00 · Jueves 08:00 - 20:00 · Viernes 08:00 - 19:00 · Sábado 08:00 - 14:00",
+    "days": {
+      "Martes": "08:00 - 21:00",
+      "Miércoles": "11:00 - 21:00",
+      "Jueves": "08:00 - 20:00",
+      "Viernes": "08:00 - 19:00",
+      "Sábado": "08:00 - 14:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Manuela Vinuales / Delfina Vinuales",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Lunes 19:00 - 22:00 · Miércoles 19:00 - 22:00 · Viernes 19:30 - 22:00",
     "days": {
       "Lunes": "19:00 - 22:00",
@@ -262,6 +286,33 @@
     "venue": "",
     "court": "",
     "home": "Miguel Darío Screpis / Facundo Roberto Capatto",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Lunes 20:00 - 00:00 · Miércoles 20:00 - 00:00 · Viernes 20:00 - 00:00",
+    "days": {
+      "Lunes": "20:00 - 00:00",
+      "Miércoles": "20:00 - 00:00",
+      "Viernes": "20:00 - 00:00"
+    },
+    "homeDays": {
+      "Lunes": "20:00 - 00:00",
+      "Miércoles": "20:00 - 00:00",
+      "Viernes": "20:00 - 00:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Gauna Camila / Falcón Luana",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""

@@ -433,20 +433,5 @@
     "result": "",
     "appliedResult": "",
     "flexAvail": true
-  },
-  {
-    "week": "Fecha 1",
-    "day": "Miércoles",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "19:30 - 21:00",
-    "venue": "La manzana Padel",
-    "court": "Cancha 2",
-    "home": "Manuela Vinuales / Delfina Vinuales",
-    "away": "Gauna Camila / Falcón Luana",
-    "result": "",
-    "appliedResult": "",
-    "flexAvail": true
   }
 ]
