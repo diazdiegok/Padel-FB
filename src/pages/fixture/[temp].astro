@@ -8,10 +8,10 @@ import { isPendingMatch, isRealPairMatch } from "../../lib/fixturer.js";
 import { combineResults, seasonLabel, seasonSlug, weekNumber, weekSlug } from "../../lib/liga.js";
 import { page } from "../../lib/paths";
 
-const fxList = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) || isPendingMatch(m));
+const fxList = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) && !isPendingMatch(m));
 
 export function getStaticPaths() {
-  const live = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) || isPendingMatch(m));
+  const live = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) && !isPendingMatch(m));
   const pool = combineResults(results, live);
   const seasons = [...new Set(pool.map((m) => m.temp || site.currentSeason || "T4"))];
   return seasons.map((temp) => ({

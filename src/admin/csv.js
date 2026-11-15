@@ -157,6 +157,9 @@ export function cleanMatch(m, defaults = {}, currentSeason = "T4") {
     if (m.reason) extra.reason = String(m.reason).trim();
     if (m.avail) extra.avail = String(m.avail).trim();
     if (m.note) extra.note = String(m.note).trim();
+    // Conservar disponibilidad para poder cubrir con turnos del Drive.
+    if (m.days && typeof m.days === "object") extra.days = m.days;
+    if (m.homeDays && typeof m.homeDays === "object") extra.homeDays = m.homeDays;
   }
   return {
     ...extra,

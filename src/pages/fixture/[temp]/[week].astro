@@ -8,7 +8,7 @@ import { isPendingMatch, isRealPairMatch } from "../../../lib/fixturer.js";
 import { combineResults, seasonLabel, seasonSlug, weekSlug } from "../../../lib/liga.js";
 import { page } from "../../../lib/paths";
 
-const fxVisible = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) || isPendingMatch(m));
+const fxVisible = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) && !isPendingMatch(m));
 
 export function getStaticPaths() {
   const DAY_ORDER = ["lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado", "domingo"];
@@ -16,7 +16,7 @@ export function getStaticPaths() {
     const i = DAY_ORDER.indexOf(String(d || "").trim().toLowerCase());
     return i < 0 ? 99 : i;
   };
-  const live = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) || isPendingMatch(m));
+  const live = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) && !isPendingMatch(m));
   const matches = combineResults(results, live).sort((a, b) => {
     const da = dayIdx(a.day);
     const db = dayIdx(b.day);

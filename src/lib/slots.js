@@ -259,8 +259,21 @@ function windowsOverlap(aFrom, aTo, bFrom, bTo) {
   return aFrom < bTo && bFrom < aTo;
 }
 
+/** "Cancha 1", "1", "Pista 1" → misma cancha. */
+export function courtKey(court) {
+  const f = fold(court);
+  if (!f) return "";
+  const numbered = f.match(/^(?:cancha|pista|court)\s*([0-9]+[a-z]?)$/) || f.match(/^([0-9]+[a-z]?)$/);
+  if (numbered) return numbered[1];
+  return f;
+}
+
 function sameCourt(a, b) {
-  return fold(a.venue) === fold(b.venue) && fold(a.court) === fold(b.court) && a.day === b.day;
+  return (
+    fold(a.venue) === fold(b.venue) &&
+    courtKey(a.court) === courtKey(b.court) &&
+    normalizeDay(a.day) === normalizeDay(b.day)
+  );
 }
 
 function slotFitsMatch(slot, match) {
@@ -615,9 +628,10 @@ export function isCourtTaken(match = {}, taken = []) {
   const day = normalizeDay(match.day);
   const win = parseCourtWindow(match.time);
   if (!venue || !court || !day || !win || !(win.to > win.from)) return false;
+  const ck = courtKey(court);
   return (taken || []).some((other) => {
     if (!other?.venue || !other?.court) return false;
-    if (fold(other.venue) !== fold(venue) || fold(other.court) !== fold(court)) return false;
+    if (fold(other.venue) !== fold(venue) || courtKey(other.court) !== ck) return false;
     if (normalizeDay(other.day) !== day) return false;
     const otherWin = parseCourtWindow(other.time);
     if (!otherWin) return false;
@@ -636,11 +650,12 @@ function hasPairAvailability(match, pending) {
  * Canchas del Sheet para partidos que quedaron sin complejo/cancha.
  * Ignora el tope de «Partidos a usar».
  * Con disponibilidad de las parejas: ofrece cualquier día/horario del Drive donde
- * puedan jugar ambas (no solo el turno que había armado el fixture).
+ * puedan jugar (no solo el turno que había armado el fixture).
+ * softAway: la pareja visitante/cubre no bloquea; solo ordena (prioriza si también entra).
  * Sin disponibilidad cargada: se limita al día y horario ya fijados.
  * No ofrece una cancha ya ocupada (mismo complejo, cancha y horario solapado).
  */
-export function driveCourtOptions(match = {}, slots = [], taken = []) {
+export function driveCourtOptions(match = {}, slots = [], taken = [], { softAway = false } = {}) {
   const matchDay = normalizeDay(match.day);
   const matchWin = parseCourtWindow(match.time);
   const pending = !!match.pending || fold(match.away) === fold("Pendiente / Pendiente");
@@ -651,7 +666,14 @@ export function driveCourtOptions(match = {}, slots = [], taken = []) {
   const out = [];
   for (const slot of expandCourtCandidates(slots)) {
     if (useAvail) {
-      if (!slotFitsPairAvailability(slot, match, { pending })) continue;
+      if (softAway) {
+        // Anclar en la pareja local/pendiente; la que cubre puede aflojar horario.
+        if (pending) {
+          if (match?.days && typeof match.days === "object") {
+            if (!daysMapFitsSlot(match.days, slot)) continue;
+          } else if (!daysMapFitsSlot(match?.homeDays, slot)) continue;
+        } else if (!daysMapFitsSlot(match?.homeDays, slot)) continue;
+      } else if (!slotFitsPairAvailability(slot, match, { pending })) continue;
     } else {
       if (normalizeDay(slot.day) !== matchDay) continue;
       if (slot.from !== matchWin.from || slot.to !== matchWin.to) continue;
@@ -660,7 +682,7 @@ export function driveCourtOptions(match = {}, slots = [], taken = []) {
     const slotDay = normalizeDay(slot.day);
     const busy = (taken || []).some((other) => {
       if (!other?.venue || !other?.court) return false;
-      if (fold(other.venue) !== fold(slot.venue) || fold(other.court) !== fold(slot.court)) return false;
+      if (fold(other.venue) !== fold(slot.venue) || courtKey(other.court) !== courtKey(slot.court)) return false;
       if (normalizeDay(other.day) !== slotDay) return false;
       const otherWin = parseCourtWindow(other.time);
       if (!otherWin) return false;
@@ -675,6 +697,7 @@ export function driveCourtOptions(match = {}, slots = [], taken = []) {
     const sameDay = matchDay && slotDay === matchDay;
     const sameWhen =
       sameDay && matchWin && slot.from === matchWin.from && slot.to === matchWin.to;
+    const fitsAway = softAway ? daysMapFitsSlot(match?.awayDays, slot) : true;
     out.push({
       day: slot.day,
       time: slot.time,
@@ -683,11 +706,13 @@ export function driveCourtOptions(match = {}, slots = [], taken = []) {
       key,
       sameWhen: !!sameWhen,
       sameDay: !!sameDay,
+      fitsAway: !!fitsAway,
     });
   }
 
   out.sort(
     (a, b) =>
+      Number(b.fitsAway) - Number(a.fitsAway) ||
       Number(b.sameWhen) - Number(a.sameWhen) ||
       Number(b.sameDay) - Number(a.sameDay) ||
       DAYS.indexOf(a.day) - DAYS.indexOf(b.day) ||

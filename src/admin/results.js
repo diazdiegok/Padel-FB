@@ -1,4 +1,4 @@
-import { FIXTURE_PATH, RANK_PATH, RESULTS_PATH } from "./constants.js";
+import { FIXTURE_PATH, FIXTURE_PENDING_PATH, RANK_PATH, RESULTS_PATH } from "./constants.js";
 import {
   RES_IMPORT_COLS,
   cleanMatch,
@@ -8,7 +8,7 @@ import {
   parseResultsImportObjects,
   parseResultsImportText,
 } from "./csv.js";
-import { isRealPairMatch } from "../lib/fixturer.js";
+import { isPendingMatch, isRealPairMatch } from "../lib/fixturer.js";
 import { applyFixtureResults, describeResult, fold, pairsMatch, parseResult } from "../lib/scoring.js";
 import { combineResults, seasonLabel, seasonNumber, weekKey, weekNumber } from "../lib/liga.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
@@ -322,14 +322,18 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
   async function reload() {
     try {
       const clean = !ctx.dirty.has("fixture") && !ctx.dirty.has("resultados");
-      const [remote, remoteFx] = await Promise.all([
+      const [remote, remoteFx, remotePending] = await Promise.all([
         api.readRemoteJson(RESULTS_PATH, []),
         clean ? api.readRemoteJson(FIXTURE_PATH, null) : null,
+        clean ? api.readRemoteJson(FIXTURE_PENDING_PATH, []) : null,
       ]);
       if (!ctx.dirty.has("resultados")) ctx.results = Array.isArray(remote) ? remote : [];
       if (Array.isArray(remoteFx)) {
-        ctx.fixture = remoteFx;
-        ctx.fixturePublished = structuredClone(remoteFx);
+        const live = remoteFx.filter((m) => !isPendingMatch(m));
+        const pending = (Array.isArray(remotePending) ? remotePending : []).filter(isPendingMatch);
+        const adminFixture = [...live, ...pending];
+        ctx.fixture = adminFixture;
+        ctx.fixturePublished = structuredClone(adminFixture);
       }
       loaded = true;
       render();
@@ -454,15 +458,21 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
       setBusy($("res-publish"), true, "Publicando…");
       setMsg($("res-msg"), "Publicando resultados y ranking…");
       try {
-        const [remoteRank, remoteFx, remoteRes] = await Promise.all([
+        const [remoteRank, remoteFx, remotePending, remoteRes] = await Promise.all([
           api.readRemoteJson(RANK_PATH, ctx.rows),
           api.readRemoteJson(FIXTURE_PATH, []),
+          api.readRemoteJson(FIXTURE_PENDING_PATH, []),
           api.readRemoteJson(RESULTS_PATH, []),
         ]);
         const ranking = (Array.isArray(remoteRank) ? remoteRank : [])
           .map((row) => cleanRow(row, season))
           .filter((row) => row.name && row.cat.toLowerCase() !== "s masculina");
-        const nextFixture = (Array.isArray(remoteFx) ? remoteFx : []).map((m) => cleanMatch(m, {}, season)).filter((m) => m.home || m.away);
+        const nextFixture = (Array.isArray(remoteFx) ? remoteFx : [])
+          .map((m) => cleanMatch(m, {}, season))
+          .filter((m) => (m.home || m.away) && !isPendingMatch(m));
+        const nextPending = (Array.isArray(remotePending) ? remotePending : [])
+          .map((m) => cleanMatch(m, {}, season))
+          .filter((m) => (m.home || m.away) && isPendingMatch(m));
         const nextResults = (Array.isArray(remoteRes) ? remoteRes : []).map((m) => cleanMatch(m, {}, season)).filter((m) => m.home || m.away);
         const remoteKeys = new Set();
         for (const m of [...nextFixture, ...nextResults]) {
@@ -477,6 +487,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
         await api.publishFiles(
           [
             { path: FIXTURE_PATH, content: JSON.stringify(nextFixture, null, 2) + "\n" },
+            { path: FIXTURE_PENDING_PATH, content: JSON.stringify(nextPending, null, 2) + "\n" },
             { path: RESULTS_PATH, content: JSON.stringify(nextResults, null, 2) + "\n" },
             { path: RANK_PATH, content: JSON.stringify(ranking, null, 2) + "\n" },
           ],
@@ -485,8 +496,9 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
             : "Actualiza resultados desde el admin."
         );
         ctx.rows = ranking;
-        ctx.fixture = nextFixture;
-        ctx.fixturePublished = structuredClone(nextFixture);
+        const adminFixture = [...nextFixture, ...nextPending];
+        ctx.fixture = adminFixture;
+        ctx.fixturePublished = structuredClone(adminFixture);
         ctx.results = nextResults;
         shell.clearDirty("resultados");
         shell.clearDirty("ranking");

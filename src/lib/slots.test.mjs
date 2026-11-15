@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   applyVenuePlan,
   assignCourtSlots,
+  courtKey,
   driveCourtOptions,
   isCourtTaken,
   matchStartsInWindow,
@@ -368,12 +369,65 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   assert.equal(driveCourtOptions({ time: "19:00 - 20:30" }, sheet, []).length, 0, "sin día ni disponibilidad no inventa turnos");
 }
 
+// Cubrir pendiente: ancla en la pendiente; quien cubre puede aflojar horario.
 {
+  const sheet = parseCourtSlotRows([
+    { Complejo: "Open", Cancha: "1", Dia: "Lunes", Horario: "19:00 - 20:30" },
+    { Complejo: "Open", Cancha: "2", Dia: "Lunes", Horario: "19:00 - 20:30" },
+    { Complejo: "Americas", Cancha: "1", Dia: "Miércoles", Horario: "18:00 - 19:30" },
+    { Complejo: "Terrazas", Cancha: "1", Dia: "Viernes", Horario: "19:00 - 20:30" },
+    { Complejo: "Terrazas", Cancha: "2", Dia: "Viernes", Horario: "19:00 - 20:30" },
+    { Complejo: "Open", Cancha: "1", Dia: "Sábado", Horario: "10:00 - 11:30" },
+  ]);
+  const pendingCover = {
+    day: "",
+    time: "",
+    venue: "",
+    court: "",
+    pending: false,
+    home: "Andrea / Carla",
+    away: "Marien / Sofi",
+    homeDays: {
+      Lunes: "18:00 - 22:00",
+      Miércoles: "18:00 - 22:00",
+      Viernes: "18:00 - 22:00",
+    },
+    awayDays: {
+      Lunes: "19:00 - 21:00",
+      Viernes: "18:00 - 22:00",
+      Sábado: "10:00 - 14:00",
+    },
+  };
+  const taken = [{ day: "Viernes", time: "19:00 - 20:30", venue: "Terrazas Padel", court: "Cancha 1" }];
+  const coverOpts = driveCourtOptions(pendingCover, sheet, taken, { softAway: true });
+  const keys = coverOpts.map((o) => `${o.day}|${o.time}|${o.venue}|${o.court}|${o.fitsAway ? "ambas" : "flex"}`);
+  assert.deepEqual(
+    keys,
+    [
+      "Lunes|19:00 - 20:30|Open Padel|1|ambas",
+      "Lunes|19:00 - 20:30|Open Padel|2|ambas",
+      "Viernes|19:00 - 20:30|Terrazas Padel|2|ambas",
+      "Miércoles|18:00 - 19:30|Americas Padel|1|flex",
+    ],
+    "al cubrir: prioriza turnos de ambas; incluye miércoles (solo pendiente) como flexible; excluye sábado (solo cover) y cancha tomada (1 ≡ Cancha 1)"
+  );
+  const strict = driveCourtOptions(pendingCover, sheet, taken);
+  assert.ok(!strict.some((o) => o.day === "Miércoles"), "sin softAway no ofrece el día solo de la pendiente");
+}
+
+{
+  assert.equal(courtKey("Cancha 1"), "1");
+  assert.equal(courtKey("1"), "1");
   const taken = [{ day: "Viernes", time: "18:00 - 19:30", venue: "Open Padel", court: "1" }];
   assert.equal(
     isCourtTaken({ day: "Viernes", time: "18:00 - 19:30", venue: "Open Padel", court: "1" }, taken),
     true,
     "misma cancha y horario = en uso"
+  );
+  assert.equal(
+    isCourtTaken({ day: "Viernes", time: "18:00 - 19:30", venue: "Open Padel", court: "Cancha 1" }, taken),
+    true,
+    "Cancha 1 y 1 son la misma"
   );
   assert.equal(
     isCourtTaken({ day: "Viernes", time: "18:00 - 19:30", venue: "Open Padel", court: "2" }, taken),
@@ -390,6 +444,29 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
     false,
     "mismo complejo/cancha pero horario libre"
   );
+}
+
+// No doble-book: varias parejas no pueden llevarse la misma Open Cancha 1 al mismo horario.
+{
+  const sheet = parseCourtSlotRows([
+    { Complejo: "Open", Cancha: "Cancha 1", Dia: "Lunes", Horario: "20:00 - 21:30" },
+    { Complejo: "Open", Cancha: "1", Dia: "Lunes", Horario: "20:00 - 21:30" },
+    { Complejo: "Open", Cancha: "Cancha 2", Dia: "Lunes", Horario: "20:00 - 21:30" },
+  ]);
+  const pool = applyVenuePlan(sheet, [{ venue: "Open Padel", count: 10, days: ["Lunes"] }], { mode: "pool" });
+  const out = assignCourtSlots(
+    [
+      { day: "Lunes", time: "20:00 - 21:30", home: "A / B", away: "C / D", cat: "B Femenino", venue: "", court: "" },
+      { day: "Lunes", time: "20:00 - 21:30", home: "E / F", away: "G / H", cat: "B Masculina", venue: "", court: "" },
+      { day: "Lunes", time: "20:00 - 21:30", home: "I / J", away: "K / L", cat: "C Femenino", venue: "", court: "" },
+    ],
+    pool,
+    { preferPlan: true }
+  );
+  const open20 = out.matches.filter((m) => m.venue === "Open Padel" && m.time === "20:00 - 21:30");
+  const keys = open20.map((m) => courtKey(m.court));
+  assert.equal(new Set(keys).size, keys.length, "no repite la misma cancha a las 20:00");
+  assert.ok(out.assigned >= 2, "al menos dos partidos entran (cancha 1 y 2)");
 }
 
 // Si A-B no entra en cancha y C-D sí, cambiar rivales puede salvar ambos turnos.

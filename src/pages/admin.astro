@@ -218,7 +218,7 @@ import "../styles/admin.css";
         <section data-section="fixture" hidden>
           <div class="admin-callout">
             <strong>Cómo se arma</strong>
-            <span>1) Leer Drive toma la pestaña del Google Sheet con el mismo nombre que la fecha (Fecha 1, Fecha 2…). Un horario solo = 1:30; un rango (16:30-21:00) = ventana para partidos de 1:30. 2) Complejos avanzado: cupos y días. 3) Armar fixture (si no hay cancha, puede cambiar el rival) y publicar.</span>
+            <span>1) Leer Drive toma la pestaña del Google Sheet con el mismo nombre que la fecha (Fecha 1, Fecha 2…). Un horario solo = 1:30; un rango (16:30-21:00) = ventana para partidos de 1:30. 2) Complejos avanzado: cupos y días. 3) Armar fixture (si no hay cancha, puede cambiar el rival). 4) Publicar: salen los partidos con rival; los pendientes quedan en el admin hasta cubrirlos.</span>
           </div>
           <div class="admin-section-tools">
             <span class="tag" id="fx-summary">Sin partidos</span>
@@ -280,7 +280,7 @@ import "../styles/admin.css";
               </table>
             </div>
             <div class="admin-sticky-bar">
-              <p class="admin-sticky-note">Publicá el fixture de la fecha. Los resultados se cargan en la sección Resultados.</p>
+              <p class="admin-sticky-note">Publicá los partidos con rival. Los pendientes quedan en el admin hasta cubrirlos. Los resultados se cargan en Resultados.</p>
               <div class="admin-sticky-actions">
                 <button class="btn btn-lime" type="button" id="fx-publish">Publicar fixture</button>
               </div>
@@ -647,6 +647,7 @@ import "../styles/admin.css";
   <script>
     import rankingJson from "../data/ranking.json";
     import fixtureJson from "../data/fixture.json";
+    import fixturePendingJson from "../data/fixture-pending.json";
     import siteJson from "../data/site.json";
     import dispJson from "../data/disponibilidad.json";
     import resultsJson from "../data/results.json";
@@ -656,6 +657,17 @@ import "../styles/admin.css";
     import ascensosJson from "../data/ascensos.json";
     import { bootAdmin } from "../admin/main.js";
 
-    bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson, pairsJson, pairsConfigJson, ascensosJson });
+    bootAdmin({
+      rankingJson,
+      fixtureJson,
+      fixturePendingJson,
+      siteJson,
+      dispJson,
+      resultsJson,
+      playoffJson,
+      pairsJson,
+      pairsConfigJson,
+      ascensosJson,
+    });
   </script>
 </Layout>

@@ -7,6 +7,7 @@ import { createCms } from "./cms.js";
 import { createFixture } from "./fixture.js";
 import { createParejas } from "./parejas.js";
 import { createPlayoff } from "./playoff.js";
+import { isPendingMatch } from "../lib/fixturer.js";
 import { normalizePlayoffs } from "../lib/playoff.js";
 import { createRanking } from "./ranking.js";
 import { createResults } from "./results.js";
@@ -15,12 +16,27 @@ import { createShell } from "./shell.js";
 import { createVisitas } from "./visitas.js";
 import { $ } from "./ui.js";
 
-export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson, pairsJson, pairsConfigJson, ascensosJson }) {
+export function bootAdmin({
+  rankingJson,
+  fixtureJson,
+  fixturePendingJson,
+  siteJson,
+  dispJson,
+  resultsJson,
+  playoffJson,
+  pairsJson,
+  pairsConfigJson,
+  ascensosJson,
+}) {
+  const publishedLive = structuredClone(Array.isArray(fixtureJson) ? fixtureJson : []);
+  const pendingOnly = structuredClone(Array.isArray(fixturePendingJson) ? fixturePendingJson : []);
+  // En admin: partidos publicados + pendientes (estos últimos no van a la web).
+  const adminFixture = [...publishedLive.filter((m) => !isPendingMatch(m)), ...pendingOnly];
   const ctx = {
     rows: structuredClone(rankingJson.filter((p) => !HIDDEN_CATS.has(p.cat))),
     siteData: structuredClone(siteJson),
-    fixture: structuredClone(fixtureJson || []),
-    fixturePublished: structuredClone(fixtureJson || []),
+    fixture: adminFixture,
+    fixturePublished: structuredClone(adminFixture),
     results: structuredClone(resultsJson || []),
     disp: structuredClone(dispJson),
     pairs: structuredClone(Array.isArray(pairsJson) ? pairsJson : []),
