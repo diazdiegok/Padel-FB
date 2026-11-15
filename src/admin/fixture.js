@@ -1168,11 +1168,13 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     }
 
     async function loadSlotsFromDrive() {
-      if (!filterTemp || !filterWeek) {
+      const week = String(filterWeek || "").trim();
+      const temp = String(filterTemp || "").trim();
+      if (!temp || !week) {
         toast("Entrá a la fecha del fixture antes de leer el Drive.", "err");
         return;
       }
-      const sheetId = courtsSheetIdForSeason(ctx.siteData, filterTemp);
+      const sheetId = courtsSheetIdForSeason(ctx.siteData, temp);
       if ((await shell.setSection("fixture")) === false) return;
       const gate = api.usePublishToken();
       if (!gate.ok) {
@@ -1182,12 +1184,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       setBusy($("fx-drive"), true, "Leyendo Drive…");
       try {
         const data = await api.worker(
-          `/fixture/courts?week=${encodeURIComponent(filterWeek)}&sheetId=${encodeURIComponent(sheetId)}`
+          `/fixture/courts?week=${encodeURIComponent(week)}&sheetId=${encodeURIComponent(sheetId)}`
         );
         const objects = courtSlotObjectsFromText(data.csv || "");
         const gaps = missingCourtHorarios(objects);
         const slots = parseCourtSlotObjects(objects);
-        applyLoadedSlots(slots, `Drive · ${filterWeek}`, { gaps });
+        applyLoadedSlots(slots, `Drive · ${week}`, { gaps });
       } catch (err) {
         setMsg($("fx-msg"), err.message || "No se pudo leer el Google Sheet.", "err");
         toast(err.message || "Error al leer Drive", "err");
@@ -1222,7 +1224,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       const file = input.files?.[0];
       input.value = "";
       if (!file) return;
-      if (!filterTemp || !filterWeek) {
+      const week = String(filterWeek || "").trim();
+      const temp = String(filterTemp || "").trim();
+      if (!temp || !week) {
         toast("Entrá a la fecha del fixture antes de subir el archivo.", "err");
         return;
       }
@@ -1230,10 +1234,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       setBusy($("fx-slots"), true, "Leyendo…");
       try {
         const { slots, weekHint } = await readSlotsFile(file);
-        if (weekHint && weekHint !== filterWeek) {
+        if (weekHint && weekHint !== week) {
           const ok = await confirmModal({
             title: "Fecha del archivo",
-            body: `El archivo parece de ${weekHint} y estás en ${filterWeek}. ¿Usarlo igual para ${filterWeek}?`,
+            body: `El archivo parece de ${weekHint} y estás en ${week}. ¿Usarlo igual para ${week}?`,
             confirmLabel: "Usar igual",
           });
           if (!ok) return;
