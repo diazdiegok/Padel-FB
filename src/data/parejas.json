@@ -1055,5 +1055,20 @@
       "Viernes": "19:30 - 22:30"
     },
     "note": ""
+  },
+  {
+    "id": "pmwhmin8ya2c6",
+    "createdAt": "2026-11-15T09:19:51.346Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Gobatto Lucas",
+    "p2": "Roldan Matias",
+    "days": {
+      "Lunes": "18:00 - 21:00",
+      "Martes": "18:00 - 21:00",
+      "Miércoles": "18:00 - 21:00",
+      "Jueves": "18:00 - 21:00"
+    },
+    "note": ""
   }
 ]
