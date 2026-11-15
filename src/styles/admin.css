@@ -805,6 +805,17 @@ body.is-admin .tag:empty {
   color: #ff8a8a;
 }
 
+.admin-pending {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.admin-pending:hover {
+  background: rgba(255, 196, 72, 0.14);
+  color: #ffc448;
+}
+
 .admin-msg {
   font-size: 13px;
   color: var(--muted);

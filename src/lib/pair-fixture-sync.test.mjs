@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { PENDING_AWAY, isPendingMatch } from "./fixturer.js";
-import { rivalOptionsFromPairs, syncFixtureWithPairs } from "./pair-fixture-sync.js";
+import { rivalOptionsFromPairs, splitMatchToPending, syncFixtureWithPairs } from "./pair-fixture-sync.js";
 import { pairsMatch } from "./scoring.js";
 
 const temp = "T5";
@@ -125,6 +125,26 @@ const pairs = [
   assert.ok(abril);
   assert.equal(abril.cat, "B Femenino");
   assert.ok(String(abril.avail || "").includes("Martes"));
+}
+
+{
+  const match = {
+    week,
+    temp,
+    cat: "C Femenino",
+    day: "Lunes",
+    time: "19:30 - 21:00",
+    venue: "Open",
+    court: "1",
+    home: "Marien Robledo / Valeria Joubert",
+    away: "Milagros Solaro / Ana Paula Croce",
+  };
+  const rows = splitMatchToPending(match, pairs);
+  assert.equal(rows.length, 2);
+  assert.ok(rows.every(isPendingMatch));
+  assert.ok(rows.every((r) => !r.venue && !r.day));
+  assert.ok(rows.some((r) => pairsMatch(r.home, "Marien Robledo / Valeria Joubert")));
+  assert.ok(rows.some((r) => pairsMatch(r.home, "Milagros Solaro / Ana Paula Croce")));
 }
 
 console.log("pair-fixture-sync ok");

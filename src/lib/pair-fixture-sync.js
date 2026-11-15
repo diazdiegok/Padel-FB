@@ -224,6 +224,35 @@ export function syncFixtureWithPairs({ matches = [], pairs = [], temp = "", live
   };
 }
 
+/**
+ * Parte un partido real en dos filas pendientes (home y away).
+ * Usado por “Marcar como pendiente” en el admin de fixture.
+ */
+export function splitMatchToPending(match, pairs = []) {
+  if (!match || isPendingMatch(match) || !isRealPairMatch(match)) return [];
+  const temp = String(match.temp || "").toUpperCase();
+  const week = match.week || "";
+  const cat = match.cat || "";
+  const reason = "Partido marcado como pendiente desde el fixture.";
+  const out = [];
+  for (const side of ["home", "away"]) {
+    const name = String(match[side] || "").trim();
+    if (!name || isPlaceholderPair(name)) continue;
+    const entry = pairEntry(pairs, name, temp, cat);
+    out.push(
+      asPending({
+        week,
+        temp,
+        cat: entry?.cat || cat,
+        home: entry ? pairLabel(entry) : name,
+        reason,
+        days: entry?.days,
+      })
+    );
+  }
+  return out;
+}
+
 /** Opciones de rival desde inscripciones de la misma categoría (más Pendiente). */
 export function rivalOptionsFromPairs({ pairs = [], temp = "", cat = "", exclude = "" } = {}) {
   const season = String(temp || "").toUpperCase();
