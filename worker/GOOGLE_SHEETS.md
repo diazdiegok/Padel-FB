@@ -17,7 +17,8 @@ El admin usa **Leer Drive** y pide la pestaña de la fecha abierta.
 Sheet fijo donde el admin pega los partidos con rival (sin pendientes):  
 https://docs.google.com/spreadsheets/d/1OI6ogfmdOAQ5mz3JqP482cDPT_xp-PjWdE07k54AAiQ/edit
 
-- Primera pestaña: se **reemplaza** entera al pegar
+- **Una pestaña por fecha** (`Fecha 1`, `Fecha 2`, …): se crea si no existe y se reemplaza al pegar
 - Columnas: Fecha, Dia, Horario, Categoria, Complejo, Cancha, Pareja 1, Pareja 2, Resultado
+- Formato: encabezado en **negrita** (fondo suave), fila congelada, filtro, columnas autoajustadas
 - El Worker necesita el secret `GOOGLE_SERVICE_ACCOUNT` y que ese Sheet esté compartido con el `client_email` de la SA como **Editor**
 - Botón en Fixture: **Pegar en Drive** (usa el mismo orden que Descargar Excel; no envía pendientes)

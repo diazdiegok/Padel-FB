@@ -1444,8 +1444,57 @@ const FIXTURE_DRIVE_HEADERS = [
 
 const FIXED_FIXTURE_DRIVE_SHEET = "1OI6ogfmdOAQ5mz3JqP482cDPT_xp-PjWdE07k54AAiQ";
 
-/** Sobrescribe la primera pestaña del Sheet de fixture (sin pendientes). */
-async function writeFixtureDriveSheet(env, { sheetId, rows = [] } = {}) {
+const FIXTURE_DRIVE_HEADER_KEY = {
+  Fecha: "fecha",
+  Dia: "dia",
+  Horario: "horario",
+  Categoria: "categoria",
+  Complejo: "complejo",
+  Cancha: "cancha",
+  "Pareja 1": "pareja1",
+  "Pareja 2": "pareja2",
+  Resultado: "resultado",
+};
+
+function sheetsAuthError(msg, sa, status) {
+  const err = new Error(
+    /permission|forbidden|403/i.test(String(msg || ""))
+      ? `Sin permiso de edición. Compartí el Sheet con ${sa.client_email} como Editor.`
+      : msg || "Error de Google Sheets."
+  );
+  err.status = status === 403 ? 403 : status && status >= 400 ? status : 502;
+  return err;
+}
+
+async function sheetsFetch(accessToken, url, { method = "GET", body } = {}) {
+  const res = await fetch(url, {
+    method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/json",
+      ...(body != null ? { "Content-Type": "application/json" } : {}),
+    },
+    ...(body != null ? { body: typeof body === "string" ? body : JSON.stringify(body) } : {}),
+  });
+  const json = await res.json().catch(() => ({}));
+  return { res, json };
+}
+
+/** Nombre de pestaña seguro (máx 100 chars; sin : \\ / ? * [ ]). */
+function fixtureSheetTitle(week) {
+  const raw = String(week || "Fixture")
+    .trim()
+    .replace(/[:\\/?*[\]]+/g, " ")
+    .replace(/\s+/g, " ")
+    .slice(0, 100);
+  return raw || "Fixture";
+}
+
+/**
+ * Escribe el fixture (sin pendientes) en una pestaña = nombre de la fecha.
+ * Crea la hoja si no existe. Encabezado en negrita, fila congelada, columnas autoajustadas.
+ */
+async function writeFixtureDriveSheet(env, { sheetId, week = "", rows = [] } = {}) {
   const id = String(sheetId || env.FIXTURE_DRIVE_SHEET_ID || FIXED_FIXTURE_DRIVE_SHEET)
     .trim()
     .replace(/^.*\/spreadsheets\/d\//i, "")
@@ -1464,99 +1513,175 @@ async function writeFixtureDriveSheet(env, { sheetId, rows = [] } = {}) {
     throw err;
   }
   const accessToken = await googleAccessToken(sa, "https://www.googleapis.com/auth/spreadsheets");
-  const metaRes = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}?fields=sheets.properties(sheetId,title)`,
-    { headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" } }
-  );
-  const meta = await metaRes.json().catch(() => ({}));
-  if (!metaRes.ok) {
-    const msg = meta.error?.message || `Google Sheets ${metaRes.status}`;
-    const err = new Error(
-      /permission|forbidden|403/i.test(msg)
-        ? `Sin permiso de edición. Compartí el Sheet con ${sa.client_email} como Editor.`
-        : msg
-    );
-    err.status = metaRes.status === 403 ? 403 : 502;
-    throw err;
-  }
-  const title = String(meta.sheets?.[0]?.properties?.title || "Hoja 1").trim() || "Hoja 1";
+  const title = fixtureSheetTitle(week);
   const quoted = `'${title.replace(/'/g, "''")}'`;
+  const cols = FIXTURE_DRIVE_HEADERS.length;
+  const lastCol = String.fromCharCode("A".charCodeAt(0) + cols - 1); // I
 
-  const clearRes = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/${encodeURIComponent(`${quoted}!A:Z`)}:clear`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: "{}",
-    }
+  const meta = await sheetsFetch(
+    accessToken,
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}?fields=sheets.properties(sheetId,title)`
   );
-  const clearJson = await clearRes.json().catch(() => ({}));
-  if (!clearRes.ok) {
-    const msg = clearJson.error?.message || `No se pudo limpiar el Sheet (${clearRes.status}).`;
-    const err = new Error(
-      /permission|forbidden|403/i.test(msg)
-        ? `Sin permiso de edición. Compartí el Sheet con ${sa.client_email} como Editor.`
-        : msg
+  if (!meta.res.ok) {
+    throw sheetsAuthError(meta.json.error?.message || `Google Sheets ${meta.res.status}`, sa, meta.res.status);
+  }
+
+  let tabId = null;
+  const want = title.toLowerCase();
+  for (const s of meta.json.sheets || []) {
+    const t = String(s?.properties?.title || "");
+    if (t.toLowerCase() === want) {
+      tabId = s.properties.sheetId;
+      break;
+    }
+  }
+
+  if (tabId == null) {
+    const created = await sheetsFetch(
+      accessToken,
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
+      {
+        method: "POST",
+        body: {
+          requests: [
+            {
+              addSheet: {
+                properties: {
+                  title,
+                  gridProperties: { frozenRowCount: 1, columnCount: cols, rowCount: Math.max(50, (rows?.length || 0) + 20) },
+                },
+              },
+            },
+          ],
+        },
+      }
     );
-    err.status = clearRes.status === 403 ? 403 : 502;
-    throw err;
+    if (!created.res.ok) {
+      throw sheetsAuthError(created.json.error?.message || `No se pudo crear la hoja «${title}».`, sa, created.res.status);
+    }
+    tabId = created.json.replies?.[0]?.addSheet?.properties?.sheetId;
+    if (tabId == null) {
+      const err = new Error(`No se pudo crear la hoja «${title}».`);
+      err.status = 502;
+      throw err;
+    }
+  }
+
+  const clear = await sheetsFetch(
+    accessToken,
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/${encodeURIComponent(`${quoted}!A:${lastCol}`)}:clear`,
+    { method: "POST", body: {} }
+  );
+  if (!clear.res.ok) {
+    throw sheetsAuthError(clear.json.error?.message || `No se pudo limpiar «${title}».`, sa, clear.res.status);
   }
 
   const values = [
     FIXTURE_DRIVE_HEADERS,
     ...(rows || []).map((r) =>
-      FIXTURE_DRIVE_HEADERS.map((h) => {
-        const key = {
-          Fecha: "fecha",
-          Dia: "dia",
-          Horario: "horario",
-          Categoria: "categoria",
-          Complejo: "complejo",
-          Cancha: "cancha",
-          "Pareja 1": "pareja1",
-          "Pareja 2": "pareja2",
-          Resultado: "resultado",
-        }[h];
-        return String(r?.[key] ?? r?.[h] ?? "");
-      })
+      FIXTURE_DRIVE_HEADERS.map((h) => String(r?.[FIXTURE_DRIVE_HEADER_KEY[h]] ?? r?.[h] ?? ""))
     ),
   ];
+  const endRow = values.length;
 
-  const updateRes = await fetch(
+  const update = await sheetsFetch(
+    accessToken,
     `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/${encodeURIComponent(`${quoted}!A1`)}` +
       `?valueInputOption=USER_ENTERED`,
+    { method: "PUT", body: { values } }
+  );
+  if (!update.res.ok) {
+    throw sheetsAuthError(update.json.error?.message || `No se pudo escribir «${title}».`, sa, update.res.status);
+  }
+
+  // Formato: encabezado negrita + fondo, fila congelada, filtro, columnas autoajustadas, alinear.
+  const format = await sheetsFetch(
+    accessToken,
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
     {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
+      method: "POST",
+      body: {
+        requests: [
+          {
+            repeatCell: {
+              range: { sheetId: tabId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: cols },
+              cell: {
+                userEnteredFormat: {
+                  textFormat: { bold: true, fontSize: 11 },
+                  backgroundColor: { red: 0.93, green: 0.95, blue: 0.9 },
+                  horizontalAlignment: "CENTER",
+                  verticalAlignment: "MIDDLE",
+                },
+              },
+              fields: "userEnteredFormat(textFormat,backgroundColor,horizontalAlignment,verticalAlignment)",
+            },
+          },
+          {
+            updateSheetProperties: {
+              properties: { sheetId: tabId, gridProperties: { frozenRowCount: 1 } },
+              fields: "gridProperties.frozenRowCount",
+            },
+          },
+          {
+            setBasicFilter: {
+              filter: {
+                range: {
+                  sheetId: tabId,
+                  startRowIndex: 0,
+                  endRowIndex: endRow,
+                  startColumnIndex: 0,
+                  endColumnIndex: cols,
+                },
+              },
+            },
+          },
+          {
+            repeatCell: {
+              range: {
+                sheetId: tabId,
+                startRowIndex: 1,
+                endRowIndex: Math.max(endRow, 2),
+                startColumnIndex: 0,
+                endColumnIndex: cols,
+              },
+              cell: {
+                userEnteredFormat: {
+                  verticalAlignment: "MIDDLE",
+                  wrapStrategy: "CLIP",
+                },
+              },
+              fields: "userEnteredFormat(verticalAlignment,wrapStrategy)",
+            },
+          },
+          {
+            autoResizeDimensions: {
+              dimensions: { sheetId: tabId, dimension: "COLUMNS", startIndex: 0, endIndex: cols },
+            },
+          },
+          // Un poco más de aire en columnas de nombres (Pareja 1 / Pareja 2 = índices 6 y 7).
+          {
+            updateDimensionProperties: {
+              range: { sheetId: tabId, dimension: "COLUMNS", startIndex: 6, endIndex: 8 },
+              properties: { pixelSize: 280 },
+              fields: "pixelSize",
+            },
+          },
+        ],
       },
-      body: JSON.stringify({ values }),
     }
   );
-  const updateJson = await updateRes.json().catch(() => ({}));
-  if (!updateRes.ok) {
-    const msg = updateJson.error?.message || `No se pudo escribir el Sheet (${updateRes.status}).`;
-    const err = new Error(
-      /permission|forbidden|403/i.test(msg)
-        ? `Sin permiso de edición. Compartí el Sheet con ${sa.client_email} como Editor.`
-        : msg
-    );
-    err.status = updateRes.status === 403 ? 403 : 502;
-    throw err;
+  if (!format.res.ok) {
+    // Datos ya escritos: no fallamos el pegado por un tema cosmético.
+    console.warn("fixture drive format", format.json.error?.message || format.res.status);
   }
 
   return {
     ok: true,
     sheetId: id,
     sheet: title,
+    gid: tabId,
     rows: Math.max(0, values.length - 1),
-    url: `https://docs.google.com/spreadsheets/d/${id}/edit`,
+    url: `https://docs.google.com/spreadsheets/d/${id}/edit#gid=${tabId}`,
   };
 }
 
@@ -1660,8 +1785,13 @@ export default {
           return response(request, env, { message: "No hay partidos para pegar (solo se envían los que tienen rival)." }, 400);
         }
         try {
+          const week = String(body.week || "").trim();
+          if (!week) {
+            return response(request, env, { message: "Falta la fecha (ej. Fecha 1) para elegir la hoja." }, 400);
+          }
           const result = await writeFixtureDriveSheet(env, {
             sheetId: body.sheetId || env.FIXTURE_DRIVE_SHEET_ID || FIXED_FIXTURE_DRIVE_SHEET,
+            week,
             rows,
           });
           return response(request, env, result);

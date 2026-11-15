@@ -1464,11 +1464,15 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       const mode = $("fx-dl-sort")?.value || "complejo";
       const sorted = sortMatchesForExport(unique, mode);
       const rows = fixtureExportRows(sorted);
+      if (!filterWeek) {
+        toast("Entrá a una fecha del fixture antes de pegar en Drive.", "err");
+        return;
+      }
       const ok = await confirmModal({
         title: "Pegar fixture en Drive",
         body:
-          `Se van a pegar ${rows.length} partido${rows.length === 1 ? "" : "s"} de ${filterWeek || "esta fecha"} en el Google Sheet (orden: ${mode}). ` +
-          "Los pendientes no se envían. Se reemplaza el contenido de la primera pestaña.",
+          `Se van a pegar ${rows.length} partido${rows.length === 1 ? "" : "s"} en la hoja «${filterWeek}» del Google Sheet (orden: ${mode}). ` +
+          "Los pendientes no se envían. Si la hoja no existe, se crea. Encabezados en negrita y columnas ajustadas.",
         confirmLabel: "Pegar en Drive",
       });
       if (!ok) return;
@@ -1482,11 +1486,17 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           rows,
         });
         const n = Number(res?.rows) || rows.length;
-        setMsg($("fx-msg"), `Fixture pegado en Drive · ${n} partido${n === 1 ? "" : "s"} (sin pendientes).`, "ok");
-        toast(`Pegado en Drive · ${n}`, "ok");
-        if (res?.url || DEFAULT_FIXTURE_DRIVE_SHEET_URL) {
-          window.open(res?.url || DEFAULT_FIXTURE_DRIVE_SHEET_URL, "_blank", "noopener,noreferrer");
-        }
+        const sheetName = res?.sheet || filterWeek;
+        setMsg(
+          $("fx-msg"),
+          `Fixture pegado en Drive · hoja «${sheetName}» · ${n} partido${n === 1 ? "" : "s"} (sin pendientes).`,
+          "ok"
+        );
+        toast(`Pegado · ${sheetName} · ${n}`, "ok");
+        const openUrl =
+          res?.url ||
+          `${DEFAULT_FIXTURE_DRIVE_SHEET_URL}${res?.gid != null ? `#gid=${res.gid}` : ""}`;
+        window.open(openUrl, "_blank", "noopener,noreferrer");
       } catch (err) {
         setMsg($("fx-msg"), err.message || "No se pudo pegar en Drive.", "err");
         toast(err.message || "No se pudo pegar en Drive", "err");
