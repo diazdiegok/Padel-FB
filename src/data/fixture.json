@@ -64,8 +64,8 @@
     "time": "19:30 - 21:00",
     "venue": "La manzana Padel",
     "court": "Cancha 2",
-    "home": "Milagros Solaro / Ana Paula Croce",
-    "away": "Micaela González / Daiana Romero",
+    "home": "Marien Robledo / Valeria Joubert",
+    "away": "Milagros Solaro / Ana Paula Croce",
     "result": "",
     "appliedResult": ""
   },
@@ -486,6 +486,20 @@
     "court": "Cancha 2",
     "home": "Morena Jaureguiberry / Mariela Jaureguiberry",
     "away": "Lucia Rausch / Luciana Marconi",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "week": "Fecha 1",
+    "day": "Miércoles",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "19:30 - 21:00",
+    "venue": "La manzana Padel",
+    "court": "Cancha 2",
+    "home": "Manuela Vinuales / Delfina Vinuales",
+    "away": "Micaela González / Daiana Romero",
     "result": "",
     "appliedResult": ""
   }
