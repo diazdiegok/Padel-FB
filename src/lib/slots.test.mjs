@@ -5,6 +5,7 @@ import {
   driveCourtOptions,
   isCourtTaken,
   matchStartsInWindow,
+  parkBareMatchesAsPending,
   parseCourtSlot,
   parseCourtSlotRows,
   parseCourtWindow,
@@ -14,6 +15,7 @@ import {
   weekFromName,
   windowCapacity,
 } from "./slots.js";
+import { isPendingMatch, isRealPairMatch, PENDING_AWAY } from "./fixturer.js";
 
 assert.equal(weekFromName("Fecha 1.xlsx"), "Fecha 1");
 assert.equal(weekFromName("fecha-2-canchas.csv"), "Fecha 2");
@@ -432,6 +434,48 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   const aways = fixed.matches.map((m) => m.away).sort();
   assert.ok(homes.includes("A1 / A2") && homes.includes("C1 / C2"));
   assert.ok(aways.includes("D1 / D2") && aways.includes("B1 / B2"));
+}
+
+// Sin cancha después de intentar → pendientes (no quedan con rival sin sede).
+{
+  const stuck = [
+    {
+      cat: "C Femenino",
+      week: "Fecha 1",
+      temp: "T5",
+      day: "Viernes",
+      time: "19:00 - 20:30",
+      home: "Marien / Valeria",
+      away: "Andrea / Gisela",
+      venue: "",
+      court: "",
+      homeDays: { Viernes: "19:00 - 21:00" },
+      awayDays: { Viernes: "18:00 - 21:00" },
+    },
+    {
+      cat: "C Femenino",
+      week: "Fecha 1",
+      temp: "T5",
+      day: "Lunes",
+      time: "19:00 - 20:30",
+      home: "Otra / Pareja",
+      away: "Relleno / Dos",
+      venue: "Open Padel",
+      court: "1",
+      homeDays: { Lunes: "18:00 - 22:00" },
+      awayDays: { Lunes: "18:00 - 22:00" },
+    },
+  ];
+  const parked = parkBareMatchesAsPending(stuck);
+  assert.equal(parked.parked, 1);
+  assert.equal(parked.matches.length, 3);
+  assert.ok(parked.matches.some((m) => m.venue === "Open Padel"), "el que tenía cancha sigue");
+  const pend = parked.matches.filter(isPendingMatch);
+  assert.equal(pend.length, 2);
+  assert.ok(pend.every((m) => m.away === PENDING_AWAY));
+  assert.ok(pend.some((m) => m.home === "Marien / Valeria"));
+  assert.ok(pend.some((m) => m.home === "Andrea / Gisela"));
+  assert.ok(!parked.matches.some(isRealPairMatch) || parked.matches.filter(isRealPairMatch).every((m) => m.venue));
 }
 
 console.log("slots ok");

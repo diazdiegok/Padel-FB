@@ -865,4 +865,63 @@ export function rematchForCourts(matches = [], slots = [], opts = {}) {
   };
 }
 
+function availText(days) {
+  if (!days || typeof days !== "object") return "";
+  return Object.entries(days)
+    .map(([d, h]) => `${d} ${h}`)
+    .join(" · ");
+}
+
+/**
+ * Partidos reales que quedaron sin cancha → dos pendientes (como impar / sin cruce).
+ * Así ninguna pareja queda “colgada” con rival pero sin sede.
+ */
+export function parkBareMatchesAsPending(matches = [], { reason = "No quedó cancha libre en el Drive donde puedan jugar." } = {}) {
+  const out = [];
+  let parked = 0;
+  for (const m of matches) {
+    if (!isRealPairMatch(m) || String(m.venue || "").trim()) {
+      out.push(m);
+      continue;
+    }
+    const homeDays = m.homeDays && typeof m.homeDays === "object" ? m.homeDays : undefined;
+    const awayDays = m.awayDays && typeof m.awayDays === "object" ? m.awayDays : undefined;
+    out.push({
+      ...m,
+      away: PENDING_AWAY,
+      pending: true,
+      venue: "",
+      court: "",
+      day: "",
+      time: "",
+      result: "",
+      rematch: false,
+      reason,
+      avail: availText(homeDays),
+      days: homeDays,
+      homeDays,
+      awayDays: undefined,
+    });
+    out.push({
+      ...m,
+      home: m.away,
+      away: PENDING_AWAY,
+      pending: true,
+      venue: "",
+      court: "",
+      day: "",
+      time: "",
+      result: "",
+      rematch: false,
+      reason,
+      avail: availText(awayDays),
+      days: awayDays,
+      homeDays: awayDays,
+      awayDays: undefined,
+    });
+    parked += 1;
+  }
+  return { matches: out, parked };
+}
+
 export { MATCH_MINUTES };

@@ -22,7 +22,7 @@ import {
 import { latestWeek, listSeasons, mergeArchivedMatches, seasonLabel, weekKey, weekNumber } from "../lib/liga.js";
 import { pairsMatch } from "../lib/scoring.js";
 import { courtsSheetIdForSeason } from "../lib/sheets.js";
-import { applyVenuePlan, driveCourtOptions, isCourtTaken, missingCourtHorarios, rematchForCourts, summarizeCourtSlots, weekFromName } from "../lib/slots.js";
+import { applyVenuePlan, driveCourtOptions, isCourtTaken, missingCourtHorarios, parkBareMatchesAsPending, rematchForCourts, summarizeCourtSlots, weekFromName } from "../lib/slots.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
 const isPending = (m) => isPendingMatch(m);
@@ -270,7 +270,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const cats = [...new Set(pending.map(({ m }) => m.cat || "Sin categoría"))];
     const pools = matchPools();
     box.innerHTML = `<h3>Pendientes · ${pending.length}</h3>
-      <p class="admin-help">Quedaron sin rival (impar, horarios o rivales ocupados). Van como <strong>${escAttr(PENDING_AWAY)}</strong> pero <strong>con complejo, cancha, día y horario ya reservados</strong>. Al cubrir, la pareja entra en ese turno. En la web pública también pueden cubrirse (misma categoría, menos de ${MAX_PAIR_MATCHES} PJ).</p>
+      <p class="admin-help">Quedaron sin rival (impar, horarios, rivales ocupados o sin cancha libre en el Drive). Van como <strong>${escAttr(PENDING_AWAY)}</strong>. Si ya tienen complejo/día/horario reservados, al cubrir la pareja entra en ese turno. En la web pública también pueden cubrirse (misma categoría, menos de ${MAX_PAIR_MATCHES} PJ).</p>
       ${cats
         .map((cat) => {
           const rows = pending.filter(({ m }) => (m.cat || "Sin categoría") === cat);
@@ -911,7 +911,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       const courtOpts = { onlyEmpty: true, venueCaps, preferPlan: true };
       // Primero asigna canchas; si alguna pareja no entra, prueba cambiarle el rival.
       const assigned = rematchForCourts(built, plannedSlots, courtOpts);
-      built = assigned.matches.map((m) => {
+      // Si igual no hay cancha, van a pendientes (como impar / sin cruce).
+      const parked = parkBareMatchesAsPending(assigned.matches);
+      built = parked.matches.map((m) => {
         const { days: _days, homeDays: _h, awayDays: _a, ...rest } = m;
         return cleanMatch(rest, {}, season);
       });
@@ -944,15 +946,18 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           `${assigned.swaps} rival${assigned.swaps === 1 ? "" : "es"} rearmado${assigned.swaps === 1 ? "" : "s"} para encontrar cancha`
         );
       }
-      if (pendingBare.length) {
-        parts.push(`${pendingBare.length} pendiente${pendingBare.length === 1 ? "" : "s"} sin cancha (faltó cupo del plan)`);
-      }
-      if (bare.length) {
+      if (parked.parked) {
         parts.push(
-          `${bare.length} sin complejo/cancha: en esa${bare.length === 1 ? " fila" : "s filas"} hay un desplegable con días/canchas del Drive donde puedan jugar ambas`
+          `${parked.parked} cruce${parked.parked === 1 ? "" : "s"} sin cancha → pendiente${parked.parked === 1 ? "" : "s"}`
         );
       }
-      if (assigned.skipped && !bare.length) parts.push(`${assigned.skipped} sin cancha compatible`);
+      if (pendingBare.length) {
+        parts.push(`${pendingBare.length} pendiente${pendingBare.length === 1 ? "" : "s"} sin cancha reservada`);
+      }
+      if (bare.filter(isRealPairMatch).length) {
+        parts.push(`${bare.filter(isRealPairMatch).length} sin complejo/cancha`);
+      }
+      if (assigned.skipped && !parked.parked) parts.push(`${assigned.skipped} sin cancha compatible`);
       const byesNoCap = out.byes.filter((e) => !e._capped);
       if (byesNoCap.length) parts.push(`${byesNoCap.length} sin disponibilidad`);
       if (capped) parts.push(`${capped} en tope ${MAX_PAIR_MATCHES} PJ`);
