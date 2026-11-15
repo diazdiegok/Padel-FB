@@ -824,25 +824,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     );
   }
 
+  /** Próxima fecha a armar: si ya existe Fecha N, la nueva es N+1. */
   function nextBuildWeek(season) {
     const all = seasonMatches(season);
     const max = all.reduce((n, m) => Math.max(n, weekNumber(m.week)), 0);
-    if (!max) return "Fecha 1";
-    const label = `Fecha ${max}`;
-    const inDraft = (ctx.fixture || []).filter((m) => m.week === label && String(m.temp || "").toUpperCase() === String(season).toUpperCase());
-    const hasResults =
-      inDraft.some((m) => String(m.result || m.appliedResult || "").trim()) ||
-      (ctx.results || []).some(
-        (m) => m.week === label && String(m.temp || "").toUpperCase() === String(season).toUpperCase() && String(m.result || "").trim()
-      ) ||
-      (ctx.fixturePublished || []).some(
-        (m) =>
-          m.week === label &&
-          String(m.temp || "").toUpperCase() === String(season).toUpperCase() &&
-          String(m.appliedResult || m.result || "").trim()
-      );
-    if (inDraft.length && !hasResults) return label;
-    return `Fecha ${max + 1}`;
+    return `Fecha ${max ? max + 1 : 1}`;
   }
 
   function pairEntries(season) {
