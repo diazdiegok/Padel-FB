@@ -788,6 +788,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       const real = built.filter((m) => !isPending(m));
       const pending = built.filter(isPending);
       const pendingBare = pending.filter((m) => !String(m.venue || "").trim() || !String(m.day || "").trim() || !String(m.time || "").trim());
+      const bare = built.filter(
+        (m) =>
+          (isRealPairMatch(m) || isPending(m)) &&
+          (!String(m.venue || "").trim() || !String(m.court || "").trim())
+      );
       const keepOther = (ctx.fixture || []).filter(
         (m) => isPending(m) && seasonOf(m) === season && (m.week || "") !== week
       );
@@ -806,7 +811,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       if (pendingBare.length) {
         parts.push(`${pendingBare.length} pendiente${pendingBare.length === 1 ? "" : "s"} sin cancha (faltó cupo del plan)`);
       }
-      if (assigned.skipped) parts.push(`${assigned.skipped} sin cancha compatible`);
+      if (bare.length) {
+        parts.push(
+          `${bare.length} sin complejo/cancha (faltó cupo del plan o del Sheet en los días elegidos)`
+        );
+      }
+      if (assigned.skipped && !bare.length) parts.push(`${assigned.skipped} sin cancha compatible`);
       const byesNoCap = out.byes.filter((e) => !e._capped);
       if (byesNoCap.length) parts.push(`${byesNoCap.length} sin disponibilidad`);
       if (capped) parts.push(`${capped} en tope ${MAX_PAIR_MATCHES} PJ`);

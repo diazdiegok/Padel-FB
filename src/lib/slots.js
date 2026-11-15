@@ -362,6 +362,36 @@ export function assignCourtSlots(matches = [], slots = [], { onlyEmpty = true, v
     return 4;
   }
 
+  function scoreOf(slot, m, pending) {
+    return fitScore(slot, m) + (pending ? pendingAvailScore(slot, m) : 0);
+  }
+
+  function underCap(slot) {
+    if (!venueCaps) return true;
+    const v = slot.venue;
+    const cap = venueCaps[v] ?? venueCaps[normVenueName(v)];
+    if (cap == null) return true;
+    return (usedByVenue.get(venueKey(v)) || 0) < Number(cap);
+  }
+
+  /** Opciones estrictas (mismo día/horario) y, si preferPlan, cualquier cancha libre del plan. */
+  function optionsFor(m, pending) {
+    const scored = pool
+      .map((slot, si) => ({ slot, si, score: scoreOf(slot, m, pending) }))
+      .filter(({ slot }) => !slot.used && underCap(slot));
+    const strict = scored
+      .filter(({ slot }) => slotFitsMatch(slot, m))
+      .sort((a, b) => b.score - a.score || a.slot.from - b.slot.from);
+    if (strict.length) return strict;
+    if (!preferPlan) return [];
+    return scored
+      .map((o) => ({
+        ...o,
+        score: o.score + (normalizeDay(m.day) === o.slot.day ? 10 : 0),
+      }))
+      .sort((a, b) => b.score - a.score || a.slot.from - b.slot.from);
+  }
+
   for (let i = 0; i < next.length; i++) {
     const m = next[i];
     const pending = isPendingMatch(m);
@@ -370,49 +400,31 @@ export function assignCourtSlots(matches = [], slots = [], { onlyEmpty = true, v
     if (!hasRealAway && !pending) continue;
     const filled = String(m.venue || "").trim() && String(m.time || "").trim();
     if (onlyEmpty && filled) continue;
-    const scoreOf = (slot) => fitScore(slot, m) + (pending ? pendingAvailScore(slot, m) : 0);
-    const strict = pool
-      .map((slot, si) => ({ slot, si, score: scoreOf(slot) }))
-      .filter(({ slot }) => !slot.used && slotFitsMatch(slot, m))
-      .sort((a, b) => b.score - a.score || a.slot.from - b.slot.from);
-    const options =
-      preferPlan && !strict.length
-        ? pool
-            .map((slot, si) => ({
-              slot,
-              si,
-              score: scoreOf(slot) + (normalizeDay(m.day) === slot.day ? 10 : 0),
-            }))
-            .filter(({ slot }) => !slot.used)
-            .sort((a, b) => b.score - a.score || a.slot.from - b.slot.from)
-        : strict;
-    candidates.push({ i, options, pending });
+    // Estimación inicial (día/hora del fixtureo) para priorizar los más trabados.
+    const estimate = optionsFor(m, pending);
+    candidates.push({ i, pending, optionCount: estimate.length });
   }
 
   // Primero partidos con pocas opciones; los pendientes (suelen matchear muchos slots) al final.
   candidates.sort(
     (a, b) =>
       Number(!!a.pending) - Number(!!b.pending) ||
-      a.options.length - b.options.length ||
+      a.optionCount - b.optionCount ||
       String(next[a.i].cat || "").localeCompare(String(next[b.i].cat || ""), "es")
   );
 
   let assigned = 0;
-  for (const { i, options } of candidates) {
-    const pick = options.find((o) => {
-      if (pool[o.si].used) return false;
-      if (!venueCaps) return true;
-      const v = pool[o.si].venue;
-      const cap = venueCaps[v] ?? venueCaps[normVenueName(v)];
-      if (cap == null) return true;
-      return (usedByVenue.get(venueKey(v)) || 0) < Number(cap);
-    });
+  for (const { i, pending } of candidates) {
+    const m = next[i];
+    // Recalcular al momento de asignar: si el horario del fixtureo ya no tiene cancha,
+    // con preferPlan se mueve a otro turno libre del plan (no deja complejo/cancha vacíos).
+    const options = optionsFor(m, pending);
+    const pick = options[0];
     if (!pick) continue;
     const slot = pool[pick.si];
     markUsed(slot);
     const vk = venueKey(slot.venue);
     usedByVenue.set(vk, (usedByVenue.get(vk) || 0) + 1);
-    const m = next[i];
     m.venue = slot.venue;
     m.court = slot.court || m.court || "";
     m.day = slot.day || m.day || "";

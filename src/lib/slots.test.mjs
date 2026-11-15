@@ -119,4 +119,21 @@ const kept = assignCourtSlots(
 assert.equal(kept.assigned, 0);
 assert.equal(kept.matches[0].venue, "Palermo");
 
+// Bug: varios partidos del fixtureo caen en el mismo horario; al agotarse esas canchas
+// deben reubicarse en otro turno del plan (no quedar con día/hora y sin complejo).
+const crowdedSlots = parseCourtSlotRows([
+  { Complejo: "Open", Cancha: "1", Dia: "Lunes", Horario: "18:00 - 19:30" },
+  { Complejo: "Open", Cancha: "2", Dia: "Lunes", Horario: "19:00 - 20:30" },
+  { Complejo: "Americas", Cancha: "1", Dia: "Lunes", Horario: "17:00 - 18:30" },
+]);
+const crowded = [
+  { day: "Lunes", time: "18:00 - 19:30", home: "A1 / A2", away: "A3 / A4", venue: "", court: "", cat: "A Masculina" },
+  { day: "Lunes", time: "18:00 - 19:30", home: "B1 / B2", away: "B3 / B4", venue: "", court: "", cat: "B Masculina" },
+  { day: "Lunes", time: "18:00 - 19:30", home: "C1 / C2", away: "C3 / C4", venue: "", court: "", cat: "C Masculina" },
+];
+const rescued = assignCourtSlots(crowded, crowdedSlots, { onlyEmpty: true, preferPlan: true });
+assert.equal(rescued.assigned, 3, "los 3 consiguen cancha aunque peleen el mismo horario");
+assert.ok(rescued.matches.every((m) => m.venue && m.court && m.day && m.time));
+assert.equal(rescued.matches.filter((m) => m.time === "18:00 - 19:30").length, 1, "solo una cancha a las 18:00");
+
 console.log("slots ok");
