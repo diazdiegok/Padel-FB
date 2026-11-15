@@ -58,6 +58,8 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   let loadedSlots = [];
   let slotsFileName = "";
   let advancedOpen = false;
+  /** Índice de pendiente → pareja elegida en «Cubrir con» (aún sin confirmar cancha). */
+  const coverDraft = new Map();
 
   function fallbackWeek() {
     return filterWeek || $("fx-week")?.value.trim() || latestWeek(ctx.fixture) || "Fecha 1";
@@ -152,13 +154,16 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     return days;
   }
 
-  /** Canchas del Drive donde puedan jugar ambas, sin el tope de «Partidos a usar». */
-  function courtChoicesFor(match) {
-    const taken = (ctx.fixture || []).filter((other) => {
-      if (other === match) return false;
+  function takenCourts(exclude) {
+    return (ctx.fixture || []).filter((other) => {
+      if (other === exclude) return false;
       if (seasonOf(other) !== filterTemp || (other.week || "") !== filterWeek) return false;
       return String(other.venue || "").trim() && String(other.court || "").trim();
     });
+  }
+
+  /** Canchas del Drive donde puedan jugar ambas, sin el tope de «Partidos a usar». */
+  function courtChoicesFor(match) {
     return driveCourtOptions(
       {
         ...match,
@@ -166,8 +171,40 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         awayDays: match.awayDays || daysOfPair(match.away, match.cat),
       },
       loadedSlots,
-      taken
+      takenCourts(match)
     );
+  }
+
+  /** Turnos libres del Drive donde el pendiente y la pareja que cubre puedan jugar. */
+  function coverCourtChoices(match, coverLabel) {
+    const cover = String(coverLabel || "").trim();
+    if (!cover) return [];
+    return driveCourtOptions(
+      {
+        ...match,
+        away: cover,
+        pending: false,
+        homeDays: match.homeDays || match.days || daysOfPair(match.home, match.cat),
+        awayDays: daysOfPair(cover, match.cat),
+      },
+      loadedSlots,
+      takenCourts(match)
+    );
+  }
+
+  function coverSlotSelect(i, match, coverLabel) {
+    const label = "Elegir día, complejo y cancha";
+    if (!loadedSlots.length) {
+      return `<select disabled aria-label="${label}"><option>Leé el Drive para ver canchas</option></select>`;
+    }
+    const opts = coverCourtChoices(match, coverLabel);
+    if (!opts.length) {
+      return `<select disabled aria-label="${label}" title="No hay un turno libre del Drive donde puedan jugar ambas"><option>Sin cancha libre donde puedan jugar ambas</option></select>`;
+    }
+    return `<select data-fx-cover-slot="${i}" aria-label="${label}">
+      <option value="">Elegir día, complejo y cancha…</option>
+      ${opts.map((o) => `<option value="${escAttr(o.key)}">${escAttr(courtOptionText(o))}</option>`).join("")}
+    </select>`;
   }
 
   function courtOptionText(option) {
@@ -264,13 +301,17 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       .filter(({ m }) => isPending(m) && seasonOf(m) === filterTemp && (m.week || "") === filterWeek);
     box.hidden = !pending.length;
     if (!pending.length) {
+      coverDraft.clear();
       box.innerHTML = "";
       return;
+    }
+    for (const key of [...coverDraft.keys()]) {
+      if (!pending.some(({ i }) => i === key)) coverDraft.delete(key);
     }
     const cats = [...new Set(pending.map(({ m }) => m.cat || "Sin categoría"))];
     const pools = matchPools();
     box.innerHTML = `<h3>Pendientes · ${pending.length}</h3>
-      <p class="admin-help">Quedaron sin rival (impar, horarios, rivales ocupados o sin cancha libre en el Drive). Van como <strong>${escAttr(PENDING_AWAY)}</strong>. Si ya tienen complejo/día/horario reservados, al cubrir la pareja entra en ese turno. En la web pública también pueden cubrirse (misma categoría, menos de ${MAX_PAIR_MATCHES} PJ).</p>
+      <p class="admin-help">Quedaron sin rival (impar, horarios, rivales ocupados o sin cancha libre en el Drive). Primero elegí <strong>Cubrir con</strong> y después el <strong>día, complejo y cancha</strong> donde puedan jugar ambas. En la web pública también pueden cubrirse (misma categoría, menos de ${MAX_PAIR_MATCHES} PJ).</p>
       ${cats
         .map((cat) => {
           const rows = pending.filter(({ m }) => (m.cat || "Sin categoría") === cat);
@@ -284,6 +325,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
                   pools,
                   temp: filterTemp,
                 });
+                const draft = coverDraft.get(i) || "";
                 return `<article class="fx-pending-card" data-i="${i}">
                   <strong>${escAttr(m.home)}</strong>
                   <span class="admin-help">vs ${escAttr(PENDING_AWAY)}${
@@ -292,17 +334,24 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
                       : " · sin cancha asignada"
                   }${m.reason ? ` · ${escAttr(m.reason)}` : ""}${m.avail ? ` · disp. ${escAttr(m.avail)}` : ""}${m.note ? ` · ${escAttr(m.note)}` : ""}</span>
                   <div class="fx-pending-actions">
-                    ${needsCourt(m) ? `<span class="fx-court-fallback">${courtFallbackSelect(i, m)}</span>` : ""}
                     <select data-fx-cover="${i}" aria-label="Cubrir con">
-                      <option value="">Cubrir con…</option>
+                      <option value="">1. Cubrir con…</option>
                       ${
                         covers.length
                           ? covers
-                              .map((c) => `<option value="${escAttr(c.label)}">${escAttr(c.label)} (${c.pj} PJ)</option>`)
+                              .map(
+                                (c) =>
+                                  `<option value="${escAttr(c.label)}"${draft === c.label ? " selected" : ""}>${escAttr(c.label)} (${c.pj} PJ)</option>`
+                              )
                               .join("")
                           : `<option value="" disabled>No hay parejas disponibles en ${escAttr(cat)}</option>`
                       }
                     </select>
+                    ${
+                      draft
+                        ? `<span class="fx-court-fallback">${coverSlotSelect(i, m, draft)}</span>`
+                        : `<select disabled aria-label="Elegir día, complejo y cancha"><option>2. Primero elegí con quién cubrir</option></select>`
+                    }
                     <button class="btn btn-ghost" type="button" data-fx-del="${i}">Quitar</button>
                   </div>
                 </article>`;
@@ -1237,17 +1286,57 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     });
 
     $("fx-pending")?.addEventListener("change", (e) => {
-      const slotSel = e.target.closest("[data-fx-slot]");
-      if (slotSel) {
-        applyCourtOption(Number(slotSel.dataset.fxSlot), slotSel.value);
+      const coverSlot = e.target.closest("[data-fx-cover-slot]");
+      if (coverSlot) {
+        const i = Number(coverSlot.dataset.fxCoverSlot);
+        const slot = ctx.fixture[i];
+        const cover = coverDraft.get(i) || "";
+        const key = coverSlot.value;
+        if (!slot || !isPending(slot) || !cover || !key) return;
+        const opt = coverCourtChoices(slot, cover).find((o) => o.key === key);
+        if (!opt) {
+          toast("Esa cancha ya no está libre para ambas parejas.", "err");
+          coverSlot.value = "";
+          return;
+        }
+        const next = cleanMatch(
+          {
+            ...slot,
+            away: cover,
+            day: opt.day,
+            time: opt.time,
+            venue: opt.venue,
+            court: opt.court,
+            pending: false,
+            reason: "",
+            avail: "",
+            note: slot.note || "",
+            result: "",
+          },
+          {},
+          filterTemp || ctx.siteData.currentSeason || "T4"
+        );
+        delete next.pending;
+        delete next.reason;
+        delete next.avail;
+        ctx.fixture[i] = next;
+        coverDraft.delete(i);
+        shell.markDirty("fixture");
+        render();
+        toast(`Cubierto · ${courtOptionText(opt)}`, "ok");
         return;
       }
       const sel = e.target.closest("[data-fx-cover]");
-      if (!sel || sel.value === "") return;
+      if (!sel) return;
       const i = Number(sel.dataset.fxCover);
       const slot = ctx.fixture[i];
       if (!slot || !isPending(slot)) return;
       const cover = String(sel.value || "").trim();
+      if (!cover) {
+        coverDraft.delete(i);
+        renderPending();
+        return;
+      }
       const allowed = coverCandidates({
         match: slot,
         pairs: ctx.pairs || [],
@@ -1257,33 +1346,19 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       if (!allowed.some((c) => pairsMatch(c.label, cover) || c.label === cover)) {
         toast("Esa pareja no puede cubrir (otra categoría o ya tiene 12 PJ).", "err");
         sel.value = "";
+        coverDraft.delete(i);
         return;
       }
-      const next = cleanMatch(
-        {
-          ...slot,
-          away: cover,
-          pending: false,
-          reason: "",
-          avail: "",
-          note: slot.note || "",
-          result: "",
-        },
-        {},
-        filterTemp || ctx.siteData.currentSeason || "T4"
-      );
-      delete next.pending;
-      delete next.reason;
-      delete next.avail;
-      ctx.fixture[i] = next;
-      shell.markDirty("fixture");
-      render();
-      toast(
-        slot.venue && slot.day && slot.time
-          ? `Rival cubierto · ${slot.day} ${slot.time} · ${slot.venue}${slot.court ? ` ${slot.court}` : ""}`
-          : "Rival cubierto. Completá complejo, día y horario en la tabla si falta.",
-        "ok"
-      );
+      // No confirma todavía: primero hay que elegir día/complejo/cancha común.
+      coverDraft.set(i, cover);
+      renderPending();
+      if (!loadedSlots.length) {
+        toast("Leé el Drive para ver los turnos donde puedan jugar ambas.", "err");
+        return;
+      }
+      if (!coverCourtChoices(slot, cover).length) {
+        toast("Esas dos parejas no tienen un turno libre en común en el Drive.", "err");
+      }
     });
 
     const onDelete = async (e) => {

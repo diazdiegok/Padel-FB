@@ -2259,17 +2259,29 @@ body.is-admin .chk input[type="checkbox"] {
 
 .fx-pending-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  width: 100%;
 }
 
 .fx-pending-actions select {
   min-width: 200px;
+  max-width: 420px;
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--bg);
   color: var(--cream);
+}
+
+.fx-pending-actions .fx-court-fallback {
+  flex: 1 1 280px;
+}
+
+.fx-pending-actions .fx-court-fallback select {
+  width: 100%;
+  max-width: 420px;
 }
 
 .fx-toolbar {
