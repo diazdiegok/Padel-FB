@@ -3,6 +3,7 @@ import {
   applyVenuePlan,
   assignCourtSlots,
   driveCourtOptions,
+  isCourtTaken,
   matchStartsInWindow,
   parseCourtSlot,
   parseCourtSlotRows,
@@ -362,6 +363,68 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   );
   assert.equal(outside.length, 0, "no ofrece un horario fuera de la inscripción");
   assert.equal(driveCourtOptions({ time: "19:00 - 20:30" }, sheet, []).length, 0, "sin día ni disponibilidad no inventa turnos");
+}
+
+{
+  const taken = [{ day: "Viernes", time: "18:00 - 19:30", venue: "Open Padel", court: "1" }];
+  assert.equal(
+    isCourtTaken({ day: "Viernes", time: "18:00 - 19:30", venue: "Open Padel", court: "1" }, taken),
+    true,
+    "misma cancha y horario = en uso"
+  );
+  assert.equal(
+    isCourtTaken({ day: "Viernes", time: "18:00 - 19:30", venue: "Open Padel", court: "2" }, taken),
+    false,
+    "otra cancha libre"
+  );
+  assert.equal(
+    isCourtTaken({ day: "Viernes", time: "19:00 - 20:30", venue: "Open Padel", court: "1" }, taken),
+    true,
+    "horario solapado también cuenta como en uso"
+  );
+  assert.equal(
+    isCourtTaken({ day: "Viernes", time: "20:00 - 21:30", venue: "Open Padel", court: "1" }, taken),
+    false,
+    "mismo complejo/cancha pero horario libre"
+  );
+}
+
+// Sin plan avanzado: toda la hoja + disponibilidad alcanza para asignar canchas.
+{
+  const sheet = parseCourtSlotRows([
+    { Complejo: "Open", Cancha: "1", Dia: "Viernes", Horario: "16:00 - 22:00" },
+    { Complejo: "Open", Cancha: "2", Dia: "Viernes", Horario: "16:00 - 22:00" },
+  ]);
+  const matches = [
+    {
+      day: "Viernes",
+      time: "18:00 - 19:30",
+      home: "A1 / A2",
+      away: "B1 / B2",
+      venue: "",
+      court: "",
+      homeDays: { Viernes: "17:00 - 21:00" },
+      awayDays: { Viernes: "17:00 - 21:00" },
+    },
+    {
+      day: "Viernes",
+      time: "18:00 - 19:30",
+      home: "C1 / C2",
+      away: "D1 / D2",
+      venue: "",
+      court: "",
+      homeDays: { Viernes: "18:00 - 22:00" },
+      awayDays: { Viernes: "18:00 - 22:00" },
+    },
+  ];
+  const direct = assignCourtSlots(matches, sheet, { onlyEmpty: true, preferPlan: true });
+  assert.equal(direct.assigned, 2, "matchea directo con la hoja sin cupos por complejo");
+  assert.ok(direct.matches.every((m) => m.venue && m.court));
+  assert.notEqual(
+    `${direct.matches[0].venue}|${direct.matches[0].court}|${direct.matches[0].time}`,
+    `${direct.matches[1].venue}|${direct.matches[1].court}|${direct.matches[1].time}`,
+    "no doble-reserva la misma cancha y horario"
+  );
 }
 
 console.log("slots ok");

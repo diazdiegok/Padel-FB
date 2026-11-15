@@ -607,6 +607,23 @@ function courtOptionKey(slot) {
   return [slot.day, slot.time, slot.venue, slot.court].map((part) => encodeURIComponent(part || "")).join("|");
 }
 
+/** True si otro partido ya usa la misma cancha en un horario que se solapa. */
+export function isCourtTaken(match = {}, taken = []) {
+  const venue = String(match.venue || "").trim();
+  const court = String(match.court || "").trim();
+  const day = normalizeDay(match.day);
+  const win = parseCourtWindow(match.time);
+  if (!venue || !court || !day || !win || !(win.to > win.from)) return false;
+  return (taken || []).some((other) => {
+    if (!other?.venue || !other?.court) return false;
+    if (fold(other.venue) !== fold(venue) || fold(other.court) !== fold(court)) return false;
+    if (normalizeDay(other.day) !== day) return false;
+    const otherWin = parseCourtWindow(other.time);
+    if (!otherWin) return false;
+    return windowsOverlap(win.from, win.to, otherWin.from, otherWin.to);
+  });
+}
+
 function hasPairAvailability(match, pending) {
   if (pending && match?.days && typeof match.days === "object" && Object.keys(match.days).length) return true;
   if (match?.homeDays && typeof match.homeDays === "object" && Object.keys(match.homeDays).length) return true;

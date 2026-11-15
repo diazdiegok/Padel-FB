@@ -218,7 +218,7 @@ import "../styles/admin.css";
         <section data-section="fixture" hidden>
           <div class="admin-callout">
             <strong>Cómo se arma</strong>
-            <span>1) Leer Drive toma la pestaña del Google Sheet con el mismo nombre que la fecha (Fecha 1, Fecha 2…). Un horario solo = 1:30; un rango (16:30-21:00) = ventana para partidos de 1:30. 2) Fixtureo complejos avanzado: cupos y días. 3) Armar fixture y publicar.</span>
+            <span>1) Leer Drive toma la pestaña del Google Sheet con el mismo nombre que la fecha (Fecha 1, Fecha 2…). Un horario solo = 1:30; un rango (16:30-21:00) = ventana para partidos de 1:30. 2) Armar fixture matchea las parejas con los turnos libres de la hoja. 3) Publicar.</span>
           </div>
           <div class="admin-section-tools">
             <span class="tag" id="fx-summary">Sin partidos</span>
@@ -249,16 +249,11 @@ import "../styles/admin.css";
               </div>
               <p class="admin-help" id="fx-slots-status" hidden></p>
               <div class="fx-advanced" id="fx-advanced" hidden>
-                <div class="fx-advanced-head">
-                  <strong>Complejos y días</strong>
-                  <span class="admin-help">El cupo total es el de la fecha: parejas jugables ÷ 2 (no entran las que ya llegaron a 12 PJ). La suma de «Partidos a usar» no puede pasarlo. El número al lado del día (ej. Jueves · 4 disp.) es cuántos de 1:30 <b>caben ese día en el Sheet</b>. Marcá los días y Armar fixture.</span>
-                  <p class="fx-plan-summary" id="fx-plan-summary" hidden></p>
-                </div>
                 <div class="fx-advanced-list" id="fx-advanced-list"></div>
               </div>
             </div>
             <div class="admin-empty" id="fx-empty" hidden>
-              <p>Todavía no hay partidos. Cargá el Excel, configurá complejos y armá el fixture.</p>
+              <p>Todavía no hay partidos. Leé el Drive y armá el fixture.</p>
             </div>
             <div class="fx-warnings" id="fx-warnings" role="status" hidden></div>
             <div class="fx-pending" id="fx-pending" hidden></div>
