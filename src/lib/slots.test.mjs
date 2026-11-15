@@ -7,6 +7,7 @@ import {
   findCourtConflicts,
   isCourtTaken,
   matchStartsInWindow,
+  pairsSharePlayableWindow,
   parkBareMatchesAsPending,
   parseCourtSlot,
   parseCourtSlotRows,
@@ -648,6 +649,23 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   assert.ok(pend.some((m) => m.home === "Marien / Valeria"));
   assert.ok(pend.some((m) => m.home === "Andrea / Gisela"));
   assert.ok(!parked.matches.some(isRealPairMatch) || parked.matches.filter(isRealPairMatch).every((m) => m.venue));
+}
+
+// Dos pendientes: Marien Vie 19-21 y Manuela Vie 8-19 no comparten 1:30.
+{
+  assert.equal(
+    pairsSharePlayableWindow(
+      { Lunes: "19:00 - 21:00", Viernes: "19:00 - 21:00" },
+      { Martes: "08:00 - 21:00", Viernes: "08:00 - 19:00", Sábado: "08:00 - 14:00" }
+    ),
+    false,
+    "Marien/Manuela sin tramo común de 90'"
+  );
+  assert.equal(
+    pairsSharePlayableWindow({ Viernes: "18:00 - 21:00" }, { Viernes: "19:00 - 22:00" }),
+    true,
+    "18-21 ∩ 19-22 = 19-21 → 90' ok"
+  );
 }
 
 console.log("slots ok");
