@@ -2202,8 +2202,8 @@ body.is-admin .chk input[type="checkbox"] {
 
 .fx-court-fallback select {
   width: 100%;
-  min-width: 240px;
-  max-width: 360px;
+  min-width: 280px;
+  max-width: 420px;
   font-size: 13px;
 }
 

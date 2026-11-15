@@ -152,7 +152,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     return days;
   }
 
-  /** Canchas del Drive para este horario, sin el tope de «Partidos a usar». */
+  /** Canchas del Drive donde puedan jugar ambas, sin el tope de «Partidos a usar». */
   function courtChoicesFor(match) {
     const taken = (ctx.fixture || []).filter((other) => {
       if (other === match) return false;
@@ -173,23 +173,20 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   function courtOptionText(option) {
     const court = String(option.court || "").trim();
     const courtTxt = /^cancha\b/i.test(court) ? court : court ? `Cancha ${court}` : "";
-    return [option.venue, courtTxt].filter(Boolean).join(" · ");
+    return [option.day, option.time, option.venue, courtTxt].filter(Boolean).join(" · ");
   }
 
   function courtFallbackSelect(i, match) {
-    const label = "Elegir complejo y cancha";
+    const label = "Elegir día, complejo y cancha";
     if (!loadedSlots.length) {
-      return `<select disabled aria-label="${label}" title="Leé el Drive para ver canchas de este horario"><option>Leé el Drive para elegir cancha</option></select>`;
-    }
-    if (!String(match.day || "").trim() || !String(match.time || "").trim()) {
-      return `<select disabled aria-label="${label}"><option>Sin horario para buscar cancha</option></select>`;
+      return `<select disabled aria-label="${label}" title="Leé el Drive para ver canchas disponibles"><option>Leé el Drive para elegir cancha</option></select>`;
     }
     const opts = courtChoicesFor(match);
     if (!opts.length) {
-      return `<select disabled aria-label="${label}" title="En el Drive no quedó una cancha libre que coincida con este día y horario"><option>Sin cancha libre en el Drive para este horario</option></select>`;
+      return `<select disabled aria-label="${label}" title="En el Drive no quedó una cancha libre en un día y horario donde puedan jugar ambas parejas"><option>Sin cancha libre en el Drive donde puedan jugar ambas</option></select>`;
     }
-    return `<select data-fx-slot="${i}" aria-label="${label}" title="Canchas del Drive para este horario, aunque el complejo ya llegó a la cantidad de partidos.">
-      <option value="">Elegir complejo y cancha…</option>
+    return `<select data-fx-slot="${i}" aria-label="${label}" title="Turnos del Drive donde puedan jugar ambas, aunque el complejo ya llegó a la cantidad de partidos.">
+      <option value="">Elegir día, complejo y cancha…</option>
       ${opts.map((o) => `<option value="${escAttr(o.key)}">${escAttr(courtOptionText(o))}</option>`).join("")}
     </select>`;
   }
@@ -199,7 +196,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     if (!match || !key) return;
     const opt = courtChoicesFor(match).find((o) => o.key === key);
     if (!opt) {
-      toast("Esa cancha ya no está libre para este horario.", "err");
+      toast("Esa cancha ya no está libre.", "err");
       render();
       return;
     }
@@ -602,7 +599,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         if (repeated.has(i)) titles.push("Ya se enfrentaron en esta temporada");
         if (bare) {
           titles.push(
-            "Sin cancha en el cupo elegido. El desplegable lista canchas del Drive para este horario, aunque el complejo ya llegó a la cantidad."
+            "Sin cancha en el cupo elegido. El desplegable lista días y canchas del Drive donde puedan jugar ambas, aunque el complejo ya llegó a la cantidad."
           );
         }
         const cls = [repeated.has(i) ? "is-rematch" : "", bare ? "is-uncourted" : ""].filter(Boolean).join(" ");
@@ -934,7 +931,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
       if (bare.length) {
         parts.push(
-          `${bare.length} sin complejo/cancha: en esa${bare.length === 1 ? " fila" : "s filas"} hay un desplegable con canchas del Drive para el mismo horario, aunque el complejo ya llegó a la cantidad`
+          `${bare.length} sin complejo/cancha: en esa${bare.length === 1 ? " fila" : "s filas"} hay un desplegable con días/canchas del Drive donde puedan jugar ambas, aunque el complejo ya llegó a la cantidad`
         );
       }
       if (assigned.skipped && !bare.length) parts.push(`${assigned.skipped} sin cancha compatible`);

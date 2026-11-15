@@ -607,44 +607,73 @@ function courtOptionKey(slot) {
   return [slot.day, slot.time, slot.venue, slot.court].map((part) => encodeURIComponent(part || "")).join("|");
 }
 
+function hasPairAvailability(match, pending) {
+  if (pending && match?.days && typeof match.days === "object" && Object.keys(match.days).length) return true;
+  if (match?.homeDays && typeof match.homeDays === "object" && Object.keys(match.homeDays).length) return true;
+  if (match?.awayDays && typeof match.awayDays === "object" && Object.keys(match.awayDays).length) return true;
+  return false;
+}
+
 /**
- * Canchas del Sheet para el día y horario que ya tiene el partido.
- * Ignora el tope de «Partidos a usar»: sirve cuando el plan no dejó turno libre.
+ * Canchas del Sheet para partidos que quedaron sin complejo/cancha.
+ * Ignora el tope de «Partidos a usar».
+ * Con disponibilidad de las parejas: ofrece cualquier día/horario del Drive donde
+ * puedan jugar ambas (no solo el turno que había armado el fixture).
+ * Sin disponibilidad cargada: se limita al día y horario ya fijados.
  * No ofrece una cancha ya ocupada (mismo complejo, cancha y horario solapado).
  */
 export function driveCourtOptions(match = {}, slots = [], taken = []) {
-  const day = normalizeDay(match.day);
-  const win = parseCourtWindow(match.time);
-  if (!day || !win || !(win.to > win.from)) return [];
+  const matchDay = normalizeDay(match.day);
+  const matchWin = parseCourtWindow(match.time);
   const pending = !!match.pending || fold(match.away) === fold("Pendiente / Pendiente");
+  const useAvail = hasPairAvailability(match, pending);
+  if (!useAvail && (!matchDay || !matchWin || !(matchWin.to > matchWin.from))) return [];
+
   const seen = new Set();
   const out = [];
   for (const slot of expandCourtCandidates(slots)) {
-    if (normalizeDay(slot.day) !== day) continue;
-    if (slot.from !== win.from || slot.to !== win.to) continue;
-    if (!slotFitsPairAvailability(slot, match, { pending })) continue;
+    if (useAvail) {
+      if (!slotFitsPairAvailability(slot, match, { pending })) continue;
+    } else {
+      if (normalizeDay(slot.day) !== matchDay) continue;
+      if (slot.from !== matchWin.from || slot.to !== matchWin.to) continue;
+    }
+
+    const slotDay = normalizeDay(slot.day);
     const busy = (taken || []).some((other) => {
       if (!other?.venue || !other?.court) return false;
       if (fold(other.venue) !== fold(slot.venue) || fold(other.court) !== fold(slot.court)) return false;
-      if (normalizeDay(other.day) !== day) return false;
+      if (normalizeDay(other.day) !== slotDay) return false;
       const otherWin = parseCourtWindow(other.time);
       if (!otherWin) return false;
       return windowsOverlap(slot.from, slot.to, otherWin.from, otherWin.to);
     });
     if (busy) continue;
+
     const key = courtOptionKey(slot);
     if (seen.has(key)) continue;
     seen.add(key);
+
+    const sameDay = matchDay && slotDay === matchDay;
+    const sameWhen =
+      sameDay && matchWin && slot.from === matchWin.from && slot.to === matchWin.to;
     out.push({
       day: slot.day,
       time: slot.time,
       venue: slot.venue,
       court: slot.court,
       key,
+      sameWhen: !!sameWhen,
+      sameDay: !!sameDay,
     });
   }
+
   out.sort(
     (a, b) =>
+      Number(b.sameWhen) - Number(a.sameWhen) ||
+      Number(b.sameDay) - Number(a.sameDay) ||
+      DAYS.indexOf(a.day) - DAYS.indexOf(b.day) ||
+      a.time.localeCompare(b.time, "es") ||
       a.venue.localeCompare(b.venue, "es") ||
       String(a.court).localeCompare(String(b.court), "es", { numeric: true })
   );

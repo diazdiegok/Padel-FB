@@ -278,7 +278,7 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   assert.ok(Number(tarde.time.slice(0, 2)) >= 18 || tarde.time.startsWith("18:") || tarde.time.startsWith("19:"), tarde.time);
 }
 
-// Desplegable: canchas del Sheet para el mismo horario, sin tope de cupo y sin doble reserva.
+// Desplegable: canchas del Sheet sin tope de cupo; con disponibilidad, también otros días.
 {
   const sheet = parseCourtSlotRows([
     { Complejo: "Americas", Cancha: "Cancha 1", Dia: "Lunes", Horario: "16:00 - 22:00" },
@@ -287,6 +287,7 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
     { Complejo: "Open", Cancha: "Cancha 1", Dia: "Lunes", Horario: "19:00 - 20:30" },
     { Complejo: "Open", Cancha: "Cancha 2", Dia: "Martes", Horario: "19:00 - 20:30" },
     { Complejo: "Terrazas", Cancha: "Cancha 1", Dia: "Lunes", Horario: "21:00 - 22:30" },
+    { Complejo: "Palermo", Cancha: "Cancha 1", Dia: "Viernes", Horario: "18:00 - 19:30" },
   ]);
   const match = {
     day: "Lunes",
@@ -295,34 +296,72 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
     away: "C / D",
     venue: "",
     court: "",
-    homeDays: { Lunes: "18:00 - 22:00" },
-    awayDays: { Lunes: "18:00 - 22:00" },
+    homeDays: { Lunes: "18:00 - 22:00", Martes: "18:00 - 22:00" },
+    awayDays: { Lunes: "18:00 - 22:00", Martes: "18:00 - 22:00" },
   };
   const opts = driveCourtOptions(match, sheet, [
     { day: "Lunes", time: "16:30 - 18:00", venue: "Americas Padel", court: "Cancha 1" },
   ]);
-  const labels = opts.map((o) => `${o.venue}|${o.court}`);
-  assert.deepEqual(
-    labels,
-    ["Americas Padel|Cancha 1", "Americas Padel|Cancha 2", "Open Padel|Cancha 1"],
-    "incluye canchas del Drive del mismo horario, aunque el cupo ya se haya usado"
-  );
-  assert.equal(opts.length, 3, "no duplica la misma cancha");
+  assert.ok(opts.some((o) => o.sameWhen && o.venue === "Americas Padel" && o.court === "Cancha 1"));
+  assert.ok(opts.some((o) => o.sameWhen && o.venue === "Open Padel" && o.court === "Cancha 1"));
+  assert.ok(opts.some((o) => o.day === "Martes" && o.venue === "Open Padel" && o.court === "Cancha 2"), "ofrece otro día si pueden");
+  assert.ok(!opts.some((o) => o.day === "Viernes"), "no ofrece un día fuera de la inscripción");
+  assert.equal(opts.filter((o) => o.venue === "Open Padel" && o.court === "Cancha 1" && o.sameWhen).length, 1, "no duplica");
 
-  const blocked = driveCourtOptions(match, sheet, [
+  const blockedSame = driveCourtOptions(match, sheet, [
     { day: "Lunes", time: "19:00 - 20:30", venue: "Americas Padel", court: "Cancha 1" },
     { day: "Lunes", time: "18:30 - 20:00", venue: "Americas Padel", court: "Cancha 2" },
     { day: "Lunes", time: "19:00 - 20:30", venue: "Open Padel", court: "Cancha 1" },
+    { day: "Lunes", time: "21:00 - 22:30", venue: "Terrazas Padel", court: "Cancha 1" },
   ]);
-  assert.equal(blocked.length, 0, "no ofrece una cancha ocupada en ese horario");
+  assert.ok(
+    blockedSame.every((o) => !(o.day === "Lunes" && o.time === "19:00 - 20:30" && ["Americas Padel", "Open Padel"].includes(o.venue))),
+    "no ofrece una cancha ocupada en ese horario"
+  );
+  assert.ok(blockedSame.some((o) => o.day === "Martes"), "si el horario quedó lleno, ofrece otro día");
+
+  const garbarino = driveCourtOptions(
+    {
+      day: "Viernes",
+      time: "18:00 - 19:30",
+      home: "Jorgelina Garbarino / Laura Ramírez Kunzi",
+      away: "Laura Martínez / Dalila Sosa",
+      venue: "",
+      court: "",
+      homeDays: {
+        Miércoles: "18:00 - 00:00",
+        Jueves: "18:00 - 00:00",
+        Viernes: "18:00 - 00:00",
+        Sábado: "10:00 - 18:00",
+      },
+      awayDays: {
+        Lunes: "16:30 - 20:30",
+        Martes: "16:30 - 20:30",
+        Viernes: "16:30 - 21:00",
+        Sábado: "19:00 - 20:30",
+      },
+    },
+    parseCourtSlotRows([
+      { Complejo: "Open", Cancha: "1", Dia: "Viernes", Horario: "18:00 - 19:30" },
+      { Complejo: "Open", Cancha: "2", Dia: "Viernes", Horario: "19:00 - 20:30" },
+      { Complejo: "Terrazas", Cancha: "1", Dia: "Sábado", Horario: "19:00 - 20:30" },
+      { Complejo: "Americas", Cancha: "1", Dia: "Lunes", Horario: "18:00 - 19:30" },
+    ]),
+    [{ day: "Viernes", time: "18:00 - 19:30", venue: "Open Padel", court: "1" }]
+  );
+  assert.deepEqual(
+    garbarino.map((o) => `${o.day}|${o.time}|${o.venue}|${o.court}`),
+    ["Viernes|19:00 - 20:30|Open Padel|2"],
+    "si Viernes 18:00 está ocupado, ofrece otro turno del viernes que puedan; no sábado (sin solape) ni lunes (solo una pareja)"
+  );
 
   const outside = driveCourtOptions(
-    { ...match, homeDays: { Lunes: "16:00 - 18:00" }, awayDays: { Lunes: "16:00 - 18:00" } },
+    { ...match, homeDays: { Lunes: "16:00 - 17:00" }, awayDays: { Lunes: "16:00 - 17:00" } },
     sheet,
     []
   );
   assert.equal(outside.length, 0, "no ofrece un horario fuera de la inscripción");
-  assert.equal(driveCourtOptions({ time: "19:00 - 20:30" }, sheet, []).length, 0);
+  assert.equal(driveCourtOptions({ time: "19:00 - 20:30" }, sheet, []).length, 0, "sin día ni disponibilidad no inventa turnos");
 }
 
 console.log("slots ok");
