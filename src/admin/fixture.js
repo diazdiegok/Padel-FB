@@ -3,6 +3,7 @@ import {
   FX_EXPORT_COLS,
   cleanMatch,
   downloadXlsx,
+  fixtureExportLabel,
   fixtureExportRows,
   courtSlotObjectsFromText,
   parseCourtSlotObjects,
@@ -1299,9 +1300,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
       const mode = $("fx-dl-sort")?.value || "complejo";
       const sorted = sortMatchesForExport(unique, mode);
-      const name = `${(filterWeek || "fixture").replace(/\s+/g, "-").toLowerCase()}-${mode}.xlsx`;
+      const label = fixtureExportLabel(filterWeek, mode);
+      const name = `${label}.xlsx`;
       try {
-        await downloadXlsx(name, FX_EXPORT_COLS, fixtureExportRows(sorted), filterWeek || "Fixture");
+        await downloadXlsx(name, FX_EXPORT_COLS, fixtureExportRows(sorted), label);
         toast("Excel descargado", "ok");
       } catch (err) {
         toast(err.message || "No se pudo descargar", "err");

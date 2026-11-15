@@ -44,12 +44,8 @@ export function sortMatchesForExport(matches = [], mode = "fecha") {
     dayIdxDl(a.day) - dayIdxDl(b.day) ||
     String(a.time || "").localeCompare(String(b.time || ""), "es") ||
     String(a.venue || "").localeCompare(String(b.venue || ""), "es");
-  /** 0 = pendiente sin complejo, 1 = pendiente con sede, 2 = partido armado. */
-  const pendingRank = (m) => {
-    if (!isPendingMatch(m)) return 2;
-    return String(m.venue || "").trim() ? 1 : 0;
-  };
-  const pendingFirst = (a, b) => pendingRank(a) - pendingRank(b);
+  /** Pendientes primero (sin importar si el admin tenía cancha reservada). */
+  const pendingFirst = (a, b) => Number(isPendingMatch(b)) - Number(isPendingMatch(a));
   if (mode === "complejo") {
     return list.sort(
       (a, b) =>
@@ -76,17 +72,29 @@ export function sortMatchesForExport(matches = [], mode = "fecha") {
 }
 
 export function fixtureExportRows(matches = []) {
-  return matches.map((m) => ({
-    fecha: m.week || "",
-    dia: m.day || "",
-    horario: m.time || "",
-    categoria: m.cat || "",
-    complejo: m.venue || "",
-    cancha: m.court || "",
-    pareja1: m.home || "",
-    pareja2: m.away || "",
-    resultado: m.result || "",
-  }));
+  return matches.map((m) => {
+    const pending = isPendingMatch(m);
+    return {
+      fecha: m.week || "",
+      // Pendiente sin rival: no lleva día/horario/sede (aunque el admin haya reservado cancha).
+      dia: pending ? "" : m.day || "",
+      horario: pending ? "" : m.time || "",
+      categoria: m.cat || "",
+      complejo: pending ? "" : m.venue || "",
+      cancha: pending ? "" : m.court || "",
+      pareja1: m.home || "",
+      pareja2: pending ? PENDING_AWAY : m.away || "",
+      resultado: pending ? "" : m.result || "",
+    };
+  });
+}
+
+/** Etiqueta del Excel según orden: "Fecha 1- Complejos", "Fecha 1- Fecha", … */
+export function fixtureExportLabel(week = "", mode = "complejo") {
+  const fecha = String(week || "Fixture").trim() || "Fixture";
+  const suffix =
+    mode === "complejo" ? "Complejos" : mode === "pareja" ? "Parejas" : mode === "fecha" ? "Fecha" : mode || "Fixture";
+  return `${fecha}- ${suffix}`;
 }
 
 export const FX_EXPORT_COLS = [
