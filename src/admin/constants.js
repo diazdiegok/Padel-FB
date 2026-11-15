@@ -3,6 +3,8 @@ export const HIDDEN_CATS = new Set(["S Masculina"]);
 export const RANK_PATH = "src/data/ranking.json";
 export const SITE_PATH = "src/data/site.json";
 export const FIXTURE_PATH = "src/data/fixture.json";
+/** Pendientes solo admin: no van al fixture público hasta que tengan rival. */
+export const FIXTURE_PENDING_PATH = "src/data/fixture-pending.json";
 export const RESULTS_PATH = "src/data/results.json";
 export const PLAYOFF_PATH = "src/data/playoff.json";
 export const ASCENSOS_PATH = "src/data/ascensos.json";
