@@ -332,10 +332,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
       return;
     }
-    const { overflow } = syncVenueCountInputs(opts);
+    // El toast avisa si intentaron pasarse; el banner refleja el valor ya corregido.
+    syncVenueCountInputs(opts);
     const plan = readVenuePlanFromDom();
     const assigned = plan.reduce((n, p) => n + Math.max(0, Number(p.count) || 0), 0);
-    const chosen = effectiveChosen(plan, summary);
     const sheetTotal = summary.reduce((n, s) => n + s.total, 0);
     const pairs = playablePairCount();
     const need = matchesNeeded();
@@ -343,7 +343,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const leftNeed = Math.max(0, need - assigned);
     const text = need
       ? `Asignados: ${assigned} / ${need}` +
-        (over || overflow
+        (over
           ? ` · ¡Pasaste el cupo!`
           : leftNeed
             ? ` · Quedan por asignar: ${leftNeed}`
@@ -353,15 +353,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     if (el) {
       el.hidden = false;
       el.textContent = text;
-      el.className =
-        "fx-plan-summary" + (over || overflow ? " is-err" : need && assigned === need ? " is-ok" : "");
+      el.className = "fx-plan-summary" + (over ? " is-err" : need && assigned === need ? " is-ok" : "");
     }
     if (status && loadedSlots.length) {
       status.hidden = false;
       status.textContent = `Drive${slotsFileName ? ` · ${slotsFileName}` : ""}: ${sheetTotal} posibles · ${summary.length} complejos · ${text}`;
     }
-    // chosen se usa al armar; assigned es lo que el usuario ve en los inputs
-    void chosen;
   }
 
   function renderAdvanced() {
