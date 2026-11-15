@@ -65,15 +65,16 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     return filterWeek || $("fx-week")?.value.trim() || latestWeek(ctx.fixture) || "Fecha 1";
   }
 
+  /** Vista raíz del nav Fixture: cajas de temporadas (después fechas). */
+  function showSeasonsHome() {
+    filterTemp = "";
+    filterWeek = "";
+    editing = -1;
+    if ($("fx-week")) $("fx-week").value = "";
+  }
+
   function syncWeek() {
-    const latest = latestWeek(ctx.fixture);
-    if (latest) {
-      filterWeek = latest;
-      if ($("fx-week")) $("fx-week").value = latest;
-      const liveTemp = (ctx.fixture || []).find((m) => (m.week || "") === latest)?.temp;
-      if (liveTemp) filterTemp = liveTemp;
-      else if (!filterTemp) filterTemp = ctx.siteData.currentSeason || "";
-    }
+    showSeasonsHome();
     return fallbackWeek();
   }
 

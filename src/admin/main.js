@@ -67,6 +67,10 @@ export function bootAdmin({
 
   const shell = createShell(ctx, {
     onEnterSection(id) {
+      if (id === "fixture") {
+        fixture?.syncWeek();
+        fixture?.render();
+      }
       if (id === "resultados") results?.reload();
       if (id === "playoff") playoff?.reload();
       if (id === "parejas") parejas?.reload();
