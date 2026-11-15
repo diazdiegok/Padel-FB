@@ -764,7 +764,7 @@ body.is-admin .tag:empty {
 }
 
 .admin-table .col-actions {
-  width: 84px;
+  width: 116px;
   text-align: right;
   white-space: nowrap;
 }
