@@ -1022,5 +1022,22 @@
       "Viernes": "18:00 - 19:30"
     },
     "note": ""
+  },
+  {
+    "id": "pmwh43pr2f81a",
+    "createdAt": "2026-11-15T00:44:21.662Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Soraya Campostrini Labour",
+    "p2": "Catalina Otamendi",
+    "days": {
+      "Lunes": "18:00 - 00:00",
+      "Martes": "18:00 - 00:00",
+      "Miércoles": "18:30 - 00:00",
+      "Jueves": "18:00 - 00:00",
+      "Viernes": "18:00 - 00:00",
+      "Sábado": "18:00 - 00:00"
+    },
+    "note": ""
   }
 ]
