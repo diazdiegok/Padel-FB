@@ -18,8 +18,8 @@
     "createdAt": "2026-10-28T13:51:57.521Z",
     "temp": "T5",
     "cat": "C Femenino",
-    "p1": "González Micaela",
-    "p2": "Romero Daiana",
+    "p1": "Micaela González",
+    "p2": "Daiana Romero",
     "days": {
       "Lunes": "19:00 - 22:00",
       "Miércoles": "19:00 - 22:00",
@@ -48,8 +48,8 @@
     "createdAt": "2026-10-28T20:04:36.577Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "Espinoza, Francisco",
-    "p2": "Rodriguez, Joaquin",
+    "p1": "Francisco Espinoza",
+    "p2": "Joaquin Rodriguez",
     "days": {
       "Lunes": "14:00 - 19:30",
       "Martes": "14:00 - 19:30",
@@ -63,8 +63,8 @@
     "createdAt": "2026-10-28T21:28:50.434Z",
     "temp": "T5",
     "cat": "C Femenino",
-    "p1": "Benedetich Stefania",
-    "p2": "Benedetich Florencia",
+    "p1": "Stefania Benedetich",
+    "p2": "Florencia Benedetich",
     "days": {
       "Lunes": "19:00 - 22:00",
       "Viernes": "19:00 - 22:00"
@@ -77,7 +77,7 @@
     "temp": "T5",
     "cat": "B Masculina",
     "p1": "Francisco Benedetich",
-    "p2": "Facundo llover",
+    "p2": "Facundo Llover",
     "days": {
       "Lunes": "18:30 - 21:00",
       "Miércoles": "18:30 - 21:00",
@@ -91,8 +91,8 @@
     "createdAt": "2026-10-29T16:28:30.306Z",
     "temp": "T5",
     "cat": "C Femenino",
-    "p1": "Esquivel Florencia Gabriela",
-    "p2": "Frickel Natalia Ivana",
+    "p1": "Florencia Gabriela Esquivel",
+    "p2": "Natalia Ivana Frickel",
     "days": {
       "Martes": "19:30 - 22:00",
       "Jueves": "18:00 - 22:00",
@@ -106,8 +106,8 @@
     "createdAt": "2026-10-29T16:45:04.611Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "Diaz sebastian",
-    "p2": "Zarate pablo",
+    "p1": "Sebastian Diaz",
+    "p2": "Pablo Zarate",
     "days": {
       "Lunes": "18:00 - 00:00",
       "Martes": "18:00 - 00:00",
@@ -122,8 +122,8 @@
     "createdAt": "2026-10-29T17:41:03.188Z",
     "temp": "T5",
     "cat": "A Masculina",
-    "p1": "Diaz Diego",
-    "p2": "Fontanetto Emiliano",
+    "p1": "Diego Diaz",
+    "p2": "Emiliano Fontanetto",
     "days": {
       "Jueves": "16:30 - 19:30",
       "Viernes": "16:30 - 19:30",
@@ -136,8 +136,8 @@
     "createdAt": "2026-10-30T14:26:31.029Z",
     "temp": "T5",
     "cat": "C Masculina",
-    "p1": "Montero claudio francisco",
-    "p2": "Federico mullor",
+    "p1": "Claudio Francisco Montero",
+    "p2": "Federico Mullor",
     "days": {
       "Lunes": "18:00 - 22:30",
       "Martes": "18:00 - 22:30",
@@ -166,8 +166,8 @@
     "createdAt": "2026-10-30T22:34:00.659Z",
     "temp": "T5",
     "cat": "C Femenino",
-    "p1": "ATUM CYNTHIA NATALIA ANTONELLA",
-    "p2": "HEREÑU CYNTHIA PAMELA",
+    "p1": "Cynthia Atum",
+    "p2": "Cyhthia Hereñu",
     "days": {
       "Lunes": "17:30 - 21:00",
       "Martes": "17:30 - 21:00",
@@ -182,8 +182,8 @@
     "createdAt": "2026-10-31T02:26:32.329Z",
     "temp": "T5",
     "cat": "B Femenino",
-    "p1": "CAVALLARO florencia",
-    "p2": "Yancovich Luisina",
+    "p1": "Florencia Cavallaro",
+    "p2": "Luisina Yancovich",
     "days": {
       "Martes": "19:00 - 21:30",
       "Miércoles": "18:30 - 21:30",
@@ -198,8 +198,8 @@
     "createdAt": "2026-10-31T03:36:38.053Z",
     "temp": "T5",
     "cat": "C Masculina",
-    "p1": "Sanchez Maximiliano Ivan",
-    "p2": "Mangona Ezequiel",
+    "p1": "Maximiliano Ivan Sanchez",
+    "p2": "Ezequiel Mangona",
     "days": {
       "Martes": "20:00 - 23:00",
       "Miércoles": "20:00 - 23:00",
@@ -213,8 +213,8 @@
     "createdAt": "2026-10-31T13:45:54.111Z",
     "temp": "T5",
     "cat": "C Femenino",
-    "p1": "manuela vinuales",
-    "p2": "delfina vinuales",
+    "p1": "Manuela Vinuales",
+    "p2": "Delfina Vinuales",
     "days": {
       "Martes": "08:00 - 21:00",
       "Miércoles": "11:00 - 21:00",
@@ -245,8 +245,8 @@
     "createdAt": "2026-11-02T11:52:50.854Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "Martínez Alberto Javier",
-    "p2": "Starck José María",
+    "p1": "Alberto Javier Martínez",
+    "p2": "José María Starck",
     "days": {
       "Lunes": "18:30 - 21:30",
       "Martes": "18:30 - 21:30",
@@ -260,8 +260,8 @@
     "createdAt": "2026-11-02T13:30:42.036Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "milton Reatto",
-    "p2": "Joaquín lucero",
+    "p1": "Milton Reatto",
+    "p2": "Joaquín Lucero",
     "days": {
       "Lunes": "20:30 - 00:00",
       "Martes": "20:30 - 00:00",
@@ -275,8 +275,8 @@
     "createdAt": "2026-11-02T13:32:41.420Z",
     "temp": "T5",
     "cat": "C Femenino",
-    "p1": "Cauvet Brenda",
-    "p2": "Santamaria Valeria",
+    "p1": "Brenda Cauvet",
+    "p2": "Valeria Santamaria",
     "days": {
       "Lunes": "21:00 - 23:00",
       "Martes": "21:00 - 23:00",
@@ -305,8 +305,8 @@
     "createdAt": "2026-11-02T14:11:31.214Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "Sbarbaro Mario Martin",
-    "p2": "Fontana Ronaldo Antonio",
+    "p1": "Mario Martin Sbarbaro",
+    "p2": "Ronaldo Antonio Fontana",
     "days": {
       "Lunes": "20:00 - 00:00",
       "Martes": "20:00 - 00:00",
@@ -321,8 +321,8 @@
     "createdAt": "2026-11-03T01:09:33.632Z",
     "temp": "T5",
     "cat": "C Masculina",
-    "p1": "Nestor sione",
-    "p2": "Almarante Ulises",
+    "p1": "Nestor Sione",
+    "p2": "Ulises Almarante",
     "days": {
       "Lunes": "21:00 - 23:00",
       "Jueves": "21:00 - 23:00",
@@ -336,8 +336,8 @@
     "createdAt": "2026-11-03T13:47:37.874Z",
     "temp": "T5",
     "cat": "C Masculina",
-    "p1": "Zapata Jorge Antonio",
-    "p2": "Diaz Gonzalo Damian",
+    "p1": "Jorge Antonio Zapata",
+    "p2": "Gonzalo Damian Diaz",
     "days": {
       "Lunes": "08:00 - 00:00",
       "Martes": "20:30 - 00:00",
@@ -367,8 +367,8 @@
     "createdAt": "2026-11-03T16:09:23.482Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "Jeronimo acuña",
-    "p2": "lucio acuña",
+    "p1": "Jeronimo Acuña",
+    "p2": "Lucio Acuña",
     "days": {
       "Lunes": "16:30 - 20:30",
       "Viernes": "16:00 - 21:00",
@@ -381,8 +381,8 @@
     "createdAt": "2026-11-03T18:36:33.496Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "Martinez Francisco",
-    "p2": "Lanzi Lucas",
+    "p1": "Francisco Martinez",
+    "p2": "Lucas Lanzi",
     "days": {
       "Martes": "20:00 - 00:00",
       "Miércoles": "20:00 - 00:00",
@@ -408,8 +408,8 @@
     "createdAt": "2026-11-03T22:11:34.702Z",
     "temp": "T5",
     "cat": "C Femenino",
-    "p1": "Feltes Rocio",
-    "p2": "Kamlopky Sofia",
+    "p1": "Rocio Feltes",
+    "p2": "Sofia Kamlopky",
     "days": {
       "Lunes": "18:00 - 21:00",
       "Miércoles": "18:00 - 21:00",
@@ -451,8 +451,8 @@
     "createdAt": "2026-11-04T10:34:49.341Z",
     "temp": "T5",
     "cat": "C Masculina",
-    "p1": "Gaston E. Enrique",
-    "p2": "Flematti Abel Alejandro",
+    "p1": "Gaston Enrique",
+    "p2": "Abel Alejandro Flematti",
     "days": {
       "Lunes": "13:00 - 22:00",
       "Martes": "13:00 - 22:00",
@@ -468,8 +468,8 @@
     "createdAt": "2026-11-04T12:51:41.657Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "Bregant Sebastian",
-    "p2": "Valla Luis",
+    "p1": "Sebastian Bregant",
+    "p2": "Luis Valla",
     "days": {
       "Martes": "21:00 - 00:00",
       "Jueves": "21:00 - 00:00",
@@ -497,8 +497,8 @@
     "createdAt": "2026-11-04T14:22:27.897Z",
     "temp": "T5",
     "cat": "B Femenino",
-    "p1": "Gabirondo Valentina",
-    "p2": "Balla Delfina",
+    "p1": "Valentina Gabirondo",
+    "p2": "Delfina Balla",
     "days": {
       "Lunes": "20:00 - 22:30",
       "Martes": "20:00 - 22:30",
@@ -512,7 +512,7 @@
     "temp": "T5",
     "cat": "C Femenino",
     "p1": "Yanina Pecker",
-    "p2": "Sandra ripari",
+    "p2": "Sandra Ripari",
     "days": {
       "Martes": "19:00 - 22:00",
       "Miércoles": "19:00 - 22:00",
@@ -556,8 +556,8 @@
     "createdAt": "2026-11-05T23:44:56.565Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "Borsotti María Laura",
-    "p2": "Senger Celia Inmaculada",
+    "p1": "María Laura Borsotti",
+    "p2": "Celia Senger",
     "days": {
       "Jueves": "17:00 - 21:00",
       "Viernes": "16:00 - 21:00",
@@ -571,7 +571,7 @@
     "temp": "T5",
     "cat": "A Masculina",
     "p1": "Denis Márquez",
-    "p2": "Ramira omar",
+    "p2": "Ramira Omar",
     "days": {
       "Viernes": "14:00 - 22:00"
     },
@@ -582,8 +582,8 @@
     "createdAt": "2026-11-06T15:21:03.873Z",
     "temp": "T5",
     "cat": "C Femenino",
-    "p1": "Jaureguiberry Morena",
-    "p2": "Jaureguiberry Mariela",
+    "p1": "Morena Jaureguiberry",
+    "p2": "Mariela Jaureguiberry",
     "days": {
       "Lunes": "18:00 - 23:00",
       "Miércoles": "18:00 - 23:00",
@@ -597,8 +597,8 @@
     "createdAt": "2026-11-07T02:13:41.906Z",
     "temp": "T5",
     "cat": "C Femenino",
-    "p1": "Martínez Laura",
-    "p2": "Sosa Dalila",
+    "p1": "Laura Martínez",
+    "p2": "Dalila Sosa",
     "days": {
       "Lunes": "16:30 - 20:30",
       "Martes": "16:30 - 20:30",
@@ -644,7 +644,7 @@
     "temp": "T5",
     "cat": "C Masculina",
     "p1": "Juan Ignacio Oldani",
-    "p2": "Lo cascio Jose Carlos",
+    "p2": "Lo Cascio Jose Carlos",
     "days": {
       "Lunes": "18:30 - 23:00",
       "Miércoles": "18:30 - 23:00",
@@ -659,8 +659,8 @@
     "createdAt": "2026-11-10T16:16:55.770Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "Beltzer Valentin",
-    "p2": "Jaureguiberry Ariel",
+    "p1": "Valentin Beltzer",
+    "p2": "Ariel Jaureguiberry",
     "days": {
       "Lunes": "20:30 - 22:30",
       "Viernes": "20:00 - 22:30"
@@ -685,8 +685,8 @@
     "createdAt": "2026-11-10T18:38:55.987Z",
     "temp": "T5",
     "cat": "C Femenino",
-    "p1": "Robledo Marien",
-    "p2": "Valeria joubert",
+    "p1": "Marien Robledo",
+    "p2": "Valeria Joubert",
     "days": {
       "Lunes": "19:00 - 21:00",
       "Viernes": "19:00 - 21:00"
@@ -698,8 +698,8 @@
     "createdAt": "2026-11-10T20:09:35.379Z",
     "temp": "T5",
     "cat": "B Femenino",
-    "p1": "Migueles Abril Diamela",
-    "p2": "Bertotti Yamila",
+    "p1": "Abril Diamela Migueles",
+    "p2": "Yamila Bertotti",
     "days": {
       "Lunes": "18:00 - 22:00",
       "Martes": "17:00 - 22:00",
@@ -756,8 +756,8 @@
     "createdAt": "2026-11-11T21:05:45.976Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "Loizate luciano",
-    "p2": "Carlos dinamo",
+    "p1": "Luciano Loizate",
+    "p2": "Carlos Dinamo",
     "days": {
       "Lunes": "20:30 - 23:30",
       "Miércoles": "20:30 - 23:00",
@@ -770,8 +770,8 @@
     "createdAt": "2026-11-12T11:21:06.468Z",
     "temp": "T5",
     "cat": "C Femenino",
-    "p1": "Garbarino Jorgelina",
-    "p2": "Ramírez Kunzi Laura",
+    "p1": "Jorgelina Garbarino",
+    "p2": "Laura Ramírez Kunzi",
     "days": {
       "Miércoles": "18:00 - 00:00",
       "Jueves": "18:00 - 00:00",
@@ -785,7 +785,7 @@
     "createdAt": "2026-11-12T17:28:57.187Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "Enz Ernesto",
+    "p1": "Ernesto Enz",
     "p2": "Facundo Casals",
     "days": {
       "Lunes": "17:30 - 22:00",
@@ -799,8 +799,8 @@
     "createdAt": "2026-11-13T16:00:17.752Z",
     "temp": "T5",
     "cat": "A Masculina",
-    "p1": "Perez Iván",
-    "p2": "Munguia Fernando",
+    "p1": "Iván Perez",
+    "p2": "Fernando Munguia",
     "days": {
       "Lunes": "20:00 - 23:00",
       "Martes": "20:00 - 22:00",
@@ -813,8 +813,8 @@
     "createdAt": "2026-11-13T20:53:33.730Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "Andrini Guillermo",
-    "p2": "Diaz Dario",
+    "p1": "Guillermo Andrini",
+    "p2": "Dario Diaz",
     "days": {
       "Lunes": "20:30 - 23:00",
       "Martes": "21:00 - 23:00",
@@ -827,7 +827,7 @@
     "createdAt": "2026-11-14T00:34:31.789Z",
     "temp": "T5",
     "cat": "C Masculina",
-    "p1": "maximiliano satler",
+    "p1": "Maximiliano Satler",
     "p2": "Daniel Grinovero",
     "days": {
       "Lunes": "19:00 - 22:00",
@@ -843,7 +843,7 @@
     "createdAt": "2026-11-14T00:41:58.273Z",
     "temp": "T5",
     "cat": "C Femenino",
-    "p1": "Martinez Rocio",
+    "p1": "Rocio Martinez",
     "p2": "Candelaria Villarraza Girard",
     "days": {
       "Lunes": "18:30 - 21:30",
@@ -859,7 +859,7 @@
     "temp": "T5",
     "cat": "C Femenino",
     "p1": "Daiana Bastidas",
-    "p2": "Jesica michelin",
+    "p2": "Jesica Michelin",
     "days": {
       "Martes": "17:00 - 22:00",
       "Jueves": "17:00 - 22:00",
@@ -872,8 +872,8 @@
     "createdAt": "2026-11-14T00:45:58.090Z",
     "temp": "T5",
     "cat": "C Masculina",
-    "p1": "Choco muñoz",
-    "p2": "Felipe muñoz",
+    "p1": "Choco Muñoz",
+    "p2": "Felipe Muñoz",
     "days": {
       "Lunes": "17:00 - 19:00",
       "Martes": "21:00 - 00:00",
@@ -888,7 +888,7 @@
     "temp": "T5",
     "cat": "C Masculina",
     "p1": "Joaquin Alberto Ijalba",
-    "p2": "Tulio Felipe Ijalba",
+    "p2": "Felipe Ijalba",
     "days": {
       "Lunes": "18:00 - 20:30",
       "Martes": "18:00 - 21:00",
@@ -931,8 +931,8 @@
     "createdAt": "2026-11-14T01:02:29.884Z",
     "temp": "T5",
     "cat": "A Masculina",
-    "p1": "Romero adrian",
-    "p2": "Roberto challol",
+    "p1": "Adrian Romero",
+    "p2": "Roberto Challol",
     "days": {
       "Lunes": "19:00 - 22:00",
       "Miércoles": "19:00 - 22:00",
@@ -945,8 +945,8 @@
     "createdAt": "2026-11-14T01:06:30.675Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "Screpis Miguel Darío",
-    "p2": "Capatto Facundo Roberto",
+    "p1": "Miguel Darío Screpis",
+    "p2": "Facundo Roberto Capatto",
     "days": {
       "Lunes": "20:00 - 21:30",
       "Miércoles": "20:00 - 21:30",
@@ -959,8 +959,8 @@
     "createdAt": "2026-11-14T01:08:56.191Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "López José Luis",
-    "p2": "Leguizamón Martín",
+    "p1": "José Luis López",
+    "p2": "Martín Leguizamón",
     "days": {
       "Lunes": "16:30 - 19:00",
       "Martes": "16:30 - 19:00",
@@ -973,8 +973,8 @@
     "createdAt": "2026-11-14T01:16:18.827Z",
     "temp": "T5",
     "cat": "C Femenino",
-    "p1": "Scoreanzi Andrea",
-    "p2": "Mansilla Gisela",
+    "p1": "Andrea Scoreanzi",
+    "p2": "Gisela Mansilla",
     "days": {
       "Viernes": "18:00 - 21:00",
       "Sábado": "11:30 - 16:00"
@@ -986,8 +986,8 @@
     "createdAt": "2026-11-14T01:33:38.832Z",
     "temp": "T5",
     "cat": "A Masculina",
-    "p1": "Carrere Mariano",
-    "p2": "Castillo Tomas",
+    "p1": "Mariano Carrere",
+    "p2": "Tomas Castillo",
     "days": {
       "Martes": "16:00 - 21:00",
       "Jueves": "16:00 - 21:00"
@@ -1000,7 +1000,7 @@
     "temp": "T5",
     "cat": "C Femenino",
     "p1": "Lucia Rausch",
-    "p2": "Marconi Luciana",
+    "p2": "Luciana Marconi",
     "days": {
       "Jueves": "18:00 - 20:00",
       "Viernes": "20:00 - 22:30",
@@ -1013,8 +1013,8 @@
     "createdAt": "2026-11-14T07:12:10.649Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "Cerdan Pablo",
-    "p2": "Oviedo Mario",
+    "p1": "Pablo Cerdan",
+    "p2": "Mario Oviedo",
     "days": {
       "Lunes": "20:00 - 23:00",
       "Miércoles": "19:30 - 23:00",
@@ -1061,8 +1061,8 @@
     "createdAt": "2026-11-15T09:19:51.346Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "Gobatto Lucas",
-    "p2": "Roldan Matias",
+    "p1": "Lucas Gobatto",
+    "p2": "Matias Roldan",
     "days": {
       "Lunes": "18:00 - 21:00",
       "Martes": "18:00 - 21:00",
