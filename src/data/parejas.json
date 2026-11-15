@@ -1039,5 +1039,21 @@
       "Sábado": "18:00 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwh483tk1478",
+    "createdAt": "2026-11-15T00:47:46.520Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Ramiro Romero",
+    "p2": "Angelica Alcaraz",
+    "days": {
+      "Lunes": "19:30 - 22:30",
+      "Martes": "19:30 - 22:30",
+      "Miércoles": "19:30 - 22:30",
+      "Jueves": "19:30 - 22:30",
+      "Viernes": "19:30 - 22:30"
+    },
+    "note": ""
   }
 ]
