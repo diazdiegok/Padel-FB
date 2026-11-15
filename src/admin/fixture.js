@@ -289,36 +289,39 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       return `<select disabled aria-label="${label}" title="${escAttr(title)}"><option>${escAttr(empty)}</option></select>`;
     }
 
-    const renderOpts = (list, { near = false } = {}) =>
+    const renderOpts = (list, { near = false, includeDay = false } = {}) =>
       list
         .map((o) => {
           const court = String(o.court || "").trim();
           const courtTxt = /^cancha\b/i.test(court) ? court : court ? `Cancha ${court}` : "";
-          const base = [o.time, o.venue, courtTxt].filter(Boolean).join(" · ");
+          const base = [includeDay ? o.day : "", o.time, o.venue, courtTxt].filter(Boolean).join(" · ");
           const text = near && o.nearLabel ? `${base} · ${o.nearLabel}` : base;
           return `<option value="${escAttr(o.key)}">${escAttr(text)}</option>`;
         })
         .join("");
 
-    if (opts.length) {
+    const groupsByDay = (list, { near = false } = {}) => {
       const byDay = new Map();
-      for (const o of opts) {
+      for (const o of list) {
         const day = o.day || "Sin día";
         if (!byDay.has(day)) byDay.set(day, []);
         byDay.get(day).push(o);
       }
-      const groups = [...byDay.entries()]
+      return [...byDay.entries()]
         .map(
-          ([day, list]) =>
-            `<optgroup label="${escAttr(day)} · ${list.length} turno${list.length === 1 ? "" : "s"} libres">
-            ${renderOpts(list)}
+          ([day, dayList]) =>
+            `<optgroup label="${escAttr(day)} · ${dayList.length} turno${dayList.length === 1 ? "" : "s"}">
+            ${renderOpts(dayList, { near, includeDay: false })}
           </optgroup>`
         )
         .join("");
+    };
+
+    if (opts.length) {
       const hint = "Solo turnos del Drive donde entran las dos parejas según Inscripciones.";
       return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="${escAttr(hint)}">
       <option value="">2. Elegir entre ${opts.length} turno${opts.length === 1 ? "" : "s"} libre${opts.length === 1 ? "" : "s"}…</option>
-      ${groups}
+      ${groupsByDay(opts)}
     </select>`;
     }
 
@@ -331,16 +334,15 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       : "No quedó cancha libre donde entren las dos exactas. Se listan las más cercanas.";
     return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="${escAttr(nearHint)}">
       <option value="">2. ${escAttr(nearTitle)}…</option>
-      <optgroup label="${escAttr(!shareWindow ? "No coinciden · sugerencias más cercanas" : "Sugerencias más cercanas")}">
-        ${renderOpts(nearOpts, { near: true })}
-      </optgroup>
+      ${groupsByDay(nearOpts, { near: true })}
     </select>`;
   }
 
   function courtOptionText(option) {
     const court = String(option.court || "").trim();
     const courtTxt = /^cancha\b/i.test(court) ? court : court ? `Cancha ${court}` : "";
-    return [option.day, option.time, option.venue, courtTxt].filter(Boolean).join(" · ");
+    const near = option?.near && option.nearLabel ? option.nearLabel : "";
+    return [option.day, option.time, option.venue, courtTxt, near].filter(Boolean).join(" · ");
   }
 
   function courtFallbackSelect(i, match) {
