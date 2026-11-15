@@ -1070,5 +1070,19 @@
       "Jueves": "18:00 - 21:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwi4ca6wcbfb",
+    "createdAt": "2026-11-15T17:38:47.576Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Gauna Camila",
+    "p2": "Falcón Luana",
+    "days": {
+      "Lunes": "20:00 - 00:00",
+      "Miércoles": "20:00 - 00:00",
+      "Viernes": "20:00 - 00:00"
+    },
+    "note": "Si es en Palermo mejor"
   }
 ]
