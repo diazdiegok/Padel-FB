@@ -149,32 +149,71 @@ export function removePairsFromRanking(rows, pairs) {
   return removed;
 }
 
+/** Mejor inscripción vigente que matchee una fila del ranking (misma cat). */
+function bestSeasonPairForRow(row, seasonPairs) {
+  let best = null;
+  let bestScore = 0;
+  for (const p of seasonPairs) {
+    if (p.cat !== row.cat) continue;
+    const name = `${p.p1} / ${p.p2}`;
+    if (!pairsMatch(row.name, name)) continue;
+    const tokens = new Set(splitPair(name).flatMap(playerTokens));
+    const score = splitPair(row.name).flatMap(playerTokens).filter((t) => tokens.has(t)).length;
+    if (score > bestScore) {
+      bestScore = score;
+      best = p;
+    }
+  }
+  return best;
+}
+
 /**
  * Deja en `temp` solo filas que coincidan con inscripciones vigentes.
+ * Si matchean, el nombre del ranking pasa a ser el de la inscripción (p1 / p2).
  * Otras temporadas no se tocan.
+ * @returns {{ removed: object[], renamed: { from: string, to: string, cat: string }[] }}
  */
 export function syncRankingToSeasonPairs(rows, pairs, temp) {
+  const empty = { removed: [], renamed: [] };
   const season = String(temp || "").toUpperCase();
-  if (!season || !Array.isArray(rows)) return [];
+  if (!season || !Array.isArray(rows)) return empty;
   const seasonPairs = (pairs || []).filter(
     (p) => String(p.temp || "").toUpperCase() === season && p.p1 && p.p2 && p.cat
   );
   const removed = [];
+  const renamed = [];
   const keep = [];
+  const claimed = new Set();
   for (const row of rows) {
     if (String(row.temp || "").toUpperCase() !== season) {
       keep.push(row);
       continue;
     }
-    const matched = seasonPairs.some((p) => p.cat === row.cat && pairsMatch(row.name, `${p.p1} / ${p.p2}`));
-    if (matched) keep.push(row);
-    else removed.push(row);
+    const matched = bestSeasonPairForRow(row, seasonPairs);
+    if (!matched) {
+      removed.push(row);
+      continue;
+    }
+    const key = `${matched.cat}|${fold(matched.p1)}|${fold(matched.p2)}`;
+    // Una inscripción no puede sostener dos filas: la segunda sobra.
+    if (claimed.has(key)) {
+      removed.push(row);
+      continue;
+    }
+    claimed.add(key);
+    const nextName = `${matched.p1} / ${matched.p2}`;
+    if (String(row.name || "").trim() !== nextName) {
+      renamed.push({ from: row.name, to: nextName, cat: row.cat });
+      row.name = nextName;
+    }
+    keep.push(row);
   }
-  if (!removed.length) return removed;
-  rows.length = 0;
-  rows.push(...keep);
-  recomputePositions(rows);
-  return removed;
+  if (removed.length) {
+    rows.length = 0;
+    rows.push(...keep);
+  }
+  if (removed.length || renamed.length) recomputePositions(rows);
+  return { removed, renamed };
 }
 
 function ensurePair(rows, name, cat, temp) {
