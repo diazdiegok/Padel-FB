@@ -312,6 +312,24 @@ export function slotFitsPairAvailability(slot, match, { pending = false } = {}) 
   return homeOk && awayOk;
 }
 
+/**
+ * True si ambas mapas de disponibilidad comparten al menos un tramo de 90'
+ * el mismo día (sin mirar canchas del Drive).
+ */
+export function pairsSharePlayableWindow(homeDays, awayDays) {
+  if (!homeDays || !awayDays || typeof homeDays !== "object" || typeof awayDays !== "object") return false;
+  for (const day of DAYS) {
+    if (!(day in homeDays) || !(day in awayDays)) continue;
+    const a = parseCourtWindow(homeDays[day]);
+    const b = parseCourtWindow(awayDays[day]);
+    if (!a || !b) continue;
+    const from = Math.max(a.from, b.from);
+    const to = Math.min(a.to, b.to);
+    if (to - from >= MATCH_MINUTES) return true;
+  }
+  return false;
+}
+
 function fitScore(slot, match) {
   let score = 0;
   const matchDay = normalizeDay(match.day);

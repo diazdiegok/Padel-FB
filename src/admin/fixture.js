@@ -30,6 +30,7 @@ import {
   findCourtConflicts,
   isCourtTaken,
   missingCourtHorarios,
+  pairsSharePlayableWindow,
   parkBareMatchesAsPending,
   rematchForCourts,
   summarizeCourtSlots,
@@ -195,19 +196,33 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       .join(" · ");
   }
 
+  /** True si esa etiqueta también figura como pendiente en esta fecha. */
+  function coverIsAlsoPending(coverLabel, exclude) {
+    const cover = String(coverLabel || "").trim();
+    if (!cover) return false;
+    return (ctx.fixture || []).some((m) => {
+      if (m === exclude) return false;
+      if (!isPending(m)) return false;
+      if (seasonOf(m) !== filterTemp || (m.week || "") !== filterWeek) return false;
+      return pairsMatch(m.home, cover);
+    });
+  }
+
   /**
-   * Turnos libres del Drive anclados a la pendiente (cualquier categoría).
-   * Siempre prioriza la disponibilidad actual de Inscripciones.
-   * Quien cubre puede aflojar: se priorizan turnos donde también entra.
+   * Turnos libres del Drive anclados a la pendiente.
+   * Si quien cubre también está pendiente → ambas tienen que entrar (sin aflojar).
+   * Si cubre una pareja que ya juega → puede aflojar un poco el horario.
    */
   function coverCourtChoices(match, coverLabel) {
     const cover = String(coverLabel || "").trim();
-    if (!cover) return { opts: [], homeDays: null, coverDays: null };
+    if (!cover) return { opts: [], homeDays: null, coverDays: null, bothPending: false, shareWindow: false };
     // Inscripciones primero (no reusar days viejos del partido).
     const homeDays = daysOfPair(match.home, match.cat) || match.homeDays || match.days;
     const coverDays = daysOfPair(cover, match.cat) || undefined;
+    const bothPending = coverIsAlsoPending(cover, match);
+    const shareWindow = !!(homeDays && coverDays && pairsSharePlayableWindow(homeDays, coverDays));
     if (!homeDays) {
-      return { opts: [], homeDays: null, coverDays: coverDays || null };
+      return { opts: [], homeDays: null, coverDays: coverDays || null, bothPending, shareWindow };
     }
     const opts = driveCourtOptions(
       {
@@ -226,9 +241,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       },
       loadedSlots,
       takenCourts(match),
-      { softAway: true }
+      // Dos pendientes: tienen que coincidir. Cubrir “de favor”: softAway ok.
+      { softAway: !bothPending }
     );
-    return { opts, homeDays, coverDays: coverDays || null };
+    return { opts, homeDays, coverDays: coverDays || null, bothPending, shareWindow };
   }
 
   function coverSlotSelect(i, match, coverLabel) {
@@ -236,12 +252,21 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     if (!loadedSlots.length) {
       return `<select disabled aria-label="${label}"><option>Leé el Drive para ver canchas</option></select>`;
     }
-    const { opts, homeDays } = coverCourtChoices(match, coverLabel);
+    const { opts, homeDays, coverDays, bothPending, shareWindow } = coverCourtChoices(match, coverLabel);
     if (!homeDays) {
       return `<select disabled aria-label="${label}"><option>Falta la disponibilidad de la pareja pendiente</option></select>`;
     }
     if (!opts.length) {
-      return `<select disabled aria-label="${label}" title="No hay cancha libre del Drive en los días de la pendiente"><option>Sin cancha libre en los días de la pendiente</option></select>`;
+      let empty = "Sin cancha libre en los días de la pendiente";
+      let title = empty;
+      if (bothPending && coverDays && !shareWindow) {
+        empty = "No coinciden en día y horario (1:30 en común)";
+        title = "Estas dos pendientes no comparten un tramo de 1:30 el mismo día. Revisá Inscripciones.";
+      } else if (bothPending) {
+        empty = "Sin cancha libre del Drive donde puedan jugar ambas";
+        title = empty;
+      }
+      return `<select disabled aria-label="${label}" title="${escAttr(title)}"><option>${escAttr(empty)}</option></select>`;
     }
     const byDay = new Map();
     for (const o of opts) {
@@ -257,7 +282,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
               .map((o) => {
                 const court = String(o.court || "").trim();
                 const courtTxt = /^cancha\b/i.test(court) ? court : court ? `Cancha ${court}` : "";
-                const flex = o.fitsAway === false ? " · cubre flexible" : "";
+                const flex = !bothPending && o.fitsAway === false ? " · cubre flexible" : "";
                 const text = [o.time, o.venue, courtTxt].filter(Boolean).join(" · ") + flex;
                 return `<option value="${escAttr(o.key)}">${escAttr(text)}</option>`;
               })
@@ -265,7 +290,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           </optgroup>`
       )
       .join("");
-    return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="Turnos libres según la pendiente. La que cubre puede aflojar horario.">
+    const hint = bothPending
+      ? "Turnos libres donde entran las dos pendientes."
+      : "Turnos libres según la pendiente. La que cubre puede aflojar horario.";
+    return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="${escAttr(hint)}">
       <option value="">2. Elegir entre ${opts.length} turno${opts.length === 1 ? "" : "s"} libre${opts.length === 1 ? "" : "s"}…</option>
       ${groups}
     </select>`;
@@ -1456,15 +1484,21 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         return;
       }
       if (!shared.opts.length) {
-        toast("No hay cancha libre del Drive en los días de la pendiente.", "err");
+        if (shared.bothPending && shared.coverDays && !shared.shareWindow) {
+          toast("No coinciden en día y horario (hace falta 1:30 en común).", "err");
+        } else if (shared.bothPending) {
+          toast("Sin cancha libre del Drive donde puedan jugar ambas.", "err");
+        } else {
+          toast("No hay cancha libre del Drive en los días de la pendiente.", "err");
+        }
         return;
       }
       const both = shared.opts.filter((o) => o.fitsAway !== false).length;
-      const flex = shared.opts.length - both;
+      const flex = shared.bothPending ? 0 : shared.opts.length - both;
       toast(
         flex
           ? `${shared.opts.length} turnos libres · ${flex} con horario flexible de quien cubre`
-          : `${shared.opts.length} turno${shared.opts.length === 1 ? "" : "s"} libre${shared.opts.length === 1 ? "" : "s"} para la pendiente`,
+          : `${shared.opts.length} turno${shared.opts.length === 1 ? "" : "s"} libre${shared.opts.length === 1 ? "" : "s"}${shared.bothPending ? " para ambas" : " para la pendiente"}`,
         "ok"
       );
     });
