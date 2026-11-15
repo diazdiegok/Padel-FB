@@ -446,5 +446,20 @@
     "away": "Ernesto Enz / Facundo Casals",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "week": "Fecha 1",
+    "day": "Viernes",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Femenino",
+    "time": "16:00 - 17:30",
+    "venue": "Americas Padel",
+    "court": "Cancha 1",
+    "home": "Valentina Laikan / Bernardita Cuello",
+    "away": "Florencia Cavallaro / Luisina Yancovich",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
   }
 ]
