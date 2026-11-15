@@ -40,16 +40,23 @@ function dayIdxDl(d) {
 /** Ordena partidos para export: fecha (día+hora) | complejo | pareja. Pendientes siempre arriba. */
 export function sortMatchesForExport(matches = [], mode = "fecha") {
   const list = (matches || []).slice();
-  const pendingFirst = (a, b) => Number(isPendingMatch(b)) - Number(isPendingMatch(a));
   const byFecha = (a, b) =>
     dayIdxDl(a.day) - dayIdxDl(b.day) ||
     String(a.time || "").localeCompare(String(b.time || ""), "es") ||
     String(a.venue || "").localeCompare(String(b.venue || ""), "es");
+  /** 0 = pendiente sin complejo, 1 = pendiente con sede, 2 = partido armado. */
+  const pendingRank = (m) => {
+    if (!isPendingMatch(m)) return 2;
+    return String(m.venue || "").trim() ? 1 : 0;
+  };
+  const pendingFirst = (a, b) => pendingRank(a) - pendingRank(b);
   if (mode === "complejo") {
     return list.sort(
       (a, b) =>
         pendingFirst(a, b) ||
         String(a.venue || "").localeCompare(String(b.venue || ""), "es") ||
+        // Dentro del mismo complejo, pendientes otra vez arriba por si rank empató.
+        Number(isPendingMatch(b)) - Number(isPendingMatch(a)) ||
         byFecha(a, b) ||
         String(a.home || "").localeCompare(String(b.home || ""), "es")
     );
