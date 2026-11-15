@@ -1,6 +1,50 @@
 [
   {
     "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 19:00 - 21:00 · Viernes 19:00 - 21:00",
+    "days": {
+      "Lunes": "19:00 - 21:00",
+      "Viernes": "19:00 - 21:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Marien Robledo / Valeria Joubert",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 19:30 - 22:30 · Martes 19:30 - 22:30 · Miércoles 19:00 - 20:30 · Sábado 14:00 - 18:00",
+    "days": {
+      "Lunes": "19:30 - 22:30",
+      "Martes": "19:30 - 22:30",
+      "Miércoles": "19:00 - 20:30",
+      "Sábado": "14:00 - 18:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Milagros Solaro / Ana Paula Croce",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
     "reason": "El horario del partido no entra en la disponibilidad de la inscripción.",
     "avail": "Lunes 16:30 - 20:30 · Martes 16:30 - 20:30 · Viernes 16:30 - 21:00 · Sábado 19:00 - 20:30",
     "days": {
