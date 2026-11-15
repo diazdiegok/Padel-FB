@@ -30,7 +30,7 @@ import {
   syncFixtureWithPairs,
 } from "../lib/pair-fixture-sync.js";
 import { pairsMatch } from "../lib/scoring.js";
-import { courtsSheetIdForSeason } from "../lib/sheets.js";
+import { courtsSheetIdForSeason, DEFAULT_FIXTURE_DRIVE_SHEET_ID, DEFAULT_FIXTURE_DRIVE_SHEET_URL } from "../lib/sheets.js";
 import {
   applyVenuePlan,
   attachPairDaysFromPairs,
@@ -1418,10 +1418,14 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       updatePlanSummary({ editedVenue: venue, announce: true });
     });
 
-    $("fx-dl")?.addEventListener("click", async () => {
+    function exportableMatches({ includePending = true } = {}) {
       const games = (ctx.fixture || [])
         .concat(ctx.results || [])
-        .filter((m) => seasonOf(m) === filterTemp && (m.week || "") === filterWeek && (isRealPairMatch(m) || isPending(m)));
+        .filter((m) => {
+          if (seasonOf(m) !== filterTemp || (m.week || "") !== filterWeek) return false;
+          if (includePending) return isRealPairMatch(m) || isPending(m);
+          return isRealPairMatch(m);
+        });
       const unique = [];
       const seen = new Set();
       for (const m of games) {
@@ -1430,6 +1434,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         seen.add(k);
         unique.push(m);
       }
+      return unique;
+    }
+
+    $("fx-dl")?.addEventListener("click", async () => {
+      const unique = exportableMatches({ includePending: true });
       if (!unique.length) {
         toast("No hay partidos para descargar en esta fecha", "err");
         return;
@@ -1443,6 +1452,46 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         toast("Excel descargado", "ok");
       } catch (err) {
         toast(err.message || "No se pudo descargar", "err");
+      }
+    });
+
+    $("fx-drive-paste")?.addEventListener("click", async () => {
+      const unique = exportableMatches({ includePending: false });
+      if (!unique.length) {
+        toast("No hay partidos con rival para pegar (los pendientes no van al Drive).", "err");
+        return;
+      }
+      const mode = $("fx-dl-sort")?.value || "complejo";
+      const sorted = sortMatchesForExport(unique, mode);
+      const rows = fixtureExportRows(sorted);
+      const ok = await confirmModal({
+        title: "Pegar fixture en Drive",
+        body:
+          `Se van a pegar ${rows.length} partido${rows.length === 1 ? "" : "s"} de ${filterWeek || "esta fecha"} en el Google Sheet (orden: ${mode}). ` +
+          "Los pendientes no se envían. Se reemplaza el contenido de la primera pestaña.",
+        confirmLabel: "Pegar en Drive",
+      });
+      if (!ok) return;
+      const btn = $("fx-drive-paste");
+      setBusy(btn, true, "Pegando…");
+      try {
+        const res = await api.worker("/fixture/drive", {
+          sheetId: DEFAULT_FIXTURE_DRIVE_SHEET_ID,
+          week: filterWeek,
+          mode,
+          rows,
+        });
+        const n = Number(res?.rows) || rows.length;
+        setMsg($("fx-msg"), `Fixture pegado en Drive · ${n} partido${n === 1 ? "" : "s"} (sin pendientes).`, "ok");
+        toast(`Pegado en Drive · ${n}`, "ok");
+        if (res?.url || DEFAULT_FIXTURE_DRIVE_SHEET_URL) {
+          window.open(res?.url || DEFAULT_FIXTURE_DRIVE_SHEET_URL, "_blank", "noopener,noreferrer");
+        }
+      } catch (err) {
+        setMsg($("fx-msg"), err.message || "No se pudo pegar en Drive.", "err");
+        toast(err.message || "No se pudo pegar en Drive", "err");
+      } finally {
+        setBusy(btn, false);
       }
     });
 

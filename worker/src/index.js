@@ -1242,13 +1242,13 @@ async function googleServiceAccount(env) {
   }
 }
 
-async function googleAccessToken(sa) {
+async function googleAccessToken(sa, scope = "https://www.googleapis.com/auth/spreadsheets.readonly") {
   const now = Math.floor(Date.now() / 1000);
   const header = encodeBase64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const claim = encodeBase64Url(
     JSON.stringify({
       iss: sa.client_email,
-      scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
+      scope,
       aud: "https://oauth2.googleapis.com/token",
       iat: now,
       exp: now + 3600,
@@ -1430,6 +1430,136 @@ async function readCourtsSheetCsv(env, sheetId, week) {
   return sheetValuesToCsv(data.values || []);
 }
 
+const FIXTURE_DRIVE_HEADERS = [
+  "Fecha",
+  "Dia",
+  "Horario",
+  "Categoria",
+  "Complejo",
+  "Cancha",
+  "Pareja 1",
+  "Pareja 2",
+  "Resultado",
+];
+
+const FIXED_FIXTURE_DRIVE_SHEET = "1OI6ogfmdOAQ5mz3JqP482cDPT_xp-PjWdE07k54AAiQ";
+
+/** Sobrescribe la primera pestaña del Sheet de fixture (sin pendientes). */
+async function writeFixtureDriveSheet(env, { sheetId, rows = [] } = {}) {
+  const id = String(sheetId || env.FIXTURE_DRIVE_SHEET_ID || FIXED_FIXTURE_DRIVE_SHEET)
+    .trim()
+    .replace(/^.*\/spreadsheets\/d\//i, "")
+    .replace(/\/.*$/, "");
+  if (!/^[a-zA-Z0-9-_]{20,}$/.test(id)) {
+    const err = new Error("ID de Google Sheet inválido.");
+    err.status = 400;
+    throw err;
+  }
+  const sa = await googleServiceAccount(env);
+  if (!sa?.client_email || !sa?.private_key) {
+    const err = new Error(
+      "Falta el secret GOOGLE_SERVICE_ACCOUNT en el Worker para escribir el Sheet."
+    );
+    err.status = 500;
+    throw err;
+  }
+  const accessToken = await googleAccessToken(sa, "https://www.googleapis.com/auth/spreadsheets");
+  const metaRes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}?fields=sheets.properties(sheetId,title)`,
+    { headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" } }
+  );
+  const meta = await metaRes.json().catch(() => ({}));
+  if (!metaRes.ok) {
+    const msg = meta.error?.message || `Google Sheets ${metaRes.status}`;
+    const err = new Error(
+      /permission|forbidden|403/i.test(msg)
+        ? `Sin permiso de edición. Compartí el Sheet con ${sa.client_email} como Editor.`
+        : msg
+    );
+    err.status = metaRes.status === 403 ? 403 : 502;
+    throw err;
+  }
+  const title = String(meta.sheets?.[0]?.properties?.title || "Hoja 1").trim() || "Hoja 1";
+  const quoted = `'${title.replace(/'/g, "''")}'`;
+
+  const clearRes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/${encodeURIComponent(`${quoted}!A:Z`)}:clear`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: "{}",
+    }
+  );
+  const clearJson = await clearRes.json().catch(() => ({}));
+  if (!clearRes.ok) {
+    const msg = clearJson.error?.message || `No se pudo limpiar el Sheet (${clearRes.status}).`;
+    const err = new Error(
+      /permission|forbidden|403/i.test(msg)
+        ? `Sin permiso de edición. Compartí el Sheet con ${sa.client_email} como Editor.`
+        : msg
+    );
+    err.status = clearRes.status === 403 ? 403 : 502;
+    throw err;
+  }
+
+  const values = [
+    FIXTURE_DRIVE_HEADERS,
+    ...(rows || []).map((r) =>
+      FIXTURE_DRIVE_HEADERS.map((h) => {
+        const key = {
+          Fecha: "fecha",
+          Dia: "dia",
+          Horario: "horario",
+          Categoria: "categoria",
+          Complejo: "complejo",
+          Cancha: "cancha",
+          "Pareja 1": "pareja1",
+          "Pareja 2": "pareja2",
+          Resultado: "resultado",
+        }[h];
+        return String(r?.[key] ?? r?.[h] ?? "");
+      })
+    ),
+  ];
+
+  const updateRes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/${encodeURIComponent(`${quoted}!A1`)}` +
+      `?valueInputOption=USER_ENTERED`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ values }),
+    }
+  );
+  const updateJson = await updateRes.json().catch(() => ({}));
+  if (!updateRes.ok) {
+    const msg = updateJson.error?.message || `No se pudo escribir el Sheet (${updateRes.status}).`;
+    const err = new Error(
+      /permission|forbidden|403/i.test(msg)
+        ? `Sin permiso de edición. Compartí el Sheet con ${sa.client_email} como Editor.`
+        : msg
+    );
+    err.status = updateRes.status === 403 ? 403 : 502;
+    throw err;
+  }
+
+  return {
+    ok: true,
+    sheetId: id,
+    sheet: title,
+    rows: Math.max(0, values.length - 1),
+    url: `https://docs.google.com/spreadsheets/d/${id}/edit`,
+  };
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(request, env) });
@@ -1518,6 +1648,25 @@ export default {
           return response(request, env, { ok: true, week, sheetId, csv });
         } catch (err) {
           return response(request, env, { message: err.message || "No se pudo leer el Sheet." }, err.status || 502);
+        }
+      }
+
+      // Pega el fixture armado (solo partidos con rival) en el Google Sheet de fixture.
+      if (url.pathname === "/fixture/drive" && request.method === "POST") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        const body = await request.json().catch(() => ({}));
+        const rows = Array.isArray(body?.rows) ? body.rows : [];
+        if (!rows.length) {
+          return response(request, env, { message: "No hay partidos para pegar (solo se envían los que tienen rival)." }, 400);
+        }
+        try {
+          const result = await writeFixtureDriveSheet(env, {
+            sheetId: body.sheetId || env.FIXTURE_DRIVE_SHEET_ID || FIXED_FIXTURE_DRIVE_SHEET,
+            rows,
+          });
+          return response(request, env, result);
+        } catch (err) {
+          return response(request, env, { message: err.message || "No se pudo pegar en Drive." }, err.status || 502);
         }
       }
 

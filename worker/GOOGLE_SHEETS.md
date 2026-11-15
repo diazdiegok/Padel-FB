@@ -1,4 +1,6 @@
-# Google Sheet de canchas
+# Google Sheets
+
+## Canchas (Leer Drive)
 
 Sheet fijo (público lector):  
 https://docs.google.com/spreadsheets/d/1OHnpx9ganzFR805yv8f5mmyYH_-o-2bNsOn9agmJcvg/edit
@@ -9,3 +11,13 @@ https://docs.google.com/spreadsheets/d/1OHnpx9ganzFR805yv8f5mmyYH_-o-2bNsOn9agmJ
 - Compartido: **Cualquiera con el enlace → Lector**
 
 El admin usa **Leer Drive** y pide la pestaña de la fecha abierta.
+
+## Fixture armado (Pegar en Drive)
+
+Sheet fijo donde el admin pega los partidos con rival (sin pendientes):  
+https://docs.google.com/spreadsheets/d/1OI6ogfmdOAQ5mz3JqP482cDPT_xp-PjWdE07k54AAiQ/edit
+
+- Primera pestaña: se **reemplaza** entera al pegar
+- Columnas: Fecha, Dia, Horario, Categoria, Complejo, Cancha, Pareja 1, Pareja 2, Resultado
+- El Worker necesita el secret `GOOGLE_SERVICE_ACCOUNT` y que ese Sheet esté compartido con el `client_email` de la SA como **Editor**
+- Botón en Fixture: **Pegar en Drive** (usa el mismo orden que Descargar Excel; no envía pendientes)

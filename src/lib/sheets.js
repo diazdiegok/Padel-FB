@@ -3,6 +3,11 @@ export const DEFAULT_COURTS_SHEET_ID = "1OHnpx9ganzFR805yv8f5mmyYH_-o-2bNsOn9agm
 export const DEFAULT_COURTS_SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1OHnpx9ganzFR805yv8f5mmyYH_-o-2bNsOn9agmJcvg/edit";
 
+/** Sheet donde el admin pega el fixture armado (sin pendientes). */
+export const DEFAULT_FIXTURE_DRIVE_SHEET_ID = "1OI6ogfmdOAQ5mz3JqP482cDPT_xp-PjWdE07k54AAiQ";
+export const DEFAULT_FIXTURE_DRIVE_SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/1OI6ogfmdOAQ5mz3JqP482cDPT_xp-PjWdE07k54AAiQ/edit";
+
 /** Extrae el ID de un Google Sheet desde URL o ID suelto. */
 export function parseGoogleSheetId(value) {
   const raw = String(value || "").trim();
