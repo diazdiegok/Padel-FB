@@ -23,9 +23,11 @@ import { latestWeek, listSeasons, mergeArchivedMatches, seasonLabel, weekKey, we
 import { pairsMatch } from "../lib/scoring.js";
 import { courtsSheetIdForSeason } from "../lib/sheets.js";
 import {
+  applyCourtOption,
   applyVenuePlan,
   assignCourtSlots,
   fillMissingCourtsFromSheet,
+  listFreeCourtOptions,
   missingCourtHorarios,
   summarizeCourtSlots,
   weekFromName,
@@ -207,13 +209,15 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
                   pools,
                   temp: filterTemp,
                 });
-                return `<article class="fx-pending-card" data-i="${i}">
+                const bare = needsCourtPick(m);
+                return `<article class="fx-pending-card${bare ? " is-bare" : ""}" data-i="${i}">
                   <strong>${escAttr(m.home)}</strong>
                   <span class="admin-help">vs ${escAttr(PENDING_AWAY)}${
-                    m.venue || m.day || m.time
+                    !bare
                       ? ` · ${escAttr([m.day, m.time, m.venue, m.court].filter(Boolean).join(" · "))}`
                       : " · sin cancha asignada"
                   }${m.reason ? ` · ${escAttr(m.reason)}` : ""}${m.avail ? ` · disp. ${escAttr(m.avail)}` : ""}${m.note ? ` · ${escAttr(m.note)}` : ""}</span>
+                  ${bare ? `<div class="fx-pending-actions">${courtPickSelect(i, { compact: true })}</div>` : ""}
                   <div class="fx-pending-actions">
                     <select data-fx-cover="${i}" aria-label="Cubrir con">
                       <option value="">Cubrir con…</option>
@@ -523,16 +527,28 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     $("fx-body").innerHTML = games
       .map(({ m, i }) => {
         const on = editing === i;
+        const bare = !on && needsCourtPick(m);
         const field = (k, placeholder) =>
           on
             ? `<input data-k="${k}" value="${escAttr(m[k])}" placeholder="${placeholder}"${k === "venue" ? ' list="fx-venues"' : ""} />`
-            : escAttr(m[k]);
-        return `<tr data-i="${i}"${repeated.has(i) ? ' class="is-rematch" title="Ya se enfrentaron en esta temporada"' : ""}>
+            : escAttr(m[k] || "—");
+        const rowClass = [
+          repeated.has(i) ? "is-rematch" : "",
+          bare ? "is-bare" : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+        const venueCourt = bare
+          ? `<td colspan="2" class="fx-court-pick-cell">${courtPickSelect(i)}</td>`
+          : `<td>${field("venue", "Complejo")}</td>
+          <td>${field("court", "Cancha 1")}</td>`;
+        return `<tr data-i="${i}"${rowClass ? ` class="${rowClass}"` : ""}${
+          repeated.has(i) ? ' title="Ya se enfrentaron en esta temporada"' : bare ? ' title="Sin complejo/cancha: elegí un turno libre del Sheet"' : ""
+        }>
           <td>${field("day", "Jueves")}</td>
           <td>${field("time", "19:00 - 20:30")}</td>
           <td>${field("cat", "A Masculina")}</td>
-          <td>${field("venue", "Complejo")}</td>
-          <td>${field("court", "Cancha 1")}</td>
+          ${venueCourt}
           <td>${field("home", "Pareja 1")}</td>
           <td>${field("away", "Pareja 2")}</td>
           <td class="col-actions">
@@ -678,6 +694,58 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           _capped: capped,
         };
       });
+  }
+
+  function needsCourtPick(m) {
+    return !String(m?.venue || "").trim() || !String(m?.court || "").trim();
+  }
+
+  function daysForPairLabel(name, cat, season) {
+    if (!String(name || "").trim()) return undefined;
+    const hit = (ctx.pairs || []).find(
+      (p) =>
+        String(p.temp || "").toUpperCase() === String(season).toUpperCase() &&
+        (!cat || p.cat === cat) &&
+        pairsMatch(pairLabel(p), name)
+    );
+    if (!hit?.days || typeof hit.days !== "object") return undefined;
+    return hit.days;
+  }
+
+  function freeCourtOptionsFor(matchIndex) {
+    const m = ctx.fixture[matchIndex];
+    if (!m || !loadedSlots.length) return [];
+    const season = seasonOf(m);
+    const week = m.week || filterWeek;
+    const occupied = (ctx.fixture || []).filter(
+      (x) => seasonOf(x) === season && (x.week || "") === week
+    );
+    const ignore = occupied.indexOf(m);
+    const forMatch = {
+      ...m,
+      homeDays: daysForPairLabel(m.home, m.cat, season),
+      awayDays: isPending(m) ? undefined : daysForPairLabel(m.away, m.cat, season),
+      days: isPending(m) ? daysForPairLabel(m.home, m.cat, season) || m.days : undefined,
+    };
+    return listFreeCourtOptions(loadedSlots, occupied, {
+      forMatch,
+      ignoreMatchIndex: ignore,
+    });
+  }
+
+  function courtPickSelect(matchIndex, { compact = false } = {}) {
+    const opts = freeCourtOptionsFor(matchIndex);
+    if (!loadedSlots.length) {
+      return `<span class="admin-help">Leé el Drive para elegir cancha</span>`;
+    }
+    if (!opts.length) {
+      return `<span class="admin-help">Sin turnos libres en el Sheet</span>`;
+    }
+    const cls = compact ? "fx-court-pick fx-court-pick-compact" : "fx-court-pick";
+    return `<select class="${cls}" data-fx-court-pick="${matchIndex}" aria-label="Elegir complejo y cancha del Sheet">
+      <option value="">Elegir cancha del Sheet…</option>
+      ${opts.map((o) => `<option value="${escAttr(o.key)}">${escAttr(o.label)}</option>`).join("")}
+    </select>`;
   }
 
   async function buildFromFecha() {
@@ -1122,7 +1190,31 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       render();
     });
 
+    function applyCourtPickFromSelect(sel) {
+      if (!sel || sel.value === "") return false;
+      const i = Number(sel.dataset.fxCourtPick);
+      const match = ctx.fixture[i];
+      if (!match) return false;
+      const opts = freeCourtOptionsFor(i);
+      const option = opts.find((o) => o.key === sel.value);
+      if (!option) {
+        toast("Ese turno ya no está libre. Elegí otro.", "err");
+        sel.value = "";
+        render();
+        return true;
+      }
+      ctx.fixture[i] = applyCourtOption(match, option);
+      shell.markDirty("fixture");
+      toast(`${option.venue} · ${option.court}`, "ok");
+      render();
+      return true;
+    }
+
     $("fx-body")?.addEventListener("change", (e) => {
+      if (e.target.closest("[data-fx-court-pick]")) {
+        applyCourtPickFromSelect(e.target.closest("[data-fx-court-pick]"));
+        return;
+      }
       const tr = e.target.closest("tr");
       if (!tr) return;
       const i = Number(tr.dataset.i);
@@ -1137,6 +1229,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     });
 
     $("fx-pending")?.addEventListener("change", (e) => {
+      if (e.target.closest("[data-fx-court-pick]")) {
+        applyCourtPickFromSelect(e.target.closest("[data-fx-court-pick]"));
+        return;
+      }
       const sel = e.target.closest("[data-fx-cover]");
       if (!sel || sel.value === "") return;
       const i = Number(sel.dataset.fxCover);

@@ -391,6 +391,93 @@ export function fillMissingCourtsFromSheet(matches = [], sheetSlots = [], opts =
   return { ...out, filledExtra: Math.max(0, before - after) };
 }
 
+function courtOptionKey(s) {
+  return `${s.day}|${s.venue}|${s.court}|${s.from}|${s.to}`;
+}
+
+/**
+ * Turnos libres del Sheet (completos, no solo el plan) que no chocan con partidos ya
+ * asignados. Para el desplegable de partidos sin complejo/cancha.
+ * @param {object} [opts.forMatch] si viene, filtra por disponibilidad de las parejas y prioriza mismo día/hora.
+ * @param {number} [opts.ignoreMatchIndex] índice en `occupiedMatches` a ignorar (el partido que estamos editando).
+ */
+export function listFreeCourtOptions(sheetSlots = [], occupiedMatches = [], { forMatch = null, ignoreMatchIndex = -1 } = {}) {
+  const pool = expandCourtCandidates(sheetSlots);
+  if (!pool.length) return [];
+
+  const blocked = new Array(pool.length).fill(false);
+  for (let mi = 0; mi < occupiedMatches.length; mi++) {
+    if (mi === ignoreMatchIndex) continue;
+    const m = occupiedMatches[mi];
+    if (!matchHasCourt(m)) continue;
+    const day = normalizeDay(m.day);
+    const win = parseCourtWindow(m.time);
+    if (!day || !win) continue;
+    for (let si = 0; si < pool.length; si++) {
+      if (blocked[si]) continue;
+      const s = pool[si];
+      if (fold(s.venue) !== fold(m.venue)) continue;
+      if (fold(s.court) !== fold(m.court)) continue;
+      if (s.day !== day) continue;
+      if (windowsOverlap(s.from, s.to, win.from, win.to)) blocked[si] = true;
+    }
+  }
+
+  const pending = !!(forMatch && (forMatch.pending || fold(forMatch.away) === fold("Pendiente / Pendiente")));
+  const free = [];
+  for (let si = 0; si < pool.length; si++) {
+    if (blocked[si]) continue;
+    const s = pool[si];
+    if (forMatch && !slotFitsPairAvailability(s, forMatch, { pending })) continue;
+    free.push(s);
+  }
+
+  free.sort((a, b) => {
+    if (forMatch) {
+      const day = normalizeDay(forMatch.day);
+      const win = parseCourtWindow(forMatch.time);
+      const score = (s) => {
+        let n = 0;
+        if (day && s.day === day) n += 10;
+        if (win && s.from === win.from && s.to === win.to) n += 20;
+        else if (win && windowsOverlap(s.from, s.to, win.from, win.to)) n += 8;
+        return n;
+      };
+      const d = score(b) - score(a);
+      if (d) return d;
+    }
+    return (
+      DAYS.indexOf(a.day) - DAYS.indexOf(b.day) ||
+      a.from - b.from ||
+      String(a.venue).localeCompare(String(b.venue), "es") ||
+      String(a.court).localeCompare(String(b.court), "es")
+    );
+  });
+
+  return free.map((s) => ({
+    key: courtOptionKey(s),
+    label: `${s.venue} · ${s.court} · ${s.day} ${s.time}`,
+    day: s.day,
+    time: s.time,
+    venue: s.venue,
+    court: s.court,
+    from: s.from,
+    to: s.to,
+  }));
+}
+
+/** Aplica una opción de `listFreeCourtOptions` a un partido. */
+export function applyCourtOption(match, option) {
+  if (!match || !option) return match;
+  return {
+    ...match,
+    day: option.day || match.day || "",
+    time: option.time || match.time || "",
+    venue: option.venue || "",
+    court: option.court || "",
+  };
+}
+
 export function assignCourtSlots(matches = [], slots = [], { onlyEmpty = true, venueCaps = null, preferPlan = false } = {}) {
   const next = matches.map((m) => ({ ...m }));
   const needsExpand = slots.some((s) => Number(s.to) - Number(s.from) > MATCH_MINUTES || s.capacity > 1);
