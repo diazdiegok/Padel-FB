@@ -1792,6 +1792,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
       const season = filterTemp || ctx.siteData.currentSeason || "T4";
       // Antes de publicar: si algún partido viola inscripción, ambas puntas a pendientes.
+      // Frenamos acá para que veas el cambio en la grilla y vuelvas a tocar Publicar a propósito.
       const audited = parkAvailabilityViolations(attachPairDaysFromPairs(ctx.fixture || [], ctx.pairs || []));
       if (audited.parked) {
         ctx.fixture = audited.matches.map((m) => {
@@ -1813,10 +1814,17 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         });
         shell.markDirty("fixture");
         render();
-        toast(
-          `${audited.parked} partido${audited.parked === 1 ? "" : "s"} fuera de disponibilidad → pendientes`,
+        const n = audited.parked;
+        setMsg(
+          $("fx-msg"),
+          `${n} partido${n === 1 ? "" : "s"} fuera de la disponibilidad de inscripción → pendientes. Revisá la grilla y tocá Publicar fixture de nuevo (los pendientes no salen al sitio).`,
           "err"
         );
+        toast(
+          `${n} partido${n === 1 ? "" : "s"} → pendientes · revisá y publicá de nuevo`,
+          "err"
+        );
+        return;
       }
       const draft = ctx.fixture.map((m) => cleanMatch(m, {}, season)).filter((m) => m.home || m.away);
       const draftLive = draft.filter((m) => !isPending(m));
@@ -1907,12 +1915,21 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         onRankingChanged?.();
         render();
         const archived = archivedWeeks.length ? ` ${archivedWeeks.join(", ")} quedó en Resultados.` : "";
+        const liveCount = nextPublished.length;
         const pendingNote = openPending
-          ? ` ${openPending} pendiente${openPending === 1 ? "" : "s"} siguen en el admin.`
+          ? ` ${openPending} pendiente${openPending === 1 ? "" : "s"} solo en admin (no salen a la web hasta cubrirlos).`
           : "";
-        const text = "Fixture publicado. El sitio se actualiza en ~1 minuto." + pendingNote + archived;
+        const text =
+          `Fixture publicado · ${liveCount} partido${liveCount === 1 ? "" : "s"} en el sitio (padel-fb.vercel.app/fixture/). Se ve en ~1 minuto.` +
+          pendingNote +
+          archived;
         setMsg($("fx-msg"), text, "ok");
-        toast(openPending ? "Fixture publicado · pendientes en admin" : "Fixture publicado", "ok");
+        toast(
+          openPending
+            ? `Publicado · ${liveCount} en web · ${openPending} pendientes`
+            : `Publicado · ${liveCount} en web`,
+          "ok"
+        );
       } catch (err) {
         const m = api.publishError(err);
         setMsg($("fx-msg"), m, "err");
