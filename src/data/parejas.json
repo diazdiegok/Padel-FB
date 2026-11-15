@@ -1084,5 +1084,21 @@
       "Viernes": "20:00 - 00:00"
     },
     "note": "Si es en Palermo mejor"
+  },
+  {
+    "id": "pmwi4esr91a50",
+    "createdAt": "2026-11-15T17:40:44.949Z",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "p1": "Matias Minigutti",
+    "p2": "Omar Izza",
+    "days": {
+      "Martes": "18:00 - 21:00",
+      "Miércoles": "20:30 - 22:00",
+      "Jueves": "17:30 - 21:30",
+      "Viernes": "17:00 - 22:00",
+      "Sábado": "15:00 - 20:00"
+    },
+    "note": ""
   }
 ]
