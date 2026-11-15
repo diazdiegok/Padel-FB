@@ -2192,6 +2192,32 @@ body.is-admin .chk input[type="checkbox"] {
   box-shadow: inset 3px 0 0 #ff7a59;
 }
 
+.admin-table tr.is-bare td:first-child {
+  box-shadow: inset 3px 0 0 #f0b44c;
+}
+
+.admin-table tr.is-bare td {
+  background: rgba(240, 180, 76, 0.06);
+}
+
+.fx-court-pick-cell {
+  min-width: 220px;
+}
+
+.fx-court-pick {
+  width: 100%;
+  max-width: 360px;
+  font-size: 12px;
+}
+
+.fx-court-pick-compact {
+  max-width: 100%;
+}
+
+.fx-pending-card.is-bare {
+  border-color: #f0b44c;
+}
+
 .fx-pending {
   margin: 0 0 18px;
   padding: 16px;

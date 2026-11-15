@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import {
+  applyCourtOption,
   applyVenuePlan,
   assignCourtSlots,
+  fillMissingCourtsFromSheet,
+  listFreeCourtOptions,
   matchStartsInWindow,
   parseCourtSlot,
   parseCourtSlotRows,
@@ -275,6 +278,106 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   const tarde = swap.matches.find((m) => /Tarde/.test(m.home));
   assert.ok(tarde.venue, "el de la tarde tiene complejo");
   assert.ok(Number(tarde.time.slice(0, 2)) >= 18 || tarde.time.startsWith("18:") || tarde.time.startsWith("19:"), tarde.time);
+}
+
+// Fallback al Sheet completo: si el plan no alcanza, completar sin pisar canchas ya dadas.
+{
+  const sheet = parseCourtSlotRows([
+    { Complejo: "Open", Cancha: "1", Dia: "Lunes", Horario: "19:00 - 20:30" },
+    { Complejo: "Terrazas", Cancha: "2", Dia: "Lunes", Horario: "19:00 - 20:30" },
+    { Complejo: "Americas", Cancha: "3", Dia: "Martes", Horario: "18:00 - 19:30" },
+  ]);
+  const planOnly = applyVenuePlan(sheet, [{ venue: "Open Padel", count: 1, days: ["Lunes"] }], { mode: "pool" });
+  const daysL = { Lunes: "19:00 - 22:00" };
+  const daysM = { Martes: "18:00 - 21:00" };
+  const batch = [
+    {
+      day: "Lunes",
+      time: "19:00 - 20:30",
+      home: "Ya / Tiene",
+      away: "Cancha / Asignada",
+      venue: "Open Padel",
+      court: "1",
+      homeDays: daysL,
+      awayDays: daysL,
+    },
+    {
+      day: "Lunes",
+      time: "19:00 - 20:30",
+      home: "Sin / Cancha",
+      away: "Misma / Hora",
+      venue: "",
+      court: "",
+      homeDays: daysL,
+      awayDays: daysL,
+    },
+    {
+      day: "Martes",
+      time: "18:00 - 19:30",
+      home: "Otro / Dia",
+      away: "Fuera / Plan",
+      venue: "",
+      court: "",
+      homeDays: daysM,
+      awayDays: daysM,
+    },
+  ];
+  // Con solo el plan (1 cupo Open lunes) el 2º y 3º quedan vacíos; el Sheet los completa.
+  const capped = assignCourtSlots(batch, planOnly, {
+    onlyEmpty: true,
+    preferPlan: true,
+    venueCaps: { "Open Padel": 1 },
+  });
+  assert.equal(capped.matches.filter((m) => m.venue && m.court).length, 1, "plan solo alcanza para 1");
+  const rescued = fillMissingCourtsFromSheet(capped.matches, sheet);
+  assert.ok(rescued.filledExtra >= 2, `rescata fuera del plan (${rescued.filledExtra})`);
+  assert.ok(rescued.matches.every((m) => m.venue && m.court), "nadie sin cancha");
+  const kept = rescued.matches.find((m) => /Ya/.test(m.home));
+  assert.equal(kept.venue, "Open Padel");
+  assert.equal(kept.court, "1");
+  const sameHour = rescued.matches.find((m) => /Sin/.test(m.home));
+  assert.ok(sameHour.venue && sameHour.venue !== "Open Padel", "mismo horario usa otro complejo del Sheet");
+  const otherDay = rescued.matches.find((m) => /Otro/.test(m.home));
+  assert.equal(otherDay.venue, "Americas Padel");
+  assert.equal(otherDay.day, "Martes");
+}
+
+// Desplegable: opciones libres del Sheet (ocupadas no aparecen; preferir mismo día/hora).
+{
+  const sheet = parseCourtSlotRows([
+    { Complejo: "Open", Cancha: "1", Dia: "Lunes", Horario: "19:00 - 20:30" },
+    { Complejo: "Terrazas", Cancha: "2", Dia: "Lunes", Horario: "19:00 - 20:30" },
+    { Complejo: "Americas", Cancha: "3", Dia: "Martes", Horario: "18:00 - 19:30" },
+  ]);
+  const occupied = [
+    {
+      day: "Lunes",
+      time: "19:00 - 20:30",
+      venue: "Open Padel",
+      court: "1",
+      home: "A / B",
+      away: "C / D",
+    },
+    {
+      day: "Lunes",
+      time: "19:00 - 20:30",
+      venue: "",
+      court: "",
+      home: "E / F",
+      away: "G / H",
+      homeDays: { Lunes: "19:00 - 22:00" },
+      awayDays: { Lunes: "19:00 - 22:00" },
+    },
+  ];
+  const opts = listFreeCourtOptions(sheet, occupied, {
+    forMatch: occupied[1],
+    ignoreMatchIndex: 1,
+  });
+  assert.ok(opts.length >= 1, "hay opciones libres");
+  assert.ok(!opts.some((o) => o.venue === "Open Padel" && o.court === "1"), "no ofrece la cancha ocupada");
+  assert.ok(opts.some((o) => /Terrazas/.test(o.venue)), "ofrece otra cancha del Sheet el mismo horario");
+  const applied = applyCourtOption(occupied[1], opts[0]);
+  assert.ok(applied.venue && applied.court && applied.day && applied.time);
 }
 
 console.log("slots ok");
