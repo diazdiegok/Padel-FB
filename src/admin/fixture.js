@@ -328,11 +328,6 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
                 const draft = coverDraft.get(i) || "";
                 return `<article class="fx-pending-card" data-i="${i}">
                   <strong>${escAttr(m.home)}</strong>
-                  <span class="admin-help">vs ${escAttr(PENDING_AWAY)}${
-                    m.venue || m.day || m.time
-                      ? ` · ${escAttr([m.day, m.time, m.venue, m.court].filter(Boolean).join(" · "))}`
-                      : " · sin cancha asignada"
-                  }${m.reason ? ` · ${escAttr(m.reason)}` : ""}${m.avail ? ` · disp. ${escAttr(m.avail)}` : ""}${m.note ? ` · ${escAttr(m.note)}` : ""}</span>
                   <div class="fx-pending-actions">
                     <select data-fx-cover="${i}" aria-label="Cubrir con">
                       <option value="">1. Cubrir con…</option>
