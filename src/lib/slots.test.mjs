@@ -239,4 +239,42 @@ assert.equal(filled.assigned, 4, "4 partidos con cancha respetando 16:30-19:30")
 assert.ok(filled.matches.every((m) => m.venue && m.court));
 assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
 
+// Reasignación: el flexible cede el turno de las 18:00 al que solo puede de tarde.
+{
+  const oneCourt = parseCourtSlotRows([
+    { Complejo: "Open", Cancha: "1", Dia: "Lunes", Horario: "16:00 - 22:00" },
+  ]);
+  const onePool = applyVenuePlan(oneCourt, [{ venue: "Open Padel", count: 2, days: ["Lunes"] }], { mode: "pool" });
+  const swap = assignCourtSlots(
+    [
+      {
+        day: "Lunes",
+        time: "18:00 - 19:30",
+        home: "Flexible / A",
+        away: "Flexible / B",
+        venue: "",
+        court: "",
+        homeDays: { Lunes: "16:00 - 22:00" },
+        awayDays: { Lunes: "16:00 - 22:00" },
+      },
+      {
+        day: "Lunes",
+        time: "18:00 - 19:30",
+        home: "Tarde / A",
+        away: "Tarde / B",
+        venue: "",
+        court: "",
+        homeDays: { Lunes: "18:00 - 21:00" },
+        awayDays: { Lunes: "18:00 - 21:00" },
+      },
+    ],
+    onePool,
+    { preferPlan: true, venueCaps: { "Open Padel": 2 } }
+  );
+  assert.equal(swap.assigned, 2, "ambos con cancha vía reasignación");
+  const tarde = swap.matches.find((m) => /Tarde/.test(m.home));
+  assert.ok(tarde.venue, "el de la tarde tiene complejo");
+  assert.ok(Number(tarde.time.slice(0, 2)) >= 18 || tarde.time.startsWith("18:") || tarde.time.startsWith("19:"), tarde.time);
+}
+
 console.log("slots ok");

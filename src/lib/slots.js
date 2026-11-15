@@ -362,31 +362,24 @@ export function applyVenuePlan(slots = [], plan = [], { mode = "pack" } = {}) {
 }
 
 /**
- * Asigna canchas a partidos.
- * Los candidatos pueden solapar en el mismo rango: al usar uno, se bloquea el solape en esa cancha.
+ * Asigna canchas a partidos respetando disponibilidad de ambas parejas.
+ * 1) Greedy: primero los partidos con menos opciones.
+ * 2) Reasignación: si uno quedó sin cancha, mueve a otro partido flexible y le cede el turno.
+ * Nunca asigna fuera de la ventana inscripta (preferPlan solo reubica dentro de ella).
  */
 export function assignCourtSlots(matches = [], slots = [], { onlyEmpty = true, venueCaps = null, preferPlan = false } = {}) {
   const next = matches.map((m) => ({ ...m }));
-  // Ventanas del Excel → candidatos de 90'. Si ya vienen como partidos de 90', se reúsan.
   const needsExpand = slots.some((s) => Number(s.to) - Number(s.from) > MATCH_MINUTES || s.capacity > 1);
   const poolSource = needsExpand ? expandCourtCandidates(slots) : slots.slice();
-  const pool = poolSource.map((s, i) => ({ ...s, _i: i, used: false }));
-  const usedByVenue = new Map();
-  const candidates = [];
+  const pool = poolSource.map((s, i) => ({ ...s, _i: i }));
 
-  function markUsed(slot) {
-    slot.used = true;
-    for (const other of pool) {
-      if (other.used) continue;
-      if (sameCourt(other, slot) && windowsOverlap(other.from, other.to, slot.from, slot.to)) other.used = true;
-    }
-  }
+  /** matchIndex → pool index elegido */
+  const owner = new Map();
 
   function isPendingMatch(m) {
     return !!m.pending || fold(m.away) === fold("Pendiente / Pendiente");
   }
 
-  /** Bonus si el pendiente declara disponibilidad ese día (m.days). */
   function pendingAvailScore(slot, match) {
     const days = match.days;
     if (!days || typeof days !== "object") return 0;
@@ -399,85 +392,213 @@ export function assignCourtSlots(matches = [], slots = [], { onlyEmpty = true, v
   }
 
   function scoreOf(slot, m, pending) {
-    return fitScore(slot, m) + (pending ? pendingAvailScore(slot, m) : 0);
+    let score = fitScore(slot, m) + (pending ? pendingAvailScore(slot, m) : 0);
+    if (preferPlan && normalizeDay(m.day) === slot.day) score += 10;
+    if (preferPlan && slotFitsMatch(slot, m)) score += 30;
+    return score;
   }
 
-  function underCap(slot) {
-    if (!venueCaps) return true;
-    const v = slot.venue;
-    const cap = venueCaps[v] ?? venueCaps[normVenueName(v)];
-    if (cap == null) return true;
-    return (usedByVenue.get(venueKey(v)) || 0) < Number(cap);
+  function venueCountExcluding(matchIndex) {
+    const counts = new Map();
+    for (const [mi, si] of owner) {
+      if (mi === matchIndex) continue;
+      const v = venueKey(pool[si].venue);
+      counts.set(v, (counts.get(v) || 0) + 1);
+    }
+    return counts;
   }
 
-  /**
-   * 1) Mismo día/horario del fixtureo, si hay cancha.
-   * 2) Si preferPlan: otro turno libre del plan SOLO si entra en la disponibilidad
-   *    de ambas parejas (nunca viernes 15:00 si anotaron 16:30-19:30).
-   */
-  function optionsFor(m, pending) {
-    const scored = pool
-      .map((slot, si) => ({ slot, si, score: scoreOf(slot, m, pending) }))
-      .filter(
-        ({ slot }) =>
-          !slot.used && underCap(slot) && slotFitsPairAvailability(slot, m, { pending })
-      );
-    const strict = scored
-      .filter(({ slot }) => slotFitsMatch(slot, m))
-      .sort((a, b) => b.score - a.score || a.slot.from - b.slot.from);
-    if (strict.length) return strict;
-    if (!preferPlan) return [];
-    return scored
-      .map((o) => ({
-        ...o,
-        score: o.score + (normalizeDay(m.day) === o.slot.day ? 10 : 0),
-      }))
-      .sort((a, b) => b.score - a.score || a.slot.from - b.slot.from);
+  function capForVenue(venue) {
+    if (!venueCaps) return null;
+    if (venueCaps[venue] != null) return Number(venueCaps[venue]);
+    const norm = normVenueName(venue);
+    if (venueCaps[norm] != null) return Number(venueCaps[norm]);
+    const folded = venueKey(venue);
+    for (const [k, v] of Object.entries(venueCaps)) {
+      if (venueKey(k) === folded) return Number(v);
+    }
+    return null;
   }
 
-  for (let i = 0; i < next.length; i++) {
-    const m = next[i];
+  function underCapFor(slot, matchIndex) {
+    const cap = capForVenue(slot.venue);
+    if (cap == null || !Number.isFinite(cap)) return true;
+    const used = venueCountExcluding(matchIndex).get(venueKey(slot.venue)) || 0;
+    return used < cap;
+  }
+
+  function slotFreeFor(si, matchIndex) {
+    const slot = pool[si];
+    if (!underCapFor(slot, matchIndex)) return false;
+    for (const [mi, osi] of owner) {
+      if (mi === matchIndex) continue;
+      const other = pool[osi];
+      if (sameCourt(slot, other) && windowsOverlap(slot.from, slot.to, other.from, other.to)) return false;
+    }
+    return true;
+  }
+
+  /** Candidatos legales: disponibilidad + cupo + sin solape. preferPlan permite otro horario válido. */
+  function optionsFor(matchIndex) {
+    const m = next[matchIndex];
     const pending = isPendingMatch(m);
-    const hasRealAway = String(m.away || "").trim() && !pending;
-    // Partidos reales y pendientes reservan cancha; filas vacías no.
-    if (!hasRealAway && !pending) continue;
-    const filled = String(m.venue || "").trim() && String(m.time || "").trim();
-    if (onlyEmpty && filled) continue;
-    // Estimación inicial (día/hora del fixtureo) para priorizar los más trabados.
-    const estimate = optionsFor(m, pending);
-    candidates.push({ i, pending, optionCount: estimate.length });
+    const opts = [];
+    for (let si = 0; si < pool.length; si++) {
+      const slot = pool[si];
+      if (!slotFitsPairAvailability(slot, m, { pending })) continue;
+      if (!preferPlan && !slotFitsMatch(slot, m)) continue;
+      if (!slotFreeFor(si, matchIndex)) continue;
+      opts.push({ si, score: scoreOf(slot, m, pending) });
+    }
+    opts.sort((a, b) => b.score - a.score || pool[a.si].from - pool[b.si].from);
+    return opts;
   }
 
-  // Primero partidos con pocas opciones; los pendientes (suelen matchear muchos slots) al final.
-  candidates.sort(
-    (a, b) =>
-      Number(!!a.pending) - Number(!!b.pending) ||
-      a.optionCount - b.optionCount ||
-      String(next[a.i].cat || "").localeCompare(String(next[b.i].cat || ""), "es")
-  );
-
-  let assigned = 0;
-  for (const { i, pending } of candidates) {
-    const m = next[i];
-    // Recalcular al asignar. preferPlan puede cambiar horario, pero nunca fuera de la inscripción.
-    const options = optionsFor(m, pending);
-    const pick = options[0];
-    if (!pick) continue;
-    const slot = pool[pick.si];
-    markUsed(slot);
-    const vk = venueKey(slot.venue);
-    usedByVenue.set(vk, (usedByVenue.get(vk) || 0) + 1);
+  function applyOwner(matchIndex, si) {
+    owner.set(matchIndex, si);
+    const slot = pool[si];
+    const m = next[matchIndex];
     m.venue = slot.venue;
     m.court = slot.court || m.court || "";
     m.day = slot.day || m.day || "";
     m.time = slot.time || m.time || "";
-    assigned += 1;
+  }
+
+  function clearOwner(matchIndex) {
+    owner.delete(matchIndex);
+    const m = next[matchIndex];
+    m.venue = "";
+    m.court = "";
+    // day/time originales se reescriben al reasignar; si queda libre, se restauran abajo
+  }
+
+  const needIdx = [];
+  for (let i = 0; i < next.length; i++) {
+    const m = next[i];
+    const pending = isPendingMatch(m);
+    const hasRealAway = String(m.away || "").trim() && !pending;
+    if (!hasRealAway && !pending) continue;
+    const filled = String(m.venue || "").trim() && String(m.time || "").trim();
+    if (onlyEmpty && filled) continue;
+    needIdx.push(i);
+  }
+
+  // Snapshot del día/hora del fixtureo (para restaurar si no hay cancha).
+  const originalWhen = new Map(needIdx.map((i) => [i, { day: next[i].day || "", time: next[i].time || "" }]));
+
+  needIdx.sort(
+    (a, b) =>
+      Number(!!isPendingMatch(next[a])) - Number(!!isPendingMatch(next[b])) ||
+      optionsFor(a).length - optionsFor(b).length ||
+      String(next[a].cat || "").localeCompare(String(next[b].cat || ""), "es")
+  );
+
+  for (const i of needIdx) {
+    const pick = optionsFor(i)[0];
+    if (pick) applyOwner(i, pick.si);
+  }
+
+  function fitsAvailAndMode(matchIndex, si) {
+    const m = next[matchIndex];
+    const pending = isPendingMatch(m);
+    const slot = pool[si];
+    if (!slotFitsPairAvailability(slot, m, { pending })) return false;
+    if (!preferPlan && !slotFitsMatch(slot, m)) return false;
+    return true;
+  }
+
+  function findOccupantBlocking(si, ignoreMatch = null) {
+    const slot = pool[si];
+    for (const [mi, osi] of owner) {
+      if (mi === ignoreMatch) continue;
+      if (osi === si) return mi;
+      const other = pool[osi];
+      if (sameCourt(slot, other) && windowsOverlap(slot.from, slot.to, other.from, other.to)) return mi;
+    }
+    return null;
+  }
+
+  // Reasignación: si un partido quedó sin cancha, pedirle el turno a uno que pueda mudarse.
+  let improved = true;
+  let guard = 0;
+  while (improved && guard++ < needIdx.length * 6) {
+    improved = false;
+    for (const u of needIdx) {
+      if (owner.has(u)) continue;
+      const direct = optionsFor(u)[0];
+      if (direct) {
+        applyOwner(u, direct.si);
+        improved = true;
+        continue;
+      }
+      if (!preferPlan) continue;
+
+      const ranked = [];
+      for (let si = 0; si < pool.length; si++) {
+        if (!fitsAvailAndMode(u, si)) continue;
+        ranked.push({ si, score: scoreOf(pool[si], next[u], isPendingMatch(next[u])) });
+      }
+      ranked.sort((a, b) => b.score - a.score || pool[a.si].from - pool[b.si].from);
+
+      for (const { si } of ranked) {
+        const occupant = findOccupantBlocking(si);
+        if (occupant == null) {
+          if (!slotFreeFor(si, u)) continue;
+          applyOwner(u, si);
+          improved = true;
+          break;
+        }
+        const occSlot = owner.get(occupant);
+        clearOwner(occupant);
+        const alt = optionsFor(occupant).find((o) => o.si !== si);
+        if (!alt) {
+          applyOwner(occupant, occSlot);
+          continue;
+        }
+        applyOwner(occupant, alt.si);
+        // Revalidar cupo/solape DESPUÉS de mudar al ocupante (si no, se puede pasar el tope del complejo).
+        if (!slotFreeFor(si, u) || !fitsAvailAndMode(u, si)) {
+          clearOwner(occupant);
+          applyOwner(occupant, occSlot);
+          continue;
+        }
+        applyOwner(u, si);
+        improved = true;
+        break;
+      }
+    }
+  }
+
+  for (const i of needIdx) {
+    if (owner.has(i)) continue;
+    const orig = originalWhen.get(i);
+    if (!orig) continue;
+    next[i].day = orig.day;
+    next[i].time = orig.time;
+    next[i].venue = "";
+    next[i].court = "";
+  }
+
+  const assigned = owner.size;
+  // leftover: turnos del pool que no chocan con ninguno asignado (aprox. capacidad libre)
+  let leftover = 0;
+  for (let si = 0; si < pool.length; si++) {
+    let blocked = false;
+    for (const osi of owner.values()) {
+      const a = pool[si];
+      const b = pool[osi];
+      if (sameCourt(a, b) && windowsOverlap(a.from, a.to, b.from, b.to)) {
+        blocked = true;
+        break;
+      }
+    }
+    if (!blocked) leftover += 1;
   }
 
   return {
     assigned,
-    skipped: candidates.length - assigned,
-    leftover: Math.max(0, pool.filter((s) => !s.used).length),
+    skipped: needIdx.length - assigned,
+    leftover,
     matches: next,
   };
 }
