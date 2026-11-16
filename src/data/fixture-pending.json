@@ -71,28 +71,6 @@
   },
   {
     "pending": true,
-    "reason": "El horario del partido no entra en la disponibilidad de la inscripción.",
-    "avail": "Jueves 18:00 - 20:00 · Viernes 20:00 - 22:30 · Sábado 09:00 - 13:00",
-    "days": {
-      "Jueves": "18:00 - 20:00",
-      "Viernes": "20:00 - 22:30",
-      "Sábado": "09:00 - 13:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Lucia Rausch / Luciana Marconi",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Lunes 16:00 - 00:00 · Martes 16:00 - 00:00 · Miércoles 16:00 - 00:00 · Jueves 16:00 - 00:00 · Viernes 16:00 - 00:00 · Sábado 16:00 - 00:00",
     "days": {
@@ -112,31 +90,6 @@
     "venue": "",
     "court": "",
     "home": "Diego Ramirez / Martin Rondan",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
-    "avail": "Lunes 18:30 - 00:00 · Martes 18:30 - 00:00 · Miércoles 21:00 - 00:00 · Jueves 18:30 - 00:00 · Viernes 18:30 - 00:00 · Sábado 18:30 - 00:00",
-    "days": {
-      "Lunes": "18:30 - 00:00",
-      "Martes": "18:30 - 00:00",
-      "Miércoles": "21:00 - 00:00",
-      "Jueves": "18:30 - 00:00",
-      "Viernes": "18:30 - 00:00",
-      "Sábado": "18:30 - 00:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Araceli Ferreyra / Agostina Bonilla",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""

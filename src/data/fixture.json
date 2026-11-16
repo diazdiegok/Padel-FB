@@ -508,5 +508,19 @@
     "result": "",
     "appliedResult": "",
     "flexAvail": true
+  },
+  {
+    "week": "Fecha 1",
+    "day": "Jueves",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "18:30 - 20:00",
+    "venue": "Americas Padel",
+    "court": "Cancha 2",
+    "home": "Lucia Rausch / Luciana Marconi",
+    "away": "Araceli Ferreyra / Agostina Bonilla",
+    "result": "",
+    "appliedResult": ""
   }
 ]
