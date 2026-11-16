@@ -1,15 +1,5 @@
 [
   {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Martes 08:00 - 21:00 · Miércoles 11:00 - 21:00 · Jueves 08:00 - 20:00 · Viernes 08:00 - 19:00 · Sábado 08:00 - 14:00",
-    "days": {
-      "Martes": "08:00 - 21:00",
-      "Miércoles": "11:00 - 21:00",
-      "Jueves": "08:00 - 20:00",
-      "Viernes": "08:00 - 19:00",
-      "Sábado": "08:00 - 14:00"
-    },
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -21,17 +11,19 @@
     "home": "Manuela Vinuales / Delfina Vinuales",
     "away": "Pendiente / Pendiente",
     "result": "",
-    "appliedResult": ""
-  },
-  {
+    "appliedResult": "",
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 19:00 - 22:00 · Miércoles 19:00 - 22:00 · Viernes 19:30 - 22:00",
+    "avail": "Martes 08:00 - 21:00 · Miércoles 11:00 - 21:00 · Jueves 08:00 - 20:00 · Viernes 08:00 - 19:00 · Sábado 08:00 - 14:00",
     "days": {
-      "Lunes": "19:00 - 22:00",
-      "Miércoles": "19:00 - 22:00",
-      "Viernes": "19:30 - 22:00"
-    },
+      "Martes": "08:00 - 21:00",
+      "Miércoles": "11:00 - 21:00",
+      "Jueves": "08:00 - 20:00",
+      "Viernes": "08:00 - 19:00",
+      "Sábado": "08:00 - 14:00"
+    }
+  },
+  {
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -43,16 +35,17 @@
     "home": "Micaela González / Daiana Romero",
     "away": "Pendiente / Pendiente",
     "result": "",
-    "appliedResult": ""
-  },
-  {
+    "appliedResult": "",
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 19:00 - 21:00 · Viernes 19:00 - 21:00",
+    "avail": "Lunes 19:00 - 22:00 · Miércoles 19:00 - 22:00 · Viernes 19:30 - 22:00",
     "days": {
-      "Lunes": "19:00 - 21:00",
-      "Viernes": "19:00 - 21:00"
-    },
+      "Lunes": "19:00 - 22:00",
+      "Miércoles": "19:00 - 22:00",
+      "Viernes": "19:30 - 22:00"
+    }
+  },
+  {
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -64,18 +57,16 @@
     "home": "Marien Robledo / Valeria Joubert",
     "away": "Pendiente / Pendiente",
     "result": "",
-    "appliedResult": ""
-  },
-  {
+    "appliedResult": "",
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 19:30 - 22:30 · Martes 19:30 - 22:30 · Miércoles 19:00 - 20:30 · Sábado 14:00 - 18:00",
+    "avail": "Lunes 19:00 - 21:00 · Viernes 19:00 - 21:00",
     "days": {
-      "Lunes": "19:30 - 22:30",
-      "Martes": "19:30 - 22:30",
-      "Miércoles": "19:00 - 20:30",
-      "Sábado": "14:00 - 18:00"
-    },
+      "Lunes": "19:00 - 21:00",
+      "Viernes": "19:00 - 21:00"
+    }
+  },
+  {
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -87,24 +78,18 @@
     "home": "Milagros Solaro / Ana Paula Croce",
     "away": "Pendiente / Pendiente",
     "result": "",
-    "appliedResult": ""
+    "appliedResult": "",
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 19:30 - 22:30 · Martes 19:30 - 22:30 · Miércoles 19:00 - 20:30 · Sábado 14:00 - 18:00",
+    "days": {
+      "Lunes": "19:30 - 22:30",
+      "Martes": "19:30 - 22:30",
+      "Miércoles": "19:00 - 20:30",
+      "Sábado": "14:00 - 18:00"
+    }
   },
   {
-    "pending": true,
-    "reason": "El horario del partido no entra en la disponibilidad de la inscripción.",
-    "avail": "Lunes 16:30 - 20:30 · Martes 16:30 - 20:30 · Viernes 16:30 - 21:00 · Sábado 19:00 - 20:30",
-    "days": {
-      "Lunes": "16:30 - 20:30",
-      "Martes": "16:30 - 20:30",
-      "Viernes": "16:30 - 21:00",
-      "Sábado": "19:00 - 20:30"
-    },
-    "homeDays": {
-      "Lunes": "16:30 - 20:30",
-      "Martes": "16:30 - 20:30",
-      "Viernes": "16:30 - 21:00",
-      "Sábado": "19:00 - 20:30"
-    },
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -116,20 +101,18 @@
     "home": "Laura Martínez / Dalila Sosa",
     "away": "Pendiente / Pendiente",
     "result": "",
-    "appliedResult": ""
-  },
-  {
+    "appliedResult": "",
     "pending": true,
     "reason": "El horario del partido no entra en la disponibilidad de la inscripción.",
-    "avail": "Lunes 19:00 - 22:00 · Viernes 19:00 - 22:00",
+    "avail": "Lunes 16:30 - 20:30 · Martes 16:30 - 20:30 · Viernes 16:30 - 21:00 · Sábado 19:00 - 20:30",
     "days": {
-      "Lunes": "19:00 - 22:00",
-      "Viernes": "19:00 - 22:00"
-    },
-    "homeDays": {
-      "Lunes": "19:00 - 22:00",
-      "Viernes": "19:00 - 22:00"
-    },
+      "Lunes": "16:30 - 20:30",
+      "Martes": "16:30 - 20:30",
+      "Viernes": "16:30 - 21:00",
+      "Sábado": "19:00 - 20:30"
+    }
+  },
+  {
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -141,24 +124,16 @@
     "home": "Stefania Benedetich / Florencia Benedetich",
     "away": "Pendiente / Pendiente",
     "result": "",
-    "appliedResult": ""
-  },
-  {
+    "appliedResult": "",
     "pending": true,
     "reason": "El horario del partido no entra en la disponibilidad de la inscripción.",
-    "avail": "Lunes 18:00 - 23:00 · Miércoles 18:00 - 23:00 · Jueves 18:00 - 23:00 · Viernes 18:00 - 23:00",
+    "avail": "Lunes 19:00 - 22:00 · Viernes 19:00 - 22:00",
     "days": {
-      "Lunes": "18:00 - 23:00",
-      "Miércoles": "18:00 - 23:00",
-      "Jueves": "18:00 - 23:00",
-      "Viernes": "18:00 - 23:00"
-    },
-    "homeDays": {
-      "Lunes": "18:00 - 23:00",
-      "Miércoles": "18:00 - 23:00",
-      "Jueves": "18:00 - 23:00",
-      "Viernes": "18:00 - 23:00"
-    },
+      "Lunes": "19:00 - 22:00",
+      "Viernes": "19:00 - 22:00"
+    }
+  },
+  {
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -170,22 +145,18 @@
     "home": "Morena Jaureguiberry / Mariela Jaureguiberry",
     "away": "Pendiente / Pendiente",
     "result": "",
-    "appliedResult": ""
-  },
-  {
+    "appliedResult": "",
     "pending": true,
     "reason": "El horario del partido no entra en la disponibilidad de la inscripción.",
-    "avail": "Jueves 18:00 - 20:00 · Viernes 20:00 - 22:30 · Sábado 09:00 - 13:00",
+    "avail": "Lunes 18:00 - 23:00 · Miércoles 18:00 - 23:00 · Jueves 18:00 - 23:00 · Viernes 18:00 - 23:00",
     "days": {
-      "Jueves": "18:00 - 20:00",
-      "Viernes": "20:00 - 22:30",
-      "Sábado": "09:00 - 13:00"
-    },
-    "homeDays": {
-      "Jueves": "18:00 - 20:00",
-      "Viernes": "20:00 - 22:30",
-      "Sábado": "09:00 - 13:00"
-    },
+      "Lunes": "18:00 - 23:00",
+      "Miércoles": "18:00 - 23:00",
+      "Jueves": "18:00 - 23:00",
+      "Viernes": "18:00 - 23:00"
+    }
+  },
+  {
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -197,28 +168,17 @@
     "home": "Lucia Rausch / Luciana Marconi",
     "away": "Pendiente / Pendiente",
     "result": "",
-    "appliedResult": ""
+    "appliedResult": "",
+    "pending": true,
+    "reason": "El horario del partido no entra en la disponibilidad de la inscripción.",
+    "avail": "Jueves 18:00 - 20:00 · Viernes 20:00 - 22:30 · Sábado 09:00 - 13:00",
+    "days": {
+      "Jueves": "18:00 - 20:00",
+      "Viernes": "20:00 - 22:30",
+      "Sábado": "09:00 - 13:00"
+    }
   },
   {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 16:00 - 00:00 · Martes 16:00 - 00:00 · Miércoles 16:00 - 00:00 · Jueves 16:00 - 00:00 · Viernes 16:00 - 00:00 · Sábado 16:00 - 00:00",
-    "days": {
-      "Lunes": "16:00 - 00:00",
-      "Martes": "16:00 - 00:00",
-      "Miércoles": "16:00 - 00:00",
-      "Jueves": "16:00 - 00:00",
-      "Viernes": "16:00 - 00:00",
-      "Sábado": "16:00 - 00:00"
-    },
-    "homeDays": {
-      "Lunes": "16:00 - 00:00",
-      "Martes": "16:00 - 00:00",
-      "Miércoles": "16:00 - 00:00",
-      "Jueves": "16:00 - 00:00",
-      "Viernes": "16:00 - 00:00",
-      "Sábado": "16:00 - 00:00"
-    },
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -230,26 +190,20 @@
     "home": "Diego Ramirez / Martin Rondan",
     "away": "Pendiente / Pendiente",
     "result": "",
-    "appliedResult": ""
-  },
-  {
+    "appliedResult": "",
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 20:00 - 00:00 · Martes 20:00 - 00:00 · Miércoles 21:30 - 00:00 · Jueves 20:00 - 00:00 · Viernes 20:00 - 00:00",
+    "avail": "Lunes 16:00 - 00:00 · Martes 16:00 - 00:00 · Miércoles 16:00 - 00:00 · Jueves 16:00 - 00:00 · Viernes 16:00 - 00:00 · Sábado 16:00 - 00:00",
     "days": {
-      "Lunes": "20:00 - 00:00",
-      "Martes": "20:00 - 00:00",
-      "Miércoles": "21:30 - 00:00",
-      "Jueves": "20:00 - 00:00",
-      "Viernes": "20:00 - 00:00"
-    },
-    "homeDays": {
-      "Lunes": "20:00 - 00:00",
-      "Martes": "20:00 - 00:00",
-      "Miércoles": "21:30 - 00:00",
-      "Jueves": "20:00 - 00:00",
-      "Viernes": "20:00 - 00:00"
-    },
+      "Lunes": "16:00 - 00:00",
+      "Martes": "16:00 - 00:00",
+      "Miércoles": "16:00 - 00:00",
+      "Jueves": "16:00 - 00:00",
+      "Viernes": "16:00 - 00:00",
+      "Sábado": "16:00 - 00:00"
+    }
+  },
+  {
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -261,22 +215,19 @@
     "home": "Mario Martin Sbarbaro / Ronaldo Antonio Fontana",
     "away": "Pendiente / Pendiente",
     "result": "",
-    "appliedResult": ""
-  },
-  {
+    "appliedResult": "",
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 20:00 - 21:30 · Miércoles 20:00 - 21:30 · Viernes 20:00 - 21:30",
+    "avail": "Lunes 20:00 - 00:00 · Martes 20:00 - 00:00 · Miércoles 21:30 - 00:00 · Jueves 20:00 - 00:00 · Viernes 20:00 - 00:00",
     "days": {
-      "Lunes": "20:00 - 21:30",
-      "Miércoles": "20:00 - 21:30",
-      "Viernes": "20:00 - 21:30"
-    },
-    "homeDays": {
-      "Lunes": "20:00 - 21:30",
-      "Miércoles": "20:00 - 21:30",
-      "Viernes": "20:00 - 21:30"
-    },
+      "Lunes": "20:00 - 00:00",
+      "Martes": "20:00 - 00:00",
+      "Miércoles": "21:30 - 00:00",
+      "Jueves": "20:00 - 00:00",
+      "Viernes": "20:00 - 00:00"
+    }
+  },
+  {
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -288,22 +239,17 @@
     "home": "Miguel Darío Screpis / Facundo Roberto Capatto",
     "away": "Pendiente / Pendiente",
     "result": "",
-    "appliedResult": ""
+    "appliedResult": "",
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 20:00 - 21:30 · Miércoles 20:00 - 21:30 · Viernes 20:00 - 21:30",
+    "days": {
+      "Lunes": "20:00 - 21:30",
+      "Miércoles": "20:00 - 21:30",
+      "Viernes": "20:00 - 21:30"
+    }
   },
   {
-    "pending": true,
-    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
-    "avail": "Lunes 20:00 - 00:00 · Miércoles 20:00 - 00:00 · Viernes 20:00 - 00:00",
-    "days": {
-      "Lunes": "20:00 - 00:00",
-      "Miércoles": "20:00 - 00:00",
-      "Viernes": "20:00 - 00:00"
-    },
-    "homeDays": {
-      "Lunes": "20:00 - 00:00",
-      "Miércoles": "20:00 - 00:00",
-      "Viernes": "20:00 - 00:00"
-    },
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -315,6 +261,63 @@
     "home": "Gauna Camila / Falcón Luana",
     "away": "Pendiente / Pendiente",
     "result": "",
-    "appliedResult": ""
+    "appliedResult": "",
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Lunes 20:00 - 00:00 · Miércoles 20:00 - 00:00 · Viernes 20:00 - 00:00",
+    "days": {
+      "Lunes": "20:00 - 00:00",
+      "Miércoles": "20:00 - 00:00",
+      "Viernes": "20:00 - 00:00"
+    }
+  },
+  {
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Luis Roberto Herrera / Cantagallo Carlos",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": "",
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Lunes 14:00 - 21:00 · Martes 14:00 - 21:00 · Miércoles 14:00 - 21:00 · Jueves 14:00 - 21:00 · Viernes 14:00 - 21:00",
+    "days": {
+      "Lunes": "14:00 - 21:00",
+      "Martes": "14:00 - 21:00",
+      "Miércoles": "14:00 - 21:00",
+      "Jueves": "14:00 - 21:00",
+      "Viernes": "14:00 - 21:00"
+    }
+  },
+  {
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Olmedo Delfina / Vallejos Vanina Antonella",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": "",
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Lunes 19:30 - 22:30 · Martes 19:30 - 22:30 · Miércoles 19:30 - 22:30 · Jueves 19:30 - 22:30 · Viernes 19:30 - 00:00 · Sábado 19:00 - 00:00",
+    "days": {
+      "Lunes": "19:30 - 22:30",
+      "Martes": "19:30 - 22:30",
+      "Miércoles": "19:30 - 22:30",
+      "Jueves": "19:30 - 22:30",
+      "Viernes": "19:30 - 00:00",
+      "Sábado": "19:00 - 00:00"
+    }
   }
 ]
