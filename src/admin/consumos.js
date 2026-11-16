@@ -82,7 +82,7 @@ function meterCard(m, providerRenew = "") {
       <strong>${esc(m.label || "")}</strong>
       <span class="consumos-meter-pct">${esc(usedPct)}% usado · ${esc(leftPct)}% libre</span>
     </div>
-    <div class="consumos-meter-bar" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${esc(usedPct)}" aria-label="${esc(m.label)}">
+    <div class="consumos-meter-bar" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${esc(Math.min(100, usedPct))}" aria-label="${esc(m.label)}">
       <i style="width:${Math.min(100, Math.max(0, usedPct))}%"></i>
     </div>
     <div class="consumos-meter-foot">

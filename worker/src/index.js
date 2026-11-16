@@ -1297,6 +1297,23 @@ async function listVercelDeploymentsWindow(env, { sinceMs, untilMs }) {
   return { ok: true, deployments };
 }
 
+/** Resumen corto para la alerta: solo proyectos con deploys en la ventana. */
+function vercelAccountLine(deps) {
+  const map = new Map();
+  for (const d of deps) {
+    const name = String(d._project || "otro");
+    const row = map.get(name) || { n: 0, prod: 0, preview: 0 };
+    row.n += 1;
+    if (String(d.target || "") === "production") row.prod += 1;
+    else row.preview += 1;
+    map.set(name, row);
+  }
+  return [...map.entries()]
+    .sort((a, b) => b[1].n - a[1].n)
+    .map(([name, row]) => `${name} ${row.n} (${row.prod} producción, ${row.preview} preview)`)
+    .join(" · ");
+}
+
 /** Vercel Hobby: deploys en las últimas 24 h (API o estimación vía GitHub statuses). */
 async function readVercelUsage(env) {
   const now = Date.now();
@@ -1478,12 +1495,14 @@ async function readVercelUsage(env) {
           latestState = String(last?.readyState || last?.state || "");
           latestDesc = String(last?.name || last?.url || "");
         }
+        const accountLine = vercelAccountLine(deps);
         if (used >= VERCEL_DEPLOY_LIMIT_DAY) {
           blocked = true;
+          const over = used - VERCEL_DEPLOY_LIMIT_DAY;
           alerts.push({
             level: "critical",
             title: "Cuota de deploys Vercel agotada",
-            body: `Hobby: ${used}/${VERCEL_DEPLOY_LIMIT_DAY}+ en 24 h (cuenta). Primer cupo libre: ${renewsAt}. Más viejo de la ventana: ${oldestAt}. Admin y Pegar en Drive siguen.`,
+            body: `Hobby: ${used} deploys en 24 h, tope ${VERCEL_DEPLOY_LIMIT_DAY} (${over} de más, toda la cuenta). ${accountLine}. Primer cupo libre: ${renewsAt}. Más viejo de la ventana: ${oldestAt}. Admin y Pegar en Drive siguen.`,
           });
         } else if (used >= Math.floor(VERCEL_DEPLOY_LIMIT_DAY * 0.85)) {
           alerts.push({
@@ -1532,16 +1551,23 @@ async function readVercelUsage(env) {
   }
 
   const usedCount = Number(used) || 0;
+  const overLimit = usedCount > VERCEL_DEPLOY_LIMIT_DAY;
   const deployMeter = {
     ...meterRow({
       id: "vercel-deploys",
       label: "Deploys (últimas 24 h)",
-      used: Math.min(usedCount, VERCEL_DEPLOY_LIMIT_DAY),
+      used: usedCount,
       limit: VERCEL_DEPLOY_LIMIT_DAY,
       unit: "deploys",
       blocked,
     }),
-    // Conteo real de la ventana (puede ser > limit si la API lista más).
+    // El medidor genérico tapa el usado en `limit` cuando está bloqueado.
+    // Acá queda el conteo real (puede ser 133/100). El % pasa de 100; la barra se recorta en la UI.
+    used: usedCount,
+    left: Math.max(0, VERCEL_DEPLOY_LIMIT_DAY - usedCount),
+    ...(overLimit
+      ? { usedPct: Math.round((usedCount / VERCEL_DEPLOY_LIMIT_DAY) * 1000) / 10, leftPct: 0 }
+      : {}),
     usedCount,
     renewsAt: renewsAt || "ventana 24 h",
     renewsAtMs,
@@ -1930,9 +1956,9 @@ async function readUsage(env) {
   };
 
   // Cache corto de Vercel/GitHub para no martillar APIs en cada “Actualizar”.
-  // v2: invalidar cache viejo al cambiar forma de meters.
+  // v5: el medidor de Vercel muestra el conteo real aunque pase de 100.
   async function cachedProvider(key, loader, ttlSec = 90) {
-    const url = `https://padel-fb-api.cache/usageprov/v4/${key}`;
+    const url = `https://padel-fb-api.cache/usageprov/v5/${key}`;
     try {
       const hit = await caches.default.match(url);
       if (hit) {
