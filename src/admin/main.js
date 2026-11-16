@@ -13,6 +13,7 @@ import { createRanking } from "./ranking.js";
 import { createResults } from "./results.js";
 import { createSeasons } from "./seasons.js";
 import { createShell } from "./shell.js";
+import { createConsumos } from "./consumos.js";
 import { createVisitas } from "./visitas.js";
 import { $ } from "./ui.js";
 
@@ -64,6 +65,7 @@ export function bootAdmin({
   let parejas;
   let acadinsc;
   let visitas;
+  let consumos;
 
   const shell = createShell(ctx, {
     onEnterSection(id) {
@@ -77,6 +79,7 @@ export function bootAdmin({
       if (id === "temporadas") seasons?.reload();
       if (id === "acadinsc") acadinsc?.reload();
       if (id === "visitas") visitas?.reload();
+      if (id === "consumos") consumos?.reload();
     },
     onDiscardSection(id) {
       if (id === "fixture") {
@@ -121,6 +124,7 @@ export function bootAdmin({
   ascensos = createAscensos(ctx, api, shell);
   acadinsc = createAcademiaInscripciones(ctx, api);
   visitas = createVisitas(ctx, api);
+  consumos = createConsumos(ctx, api);
   parejas = createParejas(ctx, api, shell, {
     onRankingChanged() {
       ranking.refresh();
@@ -152,6 +156,8 @@ export function bootAdmin({
     parejas.render();
     cms.refreshAll();
     shell.setSection(shell.initialSection(), { force: true });
+    // Punto rojo en Consumos si hay alerta (sin abrir la sección).
+    consumos?.reload({ quiet: true }).catch(() => {});
   }
 
   const auth = createAuth(ctx, { onLogin: showApp });
@@ -168,6 +174,7 @@ export function bootAdmin({
   parejas.bind();
   acadinsc.bind();
   visitas.bind();
+  consumos.bind();
 
   if (auth.isLoggedIn()) showApp();
 }

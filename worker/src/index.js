@@ -1046,6 +1046,158 @@ function mergeMaps(into, from) {
   for (const [k, v] of Object.entries(from || {})) into[k] = (into[k] || 0) + Number(v || 0);
 }
 
+async function countKvPrefix(env, prefix) {
+  if (!env.AUTH_KV) return 0;
+  let n = 0;
+  let cursor;
+  for (let i = 0; i < 20; i++) {
+    const page = await env.AUTH_KV.list({ prefix, cursor, limit: 1000 });
+    n += (page.keys || []).length;
+    if (page.list_complete) break;
+    cursor = page.cursor;
+    if (!cursor) break;
+  }
+  return n;
+}
+
+/** Panel admin: cuotas / alertas para no volver a tumbar inscripción-publish. */
+async function readUsage(env) {
+  const day = utcDay(0);
+  const alerts = [];
+  const tips = [
+    "Plan free de KV: ~1000 escrituras/día. Se reinicia a las 00:00 UTC (~21:00 Argentina).",
+    "Las visitas ya se acumulan en caché y se guardan en KV como mucho cada 5 minutos.",
+    "Si ves cuota agotada: esperá el reset; no hace falta republicar el fixture.",
+    "Cada inscripción/login/comprobante también escribe en KV: evitá pruebas masivas el mismo día.",
+    "Vercel tiene otro tope de deploys free (~100/día): no afecta inscripción, solo republicar el sitio estático.",
+  ];
+
+  let visitsToday = 0;
+  try {
+    const cur = (await env.AUTH_KV?.get(`stats:day:${day}`, "json")) || null;
+    visitsToday = Math.max(0, Number(cur?.total || 0) - Number(cur?.countries?.US || 0));
+  } catch (err) {
+    alerts.push({
+      level: "warn",
+      title: "No pude leer visitas de hoy",
+      body: String(err?.message || err),
+    });
+  }
+
+  let contacts = 0;
+  let payments = 0;
+  let acad = 0;
+  try {
+    contacts = await countKvPrefix(env, "contact:");
+    payments = await countKvPrefix(env, "pay:");
+    acad = await countKvPrefix(env, "acad:");
+  } catch (err) {
+    alerts.push({
+      level: "warn",
+      title: "No pude contar claves de almacenamiento",
+      body: String(err?.message || err),
+    });
+  }
+
+  let kvWriteStatus = "OK";
+  let writeOk = true;
+  // No probar put en cada refresh: 1 probe / 5 min (Cache API) para no gastar la cuota.
+  const probeGate = `https://padel-fb-api.cache/usageprobe/${day}`;
+  let skipProbe = false;
+  try {
+    skipProbe = Boolean(await caches.default.match(probeGate));
+  } catch {
+    skipProbe = false;
+  }
+  if (skipProbe) {
+    kvWriteStatus = "OK";
+    writeOk = true;
+  } else {
+    try {
+      const probeKey = `usage:probe:${day}`;
+      await env.AUTH_KV.put(probeKey, String(Date.now()), { expirationTtl: 300 });
+      try {
+        await caches.default.put(
+          probeGate,
+          new Response("1", { headers: { "Cache-Control": "max-age=300", "Content-Type": "text/plain" } })
+        );
+      } catch {
+        /* sin gate igual seguimos */
+      }
+    } catch (err) {
+      writeOk = false;
+      const msg = String(err?.message || err || "");
+      if (/put\(\) limit exceeded|limit exceeded for the day/i.test(msg)) {
+        kvWriteStatus = "BLOQUEADA";
+        alerts.push({
+          level: "critical",
+          title: "Cuota diaria de escrituras KV agotada",
+          body: "Inscripción, login y comprobantes fallan hasta las 00:00 UTC (~21:00 Argentina). Los datos ya publicados no se borran.",
+        });
+      } else {
+        kvWriteStatus = "ERROR";
+        alerts.push({
+          level: "critical",
+          title: "No se pudo escribir en KV",
+          body: msg || "Error desconocido al probar escritura.",
+        });
+      }
+    }
+  }
+
+  if (writeOk && visitsToday >= 400) {
+    alerts.push({
+      level: "warn",
+      title: "Muchas visitas hoy",
+      body: `Hay ${visitsToday} visitas contadas. Con el Worker actual no debería quemar la cuota, pero revisá si hay bots o previews de Vercel raros.`,
+    });
+  }
+
+  if (writeOk && !alerts.some((a) => a.level === "critical")) {
+    alerts.unshift({
+      level: "ok",
+      title: "Escrituras KV operativas",
+      body: "La prueba de escritura funcionó. Inscripción y publish deberían andar.",
+    });
+  }
+
+  // Reset wall-clock helper for Argentina (UTC-3).
+  const now = new Date();
+  const nextUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
+  const resetsAtUtc = nextUtc.toISOString();
+  const resetsAtLocal = new Intl.DateTimeFormat("es-AR", {
+    timeZone: "America/Buenos_Aires",
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(nextUtc);
+
+  return {
+    ok: writeOk,
+    generatedAt: now.toISOString(),
+    kv: {
+      writeOk,
+      freeWriteBudgetHint: 1000,
+      hitFlushSeconds: HIT_FLUSH_SECONDS,
+      resetsAtUtc,
+      resetsAtLocal,
+    },
+    storage: { contacts, payments, academia: acad },
+    kpis: {
+      visitsToday,
+      kvWriteStatus,
+      contacts,
+      payments,
+    },
+    limits: {
+      kvWritesPerDay: 1000,
+      kvReadsPerDay: 100000,
+      note: "Límites típicos del plan Workers Free de Cloudflare (orientativos).",
+    },
+    alerts,
+    tips,
+  };
+}
+
 async function readStats(env, days = 14) {
   const n = Math.min(Math.max(Number(days) || 14, 1), 30);
   const daily = [];
@@ -2004,6 +2156,11 @@ export default {
         if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
         const days = Number(url.searchParams.get("days") || 14);
         return response(request, env, await readStats(env, days));
+      }
+
+      if (url.pathname === "/usage" && request.method === "GET") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        return response(request, env, await readUsage(env));
       }
 
       return response(request, env, { message: "No encontrado." }, 404);

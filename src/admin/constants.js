@@ -87,4 +87,9 @@ export const SECTIONS = {
     title: "Visitas",
     help: "Tráfico de la web: totales de 14 días y últimas visitas con IP (solo visibles en el admin).",
   },
+  consumos: {
+    group: "Sistema",
+    title: "Consumos",
+    help: "Cuotas del Worker (KV, escrituras, visitas). Acá ves alertas antes de que se corte inscripción o publish.",
+  },
 };
