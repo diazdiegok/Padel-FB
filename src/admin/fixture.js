@@ -40,6 +40,7 @@ import {
   matchViolatesAvailability,
   missingCourtHorarios,
   nearCoverCourtOptions,
+  packNonOverlappingTurns,
   pairsSharePlayableWindow,
   parkAvailabilityViolations,
   parkBareMatchesAsPending,
@@ -266,9 +267,14 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const flex = nearCoverCourtOptions({ homeDays, awayDays: coverDays }, loadedSlots, taken, {
       includeFar: true,
     }).filter((o) => !exactKeys.has(o.key));
-    const nearOpts = flex.filter((o) => o.close);
-    const estimateOpts = flex.filter((o) => !o.close);
-    return { opts, nearOpts, estimateOpts, homeDays, coverDays, bothPending, shareWindow };
+    const nearOptsAll = flex.filter((o) => o.close);
+    const estimateOptsAll = flex.filter((o) => !o.close);
+    // Misma cancha: un turno de 1:30 no se lista también 30' corrido.
+    const packed = packNonOverlappingTurns([...opts, ...nearOptsAll, ...estimateOptsAll]);
+    const nearOpts = packed.filter((o) => o.close);
+    const estimateOpts = packed.filter((o) => o.estimate);
+    const packedExact = packed.filter((o) => !o.near);
+    return { opts: packedExact, nearOpts, estimateOpts, homeDays, coverDays, bothPending, shareWindow };
   }
 
   function coverSlotSelect(i, match, coverLabel) {

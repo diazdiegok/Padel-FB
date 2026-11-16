@@ -1085,6 +1085,43 @@ export function nearCoverCourtOptions(
 }
 
 /**
+ * Un turno dura 90'. En la misma cancha no se listan inicios cada 30'
+ * que se pisan (19:00-20:30 y 19:30-21:00 no pueden jugarse los dos).
+ * Prioridad: exacto, después cercano, después estimable; a igual prioridad, el más temprano.
+ */
+export function packNonOverlappingTurns(list = []) {
+  const groups = new Map();
+  for (const o of list) {
+    const key = `${normalizeDay(o.day)}|${fold(o.venue)}|${courtKey(o.court)}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(o);
+  }
+  const rank = (o) => (o.estimate ? 2 : o.near ? 1 : 0);
+  const out = [];
+  for (const group of groups.values()) {
+    const ranked = [...group].sort((a, b) => {
+      const byRank = rank(a) - rank(b);
+      if (byRank) return byRank;
+      const wa = parseCourtWindow(a.time);
+      const wb = parseCourtWindow(b.time);
+      return (wa?.from ?? 0) - (wb?.from ?? 0);
+    });
+    const chosen = [];
+    for (const o of ranked) {
+      const w = parseCourtWindow(o.time);
+      if (!w) continue;
+      const overlaps = chosen.some((c) => {
+        const cw = parseCourtWindow(c.time);
+        return cw && windowsOverlap(w.from, w.to, cw.from, cw.to);
+      });
+      if (!overlaps) chosen.push(o);
+    }
+    out.push(...chosen);
+  }
+  return out;
+}
+
+/**
  * Canchas del Sheet para partidos que quedaron sin complejo/cancha.
  * Ignora el tope de «Partidos a usar».
  * Con disponibilidad de las parejas: ofrece cualquier día/horario del Drive donde

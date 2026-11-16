@@ -10,6 +10,7 @@ import {
   matchStartsInWindow,
   matchViolatesAvailability,
   nearCoverCourtOptions,
+  packNonOverlappingTurns,
   pairsSharePlayableWindow,
   parkAvailabilityViolations,
   parkBareMatchesAsPending,
@@ -885,6 +886,29 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   const free = nearCoverCourtOptions({ homeDays: brenda, awayDays: martinez }, sheet, taken, { includeFar: true });
   assert.ok(!free.some((o) => o.day === "Lunes"), "la cancha ocupada no se ofrece");
   assert.equal(free.length, 2);
+}
+
+// Misma cancha libre 16:00-22:00: turnos de 1:30 que no se pisan, no un inicio cada 30'.
+{
+  const sheet = [parseCourtSlot({ Complejo: "La manzana", Cancha: "2", Dia: "Lunes", Horario: "16:00 - 22:00" })];
+  const home = { Lunes: "16:00 - 22:00" };
+  const away = { Lunes: "16:00 - 22:00" };
+  const exact = driveCourtOptions({ homeDays: home, awayDays: away, pending: false }, sheet, [], { softAway: false });
+  assert.ok(exact.length > 4, "el rango se parte cada 30' antes de compactar");
+  const packed = packNonOverlappingTurns(exact);
+  assert.deepEqual(
+    packed.map((o) => o.time).sort(),
+    ["16:00 - 17:30", "17:30 - 19:00", "19:00 - 20:30", "20:30 - 22:00"],
+    "cuatro turnos de 1:30, sin solape"
+  );
+  const otherCourt = { day: "Lunes", time: "19:00 - 20:30", venue: "Open Padel", court: "1" };
+  const both = packNonOverlappingTurns([...packed, otherCourt]);
+  assert.equal(both.length, 5, "otra cancha al mismo horario sigue libre");
+  const exactSlot = { day: "Lunes", time: "19:30 - 21:00", venue: "La manzana Padel", court: "2" };
+  const nearSlot = { day: "Lunes", time: "19:00 - 20:30", venue: "La manzana Padel", court: "2", near: true, close: true };
+  const preferExact = packNonOverlappingTurns([nearSlot, exactSlot]);
+  assert.equal(preferExact.length, 1);
+  assert.equal(preferExact[0].time, "19:30 - 21:00", "si se pisan, queda el exacto");
 }
 
 console.log("slots ok");
