@@ -89,6 +89,8 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   let advancedOpen = false;
   /** Índice de pendiente → pareja elegida en «Cubrir con» (aún sin confirmar cancha). */
   const coverDraft = new Map();
+  /** Ventanas abiertas. Recuperan fecha y Duplicados arrancan plegados. */
+  const foldOpen = new Set(["pending"]);
 
   function fallbackWeek() {
     return filterWeek || $("fx-week")?.value.trim() || latestWeek(ctx.fixture) || "Fecha 1";
@@ -143,10 +145,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   function weekStats(temp, week) {
     const live = (ctx.fixture || []).filter((m) => seasonOf(m) === temp && (m.week || "") === week);
     const arch = (ctx.results || []).filter((m) => seasonOf(m) === temp && (m.week || "") === week);
-    const games = (live.length ? live : arch).filter((m) => !isPending(m) && isRealPairMatch(m));
+    const games = (live.length ? live : arch).filter((m) => !isPending(m) && !m.dupHold && isRealPairMatch(m));
     const pending = live.filter((m) => isPending(m) && !isMakeupPending(m)).length;
     const recovering = live.filter((m) => isMakeupPending(m)).length;
-    return { games, pending, recovering, live: live.length > 0, n: games.length };
+    const duplicates = live.filter((m) => m.dupHold && isRealPairMatch(m)).length;
+    return { games, pending, recovering, duplicates, live: live.length > 0, n: games.length };
   }
 
   function updateSummary() {
@@ -558,27 +561,58 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       .join("");
   }
 
+  function facedBefore(m, history = null) {
+    if (!isRealPairMatch(m)) return [];
+    const pool = history || [...(ctx.results || []), ...(ctx.fixture || [])];
+    const weeks = pool
+      .filter(
+        (p) =>
+          p !== m &&
+          isRealPairMatch(p) &&
+          !p.dupHold &&
+          seasonOf(p) === seasonOf(m) &&
+          (p.cat || "") === (m.cat || "") &&
+          (p.week || "") !== (m.week || "") &&
+          ((pairsMatch(p.home, m.home) && pairsMatch(p.away, m.away)) ||
+            (pairsMatch(p.home, m.away) && pairsMatch(p.away, m.home)))
+      )
+      .map((p) => p.week)
+      .filter(Boolean);
+    return [...new Set(weeks)].sort((a, b) => weekNumber(a) - weekNumber(b));
+  }
+
+  function foldBox(box, { key, title, help, count, body, tone }) {
+    if (!box) return;
+    const open = foldOpen.has(key);
+    box.hidden = false;
+    box.className = `fx-fold ${tone || ""}`.trim();
+    box.innerHTML = `<button class="fx-fold-head" type="button" data-fx-fold="${key}" aria-expanded="${open ? "true" : "false"}">
+        <span>
+          <strong>${escAttr(title)} · ${count}</strong>
+          <span class="admin-help">${help}</span>
+        </span>
+        <span class="fx-fold-chevron" aria-hidden="true">${open ? "▾" : "▸"}</span>
+      </button>
+      <div class="fx-fold-body"${open ? "" : " hidden"}>${body}</div>`;
+  }
+
   function renderPending() {
     const box = $("fx-pending");
     if (!box) return;
     const pending = weekRows((m) => isPending(m) && !isMakeupPending(m));
-    if (!pending.length) {
-      for (const key of [...coverDraft.keys()]) {
-        if (!weekRows((m) => isMakeupPending(m)).some(({ i }) => i === key)) coverDraft.delete(key);
-      }
-      box.hidden = true;
-      box.innerHTML = "";
-      return;
-    }
     for (const key of [...coverDraft.keys()]) {
       if (!pending.some(({ i }) => i === key) && !weekRows((m) => isMakeupPending(m)).some(({ i }) => i === key)) {
         coverDraft.delete(key);
       }
     }
-    box.hidden = false;
-    box.innerHTML = `<h3>Pendientes · ${pending.length}</h3>
-      <p class="admin-help">Quedaron sin rival: no había un horario exacto de 1:30 en común, el número era impar o no quedó cancha libre. Siguen acá aunque después recuperen la fecha. Primero elegí <strong>Cubrir con</strong> y después un día/cancha. No se publican al sitio hasta cubrirlos.</p>
-      ${pendingCards(pending)}`;
+    foldBox(box, {
+      key: "pending",
+      title: "Pendientes",
+      tone: "",
+      count: pending.length,
+      help: "Quedaron sin rival: no había un horario exacto de 1:30 en común, el número era impar o no quedó cancha libre.",
+      body: pending.length ? pendingCards(pending) : `<p class="admin-help">No hay pendientes en esta fecha.</p>`,
+    });
   }
 
   function syncRecoveries() {
@@ -599,14 +633,55 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const box = $("fx-recover-box");
     if (!box) return;
     const rows = weekRows((m) => isMakeupPending(m));
-    box.hidden = !rows.length;
-    if (!rows.length) {
-      box.innerHTML = "";
-      return;
-    }
-    box.innerHTML = `<h3>Recuperan fecha · ${rows.length}</h3>
-      <p class="admin-help">Tienen un partido menos que el resto de su categoría. En Fecha 2, quien tiene 0 partidos jugados recupera Fecha 1. Siguen en pendientes de la fecha que no jugaron. El partido normal de esta fecha va aparte: acá cubrís el que falta.</p>
-      ${pendingCards(rows, { makeup: true })}`;
+    foldBox(box, {
+      key: "recover",
+      title: "Recuperan fecha",
+      tone: "is-recover",
+      count: rows.length,
+      help: "Tienen un partido menos. En Fecha 2, quien tiene 0 partidos jugados recupera Fecha 1.",
+      body: rows.length ? pendingCards(rows, { makeup: true }) : `<p class="admin-help">Nadie recupera en esta fecha.</p>`,
+    });
+  }
+
+  function renderDuplicates() {
+    const box = $("fx-dup-box");
+    if (!box) return;
+    const rows = weekRows((m) => m.dupHold && isRealPairMatch(m));
+    const cats = [...new Set(rows.map(({ m }) => m.cat || "Sin categoría"))];
+    const body = rows.length
+      ? cats
+          .map((cat) => {
+            const group = rows.filter(({ m }) => (m.cat || "Sin categoría") === cat);
+            return `<div class="fx-pending-cat">
+              <h4>${escAttr(cat)}</h4>
+              ${group
+                .map(({ m, i }) => {
+                  const weeks = facedBefore(m);
+                  const slot = [m.day, m.time].filter(Boolean).join(" ");
+                  const place = [m.venue, m.court].filter(Boolean).join(" · ");
+                  const when = slot || place ? `${slot}${place ? ` · ${place}` : ""}` : "Sin cancha · prearmado";
+                  return `<article class="fx-pending-card" data-i="${i}">
+                    <strong>${escAttr(m.home)} vs ${escAttr(m.away)}</strong>
+                    <p class="admin-help" style="margin:4px 0 0">${weeks.length ? `Ya jugaron en ${escAttr(weeks.join(", "))}. ` : ""}${escAttr(when)}</p>
+                    <div class="fx-pending-actions">
+                      <button class="btn btn-lime" type="button" data-fx-dup-ok="${i}">Autorizar</button>
+                      <button class="btn btn-ghost" type="button" data-fx-del="${i}">Quitar</button>
+                    </div>
+                  </article>`;
+                })
+                .join("")}
+            </div>`;
+          })
+          .join("")
+      : `<p class="admin-help">Ningún cruce repetido.</p>`;
+    foldBox(box, {
+      key: "dup",
+      title: "Duplicados",
+      tone: "is-dup",
+      count: rows.length,
+      help: "Ya se enfrentaron. Quedan prearmados, con cancha y horario si coinciden, y no entran al fixture hasta que los autorices.",
+      body,
+    });
   }
 
   function readVenuePlanFromDom() {
@@ -882,6 +957,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       $("fx-warnings").hidden = true;
       $("fx-pending").hidden = true;
       if ($("fx-recover-box")) $("fx-recover-box").hidden = true;
+      if ($("fx-dup-box")) $("fx-dup-box").hidden = true;
       $("fx-body").innerHTML = arch
         .map(
           (m) => `<tr>
@@ -902,16 +978,21 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     syncRecoveries();
     renderPending();
     renderRecover();
+    renderDuplicates();
     const games = ctx.fixture
       .map((m, i) => ({ m, i }))
-      .filter(({ m }) => !isPending(m) && seasonOf(m) === filterTemp && (m.week || "") === filterWeek)
+      .filter(({ m }) => !isPending(m) && !m.dupHold && seasonOf(m) === filterTemp && (m.week || "") === filterWeek)
       .sort((a, b) => compareByDayTime(a.m, b.m));
     const warnings = renderWarnings(games) || { rematch: new Set(), conflict: new Set() };
     const repeated = warnings.rematch || new Set();
     const conflicted = warnings.conflict || new Set();
     const empty = $("fx-empty");
     if (empty) {
-      empty.hidden = games.length > 0 || ctx.fixture.some((m) => isPending(m) && (m.week || "") === filterWeek);
+      empty.hidden =
+        games.length > 0 ||
+        ctx.fixture.some(
+          (m) => (isPending(m) || m.dupHold) && seasonOf(m) === filterTemp && (m.week || "") === filterWeek
+        );
       empty.querySelector("p").textContent = !loadedSlots.length
         ? "Paso 1: tocá Leer Drive (pestaña con el mismo nombre que esta fecha)."
         : "Paso 2: abajo elegí partidos y días por complejo, y tocá Armar fixture.";
@@ -1288,8 +1369,16 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       built = attachPairDaysFromPairs(built, ctx.pairs || []);
       // Primero asigna canchas; si alguna pareja no entra, prueba cambiarle el rival.
       const assigned = rematchForCourts(built, plannedSlots, courtOpts);
+      // Cruces que ya se jugaron: se prearman (cancha y horario si coinciden) y no entran a la grilla.
+      const fresh = [];
+      const held = [];
+      for (const m of assigned.matches) {
+        if (isRealPairMatch(m) && !isPending(m) && facedBefore(m, history).length) {
+          held.push({ ...m, dupHold: true });
+        } else fresh.push(m);
+      }
       // Si igual no hay cancha, van a pendientes (como impar / sin cruce).
-      const parkedBare = parkBareMatchesAsPending(assigned.matches);
+      const parkedBare = parkBareMatchesAsPending(fresh);
       const parkedBad = parkAvailabilityViolations(attachPairDaysFromPairs(parkedBare.matches, ctx.pairs || []));
       built = parkedBad.matches.map((m) => {
         if (isPending(m)) {
@@ -1312,7 +1401,13 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         const { days: _days, homeDays: _h, awayDays: _a, ...rest } = m;
         return cleanMatch(rest, {}, season);
       });
-      const real = built.filter((m) => !isPending(m));
+      const heldClean = held.map((m) => {
+        const { days: _days, homeDays: _h, awayDays: _a, ...rest } = m;
+        return { ...cleanMatch(rest, {}, season), dupHold: true };
+      });
+      built = [...heldClean, ...built];
+      const real = built.filter((m) => !isPending(m) && !m.dupHold);
+      const duplicates = built.filter((m) => m.dupHold);
       const pending = built.filter(isPending);
       const pendingBare = pending.filter((m) => !String(m.venue || "").trim() || !String(m.day || "").trim() || !String(m.time || "").trim());
       const bare = built.filter(
@@ -1333,7 +1428,6 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       if ($("fx-week")) $("fx-week").value = week;
       shell.markDirty("fixture");
       render();
-      const rematches = out.matches.filter((m) => m.rematch && !m.pending).length;
       const parts = [
         `${real.length} partido${real.length === 1 ? "" : "s"}`,
         `${assigned.assigned} con cancha`,
@@ -1364,7 +1458,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       const byesNoCap = out.byes.filter((e) => !e._capped);
       if (byesNoCap.length) parts.push(`${byesNoCap.length} sin disponibilidad`);
       if (capped) parts.push(`${capped} en tope ${MAX_PAIR_MATCHES} PJ`);
-      if (rematches) parts.push(`${rematches} repite rival, mirá el aviso Revisar`);
+      if (duplicates.length) {
+        parts.push(
+          `${duplicates.length} duplicado${duplicates.length === 1 ? "" : "s"} prearmado${duplicates.length === 1 ? "" : "s"} (no entran al fixture hasta autorizarlos)`
+        );
+      }
       setMsg($("fx-msg"), `${week} armada: ${parts.join(" · ")}. Revisá y publicá.`, "ok");
       toast(`${week} armada`, "ok");
     } catch (err) {
@@ -1587,6 +1685,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         .concat(ctx.results || [])
         .filter((m) => {
           if (seasonOf(m) !== filterTemp || (m.week || "") !== filterWeek) return false;
+          if (m.dupHold) return false;
           if (includePending) return isRealPairMatch(m) || isPending(m);
           return isRealPairMatch(m);
         });
@@ -1923,6 +2022,27 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     };
     $("fx-body")?.addEventListener("click", onDelete);
     $("fx-pending")?.addEventListener("click", onDelete);
+    $("fx-dup-box")?.addEventListener("click", onDelete);
+
+    $("fx-detail")?.addEventListener("click", (e) => {
+      const fold = e.target.closest("[data-fx-fold]");
+      if (!fold) return;
+      const key = fold.dataset.fxFold || "";
+      if (foldOpen.has(key)) foldOpen.delete(key);
+      else foldOpen.add(key);
+      render();
+    });
+
+    $("fx-dup-box")?.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-fx-dup-ok]");
+      if (!btn) return;
+      const match = ctx.fixture[Number(btn.dataset.fxDupOk)];
+      if (!match) return;
+      delete match.dupHold;
+      shell.markDirty("fixture");
+      render();
+      toast("Cruce autorizado · quedó en el fixture", "ok");
+    });
 
     $("fx-recover-box")?.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-fx-recover-del]");
@@ -1992,9 +2112,16 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       const season = filterTemp || ctx.siteData.currentSeason || "T4";
       // Antes de publicar: si algún partido viola inscripción, ambas puntas a pendientes.
       // Frenamos acá para que veas el cambio en la grilla y vuelvas a tocar Publicar a propósito.
-      const audited = parkAvailabilityViolations(attachPairDaysFromPairs(ctx.fixture || [], ctx.pairs || []));
+      const heldNow = (ctx.fixture || []).filter((m) => m.dupHold);
+      const audited = parkAvailabilityViolations(
+        attachPairDaysFromPairs(
+          (ctx.fixture || []).filter((m) => !m.dupHold),
+          ctx.pairs || []
+        )
+      );
       if (audited.parked) {
-        ctx.fixture = audited.matches.map((m) => {
+        ctx.fixture = [
+          ...audited.matches.map((m) => {
           if (isPending(m)) {
             return cleanMatch(
               {
@@ -2010,7 +2137,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           }
           const { days: _d, homeDays: _h, awayDays: _a, ...rest } = m;
           return cleanMatch(rest, {}, season);
-        });
+        }),
+          ...heldNow,
+        ];
         shell.markDirty("fixture");
         render();
         const n = audited.parked;
@@ -2031,8 +2160,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         return;
       }
       const draft = ctx.fixture.map((m) => cleanMatch(m, {}, season)).filter((m) => m.home || m.away);
-      const draftLive = draft.filter((m) => !isPending(m));
-      const draftPending = draft.filter(isPending);
+      const draftLive = draft.filter((m) => !isPending(m) && !m.dupHold);
+      const draftPending = draft.filter((m) => isPending(m));
+      const draftDup = draft.filter((m) => m.dupHold);
       const incomplete = draftLive.filter((m) => !isRealPairMatch(m) || !m.day || !m.time);
       const openPending = draftPending.length;
       const repeated = draftLive.filter((m) => isRealPairMatch(m) && previousMeetings(m).length).length;
@@ -2090,7 +2220,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         const carryLive = remoteLive.filter((m) => !draftKeys.has(weekKey(m)));
         const carryPending = remotePending.filter((m) => isPending(m) && !draftKeys.has(weekKey(m)));
         const nextPublished = [...carryLive, ...draftLive];
-        const nextPending = [...carryPending, ...draftPending];
+        const nextPending = [...carryPending, ...draftPending, ...draftDup];
         const adminFixture = [...nextPublished, ...nextPending];
         const newWeeks = new Set(adminFixture.map(weekKey));
         const toArchive = remoteLive.filter((m) => isRealPairMatch(m) && !newWeeks.has(weekKey(m)));

@@ -182,6 +182,7 @@ export function cleanMatch(m, defaults = {}, currentSeason = "T4") {
     if (m.recoveredIn) extra.recoveredIn = String(m.recoveredIn).trim();
   }
   if (m.recoverFrom) extra.recoverFrom = String(m.recoverFrom).trim();
+  if (m.dupHold) extra.dupHold = true;
   return {
     ...extra,
     week: String(m.week || defaults.week || "").trim(),

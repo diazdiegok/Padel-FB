@@ -2648,6 +2648,68 @@ body.is-admin .chk input[type="checkbox"] {
   cursor: default;
 }
 
+.fx-fold {
+  margin: 0 0 18px;
+  border: 1px dashed #f0b44c;
+  border-radius: 16px;
+  background: var(--bg-2);
+  overflow: hidden;
+}
+
+.fx-fold-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 0;
+  background: transparent;
+  color: #f0b44c;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fx-fold-head strong {
+  display: block;
+  font-family: var(--display);
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.05;
+}
+
+.fx-fold-head .admin-help {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.fx-fold-chevron {
+  flex: 0 0 auto;
+  font-size: 18px;
+}
+
+.fx-fold-body {
+  padding: 0 16px 16px;
+}
+
+.fx-fold.is-recover {
+  border-color: #7ec8ff;
+}
+
+.fx-fold.is-recover .fx-fold-head {
+  color: #7ec8ff;
+}
+
+.fx-fold.is-dup {
+  border-color: #d28bff;
+}
+
+.fx-fold.is-dup .fx-fold-head {
+  color: #d28bff;
+}
+
 .fx-pending {
   margin: 0 0 18px;
   padding: 16px;
@@ -2661,11 +2723,8 @@ body.is-admin .chk input[type="checkbox"] {
   color: #f0b44c;
 }
 
-.fx-recover {
-  margin-top: 0;
-}
-
-.fx-pending h4 {
+.fx-pending h4,
+.fx-fold h4 {
   font-size: 12px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
