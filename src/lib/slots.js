@@ -242,14 +242,18 @@ export function expandCourtCandidates(windows = []) {
   return out;
 }
 
-/** True si ese complejo no tiene ningún partido ese día. */
-export function venueDayIsOpen(day, venue, taken = []) {
-  const key = `${normalizeDay(day)}|${fold(venue)}`;
-  if (!normalizeDay(day) || !fold(venue)) return false;
+function courtDayKey(day, venue, court) {
+  return `${normalizeDay(day)}|${fold(venue)}|${courtKey(court)}`;
+}
+
+/** True si esa cancha no tiene ningún partido ese día. */
+export function courtDayIsOpen(day, venue, court, taken = []) {
+  const key = courtDayKey(day, venue, court);
+  if (!normalizeDay(day) || !fold(venue) || !courtKey(court)) return false;
   return !(taken || []).some((m) => {
     if (!String(m?.venue || "").trim() || !String(m?.court || "").trim()) return false;
     if (!parseCourtWindow(m.time)) return false;
-    return `${normalizeDay(m.day)}|${fold(m.venue)}` === key;
+    return courtDayKey(m.day, m.venue, m.court) === key;
   });
 }
 
@@ -261,11 +265,11 @@ export function widenUnusedCourtWindows(slots = [], taken = [], margin = FREE_CO
     const day = normalizeDay(m?.day);
     if (!day || !String(m?.venue || "").trim() || !String(m?.court || "").trim()) continue;
     if (!parseCourtWindow(m.time)) continue;
-    used.add(`${day}|${fold(m.venue)}`);
+    used.add(courtDayKey(day, m.venue, m.court));
   }
   return (slots || []).map((s) => {
     const day = normalizeDay(s.day);
-    if (!day || used.has(`${day}|${fold(s.venue)}`)) return s;
+    if (!day || used.has(courtDayKey(day, s.venue, s.court))) return s;
     const from = Math.max(0, Number(s.from) - pad);
     const to = Math.min(DAY_END, Number(s.to) + pad);
     if (!(to - from >= MATCH_MINUTES) || (from === s.from && to === s.to)) return s;

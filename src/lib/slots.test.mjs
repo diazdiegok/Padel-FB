@@ -23,7 +23,7 @@ import {
   summarizeCourtSlots,
   weekFromName,
   windowCapacity,
-  venueDayIsOpen,
+  courtDayIsOpen,
   widenUnusedCourtWindows,
   expandCourtCandidates,
 } from "./slots.js";
@@ -939,7 +939,7 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
 {
   const sheet = [parseCourtSlot({ Complejo: "Americas", Cancha: "Cancha 1", Dia: "Jueves", Horario: "14:00 - 18:30" })];
   const mondayOnly = [{ day: "Lunes", time: "17:00 - 18:30", venue: "Americas Padel", court: "Cancha 1" }];
-  assert.equal(venueDayIsOpen("Jueves", "Americas Padel", mondayOnly), true, "el jueves Américas está libre");
+  assert.equal(courtDayIsOpen("Jueves", "Americas Padel", "Cancha 1", mondayOnly), true, "el jueves Américas cancha 1 está libre");
   const wide = widenUnusedCourtWindows(sheet, mondayOnly);
   assert.equal(wide[0].from, 14 * 60 - 90);
   assert.equal(wide[0].to, 18 * 60 + 30 + 90);
@@ -953,10 +953,16 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   );
   assert.ok(packed.some((o) => o.day === "Jueves" && o.time === "17:00 - 18:30"), "queda el jueves 17:00");
   const openBusy = [parseCourtSlot({ Complejo: "Open", Cancha: "2", Dia: "Jueves", Horario: "14:00 - 18:30" })];
-  const juevesOpen = [{ day: "Jueves", time: "20:00 - 21:30", venue: "Open Padel", court: "1" }];
-  const held = widenUnusedCourtWindows(openBusy, juevesOpen);
-  assert.equal(held[0].from, 14 * 60, "con partidos ese día no se estira");
+  const sameCourt = [{ day: "Jueves", time: "20:00 - 21:30", venue: "Open Padel", court: "2" }];
+  const held = widenUnusedCourtWindows(openBusy, sameCourt);
+  assert.equal(held[0].from, 14 * 60, "esa cancha ya tiene partido: no se estira");
   assert.equal(held[0].to, 18 * 60 + 30);
+  const otherCourt = widenUnusedCourtWindows(openBusy, [
+    { day: "Jueves", time: "20:00 - 21:30", venue: "Open Padel", court: "1" },
+  ]);
+  assert.ok(otherCourt[0].from < 14 * 60, "otra cancha libre del mismo día sí se estira");
+  const everyStart = expandCourtCandidates(wide).map((s) => s.time);
+  assert.ok(everyStart.includes("16:30 - 18:00") && everyStart.includes("17:00 - 18:30") && everyStart.includes("18:00 - 19:30"), "17:00 se lista junto con 16:30 y 18:00");
   const until17 = widenUnusedCourtWindows(
     [parseCourtSlot({ Complejo: "Americas", Cancha: "2", Dia: "Jueves", Horario: "15:30 - 17:00" })],
     []

@@ -39,14 +39,13 @@ import {
   isCourtTaken,
   matchViolatesAvailability,
   missingCourtHorarios,
+  courtDayIsOpen,
   nearCoverCourtOptions,
-  packNonOverlappingTurns,
   pairsSharePlayableWindow,
   parkAvailabilityViolations,
   parkBareMatchesAsPending,
   rematchForCourts,
   summarizeCourtSlots,
-  venueDayIsOpen,
   weekFromName,
   widenUnusedCourtWindows,
 } from "../lib/slots.js";
@@ -192,14 +191,15 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
 
   /** Canchas del Drive donde puedan jugar ambas, sin el tope de «Partidos a usar». */
   function courtChoicesFor(match) {
+    const taken = takenCourts(match);
     return driveCourtOptions(
       {
         ...match,
         homeDays: match.homeDays || daysOfPair(match.home, match.cat),
         awayDays: match.awayDays || daysOfPair(match.away, match.cat),
       },
-      loadedSlots,
-      takenCourts(match)
+      widenUnusedCourtWindows(loadedSlots, taken),
+      taken
     );
   }
 
@@ -273,12 +273,13 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     }).filter((o) => !exactKeys.has(o.key));
     const nearOptsAll = flex.filter((o) => o.close);
     const estimateOptsAll = flex.filter((o) => !o.close);
-    // Misma cancha: un turno de 1:30 no se lista también 30' corrido.
-    const packed = packNonOverlappingTurns([...opts, ...nearOptsAll, ...estimateOptsAll]);
-    const tag = (o) => ({ ...o, openDay: venueDayIsOpen(o.day, o.venue, taken) });
-    const nearOpts = packed.filter((o) => o.close).map(tag);
-    const estimateOpts = packed.filter((o) => o.estimate).map(tag);
-    const packedExact = packed.filter((o) => !o.near).map(tag);
+    // Cancha libre: se listan TODOS los inicios (17:00 y también 16:30 y 18:00).
+    // Son alternativas para un solo partido, no turnos simultáneos.
+    const tag = (o) => ({ ...o, openDay: courtDayIsOpen(o.day, o.venue, o.court, taken) });
+    const listed = [...opts, ...nearOptsAll, ...estimateOptsAll].map(tag);
+    const nearOpts = listed.filter((o) => o.close);
+    const estimateOpts = listed.filter((o) => o.estimate);
+    const packedExact = listed.filter((o) => !o.near);
     return { opts: packedExact, nearOpts, estimateOpts, homeDays, coverDays, bothPending, shareWindow };
   }
 
@@ -349,7 +350,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     if (nearRest.length) parts.push(`${nearRest.length} cercano${nearRest.length === 1 ? "" : "s"}`);
     if (estimateRest.length) parts.push(`${estimateRest.length} estimable${estimateRest.length === 1 ? "" : "s"}`);
     const placeholder = `2. Elegir entre ${parts.join(" + ")}…`;
-    const hint = "Si ese día el complejo no tiene partidos, el horario del Sheet se estira 1:30. Ahí entra, por ejemplo, jueves 17:00 en Américas.";
+    const hint = "Cancha libre: se listan todos los inicios de 1:30, cada 30 minutos. 17:00, 16:30 y 18:00 pueden verse juntos; elegís uno.";
     // Separadores con <option disabled> (no anidar optgroup).
     const exactBlock = opts.length
       ? `<option disabled value="">── Libres exactos (entran las dos) ──</option>
@@ -357,7 +358,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       : "";
     const openBlock = openOpts.length
       ? `<option disabled value="">────────────────────────────────</option>
-      <option disabled value="">── Sin partidos ese día · horario +1:30 ──</option>
+      <option disabled value="">── Cancha libre · todos los horarios (también las 17) ──</option>
       ${groupsByDay(openOpts, { near: true })}`
       : "";
     const nearBlock = nearRest.length
