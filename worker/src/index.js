@@ -1162,19 +1162,27 @@ function mergeMaps(into, from) {
   for (const [k, v] of Object.entries(from || {})) into[k] = (into[k] || 0) + Number(v || 0);
 }
 
-async function countKvPrefix(env, prefix) {
-  if (!env.AUTH_KV) return 0;
-  let n = 0;
+/** Una sola lista del namespace: KV no acepta varios prefijos en un list. */
+async function countStoredKeys(env) {
+  const totals = { "contact:": 0, "pay:": 0, "acad:": 0 };
+  if (!env.AUTH_KV) return totals;
   let cursor;
+  let pages = 0;
   for (let i = 0; i < 20; i++) {
-    const page = await env.AUTH_KV.list({ prefix, cursor, limit: 1000 });
-    await meterBump(env, { lists: 1 });
-    n += (page.keys || []).length;
+    const page = await env.AUTH_KV.list({ cursor, limit: 1000 });
+    pages += 1;
+    for (const key of page.keys || []) {
+      const name = key.name || "";
+      if (name.startsWith("contact:")) totals["contact:"] += 1;
+      else if (name.startsWith("pay:")) totals["pay:"] += 1;
+      else if (name.startsWith("acad:")) totals["acad:"] += 1;
+    }
     if (page.list_complete) break;
     cursor = page.cursor;
     if (!cursor) break;
   }
-  return n;
+  if (pages) await meterBump(env, { lists: pages });
+  return totals;
 }
 
 const VERCEL_DEPLOY_LIMIT_DAY = 100; // Hobby · ventana rodante 24 h
@@ -1781,7 +1789,7 @@ async function readUsage(env) {
   const alerts = [];
   const tips = [
     "Estas barras las cuenta este Worker. El mail de Cloudflare mira toda la cuenta (todos los proyectos) y avisa al 50% de escrituras, listas o borrados.",
-    "Listas KV: cada Actualizar lista contactos, pagos y academia. Tope 1000/día. No corta la inscripción.",
+    "Listas KV: cada Actualizar hace 1 sola lista y de ahí cuenta contactos, pagos y academia. Tope 1000/día. No corta la inscripción.",
     "Visitas: se anotan en caché y, como mucho, cada 5 min se guardan 2 escrituras. No hacen listas.",
     "Lo que corta inscripción, login y comprobantes es Escrituras KV al 100%. El mail del 50% no bloquea el sitio.",
     "Borrados son otro tope de 1000/día. Este panel no los muestra: pueden venir de otro proyecto de la misma cuenta.",
@@ -1805,9 +1813,10 @@ async function readUsage(env) {
   let payments = 0;
   let acad = 0;
   try {
-    contacts = await countKvPrefix(env, "contact:");
-    payments = await countKvPrefix(env, "pay:");
-    acad = await countKvPrefix(env, "acad:");
+    const stored = await countStoredKeys(env);
+    contacts = stored["contact:"];
+    payments = stored["pay:"];
+    acad = stored["acad:"];
   } catch (err) {
     alerts.push({
       level: "warn",
