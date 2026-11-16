@@ -1120,5 +1120,21 @@
       "Sábado": "19:00 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwijb2t00b0b",
+    "createdAt": "2026-11-16T00:37:45.588Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Tomás Rodríguez",
+    "p2": "Sergio alem",
+    "days": {
+      "Martes": "19:00 - 00:00",
+      "Miércoles": "19:00 - 00:00",
+      "Jueves": "19:00 - 00:00",
+      "Viernes": "19:00 - 00:00",
+      "Sábado": "17:00 - 21:30"
+    },
+    "note": "Sí o sí apartir de las 19 por tema de trabajo"
   }
 ]
