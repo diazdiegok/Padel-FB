@@ -1930,7 +1930,8 @@ function fixtureSheetTitle(week) {
 
 /**
  * Escribe el fixture (sin pendientes) en una pestaña = nombre de la fecha.
- * Crea la hoja si no existe. Encabezado en negrita, fila congelada, columnas autoajustadas.
+ * Crea la hoja si no existe y la deja primera (izq); las fechas viejas quedan a la derecha.
+ * Encabezado en negrita, fila congelada, columnas autoajustadas.
  */
 async function writeFixtureDriveSheet(env, { sheetId, week = "", rows = [] } = {}) {
   const id = String(sheetId || env.FIXTURE_DRIVE_SHEET_ID || FIXED_FIXTURE_DRIVE_SHEET)
@@ -1958,23 +1959,26 @@ async function writeFixtureDriveSheet(env, { sheetId, week = "", rows = [] } = {
 
   const meta = await sheetsFetch(
     accessToken,
-    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}?fields=sheets.properties(sheetId,title)`
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}?fields=sheets.properties(sheetId,title,index)`
   );
   if (!meta.res.ok) {
     throw sheetsAuthError(meta.json.error?.message || `Google Sheets ${meta.res.status}`, sa, meta.res.status);
   }
 
   let tabId = null;
+  let tabIndex = null;
   const want = title.toLowerCase();
   for (const s of meta.json.sheets || []) {
     const t = String(s?.properties?.title || "");
     if (t.toLowerCase() === want) {
       tabId = s.properties.sheetId;
+      tabIndex = s.properties.index;
       break;
     }
   }
 
   if (tabId == null) {
+    // index: 0 → la fecha nueva queda primera; las anteriores se corren a la derecha.
     const created = await sheetsFetch(
       accessToken,
       `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
@@ -1986,6 +1990,7 @@ async function writeFixtureDriveSheet(env, { sheetId, week = "", rows = [] } = {
               addSheet: {
                 properties: {
                   title,
+                  index: 0,
                   gridProperties: { frozenRowCount: 1, columnCount: cols, rowCount: Math.max(50, (rows?.length || 0) + 20) },
                 },
               },
@@ -1998,10 +2003,35 @@ async function writeFixtureDriveSheet(env, { sheetId, week = "", rows = [] } = {
       throw sheetsAuthError(created.json.error?.message || `No se pudo crear la hoja «${title}».`, sa, created.res.status);
     }
     tabId = created.json.replies?.[0]?.addSheet?.properties?.sheetId;
+    tabIndex = 0;
     if (tabId == null) {
       const err = new Error(`No se pudo crear la hoja «${title}».`);
       err.status = 502;
       throw err;
+    }
+  } else if (tabIndex !== 0) {
+    // Re-pegar una fecha ya existente: también la trae al frente.
+    const moved = await sheetsFetch(
+      accessToken,
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
+      {
+        method: "POST",
+        body: {
+          requests: [
+            {
+              updateSheetProperties: {
+                properties: { sheetId: tabId, index: 0 },
+                fields: "index",
+              },
+            },
+          ],
+        },
+      }
+    );
+    if (!moved.res.ok) {
+      console.warn("fixture drive tab order", moved.json.error?.message || moved.res.status);
+    } else {
+      tabIndex = 0;
     }
   }
 

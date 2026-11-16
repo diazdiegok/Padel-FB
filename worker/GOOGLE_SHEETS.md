@@ -18,7 +18,8 @@ Sheet fijo donde el admin pega los partidos con rival (sin pendientes):
 https://docs.google.com/spreadsheets/d/1OI6ogfmdOAQ5mz3JqP482cDPT_xp-PjWdE07k54AAiQ/edit
 
 - **Una pestaña por fecha** (`Fecha 1`, `Fecha 2`, …): se crea si no existe y se reemplaza al pegar
+- La fecha que pegás queda **primera (izquierda)**; las fechas anteriores se corren a la derecha
 - Columnas: Fecha, Dia, Horario, Categoria, Complejo, Cancha, Pareja 1, Pareja 2, Resultado
-- Formato: encabezado en **negrita** (fondo suave), fila congelada, filtro, columnas autoajustadas
+- Formato: encabezado en **negrita** (fondo suave), fila congelada, filtro, columnas autoajustadas; datos sin negrita
 - El Worker necesita el secret `GOOGLE_SERVICE_ACCOUNT` y que ese Sheet esté compartido con el `client_email` de la SA como **Editor**
 - Botón en Fixture: **Pegar en Drive** (usa el mismo orden que Descargar Excel; no envía pendientes)
