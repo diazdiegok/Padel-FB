@@ -147,4 +147,25 @@ const pairs = [
   assert.ok(rows.some((r) => pairsMatch(r.home, "Milagros Solaro / Ana Paula Croce")));
 }
 
+{
+  const diego = { temp, cat: "B Masculina", p1: "Diego Ramirez", p2: "Martin Rondan", days: { Lunes: "16:00 - 00:00" } };
+  const matches = [
+    {
+      week: "Fecha 2",
+      temp,
+      cat: "B Masculina",
+      home: "Diego Ramirez / Martin Rondan",
+      away: PENDING_AWAY,
+      pending: true,
+      recoverFrom: "Fecha 1",
+      reason: "Recupera Fecha 1.",
+    },
+  ];
+  const out = syncFixtureWithPairs({ matches, pairs: [...pairs, diego], temp, liveWeek: "Fecha 2" });
+  const rows = out.matches.filter((m) => isPendingMatch(m) && pairsMatch(m.home, "Diego Ramirez / Martin Rondan"));
+  assert.equal(rows.length, 2, "el recupero no reemplaza el pendiente normal");
+  assert.ok(rows.some((m) => m.recoverFrom === "Fecha 1"));
+  assert.ok(rows.some((m) => !m.recoverFrom));
+}
+
 console.log("pair-fixture-sync ok");

@@ -7,8 +7,10 @@ import {
   parseWindow,
   countPairMatches,
   coverCandidates,
+  importRecoveryDebts,
   isPendingMatch,
   isRealPairMatch,
+  releaseRecoveryDebt,
 } from "./fixturer.js";
 
 assert.deepEqual(parseWindow("19:00 - 22:00"), [1140, 1320]);
@@ -159,6 +161,75 @@ console.log("--- cover", covers.map((c) => `${c.label} (${c.pj})`).join(" · "))
   assert.ok(out.includes(other), "el pendiente ajeno sigue");
   assert.ok(!out.some((m) => isPendingMatch(m) && m.home === laura.home), "laura ya no está pendiente");
   assert.ok(!out.some((m) => isPendingMatch(m) && m.home === stefania.home), "stefania ya no está pendiente");
+}
+
+// Cubrir el partido normal no borra el que recupera, ni al revés.
+{
+  const normal = {
+    week: "Fecha 2",
+    temp: "T5",
+    cat: "B Masculina",
+    home: "Diego Ramirez / Martin Rondan",
+    away: PENDING_AWAY,
+    pending: true,
+  };
+  const makeup = {
+    week: "Fecha 2",
+    temp: "T5",
+    cat: "B Masculina",
+    home: "Diego Ramirez / Martin Rondan",
+    away: PENDING_AWAY,
+    pending: true,
+    recoverFrom: "Fecha 1",
+  };
+  const covered = {
+    week: "Fecha 2",
+    temp: "T5",
+    cat: "B Masculina",
+    home: normal.home,
+    away: "Otra Pareja / Rival",
+  };
+  const out = absorbCoveredPending([normal, makeup, covered], covered, covered.away);
+  assert.ok(out.includes(covered));
+  assert.ok(!out.includes(normal), "sale el pendiente normal");
+  assert.ok(out.includes(makeup), "el recupero sigue");
+  const coveredMakeup = { ...covered, recoverFrom: "Fecha 1" };
+  const out2 = absorbCoveredPending([normal, makeup, coveredMakeup], coveredMakeup, coveredMakeup.away);
+  assert.ok(out2.includes(normal), "cubrir el recupero no saca el partido normal");
+  assert.ok(!out2.includes(makeup));
+}
+
+{
+  const debt = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "B Masculina",
+    home: "Diego Ramirez / Martin Rondan",
+    away: PENDING_AWAY,
+    pending: true,
+    recoverLater: true,
+    recoverFrom: "Fecha 1",
+    days: { Lunes: "16:00 - 00:00" },
+  };
+  const first = importRecoveryDebts([debt], { temp: "T5", week: "Fecha 2" });
+  assert.equal(first.added, 1);
+  assert.equal(debt.recoveredIn, "Fecha 2");
+  const brought = first.matches.find((m) => m.week === "Fecha 2");
+  assert.equal(brought.recoverFrom, "Fecha 1");
+  assert.equal(brought.pending, true);
+  assert.equal(brought.home, debt.home);
+  const again = importRecoveryDebts(first.matches, { temp: "T5", week: "Fecha 2" });
+  assert.equal(again.added, 0, "no duplica");
+  const sameWeek = importRecoveryDebts(
+    [{ ...debt, recoveredIn: "" }],
+    { temp: "T5", week: "Fecha 1" }
+  );
+  assert.equal(sameWeek.added, 0, "no se recupera dentro de la misma fecha");
+  releaseRecoveryDebt(first.matches, brought);
+  assert.equal(debt.recoveredIn, undefined);
+  const later = importRecoveryDebts(first.matches, { temp: "T5", week: "Fecha 3" });
+  assert.equal(later.added, 1);
+  assert.equal(debt.recoveredIn, "Fecha 3");
 }
 
 console.log("ok");

@@ -1,4 +1,5 @@
 import { DAYS, pairLabel } from "./disponibilidad.js";
+import { weekNumber } from "./liga.js";
 import { findPairIndex, fold, pairsMatch } from "./scoring.js";
 
 export const MATCH_MINUTES = 90;
@@ -22,6 +23,24 @@ export function isPendingMatch(m) {
 
 export function isRealPairMatch(m) {
   return Boolean(m && String(m.home || "").trim() && !isPlaceholderPair(m.home) && !isPlaceholderPair(m.away));
+}
+
+/** Pendiente que no juega esa fecha: se recupera en una fecha siguiente. */
+export function isRecoverLater(m) {
+  return !!(m && isPendingMatch(m) && m.recoverLater);
+}
+
+/** Pendiente traído a otra fecha para cubrir el partido que debe. */
+export function isMakeupPending(m) {
+  return !!(m && isPendingMatch(m) && m.recoverFrom && !m.recoverLater);
+}
+
+function pendingKind(m) {
+  return m && m.recoverFrom && !m.recoverLater ? "makeup" : "normal";
+}
+
+function samePendingKind(a, b) {
+  return pendingKind(a) === pendingKind(b);
 }
 
 /** Partidos contables (ambas puntas reales) de una pareja en la temporada. */
@@ -62,10 +81,83 @@ export function absorbCoveredPending(matches = [], covered, coverLabel = "") {
     if (!isPendingMatch(m)) return true;
     if ((m.week || "") !== week) return true;
     if (String(m.temp || "").toUpperCase() !== temp) return true;
-    if (home && pairsMatch(m.home, home)) return false;
-    if (cover && !isPlaceholderPair(cover) && pairsMatch(m.home, cover)) return false;
+    if (home && pairsMatch(m.home, home)) return !samePendingKind(m, covered);
+    if (cover && !isPlaceholderPair(cover) && pairsMatch(m.home, cover)) return !samePendingKind(m, covered);
     return true;
   });
+}
+
+/**
+ * Trae a `week` las parejas marcadas «no juega» en una fecha anterior.
+ * El partido normal de esta fecha no se toca: el que recuperan queda pendiente aparte.
+ */
+export function importRecoveryDebts(matches = [], { temp = "", week = "" } = {}) {
+  const season = String(temp || "").toUpperCase();
+  const here = weekNumber(week);
+  const list = Array.isArray(matches) ? matches.slice() : [];
+  if (!season || !week || !here) return { matches: list, added: 0, waiting: 0 };
+  let added = 0;
+  let waiting = 0;
+  for (const src of list) {
+    if (!isRecoverLater(src)) continue;
+    if (String(src.temp || "").toUpperCase() !== season) continue;
+    if (src.recoveredIn) continue;
+    const from = String(src.recoverFrom || src.week || "").trim();
+    const fromN = weekNumber(from);
+    if (!fromN || fromN >= here) continue;
+    waiting += 1;
+    const exists = list.some(
+      (m) =>
+        isMakeupPending(m) &&
+        (m.week || "") === week &&
+        String(m.temp || "").toUpperCase() === season &&
+        String(m.recoverFrom || "") === from &&
+        pairsMatch(m.home, src.home)
+    );
+    if (exists) {
+      src.recoveredIn = week;
+      continue;
+    }
+    list.push({
+      pending: true,
+      recoverFrom: from,
+      week,
+      day: "",
+      date: "",
+      temp: season,
+      cat: src.cat || "",
+      time: "",
+      venue: "",
+      court: "",
+      home: src.home,
+      away: PENDING_AWAY,
+      result: "",
+      appliedResult: "",
+      reason: `Recupera ${from}.`,
+      ...(src.days && typeof src.days === "object" ? { days: src.days } : {}),
+      ...(src.avail ? { avail: String(src.avail) } : {}),
+      ...(src.note ? { note: String(src.note) } : {}),
+    });
+    src.recoveredIn = week;
+    added += 1;
+  }
+  return { matches: list, added, waiting };
+}
+
+/** Si se quita el pendiente de recupero, la deuda vuelve a estar libre para otra fecha. */
+export function releaseRecoveryDebt(matches = [], makeup) {
+  if (!makeup || !isMakeupPending(makeup)) return;
+  const from = String(makeup.recoverFrom || "").trim();
+  const week = makeup.week || "";
+  const temp = String(makeup.temp || "").toUpperCase();
+  for (const m of matches) {
+    if (!isRecoverLater(m)) continue;
+    if (String(m.temp || "").toUpperCase() !== temp) continue;
+    if ((m.recoveredIn || "") !== week) continue;
+    if (from && String(m.recoverFrom || m.week || "") !== from) continue;
+    if (!pairsMatch(m.home, makeup.home)) continue;
+    delete m.recoveredIn;
+  }
 }
 
 /** Candidatas de la misma categoría para cubrir un pendiente (doble jornada ok; tope 12 PJ). */

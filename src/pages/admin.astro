@@ -256,6 +256,14 @@ import "../styles/admin.css";
                   >
                     Revisar duplicados
                   </button>
+                  <button
+                    class="btn btn-ghost"
+                    type="button"
+                    id="fx-recover"
+                    title="Trae abajo de pendientes a las parejas que no jugaron una fecha anterior"
+                  >
+                    Recuperar fecha
+                  </button>
                 </div>
                 <div class="fx-download" id="fx-download-wrap" hidden>
                   <label class="fx-download-label" for="fx-dl-sort">Descargar Excel</label>
@@ -283,6 +291,7 @@ import "../styles/admin.css";
             </div>
             <div class="fx-warnings" id="fx-warnings" role="status" hidden></div>
             <div class="fx-pending" id="fx-pending" hidden></div>
+            <div class="fx-pending fx-recover" id="fx-recover-box" hidden></div>
             <div class="admin-scroll">
               <table class="admin-table">
                 <thead>

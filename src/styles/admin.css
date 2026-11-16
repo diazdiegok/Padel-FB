@@ -2661,6 +2661,10 @@ body.is-admin .chk input[type="checkbox"] {
   color: #f0b44c;
 }
 
+.fx-recover {
+  margin-top: 0;
+}
+
 .fx-pending h4 {
   font-size: 12px;
   letter-spacing: 0.12em;

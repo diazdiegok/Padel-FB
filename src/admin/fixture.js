@@ -18,9 +18,13 @@ import {
   buildFixture,
   countPairMatches,
   coverCandidates,
+  importRecoveryDebts,
+  isMakeupPending,
   isPendingMatch,
   isPlaceholderPair,
   isRealPairMatch,
+  isRecoverLater,
+  releaseRecoveryDebt,
 } from "../lib/fixturer.js";
 import { latestWeek, listSeasons, mergeArchivedMatches, seasonLabel, weekKey, weekNumber } from "../lib/liga.js";
 import {
@@ -141,8 +145,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const live = (ctx.fixture || []).filter((m) => seasonOf(m) === temp && (m.week || "") === week);
     const arch = (ctx.results || []).filter((m) => seasonOf(m) === temp && (m.week || "") === week);
     const games = (live.length ? live : arch).filter((m) => !isPending(m) && isRealPairMatch(m));
-    const pending = live.filter(isPending).length;
-    return { games, pending, live: live.length > 0, n: games.length };
+    const pending = live.filter((m) => isPending(m) && !isRecoverLater(m) && !isMakeupPending(m)).length;
+    const recovering = live.filter((m) => isMakeupPending(m)).length;
+    return { games, pending, recovering, live: live.length > 0, n: games.length };
   }
 
   function updateSummary() {
@@ -161,6 +166,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     el.textContent = st.n || st.pending
       ? `${st.n} partido${st.n === 1 ? "" : "s"} · ${filterWeek}` +
         (st.pending ? ` · ${st.pending} pendiente${st.pending === 1 ? "" : "s"}` : "") +
+        (st.recovering ? ` · ${st.recovering} recuperan` : "") +
         (st.live ? "" : " · archivo")
       : `Sin partidos en ${filterWeek}`;
   }
@@ -491,71 +497,128 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     return { rematch: new Set(list.map((x) => x.i)), conflict: conflictIdx };
   }
 
+  function weekRows(pred) {
+    return ctx.fixture
+      .map((m, i) => ({ m, i }))
+      .filter(({ m }) => pred(m) && seasonOf(m) === filterTemp && (m.week || "") === filterWeek);
+  }
+
+  function pendingCards(rows, { defer = false, makeup = false } = {}) {
+    const cats = [...new Set(rows.map(({ m }) => m.cat || "Sin categoría"))];
+    const pools = matchPools();
+    return cats
+      .map((cat) => {
+        const group = rows.filter(({ m }) => (m.cat || "Sin categoría") === cat);
+        return `<div class="fx-pending-cat">
+          <h4>${escAttr(cat)}</h4>
+          ${group
+            .map(({ m, i }) => {
+              const covers = coverCandidates({
+                match: m,
+                pairs: ctx.pairs || [],
+                pools,
+                temp: filterTemp,
+              });
+              const draft = coverDraft.get(i) || "";
+              const pendingDays = daysOfPair(m.home, m.cat) || m.homeDays || m.days;
+              const daysTxt = availHint(pendingDays);
+              const from = m.recoverFrom || m.week || "";
+              const extraBtn = defer
+                ? `<button class="btn btn-ghost" type="button" data-fx-defer="${i}" title="No juega esta fecha. En la siguiente, Recuperar fecha la trae para fixturear el partido que debe.">No juega esta fecha</button>`
+                : "";
+              const quit = makeup
+                ? `<button class="btn btn-ghost" type="button" data-fx-recover-del="${i}">Quitar</button>`
+                : `<button class="btn btn-ghost" type="button" data-fx-del="${i}">Quitar</button>`;
+              return `<article class="fx-pending-card" data-i="${i}">
+                <strong>${escAttr(m.home)}</strong>
+                ${makeup && from ? `<p class="admin-help" style="margin:4px 0 0">Recupera ${escAttr(from)}. El partido normal de esta fecha va aparte.</p>` : ""}
+                ${daysTxt ? `<p class="admin-help" style="margin:4px 0 0">Puede: ${escAttr(daysTxt)}</p>` : ""}
+                <div class="fx-pending-actions">
+                  <select data-fx-cover="${i}" aria-label="Cubrir con">
+                    <option value="">1. Cubrir con…</option>
+                    ${
+                      covers.length
+                        ? covers
+                            .map(
+                              (c) =>
+                                `<option value="${escAttr(c.label)}"${draft === c.label ? " selected" : ""}>${escAttr(c.label)} (${c.pj} PJ)</option>`
+                            )
+                            .join("")
+                        : `<option value="" disabled>No hay parejas disponibles en ${escAttr(cat)}</option>`
+                    }
+                  </select>
+                  ${
+                    draft
+                      ? `<span class="fx-court-fallback">${coverSlotSelect(i, m, draft)}</span>`
+                      : `<select disabled aria-label="Elegir día, complejo y cancha"><option>2. Primero elegí con quién cubrir</option></select>`
+                  }
+                  ${extraBtn}
+                  ${quit}
+                </div>
+              </article>`;
+            })
+            .join("")}
+        </div>`;
+      })
+      .join("");
+  }
+
   function renderPending() {
     const box = $("fx-pending");
     if (!box) return;
-    const pending = ctx.fixture
-      .map((m, i) => ({ m, i }))
-      .filter(({ m }) => isPending(m) && seasonOf(m) === filterTemp && (m.week || "") === filterWeek);
-    box.hidden = !pending.length;
-    if (!pending.length) {
-      coverDraft.clear();
+    const pending = weekRows((m) => isPending(m) && !isRecoverLater(m) && !isMakeupPending(m));
+    const deferred = weekRows((m) => isRecoverLater(m) && !m.recoveredIn);
+    const shown = [...pending, ...deferred];
+    if (!shown.length) {
+      for (const key of [...coverDraft.keys()]) {
+        if (!weekRows((m) => isMakeupPending(m)).some(({ i }) => i === key)) coverDraft.delete(key);
+      }
+      box.hidden = true;
       box.innerHTML = "";
       return;
     }
     for (const key of [...coverDraft.keys()]) {
-      if (!pending.some(({ i }) => i === key)) coverDraft.delete(key);
+      if (!shown.some(({ i }) => i === key) && !weekRows((m) => isMakeupPending(m)).some(({ i }) => i === key)) {
+        coverDraft.delete(key);
+      }
     }
-    const cats = [...new Set(pending.map(({ m }) => m.cat || "Sin categoría"))];
-    const pools = matchPools();
-    box.innerHTML = `<h3>Pendientes · ${pending.length}</h3>
-      <p class="admin-help">Quedaron sin rival (impar, horarios, rivales ocupados o sin cancha libre en el Drive). Primero elegí <strong>Cubrir con</strong> y después un día/cancha del Drive donde <strong>entren las dos</strong> según Inscripciones. Los pendientes no se publican al sitio hasta cubrirlos.</p>
-      ${cats
-        .map((cat) => {
-          const rows = pending.filter(({ m }) => (m.cat || "Sin categoría") === cat);
-          return `<div class="fx-pending-cat">
-            <h4>${escAttr(cat)}</h4>
-            ${rows
-              .map(({ m, i }) => {
-                const covers = coverCandidates({
-                  match: m,
-                  pairs: ctx.pairs || [],
-                  pools,
-                  temp: filterTemp,
-                });
-                const draft = coverDraft.get(i) || "";
-                const pendingDays = daysOfPair(m.home, m.cat) || m.homeDays || m.days;
-                const daysTxt = availHint(pendingDays);
-                return `<article class="fx-pending-card" data-i="${i}">
-                  <strong>${escAttr(m.home)}</strong>
-                  ${daysTxt ? `<p class="admin-help" style="margin:4px 0 0">Puede: ${escAttr(daysTxt)}</p>` : ""}
-                  <div class="fx-pending-actions">
-                    <select data-fx-cover="${i}" aria-label="Cubrir con">
-                      <option value="">1. Cubrir con…</option>
-                      ${
-                        covers.length
-                          ? covers
-                              .map(
-                                (c) =>
-                                  `<option value="${escAttr(c.label)}"${draft === c.label ? " selected" : ""}>${escAttr(c.label)} (${c.pj} PJ)</option>`
-                              )
-                              .join("")
-                          : `<option value="" disabled>No hay parejas disponibles en ${escAttr(cat)}</option>`
-                      }
-                    </select>
-                    ${
-                      draft
-                        ? `<span class="fx-court-fallback">${coverSlotSelect(i, m, draft)}</span>`
-                        : `<select disabled aria-label="Elegir día, complejo y cancha"><option>2. Primero elegí con quién cubrir</option></select>`
-                    }
-                    <button class="btn btn-ghost" type="button" data-fx-del="${i}">Quitar</button>
-                  </div>
-                </article>`;
-              })
-              .join("")}
-          </div>`;
-        })
-        .join("")}`;
+    const deferredHtml = deferred.length
+      ? `<h3>Pasan a recuperar · ${deferred.length}</h3>
+        <p class="admin-help">No juegan esta fecha. En la fecha siguiente, <strong>Recuperar fecha</strong> las trae abajo de pendientes.</p>
+        ${deferred
+          .map(
+            ({ m, i }) => `<article class="fx-pending-card" data-i="${i}">
+            <strong>${escAttr(m.home)}</strong>
+            <p class="admin-help" style="margin:4px 0 0">${escAttr(m.cat || "")}${m.recoverFrom ? ` · ${escAttr(m.recoverFrom)}` : ""}</p>
+            <div class="fx-pending-actions">
+              <button class="btn btn-ghost" type="button" data-fx-undefer="${i}">Volver a pendientes</button>
+            </div>
+          </article>`
+          )
+          .join("")}`
+      : "";
+    box.hidden = false;
+    box.innerHTML = `${
+      pending.length
+        ? `<h3>Pendientes · ${pending.length}</h3>
+      <p class="admin-help">Quedaron sin rival (impar, horarios, rivales ocupados o sin cancha libre en el Drive). Primero elegí <strong>Cubrir con</strong> y después un día/cancha del Drive donde <strong>entren las dos</strong> según Inscripciones. Los pendientes no se publican al sitio hasta cubrirlos. Si no pueden jugar esta fecha, tocá <strong>No juega esta fecha</strong>.</p>
+      ${pendingCards(pending, { defer: true })}`
+        : ""
+    }${deferredHtml}`;
+  }
+
+  function renderRecover() {
+    const box = $("fx-recover-box");
+    if (!box) return;
+    const rows = weekRows((m) => isMakeupPending(m));
+    box.hidden = !rows.length;
+    if (!rows.length) {
+      box.innerHTML = "";
+      return;
+    }
+    box.innerHTML = `<h3>Recuperan fecha · ${rows.length}</h3>
+      <p class="admin-help">No jugaron una fecha anterior. El partido normal de esta fecha se arma aparte. Acá cubrís el que recuperan: primero con quién y después la cancha.</p>
+      ${pendingCards(rows, { makeup: true })}`;
   }
 
   function readVenuePlanFromDom() {
@@ -830,6 +893,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
       $("fx-warnings").hidden = true;
       $("fx-pending").hidden = true;
+      if ($("fx-recover-box")) $("fx-recover-box").hidden = true;
       $("fx-body").innerHTML = arch
         .map(
           (m) => `<tr>
@@ -848,6 +912,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     }
 
     renderPending();
+    renderRecover();
     const games = ctx.fixture
       .map((m, i) => ({ m, i }))
       .filter(({ m }) => !isPending(m) && seasonOf(m) === filterTemp && (m.week || "") === filterWeek)
@@ -906,7 +971,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         return `<tr data-i="${i}"${cls ? ` class="${cls}"` : ""}${titles.length ? ` title="${escAttr(titles.join(" "))}"` : ""}>
           <td>${field("day", "Jueves")}</td>
           <td>${field("time", "19:00 - 20:30")}</td>
-          <td>${field("cat", "A Masculina")}</td>
+          <td>${on ? field("cat", "A Masculina") : `${escAttr(m.cat || "—")}${m.recoverFrom ? ` · recupera ${escAttr(m.recoverFrom)}` : ""}`}</td>
           ${
             bare
               ? `<td class="fx-court-fallback" colspan="2">${courtFallbackSelect(i, m)}</td>`
@@ -1269,8 +1334,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       const keepOther = (ctx.fixture || []).filter(
         (m) => isPending(m) && seasonOf(m) === season && (m.week || "") !== week
       );
+      const keepMakeup = (ctx.fixture || []).filter(
+        (m) => isMakeupPending(m) && seasonOf(m) === season && (m.week || "") === week
+      );
       built.sort(compareByDayTime);
-      ctx.fixture = [...keepOther, ...built];
+      ctx.fixture = [...keepOther, ...keepMakeup, ...built];
       filterTemp = season;
       filterWeek = week;
       if ($("fx-week")) $("fx-week").value = week;
@@ -1614,6 +1682,42 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
 
     $("fx-dupes")?.addEventListener("click", () => reviewCourtDuplicates());
 
+    $("fx-recover")?.addEventListener("click", () => {
+      if (!filterTemp || !filterWeek) {
+        toast("Entrá a una fecha para recuperar.", "err");
+        return;
+      }
+      if (!isLiveWeek(filterTemp, filterWeek)) {
+        toast("Esta fecha ya está en Resultados.", "err");
+        return;
+      }
+      const pulled = importRecoveryDebts(ctx.fixture, { temp: filterTemp, week: filterWeek });
+      ctx.fixture = pulled.matches;
+      const already = ctx.fixture.filter(
+        (m) => isMakeupPending(m) && seasonOf(m) === filterTemp && (m.week || "") === filterWeek
+      ).length;
+      if (!pulled.added) {
+        const msg = already
+          ? `${filterWeek}: esas parejas ya están en Recuperan fecha.`
+          : "Nadie para recuperar. En la fecha que no juegan, tocá «No juega esta fecha» en su pendiente.";
+        setMsg($("fx-msg"), msg, already ? "ok" : "err");
+        toast(already ? "Ya están en esta fecha" : "Nadie para recuperar", already ? "ok" : "err");
+        render();
+        if (already) $("fx-recover-box")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      shell.markDirty("fixture");
+      render();
+      const n = pulled.added;
+      setMsg(
+        $("fx-msg"),
+        `${filterWeek}: ${n} pareja${n === 1 ? "" : "s"} en Recuperan fecha. El partido normal de esta fecha va aparte.`,
+        "ok"
+      );
+      toast(`${n} recuperan fecha`, "ok");
+      $("fx-recover-box")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
     $("fx-add")?.addEventListener("click", () => {
       if (!filterTemp || !filterWeek) return;
       const sched = scheduleOpts();
@@ -1715,7 +1819,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       } else updateSummary();
     });
 
-    $("fx-pending")?.addEventListener("change", async (e) => {
+    const onCoverChange = async (e) => {
       const coverSlot = e.target.closest("[data-fx-cover-slot]");
       if (coverSlot) {
         const i = Number(coverSlot.dataset.fxCoverSlot);
@@ -1797,6 +1901,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       if (!cover) {
         coverDraft.delete(i);
         renderPending();
+        renderRecover();
         return;
       }
       const allowed = coverCandidates({
@@ -1814,6 +1919,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       // No confirma todavía: primero hay que elegir día/complejo/cancha común.
       coverDraft.set(i, cover);
       renderPending();
+      renderRecover();
       if (!loadedSlots.length) {
         toast("Leé el Drive para ver canchas libres.", "err");
         return;
@@ -1844,7 +1950,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           (flexCount ? ` · ${flexCount} estimable${flexCount === 1 ? "" : "s"} más` : ""),
         "ok"
       );
-    });
+    };
+    $("fx-pending")?.addEventListener("change", onCoverChange);
+    $("fx-recover-box")?.addEventListener("change", onCoverChange);
 
     const onDelete = async (e) => {
       const btn = e.target.closest("[data-fx-del]");
@@ -1862,6 +1970,64 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     };
     $("fx-body")?.addEventListener("click", onDelete);
     $("fx-pending")?.addEventListener("click", onDelete);
+
+    $("fx-pending")?.addEventListener("click", async (e) => {
+      const deferBtn = e.target.closest("[data-fx-defer]");
+      const backBtn = e.target.closest("[data-fx-undefer]");
+      if (!deferBtn && !backBtn) return;
+      const i = Number((deferBtn || backBtn).dataset.fxDefer || (deferBtn || backBtn).dataset.fxUndefer);
+      const match = ctx.fixture[i];
+      if (!match || !isPending(match)) return;
+      if (deferBtn) {
+        const ok = await confirmModal({
+          title: "No juega esta fecha",
+          body: `${match.home} no juega ${filterWeek}. En la fecha siguiente, Recuperar fecha la trae abajo de pendientes para fixturear el partido que debe. El partido normal de esa fecha se arma aparte.`,
+          confirmLabel: "Pasa a recuperar",
+        });
+        if (!ok) return;
+        match.recoverLater = true;
+        match.recoverFrom = match.week || filterWeek;
+        match.reason = `No juega ${match.recoverFrom}. Se recupera en una fecha siguiente.`;
+        match.day = "";
+        match.time = "";
+        match.venue = "";
+        match.court = "";
+        delete match.recoveredIn;
+        coverDraft.delete(i);
+        shell.markDirty("fixture");
+        render();
+        toast(`${match.home} pasa a recuperar`, "ok");
+        return;
+      }
+      delete match.recoverLater;
+      delete match.recoverFrom;
+      delete match.recoveredIn;
+      match.reason = "Pendiente de rival.";
+      shell.markDirty("fixture");
+      render();
+      toast("Volvió a pendientes", "ok");
+    });
+
+    $("fx-recover-box")?.addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-fx-recover-del]");
+      if (!btn) return;
+      const i = Number(btn.dataset.fxRecoverDel);
+      const match = ctx.fixture[i];
+      if (!match) return;
+      const ok = await confirmModal({
+        title: "Quitar recupero",
+        body: `${match.home} sale de esta fecha. Sigue debiendo ${match.recoverFrom || "la fecha"} y se puede traer de nuevo.`,
+        confirmLabel: "Quitar",
+        danger: true,
+      });
+      if (!ok) return;
+      releaseRecoveryDebt(ctx.fixture, match);
+      ctx.fixture.splice(i, 1);
+      coverDraft.delete(i);
+      shell.markDirty("fixture");
+      render();
+      toast("Salió de Recuperan fecha", "ok");
+    });
 
     $("fx-body")?.addEventListener("click", async (e) => {
       const pendBtn = e.target.closest("[data-fx-to-pending]");

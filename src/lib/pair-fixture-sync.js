@@ -49,11 +49,23 @@ function pairKey(name, temp) {
   return `${String(temp || "").toUpperCase()}|${fold(name)}`;
 }
 
+function isMakeup(m) {
+  return !!(m && m.recoverFrom && !m.recoverLater);
+}
+
+function pendingSlotKey(row) {
+  const kind = isMakeup(row) ? `makeup:${row.recoverFrom || ""}` : "normal";
+  return `${pairKey(row.home, row.temp)}|${row.week || ""}|${kind}`;
+}
+
 function playsInWeek(matches, name, week, temp) {
   return (matches || []).some((m) => {
     if ((m.week || "") !== week) return false;
     if (String(m.temp || "").toUpperCase() !== String(temp || "").toUpperCase()) return false;
-    if (isPendingMatch(m)) return pairsMatch(m.home, name);
+    if (isPendingMatch(m)) {
+      if (isMakeup(m)) return false;
+      return pairsMatch(m.home, name);
+    }
     if (!isRealPairMatch(m)) return false;
     return pairsMatch(m.home, name) || pairsMatch(m.away, name);
   });
@@ -80,13 +92,20 @@ export function syncFixtureWithPairs({ matches = [], pairs = [], temp = "", live
   const seenPending = new Set();
 
   function pushPending(row) {
-    const key = `${pairKey(row.home, row.temp)}|${row.week || ""}`;
+    const key = pendingSlotKey(row);
     if (seenPending.has(key)) return;
-    if (out.some((m) => isPendingMatch(m) && pairsMatch(m.home, row.home) && (m.week || "") === (row.week || ""))) {
+    if (out.some((m) => isPendingMatch(m) && pendingSlotKey(m) === key && pairsMatch(m.home, row.home))) {
       return;
     }
     seenPending.add(key);
     out.push(row);
+  }
+
+  function keepRecoverFlags(row, source) {
+    if (source?.recoverLater) row.recoverLater = true;
+    if (source?.recoverFrom) row.recoverFrom = String(source.recoverFrom);
+    if (source?.recoveredIn) row.recoveredIn = String(source.recoveredIn);
+    return row;
   }
 
   for (const m of matches || []) {
@@ -107,14 +126,17 @@ export function syncFixtureWithPairs({ matches = [], pairs = [], temp = "", live
       const cat = entry.cat || m.cat || "";
       const days = entry.days && typeof entry.days === "object" ? entry.days : m.days;
       pushPending(
-        asPending({
-          week: m.week || liveWeek || "",
-          temp: season,
-          cat,
-          home: pairLabel(entry),
-          reason: m.reason || "Pendiente de rival.",
-          days,
-        })
+        keepRecoverFlags(
+          asPending({
+            week: m.week || liveWeek || "",
+            temp: season,
+            cat,
+            home: pairLabel(entry),
+            reason: m.reason || "Pendiente de rival.",
+            days,
+          }),
+          m
+        )
       );
       continue;
     }

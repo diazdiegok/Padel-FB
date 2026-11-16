@@ -178,7 +178,10 @@ export function cleanMatch(m, defaults = {}, currentSeason = "T4") {
     // Conservar disponibilidad para poder cubrir con turnos del Drive.
     if (m.days && typeof m.days === "object") extra.days = m.days;
     if (m.homeDays && typeof m.homeDays === "object") extra.homeDays = m.homeDays;
+    if (m.recoverLater) extra.recoverLater = true;
+    if (m.recoveredIn) extra.recoveredIn = String(m.recoveredIn).trim();
   }
+  if (m.recoverFrom) extra.recoverFrom = String(m.recoverFrom).trim();
   return {
     ...extra,
     week: String(m.week || defaults.week || "").trim(),
