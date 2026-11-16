@@ -422,21 +422,6 @@
   },
   {
     "week": "Fecha 1",
-    "day": "Viernes",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Femenino",
-    "time": "16:00 - 17:30",
-    "venue": "Americas Padel",
-    "court": "Cancha 1",
-    "home": "Valentina Laikan / Bernardita Cuello",
-    "away": "Florencia Cavallaro / Luisina Yancovich",
-    "result": "",
-    "appliedResult": "",
-    "flexAvail": true
-  },
-  {
-    "week": "Fecha 1",
     "day": "Lunes",
     "date": "",
     "temp": "T5",
@@ -446,6 +431,21 @@
     "court": "Cancha 2",
     "home": "Marien Robledo / Valeria Joubert",
     "away": "Milagros Solaro / Ana Paula Croce",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
+  },
+  {
+    "week": "Fecha 1",
+    "day": "Miércoles",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "time": "20:00 - 21:30",
+    "venue": "Open Padel",
+    "court": "Cancha 2",
+    "home": "Luis Roberto Herrera / Carlos Cantagallo",
+    "away": "Tomás Rodríguez / Sergio Alem",
     "result": "",
     "appliedResult": "",
     "flexAvail": true
