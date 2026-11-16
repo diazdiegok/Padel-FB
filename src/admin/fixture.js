@@ -581,6 +581,20 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       ${pendingCards(pending)}`;
   }
 
+  function syncRecoveries() {
+    if (!filterTemp || !filterWeek || !isLiveWeek(filterTemp, filterWeek)) return;
+    const history = [...(ctx.results || []), ...(ctx.fixture || [])];
+    const pulled = importRecoveryDebts(ctx.fixture, {
+      temp: filterTemp,
+      week: filterWeek,
+      history,
+      pairs: ctx.pairs || [],
+    });
+    if (!pulled.added) return;
+    ctx.fixture = pulled.matches;
+    shell.markDirty("fixture");
+  }
+
   function renderRecover() {
     const box = $("fx-recover-box");
     if (!box) return;
@@ -591,7 +605,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       return;
     }
     box.innerHTML = `<h3>Recuperan fecha · ${rows.length}</h3>
-      <p class="admin-help">Tienen un partido menos que el resto de su categoría. El pendiente de la fecha que no jugaron sigue ahí. El partido normal de esta fecha se arma aparte, con horarios exactos. Acá cubrís el que recuperan.</p>
+      <p class="admin-help">Tienen un partido menos que el resto de su categoría. En Fecha 2, quien tiene 0 partidos jugados recupera Fecha 1. Siguen en pendientes de la fecha que no jugaron. El partido normal de esta fecha va aparte: acá cubrís el que falta.</p>
       ${pendingCards(rows, { makeup: true })}`;
   }
 
@@ -885,6 +899,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       return;
     }
 
+    syncRecoveries();
     renderPending();
     renderRecover();
     const games = ctx.fixture
@@ -1655,43 +1670,6 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     });
 
     $("fx-dupes")?.addEventListener("click", () => reviewCourtDuplicates());
-
-    $("fx-recover")?.addEventListener("click", () => {
-      if (!filterTemp || !filterWeek) {
-        toast("Entrá a una fecha para recuperar.", "err");
-        return;
-      }
-      if (!isLiveWeek(filterTemp, filterWeek)) {
-        toast("Esta fecha ya está en Resultados.", "err");
-        return;
-      }
-      const history = [...(ctx.results || []), ...(ctx.fixture || [])];
-      const pulled = importRecoveryDebts(ctx.fixture, { temp: filterTemp, week: filterWeek, history });
-      ctx.fixture = pulled.matches;
-      const already = ctx.fixture.filter(
-        (m) => isMakeupPending(m) && seasonOf(m) === filterTemp && (m.week || "") === filterWeek
-      ).length;
-      if (!pulled.added) {
-        const msg = already
-          ? `${filterWeek}: esas parejas ya están en Recuperan fecha.`
-          : "Nadie con un partido menos. Quien no jugó sigue en pendientes de esa fecha.";
-        setMsg($("fx-msg"), msg, already ? "ok" : "err");
-        toast(already ? "Ya están en esta fecha" : "Nadie para recuperar", already ? "ok" : "err");
-        render();
-        if (already) $("fx-recover-box")?.scrollIntoView({ behavior: "smooth", block: "start" });
-        return;
-      }
-      shell.markDirty("fixture");
-      render();
-      const n = pulled.added;
-      setMsg(
-        $("fx-msg"),
-        `${filterWeek}: ${n} pareja${n === 1 ? "" : "s"} en Recuperan fecha. El partido normal de esta fecha va aparte.`,
-        "ok"
-      );
-      toast(`${n} recuperan fecha`, "ok");
-      $("fx-recover-box")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
 
     $("fx-add")?.addEventListener("click", () => {
       if (!filterTemp || !filterWeek) return;

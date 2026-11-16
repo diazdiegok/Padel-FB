@@ -113,10 +113,11 @@ function recoverySettled(pool, name, from, season) {
 }
 
 /**
- * Trae a `week` a quien tiene un partido menos: estuvo en una fecha anterior
- * y no la jugó, mientras el resto de su categoría sí. No saca ese pendiente.
+ * Trae a `week` a quien tiene menos partidos que el resto de su categoría.
+ * En Fecha 2, quien tiene 0 partidos jugados recupera Fecha 1.
+ * No saca el pendiente de la fecha que no jugó.
  */
-export function importRecoveryDebts(matches = [], { temp = "", week = "", history = null } = {}) {
+export function importRecoveryDebts(matches = [], { temp = "", week = "", history = null, pairs = [] } = {}) {
   const season = String(temp || "").toUpperCase();
   const here = weekNumber(week);
   const list = Array.isArray(matches) ? matches.slice() : [];
@@ -124,7 +125,14 @@ export function importRecoveryDebts(matches = [], { temp = "", week = "", histor
   if (!season || !week || !here) return { matches: list, added: 0, waiting: 0 };
 
   const seasonRows = pool.filter((m) => sameSeason(m, season));
-  const cats = [...new Set(seasonRows.map((m) => m.cat || "").filter(Boolean))];
+  const cats = [
+    ...new Set(
+      [
+        ...seasonRows.map((m) => m.cat || ""),
+        ...(pairs || []).filter((p) => String(p?.temp || "").toUpperCase() === season).map((p) => p.cat || ""),
+      ].filter(Boolean)
+    ),
+  ];
   let added = 0;
   let waiting = 0;
 
@@ -139,30 +147,33 @@ export function importRecoveryDebts(matches = [], { temp = "", week = "", histor
     ].sort((a, b) => weekNumber(a) - weekNumber(b));
     if (!playedWeeks.length) continue;
 
-    const names = [];
-    const seen = new Set();
+    const people = [];
+    const pushPerson = (label, extra = {}) => {
+      const name = String(label || "").trim();
+      if (!name || isPlaceholderPair(name)) return;
+      if (people.some((p) => pairsMatch(p.name, name))) return;
+      people.push({ name, days: extra.days, avail: extra.avail || "", note: extra.note || "" });
+    };
+    for (const p of pairs || []) {
+      if (String(p?.temp || "").toUpperCase() !== season || (p.cat || "") !== cat || !p.p1 || !p.p2) continue;
+      pushPerson(pairLabel(p), { days: p.days });
+    }
     for (const m of catRows) {
-      for (const name of [m.home, isPendingMatch(m) ? "" : m.away]) {
-        const label = String(name || "").trim();
-        if (!label || isPlaceholderPair(label)) continue;
-        const key = fold(label);
-        if (seen.has(key) || names.some((n) => pairsMatch(n, label))) continue;
-        seen.add(key);
-        names.push(label);
-      }
+      pushPerson(m.home, { days: m.days, avail: m.avail, note: m.note });
+      if (!isPendingMatch(m)) pushPerson(m.away);
     }
 
-    for (const name of names) {
+    for (const person of people) {
       const missed = playedWeeks.filter((from) => {
         const inWeek = catRows.filter((m) => (m.week || "") === from);
-        const played = inWeek.some((m) => isWeekMatch(m) && involvesPair(m, name));
-        const wasThere = inWeek.some((m) => involvesPair(m, name));
-        return wasThere && !played;
+        return !inWeek.some((m) => isWeekMatch(m) && involvesPair(m, person.name));
       });
+      if (!missed.length) continue;
       for (const from of missed) {
         waiting += 1;
-        if (recoverySettled(list, name, from, season) || recoverySettled(pool, name, from, season)) continue;
-        const src = catRows.find((m) => (m.week || "") === from && isPendingMatch(m) && pairsMatch(m.home, name));
+        if (recoverySettled(list, person.name, from, season) || recoverySettled(pool, person.name, from, season)) continue;
+        const src = catRows.find((m) => (m.week || "") === from && isPendingMatch(m) && pairsMatch(m.home, person.name));
+        const days = (src?.days && typeof src.days === "object" && src.days) || (person.days && typeof person.days === "object" && person.days) || null;
         list.push({
           pending: true,
           recoverFrom: from,
@@ -174,14 +185,14 @@ export function importRecoveryDebts(matches = [], { temp = "", week = "", histor
           time: "",
           venue: "",
           court: "",
-          home: src?.home || name,
+          home: src?.home || person.name,
           away: PENDING_AWAY,
           result: "",
           appliedResult: "",
-          reason: `Le falta 1 partido (${from}). Sigue en pendientes de esa fecha.`,
-          ...(src?.days && typeof src.days === "object" ? { days: src.days } : {}),
-          ...(src?.avail ? { avail: String(src.avail) } : {}),
-          ...(src?.note ? { note: String(src.note) } : {}),
+          reason: `Tiene 0 partidos en ${from}. Recupera esa fecha.`,
+          ...(days ? { days } : {}),
+          ...(src?.avail || person.avail ? { avail: String(src?.avail || person.avail) } : {}),
+          ...(src?.note || person.note ? { note: String(src?.note || person.note) } : {}),
         });
         added += 1;
       }

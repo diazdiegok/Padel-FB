@@ -245,6 +245,16 @@ console.log("--- cover", covers.map((c) => `${c.label} (${c.pj})`).join(" · "))
     { temp: "T5", week: "Fecha 2" }
   );
   assert.equal(even.added, 0, "si ya jugó, no recupera");
+  const zero = { temp: "T5", cat: "B Masculina", p1: "Sin", p2: "Partidos", days: { Lunes: "18:00 - 21:00" } };
+  const fromZero = importRecoveryDebts([played], {
+    temp: "T5",
+    week: "Fecha 2",
+    history: [played],
+    pairs: [zero],
+  });
+  assert.equal(fromZero.added, 1, "en Fecha 2, 0 partidos jugados recupera");
+  assert.equal(fromZero.matches.find((m) => m.week === "Fecha 2").home, "Sin / Partidos");
+  assert.equal(fromZero.matches.find((m) => m.week === "Fecha 2").recoverFrom, "Fecha 1");
 }
 
 console.log("ok");
