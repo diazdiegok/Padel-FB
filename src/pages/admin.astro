@@ -66,9 +66,13 @@ import "../styles/admin.css";
         <div class="admin-brand-mark">FB</div>
         <div class="admin-brand-text">
           <strong>PADEL FB</strong>
-          <div class="admin-brand-row">
-            <span>Admin</span>
+          <div class="admin-brand-col" aria-label="Accesos rápidos">
+            <span class="admin-brand-label">Admin</span>
             <button class="admin-brand-btn admin-brand-btn-visitas" type="button" data-nav="visitas">Visitas</button>
+            <button class="admin-brand-btn admin-brand-btn-consumos" type="button" data-nav="consumos" id="admin-consumos-btn">
+              Consumos
+              <span class="admin-brand-alert-dot" id="consumos-alert-dot" hidden aria-hidden="true"></span>
+            </button>
             <button class="admin-brand-btn admin-brand-btn-salir" type="button" id="admin-logout">Salir</button>
           </div>
         </div>
@@ -621,6 +625,19 @@ import "../styles/admin.css";
           <p class="admin-help">Totales de 14 días más las últimas visitas con IP (solo acá en el admin). Los agregados se borran solos a los ~45 días.</p>
           <p class="admin-msg" id="visitas-msg"></p>
           <div id="visitas-board"></div>
+        </section>
+
+        <!-- Consumos / cuotas Cloudflare -->
+        <section data-section="consumos" hidden>
+          <div class="admin-section-tools">
+            <button class="btn btn-ghost" type="button" id="consumos-reload">Actualizar</button>
+            <span class="tag" id="consumos-status-tag"></span>
+          </div>
+          <p class="admin-help">
+            Estado del Worker (API): cuota de escrituras KV, visitas, contactos/comprobantes y alertas para evitar que se corte inscripción o publish.
+          </p>
+          <p class="admin-msg" id="consumos-msg"></p>
+          <div id="consumos-board"></div>
         </section>
 
       </div>
