@@ -1363,6 +1363,31 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     }
 
     $("fx-drive")?.addEventListener("click", () => loadSlotsFromDrive());
+    $("fx-sync-pairs")?.addEventListener("click", () => {
+      const res = syncFromPairs({ toastResult: false });
+      const s = res?.stats || {};
+      const bits = [];
+      if (s.addedPending) bits.push(`+${s.addedPending} nueva${s.addedPending === 1 ? "" : "s"}`);
+      if (s.pendingFromRemoved) bits.push(`${s.pendingFromRemoved} por baja de rival`);
+      if (s.pendingFromCatChange) bits.push(`${s.pendingFromCatChange} por categoría`);
+      if (!res?.changed) {
+        toast("Pendientes ya estaban al día con Inscripciones", "ok");
+        return;
+      }
+      toast(
+        bits.length
+          ? `Pendientes sync · ${bits.join(" · ")}. Tocá Publicar fixture para guardar.`
+          : "Pendientes sincronizados · tocá Publicar fixture para guardar",
+        "ok"
+      );
+      setMsg(
+        $("fx-msg"),
+        bits.length
+          ? `Pendientes alineados con Inscripciones (${bits.join(" · ")}). Publicá fixture para confirmar.`
+          : "Pendientes alineados con Inscripciones. Publicá fixture para confirmar.",
+        "ok"
+      );
+    });
     $("fx-slots")?.addEventListener("click", () => $("fx-slots-file")?.click());
     $("fx-slots-file")?.addEventListener("change", async (e) => {
       const input = e.target;

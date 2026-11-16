@@ -1264,15 +1264,20 @@ async function readUsage(env) {
   const writesUsed = writeOk ? meter.writes : KV_WRITE_LIMIT_DAY;
   const readsUsed = meter.reads;
   const keysUsed = contacts + payments + acad;
-  // Reset wall-clock helper for Argentina (UTC-3) — se usa en medidores y alertas.
+  // Reset KV free: 00:00 UTC = 21:00 America/Buenos_Aires (sin DST).
   const now = new Date();
   const nextUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
   const resetsAtUtc = nextUtc.toISOString();
-  const resetsAtLocal = new Intl.DateTimeFormat("es-AR", {
+  const resetParts = new Intl.DateTimeFormat("es-AR", {
     timeZone: "America/Buenos_Aires",
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(nextUtc);
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(nextUtc);
+  const part = (type) => resetParts.find((p) => p.type === type)?.value || "";
+  const resetsAtLocal = `${part("day")}/${part("month")} ${part("hour")}:${part("minute")} AR`;
 
   const meters = [
     {

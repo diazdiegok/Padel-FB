@@ -82,7 +82,7 @@ function renderBoard(data) {
     <p class="consumos-explain">
       Acá ves <b>cuánto del plan free de Cloudflare se está usando hoy</b>.
       Lo crítico es <b>Escrituras KV</b>: si llega a 100%, se cortan inscripción, login y comprobantes hasta el reset.
-      Las cuotas diarias se renuevan el <b>${esc(resetAt || "~21:00 Argentina")}</b> (00:00 UTC).
+      Las cuotas diarias se renuevan a las <b>21:00 AR</b> (00:00 UTC)${resetAt ? ` · próximo: <b>${esc(resetAt)}</b>` : ""}.
     </p>
     ${alertHtml}
     <div class="consumos-meters">
@@ -102,14 +102,17 @@ function renderBoard(data) {
       <article class="consumos-kpi">
         <span class="consumos-kpi-label">Contactos</span>
         <strong>${esc(kpis.contacts ?? "—")}</strong>
-        <span class="consumos-kpi-sub">en KV</span>
+        <span class="consumos-kpi-sub">tel/mail en KV</span>
       </article>
       <article class="consumos-kpi">
         <span class="consumos-kpi-label">Comprobantes</span>
         <strong>${esc(kpis.payments ?? "—")}</strong>
-        <span class="consumos-kpi-sub">en KV</span>
+        <span class="consumos-kpi-sub">pagos subidos en KV</span>
       </article>
     </div>
+    <p class="admin-help consumos-kpi-note">
+      Contactos y comprobantes no tienen por qué coincidir: una pareja puede tener WhatsApp/mail guardado y todavía no haber subido el pago (o al revés). No son el contador de pendientes ni de inscriptas.
+    </p>
     <article class="consumos-tips">
       <h3>Cómo evitar cortes</h3>
       <ul>
@@ -182,7 +185,7 @@ export function createConsumos(ctx, api) {
             "Esperá el reset diario (00:00 UTC ≈ 21:00 Argentina).",
             "No hace falta tocar el fixture: los datos ya guardados siguen.",
           ],
-          kv: { resetsAtLocal: "~21:00 Argentina" },
+          kv: { resetsAtLocal: "21:00 AR" },
         });
       }
       return null;
