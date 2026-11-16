@@ -1434,7 +1434,38 @@ body.is-admin .chk input[type="checkbox"] {
 .admin-result-score input {
   text-transform: none;
   letter-spacing: 0;
-  font-size: 15px;
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #0c100e;
+  color: #f4f1ea;
+  caret-color: var(--lime);
+  outline: none;
+}
+
+.admin-result-score input::placeholder {
+  color: rgba(244, 241, 234, 0.35);
+  font-weight: 500;
+}
+
+.admin-result-score input:focus {
+  border-color: var(--lime);
+  box-shadow: 0 0 0 1px rgba(214, 255, 47, 0.25);
+}
+
+/* Chrome/Safari autofill no debe dejar texto gris sobre fondo blanco */
+.admin-result-score input:-webkit-autofill,
+.admin-result-score input:-webkit-autofill:hover,
+.admin-result-score input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f4f1ea;
+  caret-color: var(--lime);
+  box-shadow: 0 0 0 1000px #0c100e inset;
+  transition: background-color 99999s ease-out;
 }
 
 #season-list {
