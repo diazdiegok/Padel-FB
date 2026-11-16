@@ -643,14 +643,14 @@ import "../styles/admin.css";
           <div id="visitas-board"></div>
         </section>
 
-        <!-- Consumos / cuotas Cloudflare -->
+        <!-- Consumos / cuotas por proveedor -->
         <section data-section="consumos" hidden>
           <div class="admin-section-tools">
             <button class="btn btn-ghost" type="button" id="consumos-reload">Actualizar</button>
             <span class="tag" id="consumos-status-tag"></span>
           </div>
           <p class="admin-help">
-            Estado del Worker (API): cuota de escrituras KV, visitas, contactos/comprobantes y alertas para evitar que se corte inscripción o publish.
+            Cuotas separadas: <b>Cloudflare</b> (API/KV), <b>Vercel</b> (deploys del sitio) y <b>GitHub</b> (publish al repo). Cada uno se renueva distinto.
           </p>
           <p class="admin-msg" id="consumos-msg"></p>
           <div id="consumos-board"></div>

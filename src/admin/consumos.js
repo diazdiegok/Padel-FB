@@ -41,32 +41,11 @@ function meterCard(m, renewLabel = "") {
   </article>`;
 }
 
-function fallbackMeters(kpis = {}, blocked = false) {
-  const writes = blocked ? 1000 : Number(kpis.writesUsed || 0);
-  return [
-    {
-      id: "writes",
-      label: "Escrituras KV (hoy)",
-      used: writes,
-      limit: 1000,
-      left: Math.max(0, 1000 - writes),
-      usedPct: blocked ? 100 : Math.min(100, Math.round((writes / 1000) * 1000) / 10),
-      leftPct: blocked ? 0 : Math.max(0, 100 - Math.min(100, Math.round((writes / 1000) * 1000) / 10)),
-      unit: "puts",
-      tone: blocked ? "critical" : "ok",
-    },
-  ];
-}
-
-function renderBoard(data) {
-  const board = $("consumos-board");
-  if (!board) return;
-  const alerts = Array.isArray(data?.alerts) ? data.alerts : [];
-  const kpis = data?.kpis || {};
-  const tips = Array.isArray(data?.tips) ? data.tips : [];
-  const resetAt = data?.kv?.resetsAtLocal || data?.kv?.resetsAtUtc || "";
-  const meters = Array.isArray(data?.meters) && data.meters.length ? data.meters : fallbackMeters(kpis, /BLOQUEADA/i.test(String(kpis.kvWriteStatus || "")));
-
+function providerSection(p) {
+  const alerts = Array.isArray(p?.alerts) ? p.alerts : [];
+  const meters = Array.isArray(p?.meters) ? p.meters : [];
+  const kpis = Array.isArray(p?.kpis) ? p.kpis : [];
+  const tips = Array.isArray(p?.tips) ? p.tips : [];
   const alertHtml = alerts.length
     ? `<div class="consumos-alerts">${alerts
         .map(
@@ -76,49 +55,76 @@ function renderBoard(data) {
           </article>`
         )
         .join("")}</div>`
-    : `<article class="consumos-alert level-ok"><h3>OK · Sin alertas</h3><p>No hay señales de cuota al límite ahora.</p></article>`;
+    : `<article class="consumos-alert level-ok"><h3>OK · Sin alertas</h3><p>Sin señales de cuota al límite en ${esc(p?.name || "este proveedor")}.</p></article>`;
+
+  const kpiHtml = kpis.length
+    ? `<div class="consumos-kpis">${kpis
+        .map(
+          (k) => `<article class="consumos-kpi">
+            <span class="consumos-kpi-label">${esc(k.label || "")}</span>
+            <strong>${esc(k.value ?? "—")}</strong>
+            <span class="consumos-kpi-sub">${esc(k.sub || "")}</span>
+          </article>`
+        )
+        .join("")}</div>`
+    : "";
+
+  return `<section class="consumos-provider" data-provider="${esc(p?.id || "")}">
+    <header class="consumos-provider-head">
+      <h2>${esc(p?.name || "Proveedor")}</h2>
+      ${p?.renewsAt ? `<span class="consumos-provider-renew">Próximo reset · <b>${esc(p.renewsAt)}</b></span>` : ""}
+    </header>
+    ${p?.explain ? `<p class="consumos-explain">${esc(p.explain)}</p>` : ""}
+    ${alertHtml}
+    ${meters.length ? `<div class="consumos-meters">${meters.map((m) => meterCard(m, m.renewsAt || p?.renewsAt || "")).join("")}</div>` : ""}
+    ${kpiHtml}
+    ${p?.kpiNote ? `<p class="admin-help consumos-kpi-note">${esc(p.kpiNote)}</p>` : ""}
+    ${
+      tips.length
+        ? `<article class="consumos-tips">
+      <h3>Tips · ${esc(p?.name || "")}</h3>
+      <ul>${tips.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
+    </article>`
+        : ""
+    }
+  </section>`;
+}
+
+function legacyAsCloudflare(data) {
+  const kpis = data?.kpis || {};
+  const meters = Array.isArray(data?.meters) ? data.meters : [];
+  return {
+    id: "cloudflare",
+    name: "Cloudflare",
+    explain: "Worker + KV (plan free).",
+    meters,
+    kpis: [
+      { label: "Estado escritura", value: kpis.kvWriteStatus ?? "—", sub: kpis.writesLeftPct != null ? `${kpis.writesLeftPct}% libre` : "" },
+      { label: "Visitas hoy", value: String(kpis.visitsToday ?? "—"), sub: "tráfico web" },
+      { label: "Contactos", value: String(kpis.contacts ?? "—"), sub: "tel/mail en KV" },
+      { label: "Comprobantes", value: String(kpis.payments ?? "—"), sub: "pagos subidos en KV" },
+    ],
+    alerts: data?.alerts || [],
+    tips: data?.tips || [],
+    renewsAt: data?.kv?.resetsAtLocal || "",
+  };
+}
+
+function renderBoard(data) {
+  const board = $("consumos-board");
+  if (!board) return;
+  const providers =
+    Array.isArray(data?.providers) && data.providers.length
+      ? data.providers
+      : [legacyAsCloudflare(data || {})];
 
   board.innerHTML = `
     <p class="consumos-explain">
-      Acá ves <b>cuánto del plan free de Cloudflare se está usando hoy</b>.
-      Lo crítico es <b>Escrituras KV</b>: si llega a 100%, se cortan inscripción, login y comprobantes hasta el reset.
-      Las cuotas diarias se renuevan a las <b>21:00 AR</b> (00:00 UTC)${resetAt ? ` · próximo: <b>${esc(resetAt)}</b>` : ""}.
+      Cada bloque es un proveedor distinto. <b>No se mezclan</b>: Cloudflare (API/KV), Vercel (deploys del sitio) y GitHub (publish al repo).
     </p>
-    ${alertHtml}
-    <div class="consumos-meters">
-      ${meters.map((m) => meterCard(m, m.renewsAt || (m.id === "keys" ? "no renueva (acumulado)" : resetAt))).join("")}
+    <div class="consumos-providers">
+      ${providers.map(providerSection).join("")}
     </div>
-    <div class="consumos-kpis">
-      <article class="consumos-kpi">
-        <span class="consumos-kpi-label">Estado escritura</span>
-        <strong>${esc(kpis.kvWriteStatus ?? "—")}</strong>
-        <span class="consumos-kpi-sub">${esc(kpis.writesLeftPct != null ? `${kpis.writesLeftPct}% libre` : "")}</span>
-      </article>
-      <article class="consumos-kpi">
-        <span class="consumos-kpi-label">Visitas hoy</span>
-        <strong>${esc(kpis.visitsToday ?? "—")}</strong>
-        <span class="consumos-kpi-sub">tráfico web</span>
-      </article>
-      <article class="consumos-kpi">
-        <span class="consumos-kpi-label">Contactos</span>
-        <strong>${esc(kpis.contacts ?? "—")}</strong>
-        <span class="consumos-kpi-sub">tel/mail en KV</span>
-      </article>
-      <article class="consumos-kpi">
-        <span class="consumos-kpi-label">Comprobantes</span>
-        <strong>${esc(kpis.payments ?? "—")}</strong>
-        <span class="consumos-kpi-sub">pagos subidos en KV</span>
-      </article>
-    </div>
-    <p class="admin-help consumos-kpi-note">
-      Contactos y comprobantes no tienen por qué coincidir: una pareja puede tener WhatsApp/mail guardado y todavía no haber subido el pago (o al revés). No son el contador de pendientes ni de inscriptas.
-    </p>
-    <article class="consumos-tips">
-      <h3>Cómo evitar cortes</h3>
-      <ul>
-        ${tips.map((t) => `<li>${esc(t)}</li>`).join("") || "<li>Sin tips por ahora.</li>"}
-      </ul>
-    </article>
   `;
 }
 
@@ -134,12 +140,19 @@ export function createConsumos(ctx, api) {
       setAlertDot(bad);
       const tag = $("consumos-status-tag");
       if (tag) {
+        const parts = [];
+        const providers = Array.isArray(data?.providers) ? data.providers : [];
+        for (const p of providers) {
+          const crit = (p.alerts || []).some((a) => a.level === "critical");
+          const warn = (p.alerts || []).some((a) => a.level === "warn");
+          if (crit) parts.push(`${p.name} crítico`);
+          else if (warn) parts.push(`${p.name} atención`);
+        }
         const w = data?.kpis?.writesUsedPct;
-        tag.textContent = bad
-          ? `${(data.alerts || []).filter((a) => a.level !== "ok").length} alerta(s)` +
-            (w != null ? ` · escrituras ${w}%` : "")
+        tag.textContent = parts.length
+          ? parts.join(" · ")
           : w != null
-            ? `Escrituras ${w}%`
+            ? `CF escrituras ${w}%`
             : "Sin alertas";
       }
       renderBoard(data);
@@ -152,40 +165,30 @@ export function createConsumos(ctx, api) {
       if (!quiet) setMsg($("consumos-msg"), msg, "err");
       if (/KV|cuota|limit exceeded|503/i.test(msg)) {
         renderBoard({
-          alerts: [
+          providers: [
             {
-              level: "critical",
-              title: "Cuota de escrituras KV agotada (100%)",
-              body: msg,
+              id: "cloudflare",
+              name: "Cloudflare",
+              explain: "Worker + KV.",
+              alerts: [{ level: "critical", title: "Cuota de escrituras KV agotada (100%)", body: msg }],
+              meters: [
+                {
+                  id: "writes",
+                  label: "Escrituras KV (hoy)",
+                  used: 1000,
+                  limit: 1000,
+                  left: 0,
+                  usedPct: 100,
+                  leftPct: 0,
+                  unit: "puts",
+                  tone: "critical",
+                  renewsAt: "21:00 AR",
+                },
+              ],
+              tips: ["Esperá el reset diario (00:00 UTC ≈ 21:00 Argentina)."],
+              renewsAt: "21:00 AR",
             },
           ],
-          kpis: {
-            kvWriteStatus: "BLOQUEADA",
-            visitsToday: "—",
-            contacts: "—",
-            payments: "—",
-            writesUsed: 1000,
-            writesLeftPct: 0,
-            writesUsedPct: 100,
-          },
-          meters: [
-            {
-              id: "writes",
-              label: "Escrituras KV (hoy)",
-              used: 1000,
-              limit: 1000,
-              left: 0,
-              usedPct: 100,
-              leftPct: 0,
-              unit: "puts",
-              tone: "critical",
-            },
-          ],
-          tips: [
-            "Esperá el reset diario (00:00 UTC ≈ 21:00 Argentina).",
-            "No hace falta tocar el fixture: los datos ya guardados siguen.",
-          ],
-          kv: { resetsAtLocal: "21:00 AR" },
         });
       }
       return null;

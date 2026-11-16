@@ -1172,16 +1172,340 @@ async function countKvPrefix(env, prefix) {
   return n;
 }
 
+const VERCEL_DEPLOY_LIMIT_DAY = 100; // Hobby · ventana rodante 24 h
+const GITHUB_CORE_SOFT_LIMIT = 5000; // authenticated REST
+
+function formatArClock(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("es-AR", {
+    timeZone: "America/Buenos_Aires",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(d);
+  const part = (type) => parts.find((p) => p.type === type)?.value || "";
+  return `${part("day")}/${part("month")} ${part("hour")}:${part("minute")} AR`;
+}
+
+/** Vercel Hobby: deploys en las últimas 24 h (API o estimación vía GitHub statuses). */
+async function readVercelUsage(env) {
+  const now = Date.now();
+  const sinceMs = now - 86_400_000;
+  const token = String(env.VERCEL_TOKEN || "").trim();
+  const projectId = String(env.VERCEL_PROJECT_ID || "").trim();
+  const teamId = String(env.VERCEL_TEAM_ID || "").trim();
+  const alerts = [];
+  const tips = [
+    "Plan Hobby: ~100 deploys cada 24 h (ventana rodante; no se reinicia a las 21:00 AR).",
+    "Cuentan pushes a main, previews de PR y cada «Actualiza fixture / ranking» desde el admin.",
+    "Si llega a 100%, el sitio público no se actualiza; el admin, KV y Pegar en Drive siguen.",
+  ];
+  const kpis = [];
+
+  async function fromGithubStatuses() {
+    const owner = String(env.GITHUB_OWNER || "").trim();
+    const repo = String(env.GITHUB_REPO || "").trim();
+    const ghToken = String(env.GITHUB_TOKEN || "").trim();
+    if (!owner || !repo || !ghToken) {
+      return { used: null, blocked: false, renewsAt: "", note: "Sin GITHUB_TOKEN para estimar." };
+    }
+    const sinceIso = new Date(sinceMs).toISOString();
+    const listRes = await fetch(
+      `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/commits?since=${encodeURIComponent(sinceIso)}&per_page=100`,
+      {
+        headers: {
+          Authorization: `Bearer ${ghToken}`,
+          Accept: "application/vnd.github+json",
+          "User-Agent": "padel-fb-api",
+        },
+      }
+    );
+    if (!listRes.ok) {
+      return { used: null, blocked: false, renewsAt: "", note: `GitHub commits ${listRes.status}` };
+    }
+    const commits = await listRes.json().catch(() => []);
+    let used = 0;
+    let blocked = false;
+    let blockedAt = 0;
+    for (const c of Array.isArray(commits) ? commits.slice(0, 20) : []) {
+      const sha = c?.sha;
+      if (!sha) continue;
+      const stRes = await fetch(
+        `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/commits/${encodeURIComponent(sha)}/status`,
+        {
+          headers: {
+            Authorization: `Bearer ${ghToken}`,
+            Accept: "application/vnd.github+json",
+            "User-Agent": "padel-fb-api",
+          },
+        }
+      );
+      if (!stRes.ok) continue;
+      const st = await stRes.json().catch(() => ({}));
+      const vercel = (st.statuses || []).filter((s) => String(s.context || "") === "Vercel");
+      if (!vercel.length) continue;
+      used += 1;
+      for (const s of vercel) {
+        if (/rate limited/i.test(String(s.description || ""))) {
+          blocked = true;
+          const t = Date.parse(s.created_at || s.updated_at || "");
+          if (Number.isFinite(t) && t > blockedAt) blockedAt = t;
+        }
+      }
+    }
+    const renewsAt = blocked && blockedAt ? formatArClock(blockedAt + 86_400_000) : formatArClock(now + 86_400_000);
+    return {
+      used,
+      blocked,
+      renewsAt,
+      note: "Estimación solo de este repo (vía GitHub). El tope Hobby es de toda la cuenta Vercel.",
+      source: "github-estimate",
+    };
+  }
+
+  let used = 0;
+  let blocked = false;
+  let renewsAt = formatArClock(now + 86_400_000);
+  let source = "none";
+  let note = "";
+  let latestState = "";
+  let latestDesc = "";
+
+  if (token) {
+    try {
+      let url =
+        `https://api.vercel.com/v6/deployments?limit=100&since=${sinceMs}` +
+        (projectId ? `&projectId=${encodeURIComponent(projectId)}` : "") +
+        (teamId ? `&teamId=${encodeURIComponent(teamId)}` : "");
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alerts.push({
+          level: "warn",
+          title: "No pude leer deploys de Vercel",
+          body: json?.error?.message || `HTTP ${res.status}. Revisá VERCEL_TOKEN / proyecto.`,
+        });
+        const fb = await fromGithubStatuses();
+        used = fb.used ?? 0;
+        blocked = fb.blocked;
+        renewsAt = fb.renewsAt || renewsAt;
+        note = fb.note || "";
+        source = fb.source || "github-estimate";
+      } else {
+        const deps = Array.isArray(json.deployments) ? json.deployments : [];
+        used = deps.length;
+        source = "vercel-api";
+        note = projectId
+          ? "Deploys del proyecto en las últimas 24 h (API Vercel)."
+          : "Deploys de la cuenta/equipo en las últimas 24 h (API Vercel).";
+        // Si hay 100, el más viejo de la ventana define cuándo se libera 1 cupo.
+        if (deps.length) {
+          const oldest = Math.min(...deps.map((d) => Number(d.created || d.createdAt || now)).filter(Number.isFinite));
+          if (Number.isFinite(oldest)) renewsAt = formatArClock(oldest + 86_400_000);
+          const last = deps[0];
+          latestState = String(last?.readyState || last?.state || "");
+          latestDesc = String(last?.name || last?.url || "");
+        }
+        if (used >= VERCEL_DEPLOY_LIMIT_DAY) {
+          blocked = true;
+          alerts.push({
+            level: "critical",
+            title: "Cuota de deploys Vercel agotada",
+            body: `Hobby: ${used}/${VERCEL_DEPLOY_LIMIT_DAY} en 24 h. El sitio no se republica hasta ~${renewsAt}. Admin y Pegar en Drive siguen.`,
+          });
+        } else if (used >= Math.floor(VERCEL_DEPLOY_LIMIT_DAY * 0.85)) {
+          alerts.push({
+            level: "warn",
+            title: `Deploys Vercel al ${pctUsed(used, VERCEL_DEPLOY_LIMIT_DAY)}%`,
+            body: `Usados ${used} de ${VERCEL_DEPLOY_LIMIT_DAY}. Evitá publishes de prueba.`,
+          });
+        }
+      }
+    } catch (err) {
+      alerts.push({
+        level: "warn",
+        title: "Error al consultar Vercel",
+        body: String(err?.message || err),
+      });
+      const fb = await fromGithubStatuses().catch(() => null);
+      if (fb) {
+        used = fb.used ?? 0;
+        blocked = fb.blocked;
+        renewsAt = fb.renewsAt || renewsAt;
+        note = fb.note || "";
+        source = fb.source || "github-estimate";
+      }
+    }
+  } else {
+    const fb = await fromGithubStatuses();
+    used = fb.used ?? 0;
+    blocked = fb.blocked;
+    renewsAt = fb.renewsAt || renewsAt;
+    note = fb.note || "Cargá el secret VERCEL_TOKEN para el conteo exacto de la cuenta.";
+    source = fb.source || "github-estimate";
+    alerts.push({
+      level: "warn",
+      title: "Vercel sin token de API",
+      body: "Estoy estimando con los checks de GitHub de este repo. Para el número real de la cuenta, cargá VERCEL_TOKEN en el Worker.",
+    });
+    if (blocked) {
+      alerts.push({
+        level: "critical",
+        title: "Vercel rate-limited (visto en GitHub)",
+        body: `El último deploy falló por cuota. Reintentá ~${renewsAt}. Mientras, fixtureá en admin / Pegar en Drive.`,
+      });
+    }
+  }
+
+  const deployMeter = {
+    ...meterRow({
+      id: "vercel-deploys",
+      label: "Deploys (últimas 24 h)",
+      used: Number(used) || 0,
+      limit: VERCEL_DEPLOY_LIMIT_DAY,
+      unit: "deploys",
+      blocked,
+    }),
+    renewsAt: renewsAt || "ventana 24 h",
+  };
+
+  kpis.push(
+    { label: "Fuente", value: source === "vercel-api" ? "API Vercel" : source === "github-estimate" ? "Estimación GitHub" : "—" },
+    { label: "Estado", value: blocked ? "BLOQUEADA" : "OK", sub: blocked ? "sin deploys nuevos" : "puede publicar sitio" },
+    { label: "Último deploy", value: latestState || "—", sub: latestDesc || note || "" }
+  );
+
+  if (!alerts.some((a) => a.level === "critical") && !blocked && source === "vercel-api") {
+    alerts.unshift({
+      level: "ok",
+      title: `Deploys OK · libre ${deployMeter.leftPct}%`,
+      body: `Usado ${deployMeter.usedPct}% (${deployMeter.used}/${deployMeter.limit}) en 24 h.`,
+    });
+  }
+
+  return {
+    id: "vercel",
+    name: "Vercel",
+    explain:
+      "Publica el sitio estático (padel-fb.vercel.app). Si se agota la cuota Hobby, dejan de salir los deploys; los datos ya están en GitHub y el admin sigue.",
+    meters: [deployMeter],
+    kpis,
+    alerts,
+    tips,
+    note,
+    source,
+    renewsAt,
+  };
+}
+
+/** GitHub REST: cuota del token que usa el Worker para publish. */
+async function readGithubUsage(env) {
+  const token = String(env.GITHUB_TOKEN || "").trim();
+  const alerts = [];
+  const tips = [
+    "El Worker usa GITHUB_TOKEN para leer/publicar JSON (fixture, ranking, parejas).",
+    "Tope típico autenticado: 5000 requests/hora (se renueva cada hora).",
+  ];
+  if (!token) {
+    return {
+      id: "github",
+      name: "GitHub",
+      explain: "API que usa el admin para publicar archivos al repo.",
+      meters: [],
+      kpis: [{ label: "Token", value: "Falta GITHUB_TOKEN", sub: "publish no anda" }],
+      alerts: [{ level: "critical", title: "Sin GITHUB_TOKEN", body: "No se puede publicar desde el admin." }],
+      tips,
+    };
+  }
+  try {
+    const res = await fetch("https://api.github.com/rate_limit", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+        "User-Agent": "padel-fb-api",
+      },
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        id: "github",
+        name: "GitHub",
+        explain: "API que usa el admin para publicar archivos al repo.",
+        meters: [],
+        kpis: [],
+        alerts: [{ level: "warn", title: "No pude leer rate_limit", body: json?.message || `HTTP ${res.status}` }],
+        tips,
+      };
+    }
+    const core = json.resources?.core || {};
+    const used = Math.max(0, Number(core.limit || GITHUB_CORE_SOFT_LIMIT) - Number(core.remaining || 0));
+    const limit = Number(core.limit || GITHUB_CORE_SOFT_LIMIT);
+    const resetMs = Number(core.reset || 0) * 1000;
+    const renewsAt = resetMs ? formatArClock(resetMs) : "cada hora";
+    const meter = {
+      ...meterRow({
+        id: "github-core",
+        label: "API REST (esta hora)",
+        used,
+        limit,
+        unit: "reqs",
+        blocked: Number(core.remaining || 0) <= 0,
+      }),
+      renewsAt,
+    };
+    if (meter.usedPct >= 90) {
+      alerts.push({
+        level: "warn",
+        title: `GitHub API al ${meter.usedPct}%`,
+        body: `Quedan ${core.remaining} requests hasta ~${renewsAt}.`,
+      });
+    } else {
+      alerts.push({
+        level: "ok",
+        title: `GitHub OK · libre ${meter.leftPct}%`,
+        body: `Quedan ${core.remaining} de ${limit} requests esta hora.`,
+      });
+    }
+    return {
+      id: "github",
+      name: "GitHub",
+      explain: "Cuota del token con el que el Worker publica commits al repo (fixture, ranking, etc.).",
+      meters: [meter],
+      kpis: [
+        { label: "Restantes", value: String(core.remaining ?? "—"), sub: "esta hora" },
+        { label: "Repo", value: `${env.GITHUB_OWNER}/${env.GITHUB_REPO}`, sub: "publish" },
+      ],
+      alerts,
+      tips,
+      renewsAt,
+    };
+  } catch (err) {
+    return {
+      id: "github",
+      name: "GitHub",
+      explain: "API que usa el admin para publicar archivos al repo.",
+      meters: [],
+      kpis: [],
+      alerts: [{ level: "warn", title: "Error GitHub rate_limit", body: String(err?.message || err) }],
+      tips,
+    };
+  }
+}
+
 /** Panel admin: cuotas / alertas para no volver a tumbar inscripción-publish. */
 async function readUsage(env) {
   const day = utcDay(0);
   const alerts = [];
   const tips = [
-    "Los % son sobre el plan free de Cloudflare (orientativos): 1000 escrituras KV/día y 100000 lecturas/día.",
-    "Se reinicia a las 00:00 UTC (~21:00 Argentina).",
-    "Escrituras: login, inscripción, comprobantes y el guardado de visitas (cada ~5 min).",
-    "Si Escrituras llega a ~100%, se cortan inscripción y publish hasta el reset.",
-    "Vercel tiene otro tope de deploys free (~100/día): no afecta inscripción, solo republicar el sitio.",
+    "Los % de Cloudflare son del plan Workers Free (orientativos): 1000 escrituras KV/día.",
+    "Cloudflare se reinicia a las 00:00 UTC (~21:00 Argentina).",
+    "Escrituras KV: login, inscripción, comprobantes y visitas (flush cada ~5 min).",
+    "Si Escrituras KV llega a ~100%, se cortan inscripción y publish hasta el reset.",
   ];
 
   let visitsToday = 0;
@@ -1268,16 +1592,7 @@ async function readUsage(env) {
   const now = new Date();
   const nextUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
   const resetsAtUtc = nextUtc.toISOString();
-  const resetParts = new Intl.DateTimeFormat("es-AR", {
-    timeZone: "America/Buenos_Aires",
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(nextUtc);
-  const part = (type) => resetParts.find((p) => p.type === type)?.value || "";
-  const resetsAtLocal = `${part("day")}/${part("month")} ${part("hour")}:${part("minute")} AR`;
+  const resetsAtLocal = formatArClock(nextUtc);
 
   const meters = [
     {
@@ -1354,9 +1669,65 @@ async function readUsage(env) {
     });
   }
 
+  const cloudflare = {
+    id: "cloudflare",
+    name: "Cloudflare",
+    explain:
+      "Worker + KV: login, inscripción, comprobantes y visitas. Si se agotan las escrituras KV, se corta la API hasta las 21:00 AR.",
+    meters,
+    kpis: [
+      { label: "Estado escritura", value: kvWriteStatus, sub: writeMeter.leftPct != null ? `${writeMeter.leftPct}% libre` : "" },
+      { label: "Visitas hoy", value: String(visitsToday), sub: "tráfico web" },
+      { label: "Contactos", value: String(contacts), sub: "tel/mail en KV" },
+      { label: "Comprobantes", value: String(payments), sub: "pagos subidos en KV" },
+    ],
+    kpiNote:
+      "Contactos y comprobantes no tienen por qué coincidir: una pareja puede tener WhatsApp/mail y todavía no haber subido el pago (o al revés).",
+    alerts,
+    tips,
+    renewsAt: resetsAtLocal,
+  };
+
+  // Cache corto de Vercel/GitHub para no martillar APIs en cada “Actualizar”.
+  async function cachedProvider(key, loader, ttlSec = 90) {
+    const url = `https://padel-fb-api.cache/usageprov/${key}`;
+    try {
+      const hit = await caches.default.match(url);
+      if (hit) {
+        const j = await hit.json().catch(() => null);
+        if (j && j.id) return j;
+      }
+    } catch {
+      /* sin cache */
+    }
+    const fresh = await loader();
+    try {
+      await caches.default.put(
+        url,
+        new Response(JSON.stringify(fresh), {
+          headers: { "Cache-Control": `max-age=${ttlSec}`, "Content-Type": "application/json" },
+        })
+      );
+    } catch {
+      /* ignore */
+    }
+    return fresh;
+  }
+
+  const [vercel, github] = await Promise.all([
+    cachedProvider("vercel", () => readVercelUsage(env), 120),
+    cachedProvider("github", () => readGithubUsage(env), 60),
+  ]);
+  const providers = [cloudflare, vercel, github];
+  const allAlerts = providers.flatMap((p) =>
+    (p.alerts || []).map((a) => ({ ...a, provider: p.name, providerId: p.id }))
+  );
+
   return {
     ok: writeOk,
     generatedAt: now.toISOString(),
+    providers,
+    // Compat con UI vieja / alertas globales
     kv: {
       writeOk,
       freeWriteBudgetHint: KV_WRITE_LIMIT_DAY,
@@ -1381,10 +1752,11 @@ async function readUsage(env) {
       kvReadsPerDay: KV_READ_LIMIT_DAY,
       visitsSoftPerDay: VISITS_SOFT_LIMIT_DAY,
       keysSoft: KV_KEYS_SOFT_LIMIT,
-      note: "Límites típicos del plan Workers Free de Cloudflare (orientativos). El contador de escrituras es propio del Worker (aproximado).",
+      vercelDeploysPerDay: VERCEL_DEPLOY_LIMIT_DAY,
+      note: "Cloudflare = Workers Free (KV). Vercel = Hobby deploys/24h. GitHub = rate_limit del token.",
     },
-    alerts,
-    tips,
+    alerts: allAlerts,
+    tips: [...tips, ...(vercel.tips || []).slice(0, 2)],
   };
 }
 
