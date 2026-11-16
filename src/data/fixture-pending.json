@@ -2,6 +2,75 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Miércoles 19:00 - 22:00 · Viernes 19:00 - 23:00",
+    "days": {
+      "Miércoles": "19:00 - 22:00",
+      "Viernes": "19:00 - 23:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Claudio Roldán / Joaquin Roldán",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 15:00 - 18:00 · Martes 09:00 - 18:00 · Jueves 09:00 - 17:00 · Viernes 15:00 - 19:00 · Sábado 09:00 - 12:00",
+    "days": {
+      "Lunes": "15:00 - 18:00",
+      "Martes": "09:00 - 18:00",
+      "Jueves": "09:00 - 17:00",
+      "Viernes": "15:00 - 19:00",
+      "Sábado": "09:00 - 12:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Valentina Laikan / Bernardita Cuello",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Martes 19:00 - 21:30 · Miércoles 18:30 - 21:30 · Jueves 19:00 - 21:30 · Viernes 18:00 - 20:00 · Sábado 16:00 - 18:00",
+    "days": {
+      "Martes": "19:00 - 21:30",
+      "Miércoles": "18:30 - 21:30",
+      "Jueves": "19:00 - 21:30",
+      "Viernes": "18:00 - 20:00",
+      "Sábado": "16:00 - 18:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Florencia Cavallaro / Luisina Yancovich",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Viernes 18:00 - 21:00 · Sábado 11:30 - 18:00",
     "days": {
       "Viernes": "18:00 - 21:00",
@@ -16,29 +85,6 @@
     "venue": "",
     "court": "",
     "home": "Andrea Scoreanzi / Gisela Mansilla",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 21:00 - 23:00 · Martes 21:00 - 23:00 · Jueves 21:00 - 23:30 · Sábado 13:00 - 18:00",
-    "days": {
-      "Lunes": "21:00 - 23:00",
-      "Martes": "21:00 - 23:00",
-      "Jueves": "21:00 - 23:30",
-      "Sábado": "13:00 - 18:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Brenda Cauvet / Valeria Santamaria",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
@@ -63,29 +109,6 @@
     "venue": "",
     "court": "",
     "home": "Manuela Vinuales / Delfina Vinuales",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 16:30 - 20:30 · Martes 16:30 - 20:30 · Viernes 16:30 - 21:00 · Sábado 19:00 - 20:30",
-    "days": {
-      "Lunes": "16:30 - 20:30",
-      "Martes": "16:30 - 20:30",
-      "Viernes": "16:30 - 21:00",
-      "Sábado": "19:00 - 20:30"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Laura Martínez / Dalila Sosa",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
@@ -206,30 +229,6 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 20:00 - 00:00 · Martes 20:00 - 00:00 · Miércoles 21:30 - 00:00 · Jueves 20:00 - 00:00 · Viernes 20:00 - 00:00",
-    "days": {
-      "Lunes": "20:00 - 00:00",
-      "Martes": "20:00 - 00:00",
-      "Miércoles": "21:30 - 00:00",
-      "Jueves": "20:00 - 00:00",
-      "Viernes": "20:00 - 00:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Mario Martin Sbarbaro / Ronaldo Antonio Fontana",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Lunes 20:00 - 21:30 · Miércoles 20:00 - 21:30 · Viernes 20:00 - 21:30",
     "days": {
       "Lunes": "20:00 - 21:30",
@@ -274,30 +273,6 @@
   {
     "pending": true,
     "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
-    "avail": "Lunes 14:00 - 21:00 · Martes 14:00 - 21:00 · Miércoles 14:00 - 21:00 · Jueves 14:00 - 21:00 · Viernes 14:00 - 21:00",
-    "days": {
-      "Lunes": "14:00 - 21:00",
-      "Martes": "14:00 - 21:00",
-      "Miércoles": "14:00 - 21:00",
-      "Jueves": "14:00 - 21:00",
-      "Viernes": "14:00 - 21:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Luis Roberto Herrera / Carlos Cantagallo",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
     "avail": "Lunes 19:30 - 22:30 · Martes 19:30 - 22:30 · Miércoles 19:30 - 22:30 · Jueves 19:30 - 22:30 · Viernes 19:30 - 00:00 · Sábado 19:00 - 00:00",
     "days": {
       "Lunes": "19:30 - 22:30",
@@ -316,30 +291,6 @@
     "venue": "",
     "court": "",
     "home": "Delfina Olmedo / Vanina Antonella Vallejos",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
-    "avail": "Martes 19:00 - 00:00 · Miércoles 19:00 - 00:00 · Jueves 19:00 - 00:00 · Viernes 19:00 - 00:00 · Sábado 17:00 - 21:30",
-    "days": {
-      "Martes": "19:00 - 00:00",
-      "Miércoles": "19:00 - 00:00",
-      "Jueves": "19:00 - 00:00",
-      "Viernes": "19:00 - 00:00",
-      "Sábado": "17:00 - 21:30"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Tomás Rodríguez / Sergio Alem",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""

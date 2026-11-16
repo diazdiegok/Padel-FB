@@ -345,7 +345,7 @@
     "venue": "La manzana Padel",
     "court": "Cancha 2",
     "home": "Alexis Sostersich / José Sagasta",
-    "away": "Claudio Roldán / Joaquin Roldán",
+    "away": "Mario Martin Sbarbaro / Ronaldo Antonio Fontana",
     "result": "",
     "appliedResult": ""
   },
@@ -362,6 +362,21 @@
     "away": "Iván Perez / Fernando Munguia",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "week": "Fecha 1",
+    "day": "Jueves",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "22:00 - 23:30",
+    "venue": "Open Padel",
+    "court": "Cancha 1",
+    "home": "Brenda Cauvet / Valeria Santamaria",
+    "away": "Laura Martínez / Dalila Sosa",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
   },
   {
     "week": "Fecha 1",
@@ -407,21 +422,6 @@
   },
   {
     "week": "Fecha 1",
-    "day": "Viernes",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Femenino",
-    "time": "16:00 - 17:30",
-    "venue": "Americas Padel",
-    "court": "Cancha 1",
-    "home": "Valentina Laikan / Bernardita Cuello",
-    "away": "Florencia Cavallaro / Luisina Yancovich",
-    "result": "",
-    "appliedResult": "",
-    "flexAvail": true
-  },
-  {
-    "week": "Fecha 1",
     "day": "Lunes",
     "date": "",
     "temp": "T5",
@@ -431,6 +431,21 @@
     "court": "Cancha 2",
     "home": "Marien Robledo / Valeria Joubert",
     "away": "Milagros Solaro / Ana Paula Croce",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
+  },
+  {
+    "week": "Fecha 1",
+    "day": "Miércoles",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "time": "20:00 - 21:30",
+    "venue": "Open Padel",
+    "court": "Cancha 2",
+    "home": "Luis Roberto Herrera / Carlos Cantagallo",
+    "away": "Tomás Rodríguez / Sergio Alem",
     "result": "",
     "appliedResult": "",
     "flexAvail": true

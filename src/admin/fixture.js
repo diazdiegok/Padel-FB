@@ -40,6 +40,7 @@ import {
   matchViolatesAvailability,
   missingCourtHorarios,
   nearCoverCourtOptions,
+  packNonOverlappingTurns,
   pairsSharePlayableWindow,
   parkAvailabilityViolations,
   parkBareMatchesAsPending,
@@ -226,7 +227,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   function coverCourtChoices(match, coverLabel) {
     const cover = String(coverLabel || "").trim();
     if (!cover) {
-      return { opts: [], nearOpts: [], homeDays: null, coverDays: null, bothPending: false, shareWindow: false };
+      return { opts: [], nearOpts: [], estimateOpts: [], homeDays: null, coverDays: null, bothPending: false, shareWindow: false };
     }
     // Inscripciones primero (no reusar days viejos del partido).
     const homeDays = daysOfPair(match.home, match.cat) || match.homeDays || match.days;
@@ -234,11 +235,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const bothPending = coverIsAlsoPending(cover, match);
     const shareWindow = !!(homeDays && coverDays && pairsSharePlayableWindow(homeDays, coverDays));
     if (!homeDays) {
-      return { opts: [], nearOpts: [], homeDays: null, coverDays: coverDays || null, bothPending, shareWindow };
+      return { opts: [], nearOpts: [], estimateOpts: [], homeDays: null, coverDays: coverDays || null, bothPending, shareWindow };
     }
     // Sin disponibilidad de quien cubre no ofrecemos turnos: evitar fixturear fuera de inscripción.
     if (!coverDays) {
-      return { opts: [], nearOpts: [], homeDays, coverDays: null, bothPending, shareWindow: false };
+      return { opts: [], nearOpts: [], estimateOpts: [], homeDays, coverDays: null, bothPending, shareWindow: false };
     }
     const taken = takenCourts(match);
     const opts = driveCourtOptions(
@@ -260,13 +261,20 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       taken,
       { softAway: false }
     );
-    // Siempre ofrecer también turnos cercanos (desfase chico), para todas las categorías.
-    // Si ya hay exactos, los cercanos van abajo separados por una línea.
+    // Exactos arriba. Después cercanos (desfase chico) y, si no coinciden,
+    // todas las canchas libres del Drive como horarios estimables.
     const exactKeys = new Set(opts.map((o) => o.key));
-    const nearOpts = nearCoverCourtOptions({ homeDays, awayDays: coverDays }, loadedSlots, taken, {
-      limit: 16,
+    const flex = nearCoverCourtOptions({ homeDays, awayDays: coverDays }, loadedSlots, taken, {
+      includeFar: true,
     }).filter((o) => !exactKeys.has(o.key));
-    return { opts, nearOpts, homeDays, coverDays, bothPending, shareWindow };
+    const nearOptsAll = flex.filter((o) => o.close);
+    const estimateOptsAll = flex.filter((o) => !o.close);
+    // Misma cancha: un turno de 1:30 no se lista también 30' corrido.
+    const packed = packNonOverlappingTurns([...opts, ...nearOptsAll, ...estimateOptsAll]);
+    const nearOpts = packed.filter((o) => o.close);
+    const estimateOpts = packed.filter((o) => o.estimate);
+    const packedExact = packed.filter((o) => !o.near);
+    return { opts: packedExact, nearOpts, estimateOpts, homeDays, coverDays, bothPending, shareWindow };
   }
 
   function coverSlotSelect(i, match, coverLabel) {
@@ -274,21 +282,15 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     if (!loadedSlots.length) {
       return `<select disabled aria-label="${label}"><option>Leé el Drive para ver canchas</option></select>`;
     }
-    const { opts, nearOpts, homeDays, coverDays, shareWindow } = coverCourtChoices(match, coverLabel);
+    const { opts, nearOpts, estimateOpts, homeDays, coverDays } = coverCourtChoices(match, coverLabel);
     if (!homeDays) {
       return `<select disabled aria-label="${label}"><option>Falta la disponibilidad de la pareja pendiente</option></select>`;
     }
     if (!coverDays) {
       return `<select disabled aria-label="${label}" title="Falta la disponibilidad de quien cubre en Inscripciones"><option>Falta la disponibilidad de quien cubre</option></select>`;
     }
-    if (!opts.length && !nearOpts.length) {
-      let empty = "Sin cancha libre del Drive donde puedan jugar ambas";
-      let title = empty;
-      if (coverDays && !shareWindow) {
-        empty = "No coinciden en día y horario (1:30 en común)";
-        title = "No comparten un tramo de 1:30 el mismo día. Revisá Inscripciones.";
-      }
-      return `<select disabled aria-label="${label}" title="${escAttr(title)}"><option>${escAttr(empty)}</option></select>`;
+    if (!opts.length && !nearOpts.length && !estimateOpts.length) {
+      return `<select disabled aria-label="${label}" title="No quedó ninguna cancha libre en el Sheet de esta fecha"><option>Sin cancha libre en el Drive</option></select>`;
     }
 
     const renderOpts = (list, { near = false, includeDay = false } = {}) =>
@@ -319,15 +321,15 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         .join("");
     };
 
-    const total = opts.length + nearOpts.length;
-    const placeholder = opts.length
-      ? nearOpts.length
-        ? `2. Elegir entre ${opts.length} libre${opts.length === 1 ? "" : "s"} + ${nearOpts.length} cercano${nearOpts.length === 1 ? "" : "s"}…`
-        : `2. Elegir entre ${opts.length} turno${opts.length === 1 ? "" : "s"} libre${opts.length === 1 ? "" : "s"}…`
-      : `2. Elegir entre ${nearOpts.length} turno${nearOpts.length === 1 ? "" : "s"} cercano${nearOpts.length === 1 ? "" : "s"} (desfase)…`;
+    const total = opts.length + nearOpts.length + estimateOpts.length;
+    const parts = [];
+    if (opts.length) parts.push(`${opts.length} exacto${opts.length === 1 ? "" : "s"}`);
+    if (nearOpts.length) parts.push(`${nearOpts.length} cercano${nearOpts.length === 1 ? "" : "s"}`);
+    if (estimateOpts.length) parts.push(`${estimateOpts.length} estimable${estimateOpts.length === 1 ? "" : "s"}`);
+    const placeholder = `2. Elegir entre ${parts.join(" + ")}…`;
     const hint = opts.length
-      ? "Arriba: turnos donde entran las dos exactas. Abajo de la línea: libres cercanos con poco desfase (alguna punta afloja)."
-      : "No hay turno exacto para ambas. Se listan canchas libres con poco desfase de horario.";
+      ? "Arriba: turnos donde entran las dos. Después, cercanos con poco desfase y estimables: cualquier cancha libre, aunque no coincidan en 1:30."
+      : "No hay 1:30 en común. Se listan todas las canchas libres del Drive. «sin día» = ese día no está en la inscripción.";
     // Separadores con <option disabled> (no anidar optgroup).
     const exactBlock = opts.length
       ? `<option disabled value="">── Libres exactos (entran las dos) ──</option>
@@ -338,11 +340,17 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       <option disabled value="">── Cercanos · poco desfase (aflojan) ──</option>
       ${groupsByDay(nearOpts, { near: true })}`
       : "";
+    const estimateBlock = estimateOpts.length
+      ? `<option disabled value="">────────────────────────────────</option>
+      <option disabled value="">── Estimables · cancha libre ──</option>
+      ${groupsByDay(estimateOpts, { near: true })}`
+      : "";
 
     return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="${escAttr(hint)}" data-fx-cover-total="${total}">
       <option value="">${escAttr(placeholder)}</option>
       ${exactBlock}
       ${nearBlock}
+      ${estimateBlock}
     </select>`;
   }
 
@@ -1648,17 +1656,20 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         const key = coverSlot.value;
         if (!slot || !isPending(slot) || !cover || !key) return;
         const choices = coverCourtChoices(slot, cover);
-        const opt = choices.opts.find((o) => o.key === key) || choices.nearOpts.find((o) => o.key === key);
+        const opt =
+          choices.opts.find((o) => o.key === key) ||
+          choices.nearOpts.find((o) => o.key === key) ||
+          choices.estimateOpts.find((o) => o.key === key);
         if (!opt) {
           toast("Esa cancha ya no está libre.", "err");
           coverSlot.value = "";
           return;
         }
-        if (opt.near) {
+        if (opt.near || opt.estimate) {
           const okNear = await confirmModal({
-            title: "Cubrir con horario cercano",
+            title: opt.estimate ? "Cubrir con horario estimable" : "Cubrir con horario cercano",
             body:
-              `No entran exactas en 1:30 según Inscripciones. El turno más cercano libre es ${courtOptionText(opt)}` +
+              `No entran exactas en 1:30 según Inscripciones. La cancha está libre: ${courtOptionText(opt)}` +
               (opt.nearLabel ? ` (${opt.nearLabel})` : "") +
               ". Alguna pareja afloja su disponibilidad. ¿Lo usamos igual?",
             confirmLabel: "Usar igual",
@@ -1748,16 +1759,21 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         toast("Falta la disponibilidad de quien cubre en Inscripciones.", "err");
         return;
       }
+      const flexCount = shared.nearOpts.length + shared.estimateOpts.length;
+      if (!shared.opts.length && !flexCount) {
+        toast("Sin cancha libre en el Drive.", "err");
+        return;
+      }
       if (!shared.opts.length) {
-        if (shared.coverDays && !shared.shareWindow) {
-          toast("No coinciden en día y horario (hace falta 1:30 en común).", "err");
-        } else {
-          toast("Sin cancha libre del Drive donde puedan jugar ambas.", "err");
-        }
+        toast(
+          `${flexCount} horario${flexCount === 1 ? "" : "s"} estimable${flexCount === 1 ? "" : "s"}: la cancha está libre, sin 1:30 en común.`,
+          "ok"
+        );
         return;
       }
       toast(
-        `${shared.opts.length} turno${shared.opts.length === 1 ? "" : "s"} libre${shared.opts.length === 1 ? "" : "s"} donde entran las dos`,
+        `${shared.opts.length} turno${shared.opts.length === 1 ? "" : "s"} libre${shared.opts.length === 1 ? "" : "s"} donde entran las dos` +
+          (flexCount ? ` · ${flexCount} estimable${flexCount === 1 ? "" : "s"} más` : ""),
         "ok"
       );
     });
