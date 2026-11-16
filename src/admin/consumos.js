@@ -307,9 +307,32 @@ export function createConsumos(ctx, api) {
     }
   }
 
+  async function editStorageGb() {
+    const cur = last?.providers?.find((p) => p.id === "vercel")?.storage?.usedGb;
+    const raw = window.prompt(
+      "Deployment Storage usado (GB), como en Vercel → Usage.\nEj: 4.94",
+      cur != null ? String(cur) : "4.94"
+    );
+    if (raw == null) return;
+    const usedGb = Number(String(raw).replace(",", "."));
+    if (!Number.isFinite(usedGb) || usedGb < 0) {
+      setMsg($("consumos-msg"), "Número inválido.", "err");
+      return;
+    }
+    try {
+      setMsg($("consumos-msg"), "Guardando storage…");
+      await api.worker("/usage/vercel-storage", { usedGb, limitGb: 10, source: "admin" });
+      setMsg($("consumos-msg"), `Storage actualizado: ${usedGb} GB / 10 GB.`, "ok");
+      await reload({ quiet: true });
+    } catch (err) {
+      setMsg($("consumos-msg"), err?.message || "No se pudo guardar storage.", "err");
+    }
+  }
+
   function bind() {
     $("consumos-reload")?.addEventListener("click", () => reload());
     $("consumos-hide-deploy")?.addEventListener("click", () => hideHacerDeploy());
+    $("consumos-storage-edit")?.addEventListener("click", () => editStorageGb());
     $("consumos-board")?.addEventListener("click", (ev) => {
       const btn = ev.target?.closest?.("[data-hide-hacer-deploy]");
       if (btn) hideHacerDeploy();

@@ -1173,6 +1173,7 @@ async function countKvPrefix(env, prefix) {
 }
 
 const VERCEL_DEPLOY_LIMIT_DAY = 100; // Hobby · ventana rodante 24 h
+const VERCEL_STORAGE_LIMIT_GB = 10; // Hobby Deployment Storage
 const GITHUB_CORE_SOFT_LIMIT = 5000; // authenticated REST
 
 function formatArClock(date) {
@@ -1308,8 +1309,53 @@ async function readVercelUsage(env) {
     "Plan Hobby: 100 deploys / 24 h (ventana rodante de toda la cuenta, no solo este proyecto).",
     "Cuentan pushes, previews de PR y publishes del admin en cualquier proyecto del plan.",
     "Si llega a 100%, el sitio público no se actualiza; el admin, KV y Pegar en Drive siguen.",
+    "Deployment Storage (10 GB Hobby): los deploys viejos se borran solos por retention (~30 días; se guardan los últimos 3 de producción y 3 recientes). Si pasás 10 GB, Vercel borra antes los no protegidos.",
   ];
   const kpis = [];
+
+  async function countRetainedDeployments() {
+    if (!token) return null;
+    let retained = 0;
+    let until = Date.now();
+    try {
+      for (let i = 0; i < 8; i++) {
+        const url =
+          `https://api.vercel.com/v6/deployments?limit=100&until=${until}` +
+          (teamId ? `&teamId=${encodeURIComponent(teamId)}` : "");
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) return retained || null;
+        const batch = Array.isArray(json.deployments) ? json.deployments : [];
+        if (!batch.length) break;
+        retained += batch.length;
+        const oldest = Math.min(...batch.map((d) => vercelCreatedMs(d, until)));
+        if (batch.length < 100) break;
+        until = oldest - 1;
+      }
+    } catch {
+      return retained || null;
+    }
+    return retained;
+  }
+
+  async function readStorageSnapshot() {
+    try {
+      const raw = await env.AUTH_KV?.get("usage:vercel-storage", "json");
+      if (raw && Number.isFinite(Number(raw.usedGb))) {
+        return {
+          usedGb: Number(raw.usedGb),
+          limitGb: Number(raw.limitGb) || VERCEL_STORAGE_LIMIT_GB,
+          updatedAt: raw.updatedAt || "",
+          source: raw.source || "kv",
+        };
+      }
+    } catch {
+      /* ignore */
+    }
+    return null;
+  }
 
   async function fromGithubStatuses() {
     const owner = String(env.GITHUB_OWNER || "").trim();
@@ -1501,11 +1547,49 @@ async function readVercelUsage(env) {
     renewsAtMs,
   };
 
+  const [storageSnap, retainedCount] = await Promise.all([readStorageSnapshot(), countRetainedDeployments()]);
+  const meters = [deployMeter];
+
+  if (storageSnap) {
+    const usedGb = storageSnap.usedGb;
+    const limitGb = storageSnap.limitGb || VERCEL_STORAGE_LIMIT_GB;
+    const usedPct = Math.min(100, Math.round((usedGb / limitGb) * 1000) / 10);
+    const leftGb = Math.max(0, Math.round((limitGb - usedGb) * 100) / 100);
+    let tone = "ok";
+    if (usedPct >= 90) tone = "critical";
+    else if (usedPct >= 70) tone = "warn";
+    meters.push({
+      id: "vercel-storage",
+      label: "Deployment Storage (Hobby)",
+      used: usedGb,
+      limit: limitGb,
+      left: leftGb,
+      usedPct,
+      leftPct: Math.max(0, Math.round((100 - usedPct) * 10) / 10),
+      unit: "GB",
+      tone,
+      blocked: usedPct >= 100,
+      renewsAt: "auto (retention ~30 d · guarda últimos 3 prod)",
+    });
+    if (usedPct >= 85) {
+      alerts.push({
+        level: usedPct >= 95 ? "critical" : "warn",
+        title: `Storage Vercel al ${usedPct}%`,
+        body: `${usedGb} / ${limitGb} GB. Hobby borra deploys viejos solo; si llega a 10 GB puede frenar deploys hasta liberar espacio.`,
+      });
+    }
+  }
+
   kpis.push(
     {
       label: "Quedan",
       value: String(Math.max(0, VERCEL_DEPLOY_LIMIT_DAY - usedCount)),
       sub: usedCount > VERCEL_DEPLOY_LIMIT_DAY ? `${usedCount} en ventana` : "deploys libres",
+    },
+    {
+      label: "Storage",
+      value: storageSnap ? `${storageSnap.usedGb} GB` : "—",
+      sub: storageSnap ? `de ${storageSnap.limitGb || VERCEL_STORAGE_LIMIT_GB} GB Hobby` : "sin dato aún",
     },
     { label: "Estado", value: blocked ? "BLOQUEADA" : "OK", sub: blocked ? "sin deploys nuevos" : "puede publicar sitio" },
     {
@@ -1514,11 +1598,10 @@ async function readVercelUsage(env) {
       sub: oldestAt ? `más viejo ${oldestAt}` : "ventana 24 h",
     },
     {
-      label: "Fuente",
-      value: source === "vercel-api" ? "API Vercel (cuenta)" : source === "github-estimate" ? "Estimación GitHub" : "—",
-      sub: projectInWindow ? `este proyecto: ${projectInWindow}` : note || "",
-    },
-    { label: "Último deploy", value: latestState || "—", sub: latestDesc || "" }
+      label: "Retenidos",
+      value: retainedCount != null ? String(retainedCount) : "—",
+      sub: "builds guardados",
+    }
   );
 
   if (!alerts.some((a) => a.level === "critical") && !blocked && source === "vercel-api") {
@@ -1534,7 +1617,7 @@ async function readVercelUsage(env) {
     name: "Vercel",
     explain:
       "Publica el sitio estático (padel-fb.vercel.app). El tope Hobby es de toda la cuenta (todos los proyectos + previews). Si se agota, dejan de salir deploys; admin y Pegar en Drive siguen.",
-    meters: [deployMeter],
+    meters,
     kpis,
     alerts,
     tips,
@@ -1547,6 +1630,8 @@ async function readVercelUsage(env) {
     nextFrees,
     projectInWindow,
     usedCount,
+    storage: storageSnap,
+    retainedCount,
   };
 }
 
@@ -1847,7 +1932,7 @@ async function readUsage(env) {
   // Cache corto de Vercel/GitHub para no martillar APIs en cada “Actualizar”.
   // v2: invalidar cache viejo al cambiar forma de meters.
   async function cachedProvider(key, loader, ttlSec = 90) {
-    const url = `https://padel-fb-api.cache/usageprov/v3/${key}`;
+    const url = `https://padel-fb-api.cache/usageprov/v4/${key}`;
     try {
       const hit = await caches.default.match(url);
       if (hit) {
@@ -2952,6 +3037,12 @@ export default {
         return response(request, env, await readStats(env, days));
       }
 
+      
+      
+      
+      
+      
+      
       if (url.pathname === "/usage" && request.method === "GET") {
         if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
         return response(request, env, await readUsage(env));
@@ -2998,6 +3089,25 @@ export default {
           await env.AUTH_KV?.delete("usage:hacer-deploy-banner");
         }
         return response(request, env, { ok: true, hacerDeployBanner: !hide });
+      }
+
+      // Actualiza el GB de Deployment Storage (Hobby no lo expone por API estable).
+      if (url.pathname === "/usage/vercel-storage" && request.method === "POST") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        const body = await request.json().catch(() => ({}));
+        const usedGb = Number(body?.usedGb);
+        const limitGb = Number(body?.limitGb) || VERCEL_STORAGE_LIMIT_GB;
+        if (!Number.isFinite(usedGb) || usedGb < 0) {
+          return response(request, env, { message: "usedGb inválido." }, 400);
+        }
+        const snap = {
+          usedGb: Math.round(usedGb * 100) / 100,
+          limitGb,
+          updatedAt: new Date().toISOString(),
+          source: body?.source || "admin",
+        };
+        await env.AUTH_KV?.put("usage:vercel-storage", JSON.stringify(snap));
+        return response(request, env, { ok: true, storage: snap });
       }
 
       return response(request, env, { message: "No encontrado." }, 404);
