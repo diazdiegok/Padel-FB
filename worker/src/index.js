@@ -99,6 +99,7 @@ async function createSession(env) {
   const signature = encodeBase64Url(await hmac(env.SESSION_SECRET, payload));
   if (env.AUTH_KV) {
     await env.AUTH_KV.put(`sess:${jti}`, "1", { expirationTtl: SESSION_SECONDS });
+    await meterBump(env, { writes: 1 });
   }
   return { token: `${payload}.${signature}`, exp: (now + SESSION_SECONDS) * 1000 };
 }
@@ -607,6 +608,7 @@ async function registerPair(env, raw) {
       await caches.default.delete(PAIRS_CACHE);
       await env.AUTH_KV.put(`contact:${pair.id}`, "", { metadata: contact });
       await savePayment(env, pair.id, { receiptMime, receiptData });
+      await meterBump(env, { writes: 2 });
       return { ok: true, pair: { id: pair.id, p1: pair.p1, p2: pair.p2, cat: pair.cat } };
     }
     await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
@@ -927,6 +929,113 @@ async function hitRateOk(env, request) {
 
 /** Cuota free de KV: ~1000 puts/día. Visitas NO pueden escribir en cada hit. */
 const HIT_FLUSH_SECONDS = 300; // como mucho 1 flush KV / 5 min / colo
+/** Límites orientativos Workers Free (Cloudflare). */
+const KV_WRITE_LIMIT_DAY = 1000;
+const KV_READ_LIMIT_DAY = 100_000;
+const KV_KEYS_SOFT_LIMIT = 10_000;
+const VISITS_SOFT_LIMIT_DAY = 2_000;
+const METER_FLUSH_SECONDS = 120;
+
+async function meterLoad(env, day = utcDay(0)) {
+  const empty = { writes: 0, reads: 0, lists: 0 };
+  if (!env.AUTH_KV) return empty;
+  const cacheUrl = `https://padel-fb-api.cache/meter/${day}`;
+  try {
+    const hit = await caches.default.match(cacheUrl);
+    if (hit) {
+      const j = await hit.json();
+      return {
+        writes: Number(j.writes || 0),
+        reads: Number(j.reads || 0),
+        lists: Number(j.lists || 0),
+      };
+    }
+  } catch {
+    /* seguir con KV */
+  }
+  try {
+    const fromKv = (await env.AUTH_KV.get(`usage:meter:${day}`, "json")) || null;
+    if (fromKv) {
+      return {
+        writes: Number(fromKv.writes || 0),
+        reads: Number(fromKv.reads || 0) + 1,
+        lists: Number(fromKv.lists || 0),
+      };
+    }
+  } catch {
+    /* vacío */
+  }
+  return empty;
+}
+
+async function meterSaveCache(day, meter) {
+  try {
+    await caches.default.put(
+      `https://padel-fb-api.cache/meter/${day}`,
+      new Response(JSON.stringify(meter), {
+        headers: { "Cache-Control": "max-age=86400", "Content-Type": "application/json" },
+      })
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Cuenta escrituras/lecturas propias para el panel Consumos (aproximado). */
+async function meterBump(env, { writes = 0, reads = 0, lists = 0 } = {}) {
+  if (!env.AUTH_KV) return;
+  const day = utcDay(0);
+  const cur = await meterLoad(env, day);
+  cur.writes += Number(writes) || 0;
+  cur.reads += Number(reads) || 0;
+  cur.lists += Number(lists) || 0;
+  await meterSaveCache(day, cur);
+  const gateUrl = `https://padel-fb-api.cache/meterflush/${day}`;
+  try {
+    if (await caches.default.match(gateUrl)) return;
+    await caches.default.put(
+      gateUrl,
+      new Response("1", { headers: { "Cache-Control": `max-age=${METER_FLUSH_SECONDS}`, "Content-Type": "text/plain" } })
+    );
+  } catch {
+    return;
+  }
+  try {
+    await env.AUTH_KV.put(`usage:meter:${day}`, JSON.stringify(cur), { expirationTtl: 90_000 });
+    cur.writes += 1; // el propio flush
+    await meterSaveCache(day, cur);
+  } catch {
+    /* si la cuota está llena no persistimos el medidor */
+  }
+}
+
+function pctUsed(used, limit) {
+  const u = Math.max(0, Number(used) || 0);
+  const lim = Math.max(1, Number(limit) || 1);
+  return Math.min(100, Math.round((u / lim) * 1000) / 10);
+}
+
+function meterRow({ id, label, used, limit, unit = "", blocked = false }) {
+  const safeUsed = blocked ? limit : Math.max(0, Number(used) || 0);
+  const usedPct = blocked ? 100 : pctUsed(safeUsed, limit);
+  const left = Math.max(0, limit - safeUsed);
+  const leftPct = Math.max(0, Math.round((100 - usedPct) * 10) / 10);
+  let tone = "ok";
+  if (blocked || usedPct >= 95) tone = "critical";
+  else if (usedPct >= 70) tone = "warn";
+  return {
+    id,
+    label,
+    used: safeUsed,
+    limit,
+    left,
+    usedPct,
+    leftPct,
+    unit,
+    tone,
+    blocked: !!blocked,
+  };
+}
 
 async function recordHit(env, request, raw) {
   if (!env.AUTH_KV) return { ok: true };
@@ -1020,9 +1129,12 @@ async function recordHit(env, request, raw) {
       refs: cur.refs,
     };
     await env.AUTH_KV.put(key, JSON.stringify(payload), { expirationTtl: STATS_TTL });
+    let writeN = 1;
     if (cur.recent.length) {
       await env.AUTH_KV.put("stats:recent", JSON.stringify(cur.recent.slice(0, 50)), { expirationTtl: STATS_TTL });
+      writeN = 2;
     }
+    await meterBump(env, { writes: writeN, reads: 1 });
   } catch (err) {
     // Si se acabó la cuota del día, no tumbar el sitio: las visitas son best-effort.
     const msg = String(err?.message || err || "");
@@ -1065,16 +1177,17 @@ async function readUsage(env) {
   const day = utcDay(0);
   const alerts = [];
   const tips = [
-    "Plan free de KV: ~1000 escrituras/día. Se reinicia a las 00:00 UTC (~21:00 Argentina).",
-    "Las visitas ya se acumulan en caché y se guardan en KV como mucho cada 5 minutos.",
-    "Si ves cuota agotada: esperá el reset; no hace falta republicar el fixture.",
-    "Cada inscripción/login/comprobante también escribe en KV: evitá pruebas masivas el mismo día.",
-    "Vercel tiene otro tope de deploys free (~100/día): no afecta inscripción, solo republicar el sitio estático.",
+    "Los % son sobre el plan free de Cloudflare (orientativos): 1000 escrituras KV/día y 100000 lecturas/día.",
+    "Se reinicia a las 00:00 UTC (~21:00 Argentina).",
+    "Escrituras: login, inscripción, comprobantes y el guardado de visitas (cada ~5 min).",
+    "Si Escrituras llega a ~100%, se cortan inscripción y publish hasta el reset.",
+    "Vercel tiene otro tope de deploys free (~100/día): no afecta inscripción, solo republicar el sitio.",
   ];
 
   let visitsToday = 0;
   try {
     const cur = (await env.AUTH_KV?.get(`stats:day:${day}`, "json")) || null;
+    await meterBump(env, { reads: 1 });
     visitsToday = Math.max(0, Number(cur?.total || 0) - Number(cur?.countries?.US || 0));
   } catch (err) {
     alerts.push({
@@ -1091,6 +1204,7 @@ async function readUsage(env) {
     contacts = await countKvPrefix(env, "contact:");
     payments = await countKvPrefix(env, "pay:");
     acad = await countKvPrefix(env, "acad:");
+    await meterBump(env, { lists: 3, reads: 3 });
   } catch (err) {
     alerts.push({
       level: "warn",
@@ -1116,6 +1230,7 @@ async function readUsage(env) {
     try {
       const probeKey = `usage:probe:${day}`;
       await env.AUTH_KV.put(probeKey, String(Date.now()), { expirationTtl: 300 });
+      await meterBump(env, { writes: 1 });
       try {
         await caches.default.put(
           probeGate,
@@ -1131,7 +1246,7 @@ async function readUsage(env) {
         kvWriteStatus = "BLOQUEADA";
         alerts.push({
           level: "critical",
-          title: "Cuota diaria de escrituras KV agotada",
+          title: "Cuota diaria de escrituras KV agotada (100%)",
           body: "Inscripción, login y comprobantes fallan hasta las 00:00 UTC (~21:00 Argentina). Los datos ya publicados no se borran.",
         });
       } else {
@@ -1145,19 +1260,70 @@ async function readUsage(env) {
     }
   }
 
+  const meter = await meterLoad(env, day);
+  const writesUsed = writeOk ? meter.writes : KV_WRITE_LIMIT_DAY;
+  const readsUsed = meter.reads;
+  const keysUsed = contacts + payments + acad;
+  const meters = [
+    meterRow({
+      id: "writes",
+      label: "Escrituras KV (hoy)",
+      used: writesUsed,
+      limit: KV_WRITE_LIMIT_DAY,
+      unit: "puts",
+      blocked: !writeOk,
+    }),
+    meterRow({
+      id: "reads",
+      label: "Lecturas KV (hoy, estimadas)",
+      used: readsUsed,
+      limit: KV_READ_LIMIT_DAY,
+      unit: "gets",
+    }),
+    meterRow({
+      id: "visits",
+      label: "Visitas web (hoy)",
+      used: visitsToday,
+      limit: VISITS_SOFT_LIMIT_DAY,
+      unit: "hits",
+    }),
+    meterRow({
+      id: "keys",
+      label: "Almacenamiento (claves)",
+      used: keysUsed,
+      limit: KV_KEYS_SOFT_LIMIT,
+      unit: "keys",
+    }),
+  ];
+
+  const writeMeter = meters.find((m) => m.id === "writes");
+  if (writeOk && writeMeter.usedPct >= 70 && writeMeter.usedPct < 95) {
+    alerts.push({
+      level: "warn",
+      title: `Escrituras al ${writeMeter.usedPct}%`,
+      body: `Usadas ${writeMeter.used} de ${writeMeter.limit}. Queda ${writeMeter.leftPct}% (~${writeMeter.left} puts). Evitá pruebas masivas de inscripción.`,
+    });
+  } else if (writeOk && writeMeter.usedPct >= 95) {
+    alerts.push({
+      level: "critical",
+      title: `Escrituras al ${writeMeter.usedPct}%`,
+      body: `Queda muy poco (~${writeMeter.left} puts). Riesgo alto de corte antes del reset.`,
+    });
+  }
+
   if (writeOk && visitsToday >= 400) {
     alerts.push({
       level: "warn",
       title: "Muchas visitas hoy",
-      body: `Hay ${visitsToday} visitas contadas. Con el Worker actual no debería quemar la cuota, pero revisá si hay bots o previews de Vercel raros.`,
+      body: `Hay ${visitsToday} visitas contadas (${pctUsed(visitsToday, VISITS_SOFT_LIMIT_DAY)}% del tope suave).`,
     });
   }
 
   if (writeOk && !alerts.some((a) => a.level === "critical")) {
     alerts.unshift({
       level: "ok",
-      title: "Escrituras KV operativas",
-      body: "La prueba de escritura funcionó. Inscripción y publish deberían andar.",
+      title: `Escrituras OK · libre ${writeMeter.leftPct}%`,
+      body: `Usado ${writeMeter.usedPct}% (${writeMeter.used}/${writeMeter.limit}). Inscripción y publish deberían andar.`,
     });
   }
 
@@ -1176,7 +1342,7 @@ async function readUsage(env) {
     generatedAt: now.toISOString(),
     kv: {
       writeOk,
-      freeWriteBudgetHint: 1000,
+      freeWriteBudgetHint: KV_WRITE_LIMIT_DAY,
       hitFlushSeconds: HIT_FLUSH_SECONDS,
       resetsAtUtc,
       resetsAtLocal,
@@ -1187,11 +1353,18 @@ async function readUsage(env) {
       kvWriteStatus,
       contacts,
       payments,
+      writesUsed,
+      writesLeft: Math.max(0, KV_WRITE_LIMIT_DAY - writesUsed),
+      writesUsedPct: writeMeter.usedPct,
+      writesLeftPct: writeMeter.leftPct,
     },
+    meters,
     limits: {
-      kvWritesPerDay: 1000,
-      kvReadsPerDay: 100000,
-      note: "Límites típicos del plan Workers Free de Cloudflare (orientativos).",
+      kvWritesPerDay: KV_WRITE_LIMIT_DAY,
+      kvReadsPerDay: KV_READ_LIMIT_DAY,
+      visitsSoftPerDay: VISITS_SOFT_LIMIT_DAY,
+      keysSoft: KV_KEYS_SOFT_LIMIT,
+      note: "Límites típicos del plan Workers Free de Cloudflare (orientativos). El contador de escrituras es propio del Worker (aproximado).",
     },
     alerts,
     tips,

@@ -428,6 +428,97 @@ body.is-admin main > .wrap {
   gap: 14px;
 }
 
+.consumos-explain {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.consumos-explain b {
+  color: var(--cream);
+  font-weight: 700;
+}
+
+.consumos-meters {
+  display: grid;
+  gap: 10px;
+}
+
+.consumos-meter {
+  border-radius: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 8px;
+}
+
+.consumos-meter.tone-warn {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.consumos-meter.tone-critical {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.consumos-meter-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.consumos-meter-head strong {
+  font-size: 14px;
+}
+
+.consumos-meter-pct {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.consumos-meter-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.consumos-meter-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #84cc16, #f59e0b);
+}
+
+.consumos-meter.tone-ok .consumos-meter-bar i {
+  background: linear-gradient(90deg, #65a30d, #84cc16);
+}
+
+.consumos-meter.tone-warn .consumos-meter-bar i {
+  background: linear-gradient(90deg, #f59e0b, #f97316);
+}
+
+.consumos-meter.tone-critical .consumos-meter-bar i {
+  background: linear-gradient(90deg, #ef4444, #f97316);
+}
+
+.consumos-meter-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .consumos-alerts {
   display: grid;
   gap: 10px;
