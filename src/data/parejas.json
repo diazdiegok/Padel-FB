@@ -1136,5 +1136,22 @@
       "Sábado": "17:00 - 21:30"
     },
     "note": "Sí o sí apartir de las 19 por tema de trabajo"
+  },
+  {
+    "id": "pmwjkckfmf476",
+    "createdAt": "2026-11-16T17:54:40.882Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Araceli Ferreyra",
+    "p2": "Agostina Bonilla",
+    "days": {
+      "Lunes": "18:30 - 00:00",
+      "Martes": "18:30 - 00:00",
+      "Miércoles": "21:00 - 00:00",
+      "Jueves": "18:30 - 00:00",
+      "Viernes": "18:30 - 00:00",
+      "Sábado": "18:30 - 00:00"
+    },
+    "note": ""
   }
 ]
