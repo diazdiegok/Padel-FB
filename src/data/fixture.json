@@ -369,20 +369,6 @@
     "date": "",
     "temp": "T5",
     "cat": "C Femenino",
-    "time": "15:00 - 16:30",
-    "venue": "La manzana Padel",
-    "court": "Cancha 1",
-    "home": "Andrea Scoreanzi / Gisela Mansilla",
-    "away": "Brenda Cauvet / Valeria Santamaria",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "week": "Fecha 1",
-    "day": "Sábado",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
     "time": "18:00 - 19:30",
     "venue": "La manzana Padel",
     "court": "Cancha 1",
@@ -448,19 +434,5 @@
     "result": "",
     "appliedResult": "",
     "flexAvail": true
-  },
-  {
-    "week": "Fecha 1",
-    "day": "Martes",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "16:30 - 18:00",
-    "venue": "Palermo Padel",
-    "court": "Cancha 4",
-    "home": "Manuela Vinuales / Delfina Vinuales",
-    "away": "Laura Martínez / Dalila Sosa",
-    "result": "",
-    "appliedResult": ""
   }
 ]
