@@ -1256,11 +1256,12 @@ async function readVercelUsage(env) {
         }
       }
     }
-    const renewsAt = blocked && blockedAt ? formatArClock(blockedAt + 86_400_000) : formatArClock(now + 86_400_000);
+    const renewMs = blocked && blockedAt ? blockedAt + 86_400_000 : now + 86_400_000;
     return {
       used,
       blocked,
-      renewsAt,
+      renewsAtMs: renewMs,
+      renewsAt: formatArClock(renewMs),
       note: "Estimación solo de este repo (vía GitHub). El tope Hobby es de toda la cuenta Vercel.",
       source: "github-estimate",
     };
@@ -1268,7 +1269,8 @@ async function readVercelUsage(env) {
 
   let used = 0;
   let blocked = false;
-  let renewsAt = formatArClock(now + 86_400_000);
+  let renewsAtMs = now + 86_400_000;
+  let renewsAt = formatArClock(renewsAtMs);
   let source = "none";
   let note = "";
   let latestState = "";
@@ -1293,7 +1295,8 @@ async function readVercelUsage(env) {
         const fb = await fromGithubStatuses();
         used = fb.used ?? 0;
         blocked = fb.blocked;
-        renewsAt = fb.renewsAt || renewsAt;
+        if (fb.renewsAtMs) renewsAtMs = fb.renewsAtMs;
+        renewsAt = fb.renewsAt || formatArClock(renewsAtMs);
         note = fb.note || "";
         source = fb.source || "github-estimate";
       } else {
@@ -1306,7 +1309,10 @@ async function readVercelUsage(env) {
         // Si hay 100, el más viejo de la ventana define cuándo se libera 1 cupo.
         if (deps.length) {
           const oldest = Math.min(...deps.map((d) => Number(d.created || d.createdAt || now)).filter(Number.isFinite));
-          if (Number.isFinite(oldest)) renewsAt = formatArClock(oldest + 86_400_000);
+          if (Number.isFinite(oldest)) {
+            renewsAtMs = oldest + 86_400_000;
+            renewsAt = formatArClock(renewsAtMs);
+          }
           const last = deps[0];
           latestState = String(last?.readyState || last?.state || "");
           latestDesc = String(last?.name || last?.url || "");
@@ -1336,7 +1342,8 @@ async function readVercelUsage(env) {
       if (fb) {
         used = fb.used ?? 0;
         blocked = fb.blocked;
-        renewsAt = fb.renewsAt || renewsAt;
+        if (fb.renewsAtMs) renewsAtMs = fb.renewsAtMs;
+        renewsAt = fb.renewsAt || formatArClock(renewsAtMs);
         note = fb.note || "";
         source = fb.source || "github-estimate";
       }
@@ -1345,7 +1352,8 @@ async function readVercelUsage(env) {
     const fb = await fromGithubStatuses();
     used = fb.used ?? 0;
     blocked = fb.blocked;
-    renewsAt = fb.renewsAt || renewsAt;
+    if (fb.renewsAtMs) renewsAtMs = fb.renewsAtMs;
+    renewsAt = fb.renewsAt || formatArClock(renewsAtMs);
     note = fb.note || "Cargá el secret VERCEL_TOKEN para el conteo exacto de la cuenta.";
     source = fb.source || "github-estimate";
     alerts.push({
@@ -1372,11 +1380,13 @@ async function readVercelUsage(env) {
       blocked,
     }),
     renewsAt: renewsAt || "ventana 24 h",
+    renewsAtMs,
   };
 
   kpis.push(
-    { label: "Fuente", value: source === "vercel-api" ? "API Vercel" : source === "github-estimate" ? "Estimación GitHub" : "—" },
+    { label: "Quedan", value: String(Math.max(0, VERCEL_DEPLOY_LIMIT_DAY - (Number(used) || 0))), sub: "deploys libres" },
     { label: "Estado", value: blocked ? "BLOQUEADA" : "OK", sub: blocked ? "sin deploys nuevos" : "puede publicar sitio" },
+    { label: "Fuente", value: source === "vercel-api" ? "API Vercel" : source === "github-estimate" ? "Estimación GitHub" : "—" },
     { label: "Último deploy", value: latestState || "—", sub: latestDesc || note || "" }
   );
 
@@ -1400,6 +1410,7 @@ async function readVercelUsage(env) {
     note,
     source,
     renewsAt,
+    renewsAtMs,
   };
 }
 
@@ -1457,6 +1468,7 @@ async function readGithubUsage(env) {
         blocked: Number(core.remaining || 0) <= 0,
       }),
       renewsAt,
+      renewsAtMs: resetMs || undefined,
     };
     if (meter.usedPct >= 90) {
       alerts.push({
@@ -1483,6 +1495,7 @@ async function readGithubUsage(env) {
       alerts,
       tips,
       renewsAt,
+      renewsAtMs: resetMs || undefined,
     };
   } catch (err) {
     return {
@@ -1594,6 +1607,7 @@ async function readUsage(env) {
   const resetsAtUtc = nextUtc.toISOString();
   const resetsAtLocal = formatArClock(nextUtc);
 
+  const cfRenewMs = nextUtc.getTime();
   const meters = [
     {
       ...meterRow({
@@ -1605,6 +1619,7 @@ async function readUsage(env) {
         blocked: !writeOk,
       }),
       renewsAt: resetsAtLocal,
+      renewsAtMs: cfRenewMs,
     },
     {
       ...meterRow({
@@ -1615,6 +1630,7 @@ async function readUsage(env) {
         unit: "gets",
       }),
       renewsAt: resetsAtLocal,
+      renewsAtMs: cfRenewMs,
     },
     {
       ...meterRow({
@@ -1625,6 +1641,7 @@ async function readUsage(env) {
         unit: "hits",
       }),
       renewsAt: resetsAtLocal,
+      renewsAtMs: cfRenewMs,
     },
     {
       ...meterRow({
@@ -1676,7 +1693,8 @@ async function readUsage(env) {
       "Worker + KV: login, inscripción, comprobantes y visitas. Si se agotan las escrituras KV, se corta la API hasta las 21:00 AR.",
     meters,
     kpis: [
-      { label: "Estado escritura", value: kvWriteStatus, sub: writeMeter.leftPct != null ? `${writeMeter.leftPct}% libre` : "" },
+      { label: "Quedan escrituras", value: String(writeMeter.left), sub: `${writeMeter.leftPct}% libre` },
+      { label: "Estado escritura", value: kvWriteStatus, sub: writeOk ? "API operativa" : "corte de escritura" },
       { label: "Visitas hoy", value: String(visitsToday), sub: "tráfico web" },
       { label: "Contactos", value: String(contacts), sub: "tel/mail en KV" },
       { label: "Comprobantes", value: String(payments), sub: "pagos subidos en KV" },
@@ -1686,6 +1704,7 @@ async function readUsage(env) {
     alerts,
     tips,
     renewsAt: resetsAtLocal,
+    renewsAtMs: cfRenewMs,
   };
 
   // Cache corto de Vercel/GitHub para no martillar APIs en cada “Actualizar”.
