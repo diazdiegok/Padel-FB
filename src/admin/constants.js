@@ -90,6 +90,6 @@ export const SECTIONS = {
   consumos: {
     group: "Sistema",
     title: "Consumos",
-    help: "Cuotas del Worker (KV, escrituras, visitas). Acá ves alertas antes de que se corte inscripción o publish.",
+    help: "Cuotas separadas: Cloudflare (KV/API), Vercel (deploys) y GitHub (publish). Alertas antes de que se corte inscripción o el sitio.",
   },
 };

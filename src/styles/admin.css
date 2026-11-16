@@ -431,6 +431,58 @@ body.is-admin main > .wrap {
   gap: 14px;
 }
 
+.consumos-providers {
+  display: grid;
+  gap: 18px;
+}
+
+.consumos-provider {
+  display: grid;
+  gap: 12px;
+  padding: 14px 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.consumos-provider-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.consumos-provider-head h2 {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.consumos-provider-renew {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.consumos-provider-renew b {
+  color: var(--cream);
+}
+
+.consumos-provider[data-provider="cloudflare"] {
+  border-color: rgba(246, 130, 31, 0.35);
+}
+
+.consumos-provider[data-provider="vercel"] {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.consumos-provider[data-provider="github"] {
+  border-color: rgba(88, 166, 255, 0.28);
+}
+
 .consumos-explain {
   margin: 0;
   padding: 12px 14px;
