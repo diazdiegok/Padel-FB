@@ -238,6 +238,14 @@ import "../styles/admin.css";
                   <button class="btn btn-lime" type="button" id="fx-drive">Leer Drive</button>
                   <button class="btn btn-ghost" type="button" id="fx-slots">Subir archivo</button>
                   <input id="fx-slots-file" type="file" accept=".xlsx,.xls,.csv,.txt" hidden />
+                  <button
+                    class="btn btn-ghost"
+                    type="button"
+                    id="fx-sync-pairs"
+                    title="Suma parejas nuevas a Pendientes y alinea bajas/cambios de categoría con Inscripciones"
+                  >
+                    Sincronizar pendientes
+                  </button>
                   <button class="btn btn-lime" type="button" id="fx-build" hidden>Armar fixture</button>
                   <button class="btn btn-ghost" type="button" id="fx-add" hidden>+ Partido</button>
                 </div>
@@ -441,6 +449,14 @@ import "../styles/admin.css";
             <button class="btn btn-ghost" type="button" id="pairs-add">+ Pareja</button>
             <button class="btn btn-ghost" type="button" id="pairs-export">Exportar con WhatsApp</button>
             <button class="btn btn-ghost" type="button" id="pairs-align-rank" hidden>Alinear ranking</button>
+            <button
+              class="btn btn-ghost"
+              type="button"
+              id="pairs-sync-fx"
+              title="Alinea Fixture → Pendientes con las inscripciones (altas, bajas, categoría). Después Publicar parejas o Publicar fixture."
+            >
+              Sincronizar pendientes
+            </button>
             <span class="tag" id="pairs-count"></span>
             <span class="tag" id="pairs-rank-tag" hidden></span>
           </div>

@@ -599,6 +599,32 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
         "ok"
       );
     });
+    $("pairs-sync-fx")?.addEventListener("click", () => {
+      const res = onPairsChanged?.({ reason: "manual-sync", toastResult: false }) || null;
+      const s = res?.stats || {};
+      const bits = [];
+      if (s.addedPending) bits.push(`+${s.addedPending} pendiente${s.addedPending === 1 ? "" : "s"}`);
+      if (s.pendingFromRemoved) bits.push(`${s.pendingFromRemoved} por baja`);
+      if (s.pendingFromCatChange) bits.push(`${s.pendingFromCatChange} por categoría`);
+      if (!res?.changed) {
+        toast("Fixture/pendientes ya estaban al día", "ok");
+        setMsg($("pairs-msg"), "Fixture/pendientes ya estaban alineados con las inscripciones.", "ok");
+        return;
+      }
+      toast(
+        bits.length
+          ? `Pendientes sync · ${bits.join(" · ")}. Publicá parejas (o fixture) para guardar.`
+          : "Pendientes sincronizados. Publicá parejas (o fixture) para guardar.",
+        "ok"
+      );
+      setMsg(
+        $("pairs-msg"),
+        bits.length
+          ? `Pendientes alineados (${bits.join(" · ")}). Tocá Publicar parejas para subir fixture/pendientes.`
+          : "Pendientes alineados. Tocá Publicar parejas para subir fixture/pendientes.",
+        "ok"
+      );
+    });
     $("pairs-deadline")?.addEventListener("input", renderStatus);
     $("pairs-search")?.addEventListener("input", (e) => {
       term = e.target.value;
