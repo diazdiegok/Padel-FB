@@ -2,27 +2,6 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 19:00 - 22:00 · Viernes 19:00 - 22:00",
-    "days": {
-      "Lunes": "19:00 - 22:00",
-      "Viernes": "19:00 - 22:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Stefania Benedetich / Florencia Benedetich",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Lunes 15:00 - 18:00 · Martes 09:00 - 18:00 · Jueves 09:00 - 17:00 · Viernes 15:00 - 19:00 · Sábado 09:00 - 12:00",
     "days": {
       "Lunes": "15:00 - 18:00",
@@ -64,27 +43,6 @@
     "venue": "",
     "court": "",
     "home": "Florencia Cavallaro / Luisina Yancovich",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Viernes 18:00 - 21:00 · Sábado 11:30 - 18:00",
-    "days": {
-      "Viernes": "18:00 - 21:00",
-      "Sábado": "11:30 - 18:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Andrea Scoreanzi / Gisela Mansilla",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""

@@ -493,5 +493,20 @@
     "away": "Delfina Olmedo / Vanina Antonella Vallejos",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "week": "Fecha 1",
+    "day": "Sábado",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "15:00 - 16:30",
+    "venue": "La manzana Padel",
+    "court": "Cancha 1",
+    "home": "Stefania Benedetich / Florencia Benedetich",
+    "away": "Andrea Scoreanzi / Gisela Mansilla",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
   }
 ]
