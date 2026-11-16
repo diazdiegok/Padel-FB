@@ -30,10 +30,48 @@ function isWaitOnlyAlert(a) {
   return /vercel|rate.?limit|deploy|24\s*h|hobby/i.test(t) && !/KV|escritur|inscripci/i.test(t);
 }
 
-function meterCard(m, renewLabel = "") {
+function formatRemaining(ms) {
+  const n = Number(ms);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  const diff = Math.max(0, n - Date.now());
+  if (diff <= 0) return "ahora";
+  const min = Math.round(diff / 60000);
+  if (min < 60) return `en ${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h < 48) return m ? `en ${h} h ${m} min` : `en ${h} h`;
+  const d = Math.floor(h / 24);
+  const rh = h % 24;
+  return rh ? `en ${d} d ${rh} h` : `en ${d} d`;
+}
+
+function renewLine(absolute, ms) {
+  const abs = String(absolute || "").trim();
+  const rel = formatRemaining(ms);
+  if (abs && rel) return `${abs} · ${rel}`;
+  return abs || rel || "";
+}
+
+const PROVIDER_META = {
+  cloudflare: {
+    title: "Cloudflare",
+    blurb: "API del sitio: login, inscripción, comprobantes, visitas (KV).",
+  },
+  vercel: {
+    title: "Vercel",
+    blurb: "Deploys del sitio público (padel-fb.vercel.app).",
+  },
+  github: {
+    title: "GitHub",
+    blurb: "Publish del admin al repo (fixture, ranking, parejas).",
+  },
+};
+
+function meterCard(m, providerRenew = "") {
   const usedPct = Number(m.usedPct || 0);
   const leftPct = Number(m.leftPct || Math.max(0, 100 - usedPct));
-  const renew = m.renewsAt || renewLabel || "";
+  const left = m.left != null ? m.left : Math.max(0, Number(m.limit || 0) - Number(m.used || 0));
+  const renew = renewLine(m.renewsAt || providerRenew, m.renewsAtMs);
   return `<article class="consumos-meter tone-${esc(m.tone || "ok")}">
     <div class="consumos-meter-head">
       <strong>${esc(m.label || "")}</strong>
@@ -43,18 +81,22 @@ function meterCard(m, renewLabel = "") {
       <i style="width:${Math.min(100, Math.max(0, usedPct))}%"></i>
     </div>
     <div class="consumos-meter-foot">
-      <span>${esc(m.used)} / ${esc(m.limit)} ${esc(m.unit || "")}</span>
-      <span>quedan ${esc(m.left)} ${esc(m.unit || "")}</span>
+      <span>Usado <b>${esc(m.used)}</b> / ${esc(m.limit)} ${esc(m.unit || "")}</span>
+      <span class="consumos-meter-left">Quedan <b>${esc(left)}</b> ${esc(m.unit || "")}</span>
     </div>
     ${renew ? `<div class="consumos-meter-renew">Se renueva: <b>${esc(renew)}</b></div>` : ""}
   </article>`;
 }
 
 function providerSection(p) {
+  const id = p?.id || "";
+  const meta = PROVIDER_META[id] || { title: p?.name || "Proveedor", blurb: p?.explain || "" };
   const alerts = Array.isArray(p?.alerts) ? p.alerts : [];
   const meters = Array.isArray(p?.meters) ? p.meters : [];
   const kpis = Array.isArray(p?.kpis) ? p.kpis : [];
   const tips = Array.isArray(p?.tips) ? p.tips : [];
+  const renew = renewLine(p?.renewsAt, p?.renewsAtMs);
+
   const alertHtml = alerts.length
     ? `<div class="consumos-alerts">${alerts
         .map(
@@ -64,7 +106,7 @@ function providerSection(p) {
           </article>`
         )
         .join("")}</div>`
-    : `<article class="consumos-alert level-ok"><h3>OK · Sin alertas</h3><p>Sin señales de cuota al límite en ${esc(p?.name || "este proveedor")}.</p></article>`;
+    : `<article class="consumos-alert level-ok"><h3>OK · Sin alertas</h3><p>Sin señales de cuota al límite en ${esc(meta.title)}.</p></article>`;
 
   const kpiHtml = kpis.length
     ? `<div class="consumos-kpis">${kpis
@@ -78,20 +120,29 @@ function providerSection(p) {
         .join("")}</div>`
     : "";
 
-  return `<section class="consumos-provider" data-provider="${esc(p?.id || "")}">
+  const metersHtml = meters.length
+    ? `<div class="consumos-meters">${meters.map((m) => meterCard(m, p?.renewsAt || "")).join("")}</div>`
+    : `<p class="admin-help">Sin medidores para este proveedor ahora.</p>`;
+
+  return `<section class="consumos-provider" data-provider="${esc(id)}">
     <header class="consumos-provider-head">
-      <h2>${esc(p?.name || "Proveedor")}</h2>
-      ${p?.renewsAt ? `<span class="consumos-provider-renew">Próximo reset · <b>${esc(p.renewsAt)}</b></span>` : ""}
+      <div>
+        <p class="consumos-provider-kicker">Proveedor</p>
+        <h2>${esc(meta.title)}</h2>
+      </div>
+      ${renew ? `<span class="consumos-provider-renew">Próximo reset<br><b>${esc(renew)}</b></span>` : ""}
     </header>
-    ${p?.explain ? `<p class="consumos-explain">${esc(p.explain)}</p>` : ""}
+    <p class="consumos-explain">${esc(p?.explain || meta.blurb)}</p>
+    <h3 class="consumos-block-title">Cuotas</h3>
+    ${metersHtml}
+    ${kpiHtml ? `<h3 class="consumos-block-title">Resumen</h3>${kpiHtml}` : ""}
+    <h3 class="consumos-block-title">Alertas</h3>
     ${alertHtml}
-    ${meters.length ? `<div class="consumos-meters">${meters.map((m) => meterCard(m, m.renewsAt || p?.renewsAt || "")).join("")}</div>` : ""}
-    ${kpiHtml}
     ${p?.kpiNote ? `<p class="admin-help consumos-kpi-note">${esc(p.kpiNote)}</p>` : ""}
     ${
       tips.length
         ? `<article class="consumos-tips">
-      <h3>Tips · ${esc(p?.name || "")}</h3>
+      <h3>Tips · ${esc(meta.title)}</h3>
       <ul>${tips.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
     </article>`
         : ""
@@ -119,17 +170,25 @@ function legacyAsCloudflare(data) {
   };
 }
 
+function orderProviders(list) {
+  const order = ["cloudflare", "vercel", "github"];
+  return [...list].sort((a, b) => {
+    const ia = order.indexOf(a?.id);
+    const ib = order.indexOf(b?.id);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
+}
+
 function renderBoard(data) {
   const board = $("consumos-board");
   if (!board) return;
-  const providers =
-    Array.isArray(data?.providers) && data.providers.length
-      ? data.providers
-      : [legacyAsCloudflare(data || {})];
+  const providers = orderProviders(
+    Array.isArray(data?.providers) && data.providers.length ? data.providers : [legacyAsCloudflare(data || {})]
+  );
 
   board.innerHTML = `
-    <p class="consumos-explain">
-      Cada bloque es un proveedor distinto. <b>No se mezclan</b>: Cloudflare (API/KV), Vercel (deploys del sitio) y GitHub (publish al repo).
+    <p class="consumos-explain consumos-explain-top">
+      Tres proveedores <b>separados</b>. Cada uno con su barra, lo que queda y cuándo se renueva (hora AR + cuenta regresiva).
     </p>
     <div class="consumos-providers">
       ${providers.map(providerSection).join("")}
@@ -145,7 +204,6 @@ export function createConsumos(ctx, api) {
     try {
       const data = await api.worker("/usage");
       last = data;
-      // El puntito avisa; si solo es Vercel “esperar cuota”, no lo tratamos como drama.
       const actionable = (data?.alerts || []).some(
         (a) => (a.level === "critical" || a.level === "warn") && !isWaitOnlyAlert(a)
       );
@@ -156,23 +214,16 @@ export function createConsumos(ctx, api) {
         const parts = [];
         const providers = Array.isArray(data?.providers) ? data.providers : [];
         for (const p of providers) {
-          const waitOnly = (p.alerts || []).filter((a) => a.level === "critical" || a.level === "warn").every(isWaitOnlyAlert);
           const crit = (p.alerts || []).some((a) => a.level === "critical" && !isWaitOnlyAlert(a));
           const warn = (p.alerts || []).some((a) => a.level === "warn" && !isWaitOnlyAlert(a));
           const waiting = (p.alerts || []).some((a) => (a.level === "critical" || a.level === "warn") && isWaitOnlyAlert(a));
           if (crit) parts.push(`${p.name} crítico`);
           else if (warn) parts.push(`${p.name} atención`);
           else if (waiting) parts.push(`${p.name} en espera`);
-          else if (waitOnly && (p.alerts || []).length) parts.push(`${p.name} en espera`);
         }
         const w = data?.kpis?.writesUsedPct;
-        tag.textContent = parts.length
-          ? parts.join(" · ")
-          : !actionable && w != null
-            ? `CF escrituras ${w}%`
-            : w != null
-              ? `CF escrituras ${w}%`
-              : "Sin alertas";
+        tag.textContent = parts.length ? parts.join(" · ") : w != null ? `CF escrituras ${w}%` : "Sin alertas";
+        void actionable;
       }
       renderBoard(data);
       if (!quiet) setMsg($("consumos-msg"), "");
