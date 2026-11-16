@@ -2073,6 +2073,7 @@ async function writeFixtureDriveSheet(env, { sheetId, week = "", rows = [] } = {
               },
             },
           },
+          // Datos: sin negrita (limpia formato viejo de la columna Día, etc.).
           {
             repeatCell: {
               range: {
@@ -2084,11 +2085,12 @@ async function writeFixtureDriveSheet(env, { sheetId, week = "", rows = [] } = {
               },
               cell: {
                 userEnteredFormat: {
+                  textFormat: { bold: false, fontSize: 10 },
                   verticalAlignment: "MIDDLE",
                   wrapStrategy: "CLIP",
                 },
               },
-              fields: "userEnteredFormat(verticalAlignment,wrapStrategy)",
+              fields: "userEnteredFormat(textFormat,verticalAlignment,wrapStrategy)",
             },
           },
           {
