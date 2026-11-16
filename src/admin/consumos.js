@@ -14,11 +14,20 @@ function levelLabel(level) {
   return "OK";
 }
 
+/** Solo un puntito ámbar: no pinta Consumos de rojo (eso queda para Salir). */
 function setAlertDot(on) {
   const btn = $("admin-consumos-btn");
   const dot = $("consumos-alert-dot");
   btn?.classList.toggle("has-alert", !!on);
-  if (dot) dot.hidden = !on;
+  if (dot) {
+    dot.hidden = !on;
+    dot.title = on ? "Hay avisos en Consumos (abrí el panel)" : "";
+  }
+}
+
+function isWaitOnlyAlert(a) {
+  const t = `${a?.title || ""} ${a?.body || ""}`;
+  return /vercel|rate.?limit|deploy|24\s*h|hobby/i.test(t) && !/KV|escritur|inscripci/i.test(t);
 }
 
 function meterCard(m, renewLabel = "") {
@@ -136,24 +145,34 @@ export function createConsumos(ctx, api) {
     try {
       const data = await api.worker("/usage");
       last = data;
-      const bad = (data?.alerts || []).some((a) => a.level === "critical" || a.level === "warn");
-      setAlertDot(bad);
+      // El puntito avisa; si solo es Vercel “esperar cuota”, no lo tratamos como drama.
+      const actionable = (data?.alerts || []).some(
+        (a) => (a.level === "critical" || a.level === "warn") && !isWaitOnlyAlert(a)
+      );
+      const anyNotice = (data?.alerts || []).some((a) => a.level === "critical" || a.level === "warn");
+      setAlertDot(anyNotice);
       const tag = $("consumos-status-tag");
       if (tag) {
         const parts = [];
         const providers = Array.isArray(data?.providers) ? data.providers : [];
         for (const p of providers) {
-          const crit = (p.alerts || []).some((a) => a.level === "critical");
-          const warn = (p.alerts || []).some((a) => a.level === "warn");
+          const waitOnly = (p.alerts || []).filter((a) => a.level === "critical" || a.level === "warn").every(isWaitOnlyAlert);
+          const crit = (p.alerts || []).some((a) => a.level === "critical" && !isWaitOnlyAlert(a));
+          const warn = (p.alerts || []).some((a) => a.level === "warn" && !isWaitOnlyAlert(a));
+          const waiting = (p.alerts || []).some((a) => (a.level === "critical" || a.level === "warn") && isWaitOnlyAlert(a));
           if (crit) parts.push(`${p.name} crítico`);
           else if (warn) parts.push(`${p.name} atención`);
+          else if (waiting) parts.push(`${p.name} en espera`);
+          else if (waitOnly && (p.alerts || []).length) parts.push(`${p.name} en espera`);
         }
         const w = data?.kpis?.writesUsedPct;
         tag.textContent = parts.length
           ? parts.join(" · ")
-          : w != null
+          : !actionable && w != null
             ? `CF escrituras ${w}%`
-            : "Sin alertas";
+            : w != null
+              ? `CF escrituras ${w}%`
+              : "Sin alertas";
       }
       renderBoard(data);
       if (!quiet) setMsg($("consumos-msg"), "");

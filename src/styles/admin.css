@@ -397,10 +397,11 @@ body.is-admin main > .wrap {
   border-color: rgba(245, 158, 11, 0.6);
 }
 
+/* Aviso sin ponerse rojo como Salir: se mantiene la familia ámbar de Consumos. */
 .admin-brand-btn-consumos.has-alert {
-  color: #ffb4b4;
-  background: rgba(239, 68, 68, 0.16);
-  border-color: rgba(239, 68, 68, 0.55);
+  color: #ffe7bd;
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.65);
 }
 
 .admin-brand-alert-dot {
@@ -410,7 +411,7 @@ body.is-admin main > .wrap {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #ef4444;
+  background: #f59e0b;
   box-shadow: 0 0 0 2px #0b1220;
 }
 
