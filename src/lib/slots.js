@@ -1007,14 +1007,15 @@ function missLabel(mins) {
 
 /**
  * Canchas libres del Drive ordenadas por menor “distancia” a ambas inscripciones.
- * Pensado para cuando no hay cruce estricto de 1:30: sugiere los turnos más cercanos
- * (poca diferencia de hora / desfase chico). También se listan junto a los exactos.
+ * Sin includeFar: solo desfase chico (ambas tienen el día y aflojan ≤ ~1 partido).
+ * Con includeFar: todas las canchas libres, aunque una pareja no tenga ese día.
+ * Los exactos (entran las dos) los sigue armando driveCourtOptions.
  */
 export function nearCoverCourtOptions(
   { homeDays, awayDays } = {},
   slots = [],
   taken = [],
-  { limit = 12, maxMiss = MATCH_MINUTES } = {}
+  { limit = 12, maxMiss = MATCH_MINUTES, includeFar = false } = {}
 ) {
   if (!homeDays || !awayDays) return [];
   const missCap = Math.max(1, Number(maxMiss) || MATCH_MINUTES);
@@ -1037,14 +1038,14 @@ export function nearCoverCourtOptions(
     // Ya entra perfecto para ambas → lo maneja driveCourtOptions estricto.
     if (homeMiss === 0 && awayMiss === 0) continue;
 
-    // Solo desfase chico: ambas tienen el día y la suma de “aflojes” ≤ ~1 partido.
     const bothHaveDay =
       !!slotDay &&
       ((slotDay in homeDays || slot.day in homeDays) && (slotDay in awayDays || slot.day in awayDays));
-    if (!bothHaveDay) continue;
     const miss = homeMiss + awayMiss;
     const worst = Math.max(homeMiss, awayMiss);
-    if (miss > missCap || worst > missCap) continue;
+    // Cercano = desfase chico. Estimable = cualquier otra cancha libre.
+    const close = bothHaveDay && miss <= missCap && worst <= missCap;
+    if (!includeFar && !close) continue;
 
     const key = courtOptionKey(slot);
     if (seen.has(key)) continue;
@@ -1057,6 +1058,8 @@ export function nearCoverCourtOptions(
       court: slot.court,
       key,
       near: true,
+      close,
+      estimate: !close,
       homeMiss,
       awayMiss,
       miss,
@@ -1077,6 +1080,7 @@ export function nearCoverCourtOptions(
       a.venue.localeCompare(b.venue, "es") ||
       String(a.court).localeCompare(String(b.court), "es", { numeric: true })
   );
+  if (includeFar) return out;
   return out.slice(0, Math.max(1, Number(limit) || 12));
 }
 

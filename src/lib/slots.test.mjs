@@ -854,4 +854,37 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   assert.ok(nearOnly.length, "con exactos igual hay cercanos distintos");
 }
 
+// Sin día en común (caso jueves): igual listar todas las canchas libres como estimables.
+{
+  const brenda = {
+    Lunes: "21:00 - 23:00",
+    Martes: "21:00 - 23:00",
+    Jueves: "21:00 - 23:30",
+    Sábado: "13:00 - 18:00",
+  };
+  const martinez = {
+    Lunes: "09:00 - 12:00",
+    Martes: "09:00 - 12:00",
+    Sábado: "09:00 - 12:00",
+  };
+  assert.equal(pairsSharePlayableWindow(brenda, martinez), false, "no comparten 1:30");
+  const sheet = [
+    parseCourtSlot({ Complejo: "Open", Cancha: "1", Dia: "Jueves", Horario: "21:00 - 22:30" }),
+    parseCourtSlot({ Complejo: "Open", Cancha: "2", Dia: "Lunes", Horario: "21:00 - 22:30" }),
+    parseCourtSlot({ Complejo: "Palermo", Cancha: "1", Dia: "Sábado", Horario: "13:00 - 14:30" }),
+  ];
+  const strict = nearCoverCourtOptions({ homeDays: brenda, awayDays: martinez }, sheet, [], { limit: 8 });
+  assert.equal(strict.length, 0, "sin desfase chico no hay cercanos");
+  const all = nearCoverCourtOptions({ homeDays: brenda, awayDays: martinez }, sheet, [], { includeFar: true });
+  assert.equal(all.length, 3, "las tres canchas libres figuran");
+  assert.ok(all.every((o) => o.estimate && !o.close));
+  const jueves = all.find((o) => o.day === "Jueves");
+  assert.ok(jueves, "el jueves entra aunque quien cubre no pueda ese día");
+  assert.equal(jueves.nearLabel.includes("sin día"), true);
+  const taken = [{ day: "Lunes", time: "21:00 - 22:30", venue: "Open Padel", court: "2" }];
+  const free = nearCoverCourtOptions({ homeDays: brenda, awayDays: martinez }, sheet, taken, { includeFar: true });
+  assert.ok(!free.some((o) => o.day === "Lunes"), "la cancha ocupada no se ofrece");
+  assert.equal(free.length, 2);
+}
+
 console.log("slots ok");
