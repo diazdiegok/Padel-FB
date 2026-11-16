@@ -449,5 +449,20 @@
     "result": "",
     "appliedResult": "",
     "flexAvail": true
+  },
+  {
+    "week": "Fecha 1",
+    "day": "Miércoles",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "21:30 - 23:00",
+    "venue": "Open Padel",
+    "court": "Cancha 2",
+    "home": "Claudio Roldán / Joaquin Roldán",
+    "away": "Miguel Darío Screpis / Facundo Roberto Capatto",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
   }
 ]
