@@ -1227,6 +1227,75 @@ function tagMeters(providerName, list, fallbackRenew = "", fallbackMs) {
   });
 }
 
+/** Timestamp de un deploy Vercel (ms). */
+function vercelCreatedMs(d, fallback = Date.now()) {
+  const raw = d?.created ?? d?.createdAt ?? d?.creating;
+  const n = Number(raw);
+  if (Number.isFinite(n) && n > 0) {
+    // API a veces manda segundos.
+    return n < 1e12 ? n * 1000 : n;
+  }
+  const parsed = Date.parse(String(raw || ""));
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+/**
+ * Lista TODOS los deploys de la cuenta/equipo en la ventana (paginado).
+ * Importante: el tope Hobby es de la cuenta, no de un solo projectId.
+ */
+async function listVercelDeploymentsWindow(env, { sinceMs, untilMs }) {
+  const token = String(env.VERCEL_TOKEN || "").trim();
+  const teamId = String(env.VERCEL_TEAM_ID || "").trim();
+  if (!token) return { ok: false, deployments: [], error: "Sin VERCEL_TOKEN" };
+
+  const out = [];
+  let until = untilMs || Date.now();
+  // Hasta 5 páginas × 100 = 500 (de sobra para el tope 100).
+  for (let page = 0; page < 5; page++) {
+    const url =
+      `https://api.vercel.com/v6/deployments?limit=100&since=${sinceMs}&until=${until}` +
+      (teamId ? `&teamId=${encodeURIComponent(teamId)}` : "");
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        ok: false,
+        deployments: out,
+        error: json?.error?.message || `HTTP ${res.status}`,
+        status: res.status,
+      };
+    }
+    const batch = Array.isArray(json.deployments) ? json.deployments : [];
+    if (!batch.length) break;
+    out.push(...batch);
+    const oldestInBatch = Math.min(...batch.map((d) => vercelCreatedMs(d, until)));
+    // Sin más viejos en la ventana → listo.
+    if (batch.length < 100 || oldestInBatch <= sinceMs) break;
+    // Siguiente página: todo lo anterior al más viejo de esta tanda.
+    until = oldestInBatch - 1;
+  }
+
+  const seen = new Set();
+  const deployments = [];
+  for (const d of out) {
+    const id = String(d.uid || d.id || `${d.url}|${d.created}`);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const createdMs = vercelCreatedMs(d);
+    if (createdMs < sinceMs) continue;
+    deployments.push({
+      ...d,
+      _createdMs: createdMs,
+      _project: d.project?.name || d.name || d.url || "",
+    });
+  }
+  deployments.sort((a, b) => a._createdMs - b._createdMs);
+
+  return { ok: true, deployments };
+}
+
 /** Vercel Hobby: deploys en las últimas 24 h (API o estimación vía GitHub statuses). */
 async function readVercelUsage(env) {
   const now = Date.now();
@@ -1236,8 +1305,8 @@ async function readVercelUsage(env) {
   const teamId = String(env.VERCEL_TEAM_ID || "").trim();
   const alerts = [];
   const tips = [
-    "Plan Hobby: ~100 deploys cada 24 h (ventana rodante; no se reinicia a las 21:00 AR).",
-    "Cuentan pushes a main, previews de PR y cada «Actualiza fixture / ranking» desde el admin.",
+    "Plan Hobby: 100 deploys / 24 h (ventana rodante de toda la cuenta, no solo este proyecto).",
+    "Cuentan pushes, previews de PR y publishes del admin en cualquier proyecto del plan.",
     "Si llega a 100%, el sitio público no se actualiza; el admin, KV y Pegar en Drive siguen.",
   ];
   const kpis = [];
@@ -1308,26 +1377,23 @@ async function readVercelUsage(env) {
   let blocked = false;
   let renewsAtMs = now + 86_400_000;
   let renewsAt = formatArClock(renewsAtMs);
+  let oldestAtMs = 0;
+  let oldestAt = "";
+  let nextFrees = [];
   let source = "none";
   let note = "";
   let latestState = "";
   let latestDesc = "";
+  let projectInWindow = 0;
 
   if (token) {
     try {
-      let url =
-        `https://api.vercel.com/v6/deployments?limit=100&since=${sinceMs}` +
-        (projectId ? `&projectId=${encodeURIComponent(projectId)}` : "") +
-        (teamId ? `&teamId=${encodeURIComponent(teamId)}` : "");
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      const listed = await listVercelDeploymentsWindow(env, { sinceMs, untilMs: now });
+      if (!listed.ok) {
         alerts.push({
           level: "warn",
           title: "No pude leer deploys de Vercel",
-          body: json?.error?.message || `HTTP ${res.status}. Revisá VERCEL_TOKEN / proyecto.`,
+          body: listed.error || "Revisá VERCEL_TOKEN / team.",
         });
         const fb = await fromGithubStatuses();
         used = fb.used ?? 0;
@@ -1337,20 +1403,32 @@ async function readVercelUsage(env) {
         note = fb.note || "";
         source = fb.source || "github-estimate";
       } else {
-        const deps = Array.isArray(json.deployments) ? json.deployments : [];
+        const deps = listed.deployments;
         used = deps.length;
         source = "vercel-api";
-        note = projectId
-          ? "Deploys del proyecto en las últimas 24 h (API Vercel)."
-          : "Deploys de la cuenta/equipo en las últimas 24 h (API Vercel).";
-        // Si hay 100, el más viejo de la ventana define cuándo se libera 1 cupo.
+        note =
+          "Cuenta/equipo completa (Hobby). Cuentan todos los proyectos + previews de las últimas 24 h.";
+        if (projectId) {
+          projectInWindow = deps.filter((d) => String(d.projectId || d.project?.id || "") === projectId).length;
+        }
         if (deps.length) {
-          const oldest = Math.min(...deps.map((d) => Number(d.created || d.createdAt || now)).filter(Number.isFinite));
-          if (Number.isFinite(oldest)) {
-            renewsAtMs = oldest + 86_400_000;
-            renewsAt = formatArClock(renewsAtMs);
-          }
-          const last = deps[0];
+          oldestAtMs = deps[0]._createdMs;
+          oldestAt = formatArClock(oldestAtMs);
+          // Para volver a tener 1 cupo libre hace falta bajar a 99 en la ventana.
+          const needAgeOut = Math.max(0, used - (VERCEL_DEPLOY_LIMIT_DAY - 1));
+          const pivot = deps[Math.min(deps.length, Math.max(1, needAgeOut)) - 1];
+          renewsAtMs = (pivot?._createdMs || oldestAtMs) + 86_400_000;
+          renewsAt = formatArClock(renewsAtMs);
+          // Próximos cupos (cada deploy viejo que sale de la ventana libera 1).
+          const from = Math.max(0, needAgeOut - 1);
+          nextFrees = deps.slice(from, from + 5).map((d, i) => ({
+            n: i + 1,
+            freesAtMs: d._createdMs + 86_400_000,
+            freesAt: formatArClock(d._createdMs + 86_400_000),
+            createdAt: formatArClock(d._createdMs),
+            project: d._project,
+          }));
+          const last = deps[deps.length - 1];
           latestState = String(last?.readyState || last?.state || "");
           latestDesc = String(last?.name || last?.url || "");
         }
@@ -1359,13 +1437,13 @@ async function readVercelUsage(env) {
           alerts.push({
             level: "critical",
             title: "Cuota de deploys Vercel agotada",
-            body: `Hobby: ${used}/${VERCEL_DEPLOY_LIMIT_DAY} en 24 h. El sitio no se republica hasta ~${renewsAt}. Admin y Pegar en Drive siguen.`,
+            body: `Hobby: ${used}/${VERCEL_DEPLOY_LIMIT_DAY}+ en 24 h (cuenta). Primer cupo libre: ${renewsAt}. Más viejo de la ventana: ${oldestAt}. Admin y Pegar en Drive siguen.`,
           });
         } else if (used >= Math.floor(VERCEL_DEPLOY_LIMIT_DAY * 0.85)) {
           alerts.push({
             level: "warn",
             title: `Deploys Vercel al ${pctUsed(used, VERCEL_DEPLOY_LIMIT_DAY)}%`,
-            body: `Usados ${used} de ${VERCEL_DEPLOY_LIMIT_DAY}. Evitá publishes de prueba.`,
+            body: `Usados ${used} de ${VERCEL_DEPLOY_LIMIT_DAY}. Primer reset de cupo ~${renewsAt}.`,
           });
         }
       }
@@ -1407,31 +1485,47 @@ async function readVercelUsage(env) {
     }
   }
 
+  const usedCount = Number(used) || 0;
   const deployMeter = {
     ...meterRow({
       id: "vercel-deploys",
       label: "Deploys (últimas 24 h)",
-      used: Number(used) || 0,
+      used: Math.min(usedCount, VERCEL_DEPLOY_LIMIT_DAY),
       limit: VERCEL_DEPLOY_LIMIT_DAY,
       unit: "deploys",
       blocked,
     }),
+    // Conteo real de la ventana (puede ser > limit si la API lista más).
+    usedCount,
     renewsAt: renewsAt || "ventana 24 h",
     renewsAtMs,
   };
 
   kpis.push(
-    { label: "Quedan", value: String(Math.max(0, VERCEL_DEPLOY_LIMIT_DAY - (Number(used) || 0))), sub: "deploys libres" },
+    {
+      label: "Quedan",
+      value: String(Math.max(0, VERCEL_DEPLOY_LIMIT_DAY - usedCount)),
+      sub: usedCount > VERCEL_DEPLOY_LIMIT_DAY ? `${usedCount} en ventana` : "deploys libres",
+    },
     { label: "Estado", value: blocked ? "BLOQUEADA" : "OK", sub: blocked ? "sin deploys nuevos" : "puede publicar sitio" },
-    { label: "Fuente", value: source === "vercel-api" ? "API Vercel" : source === "github-estimate" ? "Estimación GitHub" : "—" },
-    { label: "Último deploy", value: latestState || "—", sub: latestDesc || note || "" }
+    {
+      label: "Primer cupo libre",
+      value: renewsAt || "—",
+      sub: oldestAt ? `más viejo ${oldestAt}` : "ventana 24 h",
+    },
+    {
+      label: "Fuente",
+      value: source === "vercel-api" ? "API Vercel (cuenta)" : source === "github-estimate" ? "Estimación GitHub" : "—",
+      sub: projectInWindow ? `este proyecto: ${projectInWindow}` : note || "",
+    },
+    { label: "Último deploy", value: latestState || "—", sub: latestDesc || "" }
   );
 
   if (!alerts.some((a) => a.level === "critical") && !blocked && source === "vercel-api") {
     alerts.unshift({
       level: "ok",
       title: `Deploys OK · libre ${deployMeter.leftPct}%`,
-      body: `Usado ${deployMeter.usedPct}% (${deployMeter.used}/${deployMeter.limit}) en 24 h.`,
+      body: `Usado ${deployMeter.usedPct}% (${deployMeter.used}/${deployMeter.limit}) en 24 h (cuenta).`,
     });
   }
 
@@ -1439,7 +1533,7 @@ async function readVercelUsage(env) {
     id: "vercel",
     name: "Vercel",
     explain:
-      "Publica el sitio estático (padel-fb.vercel.app). Si se agota la cuota Hobby, dejan de salir los deploys; los datos ya están en GitHub y el admin sigue.",
+      "Publica el sitio estático (padel-fb.vercel.app). El tope Hobby es de toda la cuenta (todos los proyectos + previews). Si se agota, dejan de salir deploys; admin y Pegar en Drive siguen.",
     meters: [deployMeter],
     kpis,
     alerts,
@@ -1448,6 +1542,11 @@ async function readVercelUsage(env) {
     source,
     renewsAt,
     renewsAtMs,
+    oldestAt,
+    oldestAtMs,
+    nextFrees,
+    projectInWindow,
+    usedCount,
   };
 }
 
@@ -1748,7 +1847,7 @@ async function readUsage(env) {
   // Cache corto de Vercel/GitHub para no martillar APIs en cada “Actualizar”.
   // v2: invalidar cache viejo al cambiar forma de meters.
   async function cachedProvider(key, loader, ttlSec = 90) {
-    const url = `https://padel-fb-api.cache/usageprov/v2/${key}`;
+    const url = `https://padel-fb-api.cache/usageprov/v3/${key}`;
     try {
       const hit = await caches.default.match(url);
       if (hit) {
@@ -2856,6 +2955,36 @@ export default {
       if (url.pathname === "/usage" && request.method === "GET") {
         if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
         return response(request, env, await readUsage(env));
+      }
+
+      // Snapshot exacto de la ventana Hobby (cuenta). Solo sesión admin.
+      if (url.pathname === "/usage/vercel-window" && request.method === "GET") {
+        if (!(await validSession(request, env))) {
+          return response(request, env, { message: "Sesión vencida." }, 401);
+        }
+        const v = await readVercelUsage(env);
+        const usedCount = Number(v.usedCount ?? v.meters?.[0]?.usedCount ?? v.meters?.[0]?.used) || 0;
+        const snap = {
+          ok: true,
+          generatedAt: new Date().toISOString(),
+          used: usedCount,
+          limit: VERCEL_DEPLOY_LIMIT_DAY,
+          blocked: usedCount >= VERCEL_DEPLOY_LIMIT_DAY,
+          renewsAt: v.renewsAt,
+          renewsAtMs: v.renewsAtMs,
+          oldestAt: v.oldestAt,
+          oldestAtMs: v.oldestAtMs,
+          nextFrees: v.nextFrees || [],
+          projectInWindow: v.projectInWindow,
+          source: v.source,
+          note: v.note,
+        };
+        try {
+          await env.AUTH_KV?.put("usage:vercel-window", JSON.stringify(snap), { expirationTtl: 3600 });
+        } catch {
+          /* ignore */
+        }
+        return response(request, env, snap);
       }
 
       // Apaga el cartel temporal «HACER DEPLOY» (solo Vercel UI pendiente).
