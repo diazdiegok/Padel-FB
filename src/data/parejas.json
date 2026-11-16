@@ -1087,5 +1087,21 @@
       "Sábado": "15:00 - 20:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwii9v1j89a4",
+    "createdAt": "2026-11-16T00:08:49.255Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Luis Roberto Herrera",
+    "p2": "Cantagallo Carlos",
+    "days": {
+      "Lunes": "14:00 - 21:00",
+      "Martes": "14:00 - 21:00",
+      "Miércoles": "14:00 - 21:00",
+      "Jueves": "14:00 - 21:00",
+      "Viernes": "14:00 - 21:00"
+    },
+    "note": ""
   }
 ]
