@@ -24,3 +24,8 @@ Hasta entonces el admin en prod sigue con JS/CSS viejo.
 ## Trigger
 
 Cualquier push a `main` dispara Vercel. Este commit es el recordatorio: **HAZ EL DEPLOY**.
+
+## Cartel en Consumos → Vercel
+
+El Worker muestra un aviso **HACER DEPLOY** en Consumos (solo Vercel).
+Cuando el sitio ya esté publicado, tocá **Ocultar «HACER DEPLOY»** — no hace falta avisarle al agente.

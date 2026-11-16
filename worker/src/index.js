@@ -1776,10 +1776,26 @@ async function readUsage(env) {
     cachedProvider("vercel", () => readVercelUsage(env), 120),
     cachedProvider("github", () => readGithubUsage(env), 60),
   ]);
+
+  // Cartel temporal: recordar publicar la UI en Vercel (se apaga con POST /usage/hacer-deploy).
+  const hideDeployBanner = (await env.AUTH_KV?.get("usage:hacer-deploy-banner").catch(() => null)) === "off";
+  const hacerDeployBanner = !hideDeployBanner;
+  const hacerDeployAlert = {
+    id: "hacer-deploy",
+    level: "warn",
+    title: "HACER DEPLOY",
+    body:
+      "Solo esto: falta el deploy de Vercel para la UI (Consumos en 3 bloques, alerta ámbar, contraste en Resultados). No toca Fixture. Cuando esté publicado, tocá «Ocultar cartel».",
+  };
+
   const vercel = {
     ...vercelRaw,
     meters: tagMeters("Vercel", vercelRaw.meters, vercelRaw.renewsAt, vercelRaw.renewsAtMs),
     renewsAt: renewLabel(vercelRaw.renewsAt, vercelRaw.renewsAtMs) || vercelRaw.renewsAt,
+    hacerDeployBanner,
+    alerts: hacerDeployBanner
+      ? [hacerDeployAlert, ...((vercelRaw.alerts || []).filter((a) => a?.id !== "hacer-deploy"))]
+      : (vercelRaw.alerts || []).filter((a) => a?.id !== "hacer-deploy"),
   };
   const github = {
     ...githubRaw,
@@ -1823,6 +1839,7 @@ async function readUsage(env) {
       githubRenewsAt: github.renewsAt,
     },
     meters: flatMeters,
+    hacerDeployBanner,
     limits: {
       kvWritesPerDay: KV_WRITE_LIMIT_DAY,
       kvReadsPerDay: KV_READ_LIMIT_DAY,
@@ -1833,6 +1850,9 @@ async function readUsage(env) {
     },
     alerts: allAlerts,
     tips: [
+      ...(hacerDeployBanner
+        ? ["HACER DEPLOY en Vercel: UI de Consumos (3 bloques) + contraste Resultados. Fixture no se toca."]
+        : []),
       "Cada barra indica el proveedor: Cloudflare · … / Vercel · … / GitHub · …",
       ...tips.slice(0, 2),
       ...(vercel.tips || []).slice(0, 1),
@@ -2836,6 +2856,19 @@ export default {
       if (url.pathname === "/usage" && request.method === "GET") {
         if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
         return response(request, env, await readUsage(env));
+      }
+
+      // Apaga el cartel temporal «HACER DEPLOY» (solo Vercel UI pendiente).
+      if (url.pathname === "/usage/hacer-deploy" && request.method === "POST") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        const body = await request.json().catch(() => ({}));
+        const hide = body?.hide !== false;
+        if (hide) {
+          await env.AUTH_KV?.put("usage:hacer-deploy-banner", "off");
+        } else {
+          await env.AUTH_KV?.delete("usage:hacer-deploy-banner");
+        }
+        return response(request, env, { ok: true, hacerDeployBanner: !hide });
       }
 
       return response(request, env, { message: "No encontrado." }, 404);
