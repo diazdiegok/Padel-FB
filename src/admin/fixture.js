@@ -937,6 +937,45 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     }
   }
 
+  function matchesInOpenWeek() {
+    const live = isLiveWeek(filterTemp, filterWeek);
+    const source = live ? ctx.fixture || [] : ctx.results || [];
+    return source.filter(
+      (m) => seasonOf(m) === filterTemp && (m.week || "") === filterWeek && !isPending(m)
+    );
+  }
+
+  function reviewCourtDuplicates() {
+    if (!filterTemp || !filterWeek) {
+      toast("Entrá a una fecha para revisar.", "err");
+      return;
+    }
+    const conflicts = findCourtConflicts(matchesInOpenWeek());
+    if (!conflicts.length) {
+      setMsg($("fx-msg"), `${filterWeek}: no hay canchas duplicadas.`, "ok");
+      toast("No hay canchas duplicadas", "ok");
+      return;
+    }
+    const lines = conflicts.slice(0, 4).map((g) => {
+      const who = g.matches.map((m) => `${m.time ? m.time + " " : ""}${m.home} vs ${m.away}`).join(" / ");
+      const court = String(g.court || "").trim();
+      const courtTxt = /^cancha\b/i.test(court) ? court : court ? `Cancha ${court}` : "";
+      return `${g.day} ${g.time} · ${g.venue}${courtTxt ? ` · ${courtTxt}` : ""} (${who})`;
+    });
+    const extra = conflicts.length > 4 ? ` y ${conflicts.length - 4} más` : "";
+    if (isLiveWeek(filterTemp, filterWeek)) render();
+    setMsg(
+      $("fx-msg"),
+      `${filterWeek}: ${conflicts.length} cancha${conflicts.length === 1 ? "" : "s"} duplicada${conflicts.length === 1 ? "" : "s"}. ${lines.join(" · ")}${extra}.`,
+      "err"
+    );
+    toast(
+      `${conflicts.length} cancha${conflicts.length === 1 ? "" : "s"} duplicada${conflicts.length === 1 ? "" : "s"}`,
+      "err"
+    );
+    $("fx-warnings")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   function render() {
     updateSummary();
     renderVenues();
@@ -1572,6 +1611,8 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         setBusy(btn, false);
       }
     });
+
+    $("fx-dupes")?.addEventListener("click", () => reviewCourtDuplicates());
 
     $("fx-add")?.addEventListener("click", () => {
       if (!filterTemp || !filterWeek) return;
