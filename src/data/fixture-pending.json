@@ -115,5 +115,30 @@
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Lunes 18:30 - 00:00 · Martes 18:30 - 00:00 · Miércoles 21:00 - 00:00 · Jueves 18:30 - 00:00 · Viernes 18:30 - 00:00 · Sábado 18:30 - 00:00",
+    "days": {
+      "Lunes": "18:30 - 00:00",
+      "Martes": "18:30 - 00:00",
+      "Miércoles": "21:00 - 00:00",
+      "Jueves": "18:30 - 00:00",
+      "Viernes": "18:30 - 00:00",
+      "Sábado": "18:30 - 00:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Araceli Ferreyra / Agostina Bonilla",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
   }
 ]
