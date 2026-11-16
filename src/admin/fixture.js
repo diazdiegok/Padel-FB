@@ -260,10 +260,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       taken,
       { softAway: false }
     );
-    const nearOpts =
-      opts.length > 0
-        ? []
-        : nearCoverCourtOptions({ homeDays, awayDays: coverDays }, loadedSlots, taken, { limit: 12 });
+    // Siempre ofrecer también turnos cercanos (desfase chico), para todas las categorías.
+    // Si ya hay exactos, los cercanos van abajo separados por una línea.
+    const exactKeys = new Set(opts.map((o) => o.key));
+    const nearOpts = nearCoverCourtOptions({ homeDays, awayDays: coverDays }, loadedSlots, taken, {
+      limit: 16,
+    }).filter((o) => !exactKeys.has(o.key));
     return { opts, nearOpts, homeDays, coverDays, bothPending, shareWindow };
   }
 
@@ -317,24 +319,30 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         .join("");
     };
 
-    if (opts.length) {
-      const hint = "Solo turnos del Drive donde entran las dos parejas según Inscripciones.";
-      return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="${escAttr(hint)}">
-      <option value="">2. Elegir entre ${opts.length} turno${opts.length === 1 ? "" : "s"} libre${opts.length === 1 ? "" : "s"}…</option>
-      ${groupsByDay(opts)}
-    </select>`;
-    }
+    const total = opts.length + nearOpts.length;
+    const placeholder = opts.length
+      ? nearOpts.length
+        ? `2. Elegir entre ${opts.length} libre${opts.length === 1 ? "" : "s"} + ${nearOpts.length} cercano${nearOpts.length === 1 ? "" : "s"}…`
+        : `2. Elegir entre ${opts.length} turno${opts.length === 1 ? "" : "s"} libre${opts.length === 1 ? "" : "s"}…`
+      : `2. Elegir entre ${nearOpts.length} turno${nearOpts.length === 1 ? "" : "s"} cercano${nearOpts.length === 1 ? "" : "s"} (desfase)…`;
+    const hint = opts.length
+      ? "Arriba: turnos donde entran las dos exactas. Abajo de la línea: libres cercanos con poco desfase (alguna punta afloja)."
+      : "No hay turno exacto para ambas. Se listan canchas libres con poco desfase de horario.";
+    // Separadores con <option disabled> (no anidar optgroup).
+    const exactBlock = opts.length
+      ? `<option disabled value="">── Libres exactos (entran las dos) ──</option>
+      ${groupsByDay(opts)}`
+      : "";
+    const nearBlock = nearOpts.length
+      ? `<option disabled value="">────────────────────────────────</option>
+      <option disabled value="">── Cercanos · poco desfase (aflojan) ──</option>
+      ${groupsByDay(nearOpts, { near: true })}`
+      : "";
 
-    // Sin 1:30 en común (o sin cancha estricta): sugerencias libres más cercanas.
-    const nearTitle = !shareWindow
-      ? "No coinciden en 1:30 · canchas libres más cercanas (alguna punta afloja)"
-      : "Sin cancha libre exacta · turnos libres más cercanos (alguna punta afloja)";
-    const nearHint = !shareWindow
-      ? "No comparten 1:30. Se listan canchas libres con la menor distancia a ambas disponibilidades."
-      : "No quedó cancha libre donde entren las dos exactas. Se listan las más cercanas.";
-    return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="${escAttr(nearHint)}">
-      <option value="">2. ${escAttr(nearTitle)}…</option>
-      ${groupsByDay(nearOpts, { near: true })}
+    return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="${escAttr(hint)}" data-fx-cover-total="${total}">
+      <option value="">${escAttr(placeholder)}</option>
+      ${exactBlock}
+      ${nearBlock}
     </select>`;
   }
 

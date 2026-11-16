@@ -1264,36 +1264,58 @@ async function readUsage(env) {
   const writesUsed = writeOk ? meter.writes : KV_WRITE_LIMIT_DAY;
   const readsUsed = meter.reads;
   const keysUsed = contacts + payments + acad;
+  // Reset wall-clock helper for Argentina (UTC-3) — se usa en medidores y alertas.
+  const now = new Date();
+  const nextUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
+  const resetsAtUtc = nextUtc.toISOString();
+  const resetsAtLocal = new Intl.DateTimeFormat("es-AR", {
+    timeZone: "America/Buenos_Aires",
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(nextUtc);
+
   const meters = [
-    meterRow({
-      id: "writes",
-      label: "Escrituras KV (hoy)",
-      used: writesUsed,
-      limit: KV_WRITE_LIMIT_DAY,
-      unit: "puts",
-      blocked: !writeOk,
-    }),
-    meterRow({
-      id: "reads",
-      label: "Lecturas KV (hoy, estimadas)",
-      used: readsUsed,
-      limit: KV_READ_LIMIT_DAY,
-      unit: "gets",
-    }),
-    meterRow({
-      id: "visits",
-      label: "Visitas web (hoy)",
-      used: visitsToday,
-      limit: VISITS_SOFT_LIMIT_DAY,
-      unit: "hits",
-    }),
-    meterRow({
-      id: "keys",
-      label: "Almacenamiento (claves)",
-      used: keysUsed,
-      limit: KV_KEYS_SOFT_LIMIT,
-      unit: "keys",
-    }),
+    {
+      ...meterRow({
+        id: "writes",
+        label: "Escrituras KV (hoy)",
+        used: writesUsed,
+        limit: KV_WRITE_LIMIT_DAY,
+        unit: "puts",
+        blocked: !writeOk,
+      }),
+      renewsAt: resetsAtLocal,
+    },
+    {
+      ...meterRow({
+        id: "reads",
+        label: "Lecturas KV (hoy, estimadas)",
+        used: readsUsed,
+        limit: KV_READ_LIMIT_DAY,
+        unit: "gets",
+      }),
+      renewsAt: resetsAtLocal,
+    },
+    {
+      ...meterRow({
+        id: "visits",
+        label: "Visitas web (hoy)",
+        used: visitsToday,
+        limit: VISITS_SOFT_LIMIT_DAY,
+        unit: "hits",
+      }),
+      renewsAt: resetsAtLocal,
+    },
+    {
+      ...meterRow({
+        id: "keys",
+        label: "Almacenamiento (claves)",
+        used: keysUsed,
+        limit: KV_KEYS_SOFT_LIMIT,
+        unit: "keys",
+      }),
+      renewsAt: "no renueva (acumulado)",
+    },
   ];
 
   const writeMeter = meters.find((m) => m.id === "writes");
@@ -1326,16 +1348,6 @@ async function readUsage(env) {
       body: `Usado ${writeMeter.usedPct}% (${writeMeter.used}/${writeMeter.limit}). Inscripción y publish deberían andar.`,
     });
   }
-
-  // Reset wall-clock helper for Argentina (UTC-3).
-  const now = new Date();
-  const nextUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
-  const resetsAtUtc = nextUtc.toISOString();
-  const resetsAtLocal = new Intl.DateTimeFormat("es-AR", {
-    timeZone: "America/Buenos_Aires",
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(nextUtc);
 
   return {
     ok: writeOk,

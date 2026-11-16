@@ -301,11 +301,17 @@ body.is-admin main > .wrap {
 }
 
 .admin-brand {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  display: grid;
+  gap: 10px;
+  justify-items: start;
   padding: 4px 4px 14px;
   border-bottom: 1px solid var(--line);
+}
+
+.admin-brand-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .admin-brand-mark {
@@ -321,11 +327,6 @@ body.is-admin main > .wrap {
   flex-shrink: 0;
 }
 
-.admin-brand-text {
-  min-width: 0;
-  flex: 1;
-}
-
 .admin-brand strong {
   font-family: var(--display);
   letter-spacing: 0.1em;
@@ -337,8 +338,10 @@ body.is-admin main > .wrap {
 .admin-brand-col {
   display: grid;
   gap: 6px;
-  margin-top: 8px;
   justify-items: start;
+  justify-self: start;
+  width: max-content;
+  max-width: 100%;
   min-width: 0;
 }
 
@@ -517,6 +520,16 @@ body.is-admin main > .wrap {
   gap: 10px;
   color: var(--muted);
   font-size: 12px;
+}
+
+.consumos-meter-renew {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.consumos-meter-renew b {
+  color: var(--cream);
+  font-weight: 700;
 }
 
 .consumos-alerts {
