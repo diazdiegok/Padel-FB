@@ -2,6 +2,53 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Martes 08:00 - 21:00 · Miércoles 11:00 - 21:00 · Jueves 08:00 - 20:00 · Viernes 08:00 - 19:00 · Sábado 08:00 - 14:00",
+    "days": {
+      "Martes": "08:00 - 21:00",
+      "Miércoles": "11:00 - 21:00",
+      "Jueves": "08:00 - 20:00",
+      "Viernes": "08:00 - 19:00",
+      "Sábado": "08:00 - 14:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Manuela Vinuales / Delfina Vinuales",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 18:00 - 23:00 · Miércoles 18:00 - 23:00 · Jueves 18:00 - 23:00 · Viernes 18:00 - 23:00",
+    "days": {
+      "Lunes": "18:00 - 23:00",
+      "Miércoles": "18:00 - 23:00",
+      "Jueves": "18:00 - 23:00",
+      "Viernes": "18:00 - 23:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Morena Jaureguiberry / Mariela Jaureguiberry",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Lunes 15:00 - 18:00 · Martes 09:00 - 18:00 · Jueves 09:00 - 17:00 · Viernes 15:00 - 19:00 · Sábado 09:00 - 12:00",
     "days": {
       "Lunes": "15:00 - 18:00",
