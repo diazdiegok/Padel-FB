@@ -1190,6 +1190,43 @@ function formatArClock(date) {
   return `${part("day")}/${part("month")} ${part("hour")}:${part("minute")} AR`;
 }
 
+/** Cuenta regresiva legible para la UI (min / h / d). */
+function formatRemaining(ms, nowMs = Date.now()) {
+  const n = Number(ms);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  const diff = Math.max(0, n - nowMs);
+  if (diff <= 0) return "ahora";
+  const min = Math.round(diff / 60000);
+  if (min < 60) return `en ${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h < 48) return m ? `en ${h} h ${m} min` : `en ${h} h`;
+  const d = Math.floor(h / 24);
+  const rh = h % 24;
+  return rh ? `en ${d} d ${rh} h` : `en ${d} d`;
+}
+
+function renewLabel(absolute, ms, nowMs = Date.now()) {
+  const abs = String(absolute || "").trim();
+  const rel = formatRemaining(ms, nowMs);
+  if (abs && rel) return `${abs} · ${rel}`;
+  return abs || rel || "";
+}
+
+/** Prefija medidores para la UI vieja (lista plana) y la nueva (providers). */
+function tagMeters(providerName, list, fallbackRenew = "", fallbackMs) {
+  const nowMs = Date.now();
+  return (Array.isArray(list) ? list : []).map((m) => {
+    const abs = m.renewsAt || fallbackRenew || "";
+    const ms = m.renewsAtMs || fallbackMs;
+    return {
+      ...m,
+      label: m.label?.startsWith(`${providerName} ·`) ? m.label : `${providerName} · ${m.label || ""}`,
+      renewsAt: renewLabel(abs, ms, nowMs) || abs,
+    };
+  });
+}
+
 /** Vercel Hobby: deploys en las últimas 24 h (API o estimación vía GitHub statuses). */
 async function readVercelUsage(env) {
   const now = Date.now();
@@ -1686,12 +1723,13 @@ async function readUsage(env) {
     });
   }
 
+  const cfMeters = tagMeters("Cloudflare", meters, resetsAtLocal, cfRenewMs);
   const cloudflare = {
     id: "cloudflare",
     name: "Cloudflare",
     explain:
       "Worker + KV: login, inscripción, comprobantes y visitas. Si se agotan las escrituras KV, se corta la API hasta las 21:00 AR.",
-    meters,
+    meters: cfMeters,
     kpis: [
       { label: "Quedan escrituras", value: String(writeMeter.left), sub: `${writeMeter.leftPct}% libre` },
       { label: "Estado escritura", value: kvWriteStatus, sub: writeOk ? "API operativa" : "corte de escritura" },
@@ -1703,13 +1741,14 @@ async function readUsage(env) {
       "Contactos y comprobantes no tienen por qué coincidir: una pareja puede tener WhatsApp/mail y todavía no haber subido el pago (o al revés).",
     alerts,
     tips,
-    renewsAt: resetsAtLocal,
+    renewsAt: renewLabel(resetsAtLocal, cfRenewMs),
     renewsAtMs: cfRenewMs,
   };
 
   // Cache corto de Vercel/GitHub para no martillar APIs en cada “Actualizar”.
+  // v2: invalidar cache viejo al cambiar forma de meters.
   async function cachedProvider(key, loader, ttlSec = 90) {
-    const url = `https://padel-fb-api.cache/usageprov/${key}`;
+    const url = `https://padel-fb-api.cache/usageprov/v2/${key}`;
     try {
       const hit = await caches.default.match(url);
       if (hit) {
@@ -1733,14 +1772,26 @@ async function readUsage(env) {
     return fresh;
   }
 
-  const [vercel, github] = await Promise.all([
+  const [vercelRaw, githubRaw] = await Promise.all([
     cachedProvider("vercel", () => readVercelUsage(env), 120),
     cachedProvider("github", () => readGithubUsage(env), 60),
   ]);
+  const vercel = {
+    ...vercelRaw,
+    meters: tagMeters("Vercel", vercelRaw.meters, vercelRaw.renewsAt, vercelRaw.renewsAtMs),
+    renewsAt: renewLabel(vercelRaw.renewsAt, vercelRaw.renewsAtMs) || vercelRaw.renewsAt,
+  };
+  const github = {
+    ...githubRaw,
+    meters: tagMeters("GitHub", githubRaw.meters, githubRaw.renewsAt, githubRaw.renewsAtMs),
+    renewsAt: renewLabel(githubRaw.renewsAt, githubRaw.renewsAtMs) || githubRaw.renewsAt,
+  };
   const providers = [cloudflare, vercel, github];
   const allAlerts = providers.flatMap((p) =>
     (p.alerts || []).map((a) => ({ ...a, provider: p.name, providerId: p.id }))
   );
+  // UI en Vercel todavía vieja (rate limit): lista plana con TODAS las barras.
+  const flatMeters = [...cfMeters, ...(vercel.meters || []), ...(github.meters || [])];
 
   return {
     ok: writeOk,
@@ -1764,8 +1815,14 @@ async function readUsage(env) {
       writesLeft: Math.max(0, KV_WRITE_LIMIT_DAY - writesUsed),
       writesUsedPct: writeMeter.usedPct,
       writesLeftPct: writeMeter.leftPct,
+      vercelUsed: vercel.meters?.[0]?.used,
+      vercelLeft: vercel.meters?.[0]?.left,
+      vercelRenewsAt: vercel.renewsAt,
+      githubUsed: github.meters?.[0]?.used,
+      githubLeft: github.meters?.[0]?.left,
+      githubRenewsAt: github.renewsAt,
     },
-    meters,
+    meters: flatMeters,
     limits: {
       kvWritesPerDay: KV_WRITE_LIMIT_DAY,
       kvReadsPerDay: KV_READ_LIMIT_DAY,
@@ -1775,7 +1832,12 @@ async function readUsage(env) {
       note: "Cloudflare = Workers Free (KV). Vercel = Hobby deploys/24h. GitHub = rate_limit del token.",
     },
     alerts: allAlerts,
-    tips: [...tips, ...(vercel.tips || []).slice(0, 2)],
+    tips: [
+      "Cada barra indica el proveedor: Cloudflare · … / Vercel · … / GitHub · …",
+      ...tips.slice(0, 2),
+      ...(vercel.tips || []).slice(0, 1),
+      ...(github.tips || []).slice(0, 1),
+    ],
   };
 }
 
