@@ -1103,5 +1103,22 @@
       "Viernes": "14:00 - 21:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwiif5hy4889",
+    "createdAt": "2026-11-16T00:12:56.086Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Olmedo Delfina",
+    "p2": "Vallejos Vanina Antonella",
+    "days": {
+      "Lunes": "19:30 - 22:30",
+      "Martes": "19:30 - 22:30",
+      "Miércoles": "19:30 - 22:30",
+      "Jueves": "19:30 - 22:30",
+      "Viernes": "19:30 - 00:00",
+      "Sábado": "19:00 - 00:00"
+    },
+    "note": ""
   }
 ]
