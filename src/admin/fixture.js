@@ -311,13 +311,23 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         if (!byDay.has(day)) byDay.set(day, []);
         byDay.get(day).push(o);
       }
+      const dayRank = (day) => {
+        const i = DAYS.indexOf(day);
+        return i < 0 ? DAYS.length : i;
+      };
       return [...byDay.entries()]
-        .map(
-          ([day, dayList]) =>
-            `<optgroup label="${escAttr(day)} · ${dayList.length} turno${dayList.length === 1 ? "" : "s"}">
-            ${renderOpts(dayList, { near, includeDay: false })}
-          </optgroup>`
-        )
+        .sort((a, b) => dayRank(a[0]) - dayRank(b[0]) || a[0].localeCompare(b[0], "es"))
+        .map(([day, dayList]) => {
+          const sorted = [...dayList].sort(
+            (a, b) =>
+              String(a.time || "").localeCompare(String(b.time || ""), "es") ||
+              String(a.venue || "").localeCompare(String(b.venue || ""), "es") ||
+              String(a.court || "").localeCompare(String(b.court || ""), "es", { numeric: true })
+          );
+          return `<optgroup label="${escAttr(day)} · ${sorted.length} turno${sorted.length === 1 ? "" : "s"}">
+            ${renderOpts(sorted, { near, includeDay: true })}
+          </optgroup>`;
+        })
         .join("");
     };
 

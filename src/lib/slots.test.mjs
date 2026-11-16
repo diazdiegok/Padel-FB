@@ -911,4 +911,25 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   assert.equal(preferExact[0].time, "19:30 - 21:00", "si se pisan, queda el exacto");
 }
 
+// Drive: Americas Cancha 1, Jueves 14:00-18:30. Cabe 17:00-18:30.
+// Un partido el lunes en esa misma cancha no la ocupa el jueves.
+{
+  const sheet = [parseCourtSlot({ Complejo: "Americas", Cancha: "Cancha 1", Dia: "Jueves", Horario: "14:00 - 18:30" })];
+  assert.equal(sheet[0].capacity, 3);
+  const taken = [
+    { day: "Lunes", time: "17:00 - 18:30", venue: "Americas Padel", court: "Cancha 1" },
+    { day: "Martes", time: "16:30 - 18:00", venue: "Americas Padel", court: "Cancha 1" },
+  ];
+  const home = { Jueves: "18:00 - 23:00", Lunes: "18:00 - 23:00" };
+  const away = { Lunes: "19:00 - 22:00", Viernes: "19:00 - 22:00" };
+  const flex = nearCoverCourtOptions({ homeDays: home, awayDays: away }, sheet, taken, { includeFar: true });
+  assert.ok(flex.some((o) => o.day === "Jueves" && o.time === "17:00 - 18:30"), "el jueves 17:00 entra como estimable");
+  const packed = packNonOverlappingTurns(flex);
+  assert.deepEqual(
+    packed.map((o) => o.time),
+    ["14:00 - 15:30", "15:30 - 17:00", "17:00 - 18:30"],
+    "tres turnos de 1:30, el de las 17 queda"
+  );
+}
+
 console.log("slots ok");
