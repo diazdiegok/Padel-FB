@@ -1,6 +1,28 @@
 [
   {
     "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 19:00 - 22:00 · Miércoles 19:00 - 22:00 · Viernes 19:30 - 22:00",
+    "days": {
+      "Lunes": "19:00 - 22:00",
+      "Miércoles": "19:00 - 22:00",
+      "Viernes": "19:30 - 22:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Micaela González / Daiana Romero",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
     "reason": "El horario del partido no entra en la disponibilidad de la inscripción.",
     "avail": "Lunes 19:00 - 22:00 · Viernes 19:00 - 22:00",
     "days": {
@@ -16,6 +38,29 @@
     "venue": "",
     "court": "",
     "home": "Stefania Benedetich / Florencia Benedetich",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "El horario del partido no entra en la disponibilidad de la inscripción.",
+    "avail": "Lunes 18:00 - 23:00 · Miércoles 18:00 - 23:00 · Jueves 18:00 - 23:00 · Viernes 18:00 - 23:00",
+    "days": {
+      "Lunes": "18:00 - 23:00",
+      "Miércoles": "18:00 - 23:00",
+      "Jueves": "18:00 - 23:00",
+      "Viernes": "18:00 - 23:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Morena Jaureguiberry / Mariela Jaureguiberry",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
@@ -180,6 +225,30 @@
     "venue": "",
     "court": "",
     "home": "Olmedo Delfina / Vallejos Vanina Antonella",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Martes 19:00 - 00:00 · Miércoles 19:00 - 00:00 · Jueves 19:00 - 00:00 · Viernes 19:00 - 00:00 · Sábado 17:00 - 21:30",
+    "days": {
+      "Martes": "19:00 - 00:00",
+      "Miércoles": "19:00 - 00:00",
+      "Jueves": "19:00 - 00:00",
+      "Viernes": "19:00 - 00:00",
+      "Sábado": "17:00 - 21:30"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Tomás Rodríguez / Sergio alem",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
