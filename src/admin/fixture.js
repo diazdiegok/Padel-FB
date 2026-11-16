@@ -23,7 +23,6 @@ import {
   isPendingMatch,
   isPlaceholderPair,
   isRealPairMatch,
-  isRecoverLater,
   releaseRecoveryDebt,
 } from "../lib/fixturer.js";
 import { latestWeek, listSeasons, mergeArchivedMatches, seasonLabel, weekKey, weekNumber } from "../lib/liga.js";
@@ -145,7 +144,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const live = (ctx.fixture || []).filter((m) => seasonOf(m) === temp && (m.week || "") === week);
     const arch = (ctx.results || []).filter((m) => seasonOf(m) === temp && (m.week || "") === week);
     const games = (live.length ? live : arch).filter((m) => !isPending(m) && isRealPairMatch(m));
-    const pending = live.filter((m) => isPending(m) && !isRecoverLater(m) && !isMakeupPending(m)).length;
+    const pending = live.filter((m) => isPending(m) && !isMakeupPending(m)).length;
     const recovering = live.filter((m) => isMakeupPending(m)).length;
     return { games, pending, recovering, live: live.length > 0, n: games.length };
   }
@@ -503,7 +502,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       .filter(({ m }) => pred(m) && seasonOf(m) === filterTemp && (m.week || "") === filterWeek);
   }
 
-  function pendingCards(rows, { defer = false, makeup = false } = {}) {
+  function pendingCards(rows, { makeup = false } = {}) {
     const cats = [...new Set(rows.map(({ m }) => m.cat || "Sin categoría"))];
     const pools = matchPools();
     return cats
@@ -523,15 +522,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
               const pendingDays = daysOfPair(m.home, m.cat) || m.homeDays || m.days;
               const daysTxt = availHint(pendingDays);
               const from = m.recoverFrom || m.week || "";
-              const extraBtn = defer
-                ? `<button class="btn btn-ghost" type="button" data-fx-defer="${i}" title="No juega esta fecha. En la siguiente, Recuperar fecha la trae para fixturear el partido que debe.">No juega esta fecha</button>`
-                : "";
               const quit = makeup
                 ? `<button class="btn btn-ghost" type="button" data-fx-recover-del="${i}">Quitar</button>`
                 : `<button class="btn btn-ghost" type="button" data-fx-del="${i}">Quitar</button>`;
               return `<article class="fx-pending-card" data-i="${i}">
                 <strong>${escAttr(m.home)}</strong>
-                ${makeup && from ? `<p class="admin-help" style="margin:4px 0 0">Recupera ${escAttr(from)}. El partido normal de esta fecha va aparte.</p>` : ""}
+                ${makeup && from ? `<p class="admin-help" style="margin:4px 0 0">Le falta 1 partido · ${escAttr(from)}. Sigue en pendientes de esa fecha.</p>` : ""}
                 ${daysTxt ? `<p class="admin-help" style="margin:4px 0 0">Puede: ${escAttr(daysTxt)}</p>` : ""}
                 <div class="fx-pending-actions">
                   <select data-fx-cover="${i}" aria-label="Cubrir con">
@@ -552,7 +548,6 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
                       ? `<span class="fx-court-fallback">${coverSlotSelect(i, m, draft)}</span>`
                       : `<select disabled aria-label="Elegir día, complejo y cancha"><option>2. Primero elegí con quién cubrir</option></select>`
                   }
-                  ${extraBtn}
                   ${quit}
                 </div>
               </article>`;
@@ -566,10 +561,8 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   function renderPending() {
     const box = $("fx-pending");
     if (!box) return;
-    const pending = weekRows((m) => isPending(m) && !isRecoverLater(m) && !isMakeupPending(m));
-    const deferred = weekRows((m) => isRecoverLater(m) && !m.recoveredIn);
-    const shown = [...pending, ...deferred];
-    if (!shown.length) {
+    const pending = weekRows((m) => isPending(m) && !isMakeupPending(m));
+    if (!pending.length) {
       for (const key of [...coverDraft.keys()]) {
         if (!weekRows((m) => isMakeupPending(m)).some(({ i }) => i === key)) coverDraft.delete(key);
       }
@@ -578,33 +571,14 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       return;
     }
     for (const key of [...coverDraft.keys()]) {
-      if (!shown.some(({ i }) => i === key) && !weekRows((m) => isMakeupPending(m)).some(({ i }) => i === key)) {
+      if (!pending.some(({ i }) => i === key) && !weekRows((m) => isMakeupPending(m)).some(({ i }) => i === key)) {
         coverDraft.delete(key);
       }
     }
-    const deferredHtml = deferred.length
-      ? `<h3>Pasan a recuperar · ${deferred.length}</h3>
-        <p class="admin-help">No juegan esta fecha. En la fecha siguiente, <strong>Recuperar fecha</strong> las trae abajo de pendientes.</p>
-        ${deferred
-          .map(
-            ({ m, i }) => `<article class="fx-pending-card" data-i="${i}">
-            <strong>${escAttr(m.home)}</strong>
-            <p class="admin-help" style="margin:4px 0 0">${escAttr(m.cat || "")}${m.recoverFrom ? ` · ${escAttr(m.recoverFrom)}` : ""}</p>
-            <div class="fx-pending-actions">
-              <button class="btn btn-ghost" type="button" data-fx-undefer="${i}">Volver a pendientes</button>
-            </div>
-          </article>`
-          )
-          .join("")}`
-      : "";
     box.hidden = false;
-    box.innerHTML = `${
-      pending.length
-        ? `<h3>Pendientes · ${pending.length}</h3>
-      <p class="admin-help">Quedaron sin rival (impar, horarios, rivales ocupados o sin cancha libre en el Drive). Primero elegí <strong>Cubrir con</strong> y después un día/cancha del Drive donde <strong>entren las dos</strong> según Inscripciones. Los pendientes no se publican al sitio hasta cubrirlos. Si no pueden jugar esta fecha, tocá <strong>No juega esta fecha</strong>.</p>
-      ${pendingCards(pending, { defer: true })}`
-        : ""
-    }${deferredHtml}`;
+    box.innerHTML = `<h3>Pendientes · ${pending.length}</h3>
+      <p class="admin-help">Quedaron sin rival: no había un horario exacto de 1:30 en común, el número era impar o no quedó cancha libre. Siguen acá aunque después recuperen la fecha. Primero elegí <strong>Cubrir con</strong> y después un día/cancha. No se publican al sitio hasta cubrirlos.</p>
+      ${pendingCards(pending)}`;
   }
 
   function renderRecover() {
@@ -617,7 +591,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       return;
     }
     box.innerHTML = `<h3>Recuperan fecha · ${rows.length}</h3>
-      <p class="admin-help">No jugaron una fecha anterior. El partido normal de esta fecha se arma aparte. Acá cubrís el que recuperan: primero con quién y después la cancha.</p>
+      <p class="admin-help">Tienen un partido menos que el resto de su categoría. El pendiente de la fecha que no jugaron sigue ahí. El partido normal de esta fecha se arma aparte, con horarios exactos. Acá cubrís el que recuperan.</p>
       ${pendingCards(rows, { makeup: true })}`;
   }
 
@@ -1691,7 +1665,8 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         toast("Esta fecha ya está en Resultados.", "err");
         return;
       }
-      const pulled = importRecoveryDebts(ctx.fixture, { temp: filterTemp, week: filterWeek });
+      const history = [...(ctx.results || []), ...(ctx.fixture || [])];
+      const pulled = importRecoveryDebts(ctx.fixture, { temp: filterTemp, week: filterWeek, history });
       ctx.fixture = pulled.matches;
       const already = ctx.fixture.filter(
         (m) => isMakeupPending(m) && seasonOf(m) === filterTemp && (m.week || "") === filterWeek
@@ -1699,7 +1674,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       if (!pulled.added) {
         const msg = already
           ? `${filterWeek}: esas parejas ya están en Recuperan fecha.`
-          : "Nadie para recuperar. En la fecha que no juegan, tocá «No juega esta fecha» en su pendiente.";
+          : "Nadie con un partido menos. Quien no jugó sigue en pendientes de esa fecha.";
         setMsg($("fx-msg"), msg, already ? "ok" : "err");
         toast(already ? "Ya están en esta fecha" : "Nadie para recuperar", already ? "ok" : "err");
         render();
@@ -1970,43 +1945,6 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     };
     $("fx-body")?.addEventListener("click", onDelete);
     $("fx-pending")?.addEventListener("click", onDelete);
-
-    $("fx-pending")?.addEventListener("click", async (e) => {
-      const deferBtn = e.target.closest("[data-fx-defer]");
-      const backBtn = e.target.closest("[data-fx-undefer]");
-      if (!deferBtn && !backBtn) return;
-      const i = Number((deferBtn || backBtn).dataset.fxDefer || (deferBtn || backBtn).dataset.fxUndefer);
-      const match = ctx.fixture[i];
-      if (!match || !isPending(match)) return;
-      if (deferBtn) {
-        const ok = await confirmModal({
-          title: "No juega esta fecha",
-          body: `${match.home} no juega ${filterWeek}. En la fecha siguiente, Recuperar fecha la trae abajo de pendientes para fixturear el partido que debe. El partido normal de esa fecha se arma aparte.`,
-          confirmLabel: "Pasa a recuperar",
-        });
-        if (!ok) return;
-        match.recoverLater = true;
-        match.recoverFrom = match.week || filterWeek;
-        match.reason = `No juega ${match.recoverFrom}. Se recupera en una fecha siguiente.`;
-        match.day = "";
-        match.time = "";
-        match.venue = "";
-        match.court = "";
-        delete match.recoveredIn;
-        coverDraft.delete(i);
-        shell.markDirty("fixture");
-        render();
-        toast(`${match.home} pasa a recuperar`, "ok");
-        return;
-      }
-      delete match.recoverLater;
-      delete match.recoverFrom;
-      delete match.recoveredIn;
-      match.reason = "Pendiente de rival.";
-      shell.markDirty("fixture");
-      render();
-      toast("Volvió a pendientes", "ok");
-    });
 
     $("fx-recover-box")?.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-fx-recover-del]");

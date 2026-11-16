@@ -10,7 +10,6 @@ import {
   importRecoveryDebts,
   isPendingMatch,
   isRealPairMatch,
-  releaseRecoveryDebt,
 } from "./fixturer.js";
 
 assert.deepEqual(parseWindow("19:00 - 22:00"), [1140, 1320]);
@@ -207,29 +206,45 @@ console.log("--- cover", covers.map((c) => `${c.label} (${c.pj})`).join(" · "))
     home: "Diego Ramirez / Martin Rondan",
     away: PENDING_AWAY,
     pending: true,
-    recoverLater: true,
-    recoverFrom: "Fecha 1",
     days: { Lunes: "16:00 - 00:00" },
   };
-  const first = importRecoveryDebts([debt], { temp: "T5", week: "Fecha 2" });
-  assert.equal(first.added, 1);
-  assert.equal(debt.recoveredIn, "Fecha 2");
+  const played = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "B Masculina",
+    home: "Otra Pareja / Rival A",
+    away: "Otra Pareja / Rival B",
+    day: "Lunes",
+    time: "19:00 - 20:30",
+  };
+  const history = [debt, played];
+  const first = importRecoveryDebts(history, { temp: "T5", week: "Fecha 2", history });
+  assert.equal(first.added, 1, "el que no jugó tiene un partido menos");
+  assert.equal(debt.pending, true, "sigue pendiente en la fecha que no jugó");
+  assert.equal(debt.recoverLater, undefined);
   const brought = first.matches.find((m) => m.week === "Fecha 2");
   assert.equal(brought.recoverFrom, "Fecha 1");
   assert.equal(brought.pending, true);
   assert.equal(brought.home, debt.home);
-  const again = importRecoveryDebts(first.matches, { temp: "T5", week: "Fecha 2" });
+  assert.ok(first.matches.includes(debt), "no se saca el pendiente original");
+  const again = importRecoveryDebts(first.matches, { temp: "T5", week: "Fecha 2", history: first.matches });
   assert.equal(again.added, 0, "no duplica");
-  const sameWeek = importRecoveryDebts(
-    [{ ...debt, recoveredIn: "" }],
-    { temp: "T5", week: "Fecha 1" }
+  const sameWeek = importRecoveryDebts(history, { temp: "T5", week: "Fecha 1", history });
+  assert.equal(sameWeek.added, 0, "en la misma fecha no arma recupero");
+  const even = importRecoveryDebts(
+    [
+      played,
+      {
+        week: "Fecha 1",
+        temp: "T5",
+        cat: "B Masculina",
+        home: debt.home,
+        away: "Otra Pareja / Rival C",
+      },
+    ],
+    { temp: "T5", week: "Fecha 2" }
   );
-  assert.equal(sameWeek.added, 0, "no se recupera dentro de la misma fecha");
-  releaseRecoveryDebt(first.matches, brought);
-  assert.equal(debt.recoveredIn, undefined);
-  const later = importRecoveryDebts(first.matches, { temp: "T5", week: "Fecha 3" });
-  assert.equal(later.added, 1);
-  assert.equal(debt.recoveredIn, "Fecha 3");
+  assert.equal(even.added, 0, "si ya jugó, no recupera");
 }
 
 console.log("ok");

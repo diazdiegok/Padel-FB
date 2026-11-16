@@ -87,59 +87,105 @@ export function absorbCoveredPending(matches = [], covered, coverLabel = "") {
   });
 }
 
+function sameSeason(m, season) {
+  return String(m?.temp || "").toUpperCase() === season;
+}
+
+function involvesPair(m, name) {
+  if (!m || !name) return false;
+  if (pairsMatch(m.home, name)) return true;
+  return !isPendingMatch(m) && pairsMatch(m.away, name);
+}
+
+/** Partido de la fecha, no el que se está recuperando. */
+function isWeekMatch(m) {
+  return isRealPairMatch(m) && !m.recoverFrom;
+}
+
+function recoverySettled(pool, name, from, season) {
+  return pool.some(
+    (m) =>
+      sameSeason(m, season) &&
+      String(m.recoverFrom || "") === from &&
+      involvesPair(m, name) &&
+      (isRealPairMatch(m) || isMakeupPending(m))
+  );
+}
+
 /**
- * Trae a `week` las parejas marcadas «no juega» en una fecha anterior.
- * El partido normal de esta fecha no se toca: el que recuperan queda pendiente aparte.
+ * Trae a `week` a quien tiene un partido menos: estuvo en una fecha anterior
+ * y no la jugó, mientras el resto de su categoría sí. No saca ese pendiente.
  */
-export function importRecoveryDebts(matches = [], { temp = "", week = "" } = {}) {
+export function importRecoveryDebts(matches = [], { temp = "", week = "", history = null } = {}) {
   const season = String(temp || "").toUpperCase();
   const here = weekNumber(week);
   const list = Array.isArray(matches) ? matches.slice() : [];
+  const pool = Array.isArray(history) ? history : list;
   if (!season || !week || !here) return { matches: list, added: 0, waiting: 0 };
+
+  const seasonRows = pool.filter((m) => sameSeason(m, season));
+  const cats = [...new Set(seasonRows.map((m) => m.cat || "").filter(Boolean))];
   let added = 0;
   let waiting = 0;
-  for (const src of list) {
-    if (!isRecoverLater(src)) continue;
-    if (String(src.temp || "").toUpperCase() !== season) continue;
-    if (src.recoveredIn) continue;
-    const from = String(src.recoverFrom || src.week || "").trim();
-    const fromN = weekNumber(from);
-    if (!fromN || fromN >= here) continue;
-    waiting += 1;
-    const exists = list.some(
-      (m) =>
-        isMakeupPending(m) &&
-        (m.week || "") === week &&
-        String(m.temp || "").toUpperCase() === season &&
-        String(m.recoverFrom || "") === from &&
-        pairsMatch(m.home, src.home)
-    );
-    if (exists) {
-      src.recoveredIn = week;
-      continue;
+
+  for (const cat of cats) {
+    const catRows = seasonRows.filter((m) => (m.cat || "") === cat);
+    const playedWeeks = [
+      ...new Set(
+        catRows
+          .filter((m) => isWeekMatch(m) && weekNumber(m.week) > 0 && weekNumber(m.week) < here)
+          .map((m) => m.week)
+      ),
+    ].sort((a, b) => weekNumber(a) - weekNumber(b));
+    if (!playedWeeks.length) continue;
+
+    const names = [];
+    const seen = new Set();
+    for (const m of catRows) {
+      for (const name of [m.home, isPendingMatch(m) ? "" : m.away]) {
+        const label = String(name || "").trim();
+        if (!label || isPlaceholderPair(label)) continue;
+        const key = fold(label);
+        if (seen.has(key) || names.some((n) => pairsMatch(n, label))) continue;
+        seen.add(key);
+        names.push(label);
+      }
     }
-    list.push({
-      pending: true,
-      recoverFrom: from,
-      week,
-      day: "",
-      date: "",
-      temp: season,
-      cat: src.cat || "",
-      time: "",
-      venue: "",
-      court: "",
-      home: src.home,
-      away: PENDING_AWAY,
-      result: "",
-      appliedResult: "",
-      reason: `Recupera ${from}.`,
-      ...(src.days && typeof src.days === "object" ? { days: src.days } : {}),
-      ...(src.avail ? { avail: String(src.avail) } : {}),
-      ...(src.note ? { note: String(src.note) } : {}),
-    });
-    src.recoveredIn = week;
-    added += 1;
+
+    for (const name of names) {
+      const missed = playedWeeks.filter((from) => {
+        const inWeek = catRows.filter((m) => (m.week || "") === from);
+        const played = inWeek.some((m) => isWeekMatch(m) && involvesPair(m, name));
+        const wasThere = inWeek.some((m) => involvesPair(m, name));
+        return wasThere && !played;
+      });
+      for (const from of missed) {
+        waiting += 1;
+        if (recoverySettled(list, name, from, season) || recoverySettled(pool, name, from, season)) continue;
+        const src = catRows.find((m) => (m.week || "") === from && isPendingMatch(m) && pairsMatch(m.home, name));
+        list.push({
+          pending: true,
+          recoverFrom: from,
+          week,
+          day: "",
+          date: "",
+          temp: season,
+          cat,
+          time: "",
+          venue: "",
+          court: "",
+          home: src?.home || name,
+          away: PENDING_AWAY,
+          result: "",
+          appliedResult: "",
+          reason: `Le falta 1 partido (${from}). Sigue en pendientes de esa fecha.`,
+          ...(src?.days && typeof src.days === "object" ? { days: src.days } : {}),
+          ...(src?.avail ? { avail: String(src.avail) } : {}),
+          ...(src?.note ? { note: String(src.note) } : {}),
+        });
+        added += 1;
+      }
+    }
   }
   return { matches: list, added, waiting };
 }
