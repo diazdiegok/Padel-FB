@@ -345,7 +345,7 @@
     "venue": "La manzana Padel",
     "court": "Cancha 2",
     "home": "Alexis Sostersich / José Sagasta",
-    "away": "Claudio Roldán / Joaquin Roldán",
+    "away": "Mario Martin Sbarbaro / Ronaldo Antonio Fontana",
     "result": "",
     "appliedResult": ""
   },
@@ -360,6 +360,20 @@
     "court": "Cancha 4",
     "home": "Imanol Agnoli / Hernan Masine",
     "away": "Iván Perez / Fernando Munguia",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "week": "Fecha 1",
+    "day": "Sábado",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "15:00 - 16:30",
+    "venue": "La manzana Padel",
+    "court": "Cancha 1",
+    "home": "Andrea Scoreanzi / Gisela Mansilla",
+    "away": "Brenda Cauvet / Valeria Santamaria",
     "result": "",
     "appliedResult": ""
   },
