@@ -34,6 +34,11 @@ const DAY_ALIASES = {
 const DAY_END = 24 * 60;
 /** Dentro de un rango (ej. 16:30-21:00) los partidos de 90' pueden empezar cada 30'. */
 const START_STEP = 30;
+/**
+ * Si ese día el complejo no tiene partidos, el horario del Sheet se estira
+ * 1:30 para cada lado. Así un rango que llega hasta las 17 también ofrece 17:00-18:30.
+ */
+export const FREE_COURT_MARGIN = 90;
 
 function fold(s) {
   return String(s || "")
@@ -218,6 +223,8 @@ export function missingCourtHorarios(rows = []) {
 export function expandCourtCandidates(windows = []) {
   const out = [];
   for (const w of windows) {
+    const sheetFrom = Number.isFinite(w._sheetFrom) ? w._sheetFrom : w.from;
+    const sheetTo = Number.isFinite(w._sheetTo) ? w._sheetTo : w.to;
     for (const start of matchStartsInWindow(w.from, w.to, { single: w.single })) {
       out.push({
         day: w.day,
@@ -228,10 +235,62 @@ export function expandCourtCandidates(windows = []) {
         time: start.time,
         _windowFrom: w.from,
         _windowTo: w.to,
+        outsideSheet: start.from < sheetFrom || start.to > sheetTo,
       });
     }
   }
   return out;
+}
+
+/** True si ese complejo no tiene ningún partido ese día. */
+export function venueDayIsOpen(day, venue, taken = []) {
+  const key = `${normalizeDay(day)}|${fold(venue)}`;
+  if (!normalizeDay(day) || !fold(venue)) return false;
+  return !(taken || []).some((m) => {
+    if (!String(m?.venue || "").trim() || !String(m?.court || "").trim()) return false;
+    if (!parseCourtWindow(m.time)) return false;
+    return `${normalizeDay(m.day)}|${fold(m.venue)}` === key;
+  });
+}
+
+export function widenUnusedCourtWindows(slots = [], taken = [], margin = FREE_COURT_MARGIN) {
+  const pad = Math.max(0, Number(margin) || 0);
+  if (!pad) return slots || [];
+  const used = new Set();
+  for (const m of taken || []) {
+    const day = normalizeDay(m?.day);
+    if (!day || !String(m?.venue || "").trim() || !String(m?.court || "").trim()) continue;
+    if (!parseCourtWindow(m.time)) continue;
+    used.add(`${day}|${fold(m.venue)}`);
+  }
+  return (slots || []).map((s) => {
+    const day = normalizeDay(s.day);
+    if (!day || used.has(`${day}|${fold(s.venue)}`)) return s;
+    const from = Math.max(0, Number(s.from) - pad);
+    const to = Math.min(DAY_END, Number(s.to) + pad);
+    if (!(to - from >= MATCH_MINUTES) || (from === s.from && to === s.to)) return s;
+    return {
+      ...s,
+      from,
+      to,
+      single: false,
+      time: clockRange(from, to),
+      capacity: Math.max(1, windowCapacity(from, to)),
+      _sheetFrom: Number.isFinite(s._sheetFrom) ? s._sheetFrom : s.from,
+      _sheetTo: Number.isFinite(s._sheetTo) ? s._sheetTo : s.to,
+    };
+  });
+}
+
+function fitsWindowMargin(days, slot, margin) {
+  if (!days || typeof days !== "object") return false;
+  const day = normalizeDay(slot.day);
+  if (!day || (!(day in days) && !(slot.day in days))) return false;
+  const raw = days[day] ?? days[slot.day];
+  const win = parseCourtWindow(raw);
+  if (!win || !(win.to > win.from)) return true;
+  const pad = Math.max(0, Number(margin) || 0);
+  return Number(slot.from) >= win.from - pad && Number(slot.to) <= win.to + pad;
 }
 
 /** Agrupa ventanas por complejo: capacidad = partidos de 90' que entran. */
@@ -1043,8 +1102,12 @@ export function nearCoverCourtOptions(
       ((slotDay in homeDays || slot.day in homeDays) && (slotDay in awayDays || slot.day in awayDays));
     const miss = homeMiss + awayMiss;
     const worst = Math.max(homeMiss, awayMiss);
-    // Cercano = desfase chico. Estimable = cualquier otra cancha libre.
-    const close = bothHaveDay && miss <= missCap && worst <= missCap;
+    // Cercano: desfase chico, o el turno entra si se estira la inscripción 1:30.
+    const withinMargin =
+      bothHaveDay &&
+      fitsWindowMargin(homeDays, slot, FREE_COURT_MARGIN) &&
+      fitsWindowMargin(awayDays, slot, FREE_COURT_MARGIN);
+    const close = bothHaveDay && ((miss <= missCap && worst <= missCap) || withinMargin);
     if (!includeFar && !close) continue;
 
     const key = courtOptionKey(slot);
@@ -1067,6 +1130,7 @@ export function nearCoverCourtOptions(
       bothHaveDay,
       fitsHome: homeMiss === 0,
       fitsAway: awayMiss === 0,
+      outsideSheet: !!slot.outsideSheet,
       nearLabel: `pendiente ${missLabel(homeMiss)} · cubre ${missLabel(awayMiss)}`,
     });
   }
@@ -1182,6 +1246,7 @@ export function driveCourtOptions(match = {}, slots = [], taken = [], { softAway
       sameWhen: !!sameWhen,
       sameDay: !!sameDay,
       fitsAway: !!fitsAway,
+      outsideSheet: !!slot.outsideSheet,
     });
   }
 

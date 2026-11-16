@@ -46,7 +46,9 @@ import {
   parkBareMatchesAsPending,
   rematchForCourts,
   summarizeCourtSlots,
+  venueDayIsOpen,
   weekFromName,
+  widenUnusedCourtWindows,
 } from "../lib/slots.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
@@ -242,6 +244,8 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       return { opts: [], nearOpts: [], estimateOpts: [], homeDays, coverDays: null, bothPending, shareWindow: false };
     }
     const taken = takenCourts(match);
+    // Jueves en Américas no tiene partidos: el rango del Sheet se estira 1:30.
+    const offerSlots = widenUnusedCourtWindows(loadedSlots, taken);
     const opts = driveCourtOptions(
       {
         week: match.week,
@@ -257,23 +261,24 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         homeDays,
         awayDays: coverDays,
       },
-      loadedSlots,
+      offerSlots,
       taken,
       { softAway: false }
     );
     // Exactos arriba. Después cercanos (desfase chico) y, si no coinciden,
     // todas las canchas libres del Drive como horarios estimables.
     const exactKeys = new Set(opts.map((o) => o.key));
-    const flex = nearCoverCourtOptions({ homeDays, awayDays: coverDays }, loadedSlots, taken, {
+    const flex = nearCoverCourtOptions({ homeDays, awayDays: coverDays }, offerSlots, taken, {
       includeFar: true,
     }).filter((o) => !exactKeys.has(o.key));
     const nearOptsAll = flex.filter((o) => o.close);
     const estimateOptsAll = flex.filter((o) => !o.close);
     // Misma cancha: un turno de 1:30 no se lista también 30' corrido.
     const packed = packNonOverlappingTurns([...opts, ...nearOptsAll, ...estimateOptsAll]);
-    const nearOpts = packed.filter((o) => o.close);
-    const estimateOpts = packed.filter((o) => o.estimate);
-    const packedExact = packed.filter((o) => !o.near);
+    const tag = (o) => ({ ...o, openDay: venueDayIsOpen(o.day, o.venue, taken) });
+    const nearOpts = packed.filter((o) => o.close).map(tag);
+    const estimateOpts = packed.filter((o) => o.estimate).map(tag);
+    const packedExact = packed.filter((o) => !o.near).map(tag);
     return { opts: packedExact, nearOpts, estimateOpts, homeDays, coverDays, bothPending, shareWindow };
   }
 
@@ -299,7 +304,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           const court = String(o.court || "").trim();
           const courtTxt = /^cancha\b/i.test(court) ? court : court ? `Cancha ${court}` : "";
           const base = [includeDay ? o.day : "", o.time, o.venue, courtTxt].filter(Boolean).join(" · ");
-          const text = near && o.nearLabel ? `${base} · ${o.nearLabel}` : base;
+          const bits = [base];
+          if (near && o.nearLabel) bits.push(o.nearLabel);
+          if (o.outsideSheet) bits.push("horario +1:30");
+          const text = bits.join(" · ");
           return `<option value="${escAttr(o.key)}">${escAttr(text)}</option>`;
         })
         .join("");
@@ -331,34 +339,42 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         .join("");
     };
 
+    const openOpts = [...nearOpts, ...estimateOpts].filter((o) => o.openDay);
+    const nearRest = nearOpts.filter((o) => !o.openDay);
+    const estimateRest = estimateOpts.filter((o) => !o.openDay);
     const total = opts.length + nearOpts.length + estimateOpts.length;
     const parts = [];
     if (opts.length) parts.push(`${opts.length} exacto${opts.length === 1 ? "" : "s"}`);
-    if (nearOpts.length) parts.push(`${nearOpts.length} cercano${nearOpts.length === 1 ? "" : "s"}`);
-    if (estimateOpts.length) parts.push(`${estimateOpts.length} estimable${estimateOpts.length === 1 ? "" : "s"}`);
+    if (openOpts.length) parts.push(`${openOpts.length} sin partido ese día`);
+    if (nearRest.length) parts.push(`${nearRest.length} cercano${nearRest.length === 1 ? "" : "s"}`);
+    if (estimateRest.length) parts.push(`${estimateRest.length} estimable${estimateRest.length === 1 ? "" : "s"}`);
     const placeholder = `2. Elegir entre ${parts.join(" + ")}…`;
-    const hint = opts.length
-      ? "Arriba: turnos donde entran las dos. Después, cercanos con poco desfase y estimables: cualquier cancha libre, aunque no coincidan en 1:30."
-      : "No hay 1:30 en común. Se listan todas las canchas libres del Drive. «sin día» = ese día no está en la inscripción.";
+    const hint = "Si ese día el complejo no tiene partidos, el horario del Sheet se estira 1:30. Ahí entra, por ejemplo, jueves 17:00 en Américas.";
     // Separadores con <option disabled> (no anidar optgroup).
     const exactBlock = opts.length
       ? `<option disabled value="">── Libres exactos (entran las dos) ──</option>
       ${groupsByDay(opts)}`
       : "";
-    const nearBlock = nearOpts.length
+    const openBlock = openOpts.length
+      ? `<option disabled value="">────────────────────────────────</option>
+      <option disabled value="">── Sin partidos ese día · horario +1:30 ──</option>
+      ${groupsByDay(openOpts, { near: true })}`
+      : "";
+    const nearBlock = nearRest.length
       ? `<option disabled value="">────────────────────────────────</option>
       <option disabled value="">── Cercanos · poco desfase (aflojan) ──</option>
-      ${groupsByDay(nearOpts, { near: true })}`
+      ${groupsByDay(nearRest, { near: true })}`
       : "";
-    const estimateBlock = estimateOpts.length
+    const estimateBlock = estimateRest.length
       ? `<option disabled value="">────────────────────────────────</option>
       <option disabled value="">── Estimables · cancha libre ──</option>
-      ${groupsByDay(estimateOpts, { near: true })}`
+      ${groupsByDay(estimateRest, { near: true })}`
       : "";
 
     return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="${escAttr(hint)}" data-fx-cover-total="${total}">
       <option value="">${escAttr(placeholder)}</option>
       ${exactBlock}
+      ${openBlock}
       ${nearBlock}
       ${estimateBlock}
     </select>`;

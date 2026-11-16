@@ -23,6 +23,9 @@ import {
   summarizeCourtSlots,
   weekFromName,
   windowCapacity,
+  venueDayIsOpen,
+  widenUnusedCourtWindows,
+  expandCourtCandidates,
 } from "./slots.js";
 import { isPendingMatch, isRealPairMatch, PENDING_AWAY } from "./fixturer.js";
 
@@ -929,6 +932,38 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
     packed.map((o) => o.time),
     ["14:00 - 15:30", "15:30 - 17:00", "17:00 - 18:30"],
     "tres turnos de 1:30, el de las 17 queda"
+  );
+}
+
+// Jueves sin partidos en Américas: 14:00-18:30 se estira y sigue el turno de las 17.
+{
+  const sheet = [parseCourtSlot({ Complejo: "Americas", Cancha: "Cancha 1", Dia: "Jueves", Horario: "14:00 - 18:30" })];
+  const mondayOnly = [{ day: "Lunes", time: "17:00 - 18:30", venue: "Americas Padel", court: "Cancha 1" }];
+  assert.equal(venueDayIsOpen("Jueves", "Americas Padel", mondayOnly), true, "el jueves Américas está libre");
+  const wide = widenUnusedCourtWindows(sheet, mondayOnly);
+  assert.equal(wide[0].from, 14 * 60 - 90);
+  assert.equal(wide[0].to, 18 * 60 + 30 + 90);
+  const packed = packNonOverlappingTurns(
+    nearCoverCourtOptions(
+      { homeDays: { Lunes: "19:00 - 22:00" }, awayDays: { Viernes: "19:00 - 22:00" } },
+      wide,
+      mondayOnly,
+      { includeFar: true }
+    )
+  );
+  assert.ok(packed.some((o) => o.day === "Jueves" && o.time === "17:00 - 18:30"), "queda el jueves 17:00");
+  const openBusy = [parseCourtSlot({ Complejo: "Open", Cancha: "2", Dia: "Jueves", Horario: "14:00 - 18:30" })];
+  const juevesOpen = [{ day: "Jueves", time: "20:00 - 21:30", venue: "Open Padel", court: "1" }];
+  const held = widenUnusedCourtWindows(openBusy, juevesOpen);
+  assert.equal(held[0].from, 14 * 60, "con partidos ese día no se estira");
+  assert.equal(held[0].to, 18 * 60 + 30);
+  const until17 = widenUnusedCourtWindows(
+    [parseCourtSlot({ Complejo: "Americas", Cancha: "2", Dia: "Jueves", Horario: "15:30 - 17:00" })],
+    []
+  );
+  assert.ok(
+    expandCourtCandidates(until17).some((s) => s.time === "17:00 - 18:30" && s.outsideSheet),
+    "un rango que cortaba a las 17 ahora ofrece 17:00-18:30"
   );
 }
 
