@@ -823,4 +823,35 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   assert.equal(vie1830.miss, 30);
 }
 
+// Libres exactos + cercanos con desfase (caso Marien/Milagros: 19:30 libre y 21:00 cercano).
+{
+  const marien = {
+    Lunes: "18:00 - 22:00",
+    Martes: "18:00 - 22:00",
+  };
+  const milagros = {
+    Lunes: "19:00 - 22:00",
+    Martes: "19:00 - 21:00",
+  };
+  const sheet = [
+    parseCourtSlot({ Complejo: "La manzana Padel", Cancha: "2", Dia: "Lunes", Horario: "19:30 - 21:00" }),
+    parseCourtSlot({ Complejo: "La manzana Padel", Cancha: "1", Dia: "Lunes", Horario: "21:00 - 22:30" }),
+    parseCourtSlot({ Complejo: "Open", Cancha: "3", Dia: "Martes", Horario: "20:00 - 21:30" }),
+  ];
+  const exact = driveCourtOptions(
+    { homeDays: marien, awayDays: milagros, pending: false },
+    sheet,
+    [],
+    { softAway: false }
+  );
+  assert.ok(exact.some((o) => o.time === "19:30 - 21:00"), "19:30 entra exacto");
+  assert.ok(!exact.some((o) => o.time === "21:00 - 22:30"), "21:00 no entra exacto (sale a 22:30)");
+  const near = nearCoverCourtOptions({ homeDays: marien, awayDays: milagros }, sheet, [], { limit: 8 });
+  assert.ok(near.some((o) => o.time === "21:00 - 22:30"), "21:00 aparece como cercano");
+  assert.ok(near.every((o) => o.near && o.miss > 0 && o.bothHaveDay));
+  const exactKeys = new Set(exact.map((o) => o.key));
+  const nearOnly = near.filter((o) => !exactKeys.has(o.key));
+  assert.ok(nearOnly.length, "con exactos igual hay cercanos distintos");
+}
+
 console.log("slots ok");

@@ -1007,10 +1007,17 @@ function missLabel(mins) {
 
 /**
  * Canchas libres del Drive ordenadas por menor “distancia” a ambas inscripciones.
- * Pensado para cuando no hay cruce estricto de 1:30: sugiere los turnos más cercanos.
+ * Pensado para cuando no hay cruce estricto de 1:30: sugiere los turnos más cercanos
+ * (poca diferencia de hora / desfase chico). También se listan junto a los exactos.
  */
-export function nearCoverCourtOptions({ homeDays, awayDays } = {}, slots = [], taken = [], { limit = 12 } = {}) {
+export function nearCoverCourtOptions(
+  { homeDays, awayDays } = {},
+  slots = [],
+  taken = [],
+  { limit = 12, maxMiss = MATCH_MINUTES } = {}
+) {
   if (!homeDays || !awayDays) return [];
+  const missCap = Math.max(1, Number(maxMiss) || MATCH_MINUTES);
   const seen = new Set();
   const out = [];
   for (const slot of expandCourtCandidates(slots)) {
@@ -1030,15 +1037,19 @@ export function nearCoverCourtOptions({ homeDays, awayDays } = {}, slots = [], t
     // Ya entra perfecto para ambas → lo maneja driveCourtOptions estricto.
     if (homeMiss === 0 && awayMiss === 0) continue;
 
+    // Solo desfase chico: ambas tienen el día y la suma de “aflojes” ≤ ~1 partido.
+    const bothHaveDay =
+      !!slotDay &&
+      ((slotDay in homeDays || slot.day in homeDays) && (slotDay in awayDays || slot.day in awayDays));
+    if (!bothHaveDay) continue;
+    const miss = homeMiss + awayMiss;
+    const worst = Math.max(homeMiss, awayMiss);
+    if (miss > missCap || worst > missCap) continue;
+
     const key = courtOptionKey(slot);
     if (seen.has(key)) continue;
     seen.add(key);
 
-    const bothHaveDay =
-      !!slotDay &&
-      ((slotDay in homeDays || slot.day in homeDays) && (slotDay in awayDays || slot.day in awayDays));
-    const miss = homeMiss + awayMiss;
-    const worst = Math.max(homeMiss, awayMiss);
     out.push({
       day: slot.day,
       time: slot.time,
@@ -1061,7 +1072,6 @@ export function nearCoverCourtOptions({ homeDays, awayDays } = {}, slots = [], t
     (a, b) =>
       a.miss - b.miss ||
       a.worst - b.worst ||
-      Number(b.bothHaveDay) - Number(a.bothHaveDay) ||
       DAYS.indexOf(a.day) - DAYS.indexOf(b.day) ||
       a.time.localeCompare(b.time, "es") ||
       a.venue.localeCompare(b.venue, "es") ||

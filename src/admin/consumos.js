@@ -21,9 +21,10 @@ function setAlertDot(on) {
   if (dot) dot.hidden = !on;
 }
 
-function meterCard(m) {
+function meterCard(m, renewLabel = "") {
   const usedPct = Number(m.usedPct || 0);
   const leftPct = Number(m.leftPct || Math.max(0, 100 - usedPct));
+  const renew = m.renewsAt || renewLabel || "";
   return `<article class="consumos-meter tone-${esc(m.tone || "ok")}">
     <div class="consumos-meter-head">
       <strong>${esc(m.label || "")}</strong>
@@ -36,6 +37,7 @@ function meterCard(m) {
       <span>${esc(m.used)} / ${esc(m.limit)} ${esc(m.unit || "")}</span>
       <span>quedan ${esc(m.left)} ${esc(m.unit || "")}</span>
     </div>
+    ${renew ? `<div class="consumos-meter-renew">Se renueva: <b>${esc(renew)}</b></div>` : ""}
   </article>`;
 }
 
@@ -79,12 +81,12 @@ function renderBoard(data) {
   board.innerHTML = `
     <p class="consumos-explain">
       Acá ves <b>cuánto del plan free de Cloudflare se está usando hoy</b>.
-      Lo crítico es <b>Escrituras KV</b>: si llega a 100%, se cortan inscripción, login y comprobantes hasta el reset
-      (${esc(resetAt || "~21:00 Argentina")}).
+      Lo crítico es <b>Escrituras KV</b>: si llega a 100%, se cortan inscripción, login y comprobantes hasta el reset.
+      Las cuotas diarias se renuevan el <b>${esc(resetAt || "~21:00 Argentina")}</b> (00:00 UTC).
     </p>
     ${alertHtml}
     <div class="consumos-meters">
-      ${meters.map(meterCard).join("")}
+      ${meters.map((m) => meterCard(m, m.renewsAt || (m.id === "keys" ? "no renueva (acumulado)" : resetAt))).join("")}
     </div>
     <div class="consumos-kpis">
       <article class="consumos-kpi">
