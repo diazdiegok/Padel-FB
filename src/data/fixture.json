@@ -493,5 +493,20 @@
     "result": "",
     "appliedResult": "",
     "flexAvail": true
+  },
+  {
+    "week": "Fecha 1",
+    "day": "Jueves",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "17:00 - 18:30",
+    "venue": "Americas Padel",
+    "court": "Cancha 1",
+    "home": "Manuela Vinuales / Delfina Vinuales",
+    "away": "Morena Jaureguiberry / Mariela Jaureguiberry",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
   }
 ]
