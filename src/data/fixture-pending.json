@@ -93,27 +93,6 @@
   {
     "pending": true,
     "reason": "El horario del partido no entra en la disponibilidad de la inscripción.",
-    "avail": "Lunes 19:00 - 22:00 · Viernes 19:00 - 22:00",
-    "days": {
-      "Lunes": "19:00 - 22:00",
-      "Viernes": "19:00 - 22:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Stefania Benedetich / Florencia Benedetich",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "El horario del partido no entra en la disponibilidad de la inscripción.",
     "avail": "Jueves 18:00 - 20:00 · Viernes 20:00 - 22:30 · Sábado 09:00 - 13:00",
     "days": {
       "Jueves": "18:00 - 20:00",
@@ -176,31 +155,6 @@
     "venue": "",
     "court": "",
     "home": "Gauna Camila / Falcón Luana",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
-    "avail": "Lunes 19:30 - 22:30 · Martes 19:30 - 22:30 · Miércoles 19:30 - 22:30 · Jueves 19:30 - 22:30 · Viernes 19:30 - 00:00 · Sábado 19:00 - 00:00",
-    "days": {
-      "Lunes": "19:30 - 22:30",
-      "Martes": "19:30 - 22:30",
-      "Miércoles": "19:30 - 22:30",
-      "Jueves": "19:30 - 22:30",
-      "Viernes": "19:30 - 00:00",
-      "Sábado": "19:00 - 00:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Delfina Olmedo / Vanina Antonella Vallejos",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
