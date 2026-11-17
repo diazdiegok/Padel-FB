@@ -334,7 +334,6 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           const base = [includeDay ? o.day : "", o.time, o.venue, courtTxt].filter(Boolean).join(" · ");
           const bits = [base];
           if (near && o.nearLabel) bits.push(o.nearLabel);
-          if (o.outsideSheet) bits.push("horario +1:30");
           const text = bits.join(" · ");
           return `<option value="${escAttr(o.key)}">${escAttr(text)}</option>`;
         })
