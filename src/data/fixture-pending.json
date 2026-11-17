@@ -206,5 +206,49 @@
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Lunes 18:30 - 00:00 · Martes 18:30 - 00:00 · Miércoles 18:30 - 21:00 · Jueves 18:30 - 00:00",
+    "days": {
+      "Lunes": "18:30 - 00:00",
+      "Martes": "18:30 - 00:00",
+      "Miércoles": "18:30 - 21:00",
+      "Jueves": "18:30 - 00:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Saavedra, Marcos / Albornoz, Luis Alberto",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Lunes 15:30 - 18:00 · Jueves 20:00 - 23:00",
+    "days": {
+      "Lunes": "15:30 - 18:00",
+      "Jueves": "20:00 - 23:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Pamela Velazques / Santino Sayes",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
   }
 ]

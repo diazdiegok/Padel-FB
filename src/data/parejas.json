@@ -1213,5 +1213,19 @@
       "Jueves": "18:30 - 00:00"
     },
     "note": "Ante la opción, preferimos jugar en Palermo por proximidad. El comprobante es el pago por ambos integrantes (50% off)"
+  },
+  {
+    "id": "pmwkwi10ua43e",
+    "createdAt": "2026-11-17T16:22:37.230Z",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "p1": "Pamela Velazques",
+    "p2": "Santino Sayes",
+    "days": {
+      "Lunes": "15:30 - 18:00",
+      "Jueves": "20:00 - 23:00"
+    },
+    "note": "",
+    "source": "admin"
   }
 ]
