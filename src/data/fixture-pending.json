@@ -1,6 +1,28 @@
 [
   {
     "pending": true,
+    "reason": "Su rival ya no está inscripto.",
+    "avail": "Jueves 17:00 - 21:00 · Viernes 16:00 - 21:00 · Sábado 11:00 - 15:00",
+    "days": {
+      "Jueves": "17:00 - 21:00",
+      "Viernes": "16:00 - 21:00",
+      "Sábado": "11:00 - 15:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "María Laura Borsotti / Celia Senger",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Lunes 19:00 - 21:00 · Viernes 19:00 - 21:00",
     "days": {
