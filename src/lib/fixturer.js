@@ -66,6 +66,18 @@ export function countPairMatches(name, cat, temp, pools = []) {
 }
 
 /**
+ * El borrador de una fecha reemplaza lo ya publicado de esa misma fecha.
+ * Así, pasar un partido a pendiente baja el PJ en el admin antes de publicar.
+ * Si el borrador no se guarda, la fecha publicada sigue contando.
+ */
+export function draftAwarePools(results = [], published = [], draft = [], season = "") {
+  const key = (m) => `${String(m?.temp || season || "").toUpperCase()}|${m?.week || ""}`;
+  const weeks = new Set((draft || []).map(key));
+  const rest = (published || []).filter((m) => !weeks.has(key(m)));
+  return [results || [], rest, draft || []];
+}
+
+/**
  * Al cubrir un pendiente con otra pareja que también estaba pendiente,
  * saca de la lista el pendiente de quien cubrió (y cualquier duplicado del local).
  * `covered` es el partido ya convertido a cruce real.

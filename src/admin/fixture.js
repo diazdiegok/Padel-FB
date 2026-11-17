@@ -18,6 +18,7 @@ import {
   buildFixture,
   countPairMatches,
   coverCandidates,
+  draftAwarePools,
   importRecoveryDebts,
   isMakeupPending,
   isPendingMatch,
@@ -139,7 +140,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   }
 
   function matchPools() {
-    return [ctx.results || [], ctx.fixturePublished || [], ctx.fixture || []];
+    return draftAwarePools(ctx.results || [], ctx.fixturePublished || [], ctx.fixture || [], ctx.siteData.currentSeason || "");
   }
 
   function weekStats(temp, week) {
@@ -2069,7 +2070,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
       const ok = await confirmModal({
         title: "Marcar como pendiente",
-        body: `Se anula el partido y ambas parejas quedan en pendientes (${match.home} y ${match.away}). Después podés cubrirlas de nuevo. Publicá fixture para confirmarlo.`,
+        body: `Se anula el partido y ambas parejas quedan en pendientes (${match.home} y ${match.away}). El PJ baja ahora. Si salís sin publicar, vuelve al valor anterior.`,
         confirmLabel: "A pendientes",
         danger: false,
       });

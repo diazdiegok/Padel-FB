@@ -7,6 +7,7 @@ import {
   parseWindow,
   countPairMatches,
   coverCandidates,
+  draftAwarePools,
   importRecoveryDebts,
   isPendingMatch,
   isRealPairMatch,
@@ -92,6 +93,49 @@ assert.equal(
   MAX_PAIR_MATCHES,
   "pendientes no suman PJ"
 );
+
+{
+  const published = [
+    {
+      temp: "T5",
+      cat: "A Masculina",
+      week: "Fecha 1",
+      day: "Lunes",
+      time: "17:00 - 18:30",
+      home: "Diego Diaz / Emiliano Fontanetto",
+      away: "Otra Pareja / Rival",
+    },
+  ];
+  const draft = [
+    {
+      temp: "T5",
+      cat: "A Masculina",
+      week: "Fecha 1",
+      home: "Diego Diaz / Emiliano Fontanetto",
+      away: PENDING_AWAY,
+      pending: true,
+    },
+    {
+      temp: "T5",
+      cat: "A Masculina",
+      week: "Fecha 1",
+      home: "Otra Pareja / Rival",
+      away: PENDING_AWAY,
+      pending: true,
+    },
+  ];
+  const pools = draftAwarePools([], published, draft);
+  assert.equal(
+    countPairMatches("Diego Diaz / Emiliano Fontanetto", "A Masculina", "T5", pools),
+    0,
+    "sacar el partido a pendientes baja el PJ del borrador"
+  );
+  assert.equal(
+    countPairMatches("Diego Diaz / Emiliano Fontanetto", "A Masculina", "T5", draftAwarePools([], published, [])),
+    1,
+    "sin guardar el borrador sigue el PJ publicado"
+  );
+}
 
 const pendingSlot = {
   temp: "T5",
