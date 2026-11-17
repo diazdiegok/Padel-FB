@@ -480,5 +480,34 @@
     "away": "Araceli Ferreyra / Agostina Bonilla",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "week": "Fecha 1",
+    "day": "Martes",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "22:00 - 23:30",
+    "venue": "Open Padel",
+    "court": "Cancha 2",
+    "home": "Sebastian Diaz / Pablo Zarate",
+    "away": "Sebastian Rodriguez / Gonzalo Barbero",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "week": "Fecha 1",
+    "day": "Miércoles",
+    "date": "",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "time": "18:00 - 19:30",
+    "venue": "Americas Padel",
+    "court": "Cancha 1",
+    "home": "Denis Márquez / Ramira Omar",
+    "away": "Diego Diaz / Emiliano Fontanetto",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
   }
 ]

@@ -2,54 +2,6 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 18:00 - 00:00 · Martes 18:00 - 00:00 · Miércoles 13:00 - 00:00 · Jueves 13:00 - 00:00 · Viernes 13:00 - 00:00",
-    "days": {
-      "Lunes": "18:00 - 00:00",
-      "Martes": "18:00 - 00:00",
-      "Miércoles": "13:00 - 00:00",
-      "Jueves": "13:00 - 00:00",
-      "Viernes": "13:00 - 00:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Sebastian Diaz / Pablo Zarate",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 19:30 - 00:00 · Martes 19:30 - 00:00 · Miércoles 19:30 - 00:00 · Jueves 19:30 - 00:00 · Viernes 19:30 - 00:00",
-    "days": {
-      "Lunes": "19:30 - 00:00",
-      "Martes": "19:30 - 00:00",
-      "Miércoles": "19:30 - 00:00",
-      "Jueves": "19:30 - 00:00",
-      "Viernes": "19:30 - 00:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Sebastian Rodriguez / Gonzalo Barbero",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Lunes 19:00 - 21:00 · Viernes 19:00 - 21:00",
     "days": {
       "Lunes": "19:00 - 21:00",
@@ -87,48 +39,6 @@
     "venue": "",
     "court": "",
     "home": "Milagros Solaro / Ana Paula Croce",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Viernes 14:00 - 22:00",
-    "days": {
-      "Viernes": "14:00 - 22:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "A Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Denis Márquez / Ramira Omar",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Jueves 16:30 - 19:30 · Viernes 16:30 - 19:30 · Sábado 16:30 - 19:30",
-    "days": {
-      "Jueves": "16:30 - 19:30",
-      "Viernes": "16:30 - 19:30",
-      "Sábado": "16:30 - 19:30"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "A Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Diego Diaz / Emiliano Fontanetto",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
