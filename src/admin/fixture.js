@@ -20,8 +20,10 @@ import {
   countPairMatches,
   coverCandidates,
   draftAwarePools,
+  fileOwedRecoveries,
   importRecoveryDebts,
   isMakeupPending,
+  normalizeRecoveryWeeks,
   isPendingMatch,
   isPlaceholderPair,
   isRealPairMatch,
@@ -134,11 +136,15 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   }
 
   function isLiveWeek(temp, week) {
-    if ((ctx.fixture || []).some((m) => seasonOf(m) === temp && (m.week || "") === week)) return true;
+    const rows = (ctx.fixture || []).filter((m) => seasonOf(m) === temp && (m.week || "") === week);
     const archived = (ctx.results || []).some(
-      (m) => seasonOf(m) === temp && (m.week || "") === week && isRealPairMatch(m)
+      (m) => seasonOf(m) === temp && (m.week || "") === week && isRealPairMatch(m) && !m.recoverFrom
     );
+    // Un recupero de esa fecha no reabre el editor si la fecha ya está en resultados.
+    const substantive = rows.some((m) => !m.recoverFrom && !isMakeupPending(m));
+    if (substantive) return true;
     if (archived) return false;
+    if (rows.length) return true;
     // Fecha nueva sin partidos todavía: editable en la temporada actual.
     return temp === (ctx.siteData.currentSeason || temp);
   }
@@ -148,11 +154,14 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   }
 
   function weekStats(temp, week) {
-    const live = (ctx.fixture || []).filter((m) => seasonOf(m) === temp && (m.week || "") === week);
+    const seasonRows = (ctx.fixture || []).filter((m) => seasonOf(m) === temp);
+    const live = seasonRows.filter((m) => (m.week || "") === week);
     const arch = (ctx.results || []).filter((m) => seasonOf(m) === temp && (m.week || "") === week);
     const games = (live.length ? live : arch).filter((m) => !isPending(m) && !m.dupHold && isRealPairMatch(m));
     const pending = live.filter((m) => isPending(m) && !isMakeupPending(m)).length;
-    const recovering = live.filter((m) => isMakeupPending(m)).length;
+    const recovering = seasonRows.filter(
+      (m) => isMakeupPending(m) && ((m.recoveredIn || "") === week || (!m.recoveredIn && (m.week || "") === week))
+    ).length;
     const duplicates = live.filter((m) => m.dupHold && isRealPairMatch(m)).length;
     return { games, pending, recovering, duplicates, live: live.length > 0, n: games.length };
   }
@@ -555,7 +564,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
                 : `<button class="btn btn-ghost" type="button" data-fx-del="${i}">Quitar</button>`;
               return `<article class="fx-pending-card" data-i="${i}">
                 <strong>${escAttr(m.home)}</strong>
-                ${makeup && from ? `<p class="admin-help" style="margin:4px 0 0">Le falta 1 partido · ${escAttr(from)}. Sigue en pendientes de esa fecha.</p>` : ""}
+                ${makeup && from ? `<p class="admin-help" style="margin:4px 0 0">Le falta 1 partido en ${escAttr(from)}. Ese partido cuenta en ${escAttr(from)}, no suma otro en esta fecha.</p>` : ""}
                 ${daysTxt ? `<p class="admin-help" style="margin:4px 0 0">Puede: ${escAttr(daysTxt)}</p>` : ""}
                 <div class="fx-pending-actions">
                   <select data-fx-cover="${i}" aria-label="Cubrir con">
@@ -626,7 +635,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     if (!box) return;
     const pending = weekRows((m) => isPending(m) && !isMakeupPending(m));
     for (const key of [...coverDraft.keys()]) {
-      if (!pending.some(({ i }) => i === key) && !weekRows((m) => isMakeupPending(m)).some(({ i }) => i === key)) {
+      if (!pending.some(({ i }) => i === key) && !recoverRows().some(({ i }) => i === key)) {
         coverDraft.delete(key);
       }
     }
@@ -654,16 +663,26 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     shell.markDirty("fixture");
   }
 
+  function recoverRows() {
+    return ctx.fixture
+      .map((m, i) => ({ m, i }))
+      .filter(({ m }) => {
+        if (seasonOf(m) !== filterTemp || !isMakeupPending(m)) return false;
+        if ((m.recoveredIn || "") === filterWeek) return true;
+        return !m.recoveredIn && (m.week || "") === filterWeek;
+      });
+  }
+
   function renderRecover() {
     const box = $("fx-recover-box");
     if (!box) return;
-    const rows = weekRows((m) => isMakeupPending(m));
+    const rows = recoverRows();
     foldBox(box, {
       key: "recover",
       title: "Recuperan fecha",
       tone: "is-recover",
       count: rows.length,
-      help: "Tienen un partido menos. En Fecha 2, quien tiene 0 partidos jugados recupera Fecha 1.",
+      help: "Tienen un partido menos. El partido queda en la fecha que les falta: no suma otro en esta.",
       body: rows.length ? pendingCards(rows, { makeup: true }) : `<p class="admin-help">Nadie recupera en esta fecha.</p>`,
     });
   }
@@ -971,8 +990,25 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const sched = scheduleOpts();
 
     if (!live) {
+      const archKeys = new Set();
       const arch = (ctx.results || [])
         .filter((m) => seasonOf(m) === filterTemp && (m.week || "") === filterWeek && isRealPairMatch(m))
+        .concat(
+          (ctx.fixture || []).filter(
+            (m) =>
+              seasonOf(m) === filterTemp &&
+              (m.week || "") === filterWeek &&
+              isRealPairMatch(m) &&
+              !isPending(m) &&
+              m.recoverFrom
+          )
+        )
+        .filter((m) => {
+          const key = `${m.cat || ""}|${m.home || ""}|${m.away || ""}`;
+          if (archKeys.has(key)) return false;
+          archKeys.add(key);
+          return true;
+        })
         .slice()
         .sort(compareByDayTime);
       const empty = $("fx-empty");
@@ -2123,15 +2159,19 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       const i = Number(btn.dataset.fxRecoverDel);
       const match = ctx.fixture[i];
       if (!match) return;
+      const owed = match.week || match.recoverFrom || "la fecha que debe";
       const ok = await confirmModal({
         title: "Quitar recupero",
-        body: `${match.home} sale de esta fecha. Sigue debiendo ${match.recoverFrom || "la fecha"} y se puede traer de nuevo.`,
+        body: `${match.home} sale de Recuperan fecha. El partido sigue en ${owed} y no se vuelve a traer solo.`,
         confirmLabel: "Quitar",
         danger: true,
       });
       if (!ok) return;
       releaseRecoveryDebt(ctx.fixture, match);
-      ctx.fixture.splice(i, 1);
+      delete match.recoverFrom;
+      delete match.recoveredIn;
+      match.recoverLater = true;
+      match.pending = true;
       coverDraft.delete(i);
       shell.markDirty("fixture");
       render();
@@ -2183,6 +2223,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         return;
       }
       const season = filterTemp || ctx.siteData.currentSeason || "T4";
+      const normalized = normalizeRecoveryWeeks(ctx.fixture || []);
+      if (normalized.changed) {
+        ctx.fixture = normalized.matches;
+        shell.markDirty("fixture");
+      }
       // Antes de publicar: si algún partido viola inscripción, ambas puntas a pendientes.
       // Frenamos acá para que veas el cambio en la grilla y vuelvas a tocar Publicar a propósito.
       const heldNow = (ctx.fixture || []).filter((m) => m.dupHold);
@@ -2289,18 +2334,27 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         ]
           .map((m) => cleanMatch(m, {}, season))
           .filter((m) => m.home || m.away);
-        const draftKeys = new Set(draft.map(weekKey));
-        const carryLive = remoteLive.filter((m) => !draftKeys.has(weekKey(m)));
-        const carryPending = remotePending.filter((m) => isPending(m) && !draftKeys.has(weekKey(m)));
-        const nextPublished = [...carryLive, ...draftLive];
+        const owedLive = draftLive.filter((m) => m.recoverFrom);
+        const regularLive = draftLive.filter((m) => !m.recoverFrom);
+        const replacing = new Set([
+          ...regularLive.map(weekKey),
+          ...draftPending.filter((m) => !m.recoverFrom).map(weekKey),
+          ...draftDup.filter((m) => !m.recoverFrom).map(weekKey),
+        ]);
+        const carryLive = remoteLive.filter((m) => !replacing.has(weekKey(m)));
+        const carryPending = remotePending.filter((m) => isPending(m) && !replacing.has(weekKey(m)));
+        let nextPublished = [...carryLive, ...regularLive];
         const nextPending = [...carryPending, ...draftPending, ...draftDup];
-        const adminFixture = [...nextPublished, ...nextPending];
-        const newWeeks = new Set(adminFixture.map(weekKey));
-        const toArchive = remoteLive.filter((m) => isRealPairMatch(m) && !newWeeks.has(weekKey(m)));
-        const nextResults = mergeArchivedMatches(
+        const keptWeeks = new Set([...nextPublished, ...nextPending.filter((m) => !m.recoverFrom)].map(weekKey));
+        const toArchive = remoteLive.filter((m) => isRealPairMatch(m) && !m.recoverFrom && !keptWeeks.has(weekKey(m)));
+        let nextResults = mergeArchivedMatches(
           (Array.isArray(remoteResults) ? remoteResults : []).map((m) => cleanMatch(m, {}, season)),
           toArchive
         );
+        const placed = fileOwedRecoveries({ published: nextPublished, results: nextResults, owed: owedLive });
+        nextPublished = placed.published;
+        nextResults = placed.results;
+        const adminFixture = [...nextPublished, ...nextPending];
         const archivedWeeks = [...new Set(toArchive.map((m) => m.week).filter(Boolean))];
         const liveWeek = [...new Set(nextPublished.map((m) => m.week).filter(Boolean))].join(", ") || fallbackWeek();
         await api.publishFiles(

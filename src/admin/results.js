@@ -257,7 +257,11 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
     if (filterDay) shown = shown.filter((m) => m.day === filterDay);
     if (filterCat) shown = shown.filter((m) => (m.cat || "Sin categoría") === filterCat);
     if (filterCourt) shown = shown.filter((m) => m.venue === filterCourt);
-    if (q) shown = shown.filter((m) => fold(`${m.home || ""} ${m.away || ""}`).includes(q));
+    if (q) {
+      shown = shown.filter((m) =>
+        fold(`${m.home || ""} ${m.away || ""} ${m.venue || ""} ${weekOf(m)} ${m.cat || ""} ${m.day || ""}`).includes(q)
+      );
+    }
     shown.sort(
       (a, b) =>
         (selWeek === ALL_WEEKS ? weekNumber(weekOf(a)) - weekNumber(weekOf(b)) : 0) ||
@@ -287,7 +291,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
         "court",
         list.length
       )}
-      <input class="admin-search" data-res-search type="search" placeholder="Buscar pareja…" autocomplete="off" value="${escAttr(term)}" />
+      <input class="admin-search" data-res-search type="search" placeholder="Buscar pareja, complejo o fecha…" autocomplete="off" value="${escAttr(term)}" />
     </div>`;
     const dayKey = (m) => (selWeek === ALL_WEEKS ? `${weekOf(m)} · ${m.day || "Sin día"}` : m.day || "Sin día");
     const daysShown = [...new Set(shown.map(dayKey))];
@@ -441,7 +445,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
       const openBtn = e.target.closest("[data-res-open]");
       if (openBtn) {
         selTemp = openBtn.dataset.resOpen;
-        selWeek = "";
+        selWeek = ALL_WEEKS;
         clearListFilters();
         render();
         return;

@@ -8,6 +8,7 @@ import {
   countPairMatches,
   coverCandidates,
   draftAwarePools,
+  fileOwedRecoveries,
   importRecoveryDebts,
   isPendingMatch,
   isRealPairMatch,
@@ -264,13 +265,13 @@ console.log("--- cover", covers.map((c) => `${c.label} (${c.pj})`).join(" · "))
   const history = [debt, played];
   const first = importRecoveryDebts(history, { temp: "T5", week: "Fecha 2", history });
   assert.equal(first.added, 1, "el que no jugó tiene un partido menos");
-  assert.equal(debt.pending, true, "sigue pendiente en la fecha que no jugó");
+  assert.equal(debt.pending, true, "sigue siendo el partido de la fecha que no jugó");
+  assert.equal(debt.week, "Fecha 1", "el recupero queda en la fecha que falta");
+  assert.equal(debt.recoverFrom, "Fecha 1");
+  assert.equal(debt.recoveredIn, "Fecha 2", "se agenda desde la fecha que se está armando");
   assert.equal(debt.recoverLater, undefined);
-  const brought = first.matches.find((m) => m.week === "Fecha 2");
-  assert.equal(brought.recoverFrom, "Fecha 1");
-  assert.equal(brought.pending, true);
-  assert.equal(brought.home, debt.home);
-  assert.ok(first.matches.includes(debt), "no se saca el pendiente original");
+  assert.equal(first.matches.filter((m) => m.home === debt.home).length, 1, "no hay un segundo partido");
+  assert.ok(!first.matches.some((m) => m.week === "Fecha 2" && m.home === debt.home), "no suma otro partido en Fecha 2");
   const again = importRecoveryDebts(first.matches, { temp: "T5", week: "Fecha 2", history: first.matches });
   assert.equal(again.added, 0, "no duplica");
   const sameWeek = importRecoveryDebts(history, { temp: "T5", week: "Fecha 1", history });
@@ -297,8 +298,52 @@ console.log("--- cover", covers.map((c) => `${c.label} (${c.pj})`).join(" · "))
     pairs: [zero],
   });
   assert.equal(fromZero.added, 1, "en Fecha 2, 0 partidos jugados recupera");
-  assert.equal(fromZero.matches.find((m) => m.week === "Fecha 2").home, "Sin / Partidos");
-  assert.equal(fromZero.matches.find((m) => m.week === "Fecha 2").recoverFrom, "Fecha 1");
+  const zeroRow = fromZero.matches.find((m) => m.home === "Sin / Partidos");
+  assert.equal(zeroRow.week, "Fecha 1", "el partido nuevo también queda en la fecha que falta");
+  assert.equal(zeroRow.recoverFrom, "Fecha 1");
+  assert.equal(zeroRow.recoveredIn, "Fecha 2");
+  assert.ok(!fromZero.matches.some((m) => m.week === "Fecha 2" && m.home === "Sin / Partidos"));
+}
+
+{
+  const fecha1 = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "B Masculina",
+    home: "Otra Pareja / Rival A",
+    away: "Otra Pareja / Rival B",
+  };
+  const recovery = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "B Masculina",
+    home: "Diego Ramirez / Martin Rondan",
+    away: "Cubierta / Pareja",
+    recoverFrom: "Fecha 1",
+    recoveredIn: "Fecha 2",
+  };
+  const fecha2 = {
+    week: "Fecha 2",
+    temp: "T5",
+    cat: "B Masculina",
+    home: "Diego Ramirez / Martin Rondan",
+    away: "Rival De Fecha / Dos",
+  };
+  const kept = fileOwedRecoveries({
+    published: [fecha1, fecha2],
+    results: [],
+    owed: [recovery],
+  });
+  assert.equal(kept.published.filter((m) => m.week === "Fecha 1").length, 2, "suma el recupero sin borrar la fecha");
+  assert.ok(kept.published.includes(fecha2), "Fecha 2 sigue con su único partido");
+  const archived = fileOwedRecoveries({
+    published: [fecha2],
+    results: [fecha1],
+    owed: [recovery],
+  });
+  assert.equal(archived.published.length, 1, "no reabre la fecha archivada en el fixture");
+  assert.ok(archived.results.some((m) => m.home === recovery.home && m.week === "Fecha 1"));
+  assert.ok(archived.results.includes(fecha1), "el historial de Fecha 1 se conserva");
 }
 
 console.log("ok");

@@ -1,5 +1,5 @@
 import { DAYS, pairLabel } from "./disponibilidad.js";
-import { weekNumber } from "./liga.js";
+import { weekKey, weekNumber } from "./liga.js";
 import { findPairIndex, fold, pairsMatch } from "./scoring.js";
 
 export const MATCH_MINUTES = 90;
@@ -124,17 +124,85 @@ function recoverySettled(pool, name, from, season) {
   );
 }
 
+function sameTeams(a, b) {
+  if (!a || !b) return false;
+  return (
+    (pairsMatch(a.home, b.home) && pairsMatch(a.away, b.away)) ||
+    (pairsMatch(a.home, b.away) && pairsMatch(a.away, b.home))
+  );
+}
+
 /**
- * Trae a `week` a quien tiene menos partidos que el resto de su categoría.
+ * El recupero pertenece a la fecha que falta (`recoverFrom`), no a la fecha
+ * en la que se está armando. Si no, esa pareja queda con dos partidos en una fecha.
+ * `recoveredIn` marca la fecha desde la que se lo agenda.
+ */
+export function normalizeRecoveryWeeks(matches = []) {
+  const list = Array.isArray(matches) ? matches.slice() : [];
+  let changed = 0;
+  for (const m of list) {
+    const owed = String(m?.recoverFrom || "").trim();
+    if (!owed || m.recoverLater) continue;
+    if ((m.week || "") === owed) continue;
+    if (!m.recoveredIn) m.recoveredIn = m.week || "";
+    m.week = owed;
+    changed += 1;
+  }
+  const makeups = list.filter(isMakeupPending);
+  const next = list.filter((m) => {
+    if (!isPendingMatch(m) || m.recoverFrom || m.recoverLater) return true;
+    const dup = makeups.some(
+      (k) =>
+        (k.week || "") === (m.week || "") &&
+        String(k.temp || "").toUpperCase() === String(m.temp || "").toUpperCase() &&
+        (k.cat || "") === (m.cat || "") &&
+        pairsMatch(k.home, m.home)
+    );
+    if (dup) changed += 1;
+    return !dup;
+  });
+  return { matches: next, changed };
+}
+
+/**
+ * Un partido ya cubierto que recupera una fecha anterior se publica en esa fecha.
+ * Si la fecha sigue en el fixture, se suma ahí. Si ya pasó a resultados, se suma al historial.
+ * No reemplaza el resto de los partidos de esa fecha.
+ */
+export function fileOwedRecoveries({ published = [], results = [], owed = [] } = {}) {
+  const live = published.slice();
+  const archive = results.slice();
+  const liveWeeks = new Set(live.map((m) => weekKey(m)));
+  for (const rec of owed) {
+    if (!rec?.recoverFrom) continue;
+    const key = weekKey(rec);
+    const same = (m) => weekKey(m) === key && sameTeams(m, rec);
+    if (liveWeeks.has(key)) {
+      const idx = live.findIndex(same);
+      if (idx >= 0) live[idx] = rec;
+      else live.push(rec);
+    } else {
+      const idx = archive.findIndex(same);
+      if (idx >= 0) {
+        archive[idx] = { ...archive[idx], ...rec, result: rec.result || archive[idx].result || "" };
+      } else archive.push(rec);
+    }
+  }
+  return { published: live, results: archive };
+}
+
+/**
+ * Marca en la fecha que se arma a quien tiene menos partidos que el resto de su categoría.
  * En Fecha 2, quien tiene 0 partidos jugados recupera Fecha 1.
- * No saca el pendiente de la fecha que no jugó.
+ * El partido queda en la fecha que falta: no se copia como un segundo partido de esta fecha.
  */
 export function importRecoveryDebts(matches = [], { temp = "", week = "", history = null, pairs = [] } = {}) {
   const season = String(temp || "").toUpperCase();
   const here = weekNumber(week);
-  const list = Array.isArray(matches) ? matches.slice() : [];
+  const normalized = normalizeRecoveryWeeks(matches);
+  const list = normalized.matches;
   const pool = Array.isArray(history) ? history : list;
-  if (!season || !week || !here) return { matches: list, added: 0, waiting: 0 };
+  if (!season || !week || !here) return { matches: list, added: normalized.changed, waiting: 0 };
 
   const seasonRows = pool.filter((m) => sameSeason(m, season));
   const cats = [
@@ -145,7 +213,7 @@ export function importRecoveryDebts(matches = [], { temp = "", week = "", histor
       ].filter(Boolean)
     ),
   ];
-  let added = 0;
+  let added = normalized.changed;
   let waiting = 0;
 
   for (const cat of cats) {
@@ -184,12 +252,44 @@ export function importRecoveryDebts(matches = [], { temp = "", week = "", histor
       for (const from of missed) {
         waiting += 1;
         if (recoverySettled(list, person.name, from, season) || recoverySettled(pool, person.name, from, season)) continue;
-        const src = catRows.find((m) => (m.week || "") === from && isPendingMatch(m) && pairsMatch(m.home, person.name));
-        const days = (src?.days && typeof src.days === "object" && src.days) || (person.days && typeof person.days === "object" && person.days) || null;
+        const parked = list.some(
+          (m) =>
+            sameSeason(m, season) &&
+            (m.week || "") === from &&
+            (m.cat || "") === cat &&
+            isRecoverLater(m) &&
+            pairsMatch(m.home, person.name)
+        );
+        if (parked) continue;
+        const src = list.find(
+          (m) =>
+            sameSeason(m, season) &&
+            (m.week || "") === from &&
+            (m.cat || "") === cat &&
+            isPendingMatch(m) &&
+            !m.recoverFrom &&
+            !m.recoverLater &&
+            pairsMatch(m.home, person.name)
+        );
+        const remembered = catRows.find((m) => (m.week || "") === from && isPendingMatch(m) && pairsMatch(m.home, person.name));
+        const days =
+          (src?.days && typeof src.days === "object" && src.days) ||
+          (remembered?.days && typeof remembered.days === "object" && remembered.days) ||
+          (person.days && typeof person.days === "object" && person.days) ||
+          null;
+        if (src) {
+          src.recoverFrom = from;
+          src.recoveredIn = week;
+          src.pending = true;
+          src.reason = src.reason || `Tiene 0 partidos en ${from}. Recupera esa fecha.`;
+          added += 1;
+          continue;
+        }
         list.push({
           pending: true,
           recoverFrom: from,
-          week,
+          recoveredIn: week,
+          week: from,
           day: "",
           date: "",
           temp: season,
