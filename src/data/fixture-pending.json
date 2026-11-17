@@ -93,5 +93,27 @@
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Lunes 20:00 - 22:00 · Martes 20:00 - 22:00 · Viernes 21:00 - 22:30",
+    "days": {
+      "Lunes": "20:00 - 22:00",
+      "Martes": "20:00 - 22:00",
+      "Viernes": "21:00 - 22:30"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Agustin Alfonso / Ricardo Martin Ramirez",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
   }
 ]
