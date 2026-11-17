@@ -45,7 +45,9 @@ import {
   isCourtTaken,
   matchViolatesAvailability,
   missingCourtHorarios,
+  bestKnownMiss,
   courtDayIsOpen,
+  coverSlotTier,
   nearCoverCourtOptions,
   pairsSharePlayableWindow,
   parkAvailabilityViolations,
@@ -354,6 +356,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         .map(([day, dayList]) => {
           const sorted = [...dayList].sort(
             (a, b) =>
+              bestKnownMiss(a) - bestKnownMiss(b) ||
               String(a.time || "").localeCompare(String(b.time || ""), "es") ||
               String(a.venue || "").localeCompare(String(b.venue || ""), "es") ||
               String(a.court || "").localeCompare(String(b.court || ""), "es", { numeric: true })
@@ -365,15 +368,21 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         .join("");
     };
 
-    const openOpts = [...nearOpts, ...estimateOpts].filter((o) => o.openDay);
-    const nearRest = nearOpts.filter((o) => !o.openDay);
-    const estimateRest = estimateOpts.filter((o) => !o.openDay);
-    const total = opts.length + nearOpts.length + estimateOpts.length;
+    const cercanos = [];
+    const estimables = [];
+    const libres = [];
+    for (const o of [...nearOpts, ...estimateOpts]) {
+      const tier = coverSlotTier(o);
+      if (tier === "near") cercanos.push(o);
+      else if (tier === "estimate") estimables.push(o);
+      else libres.push(o);
+    }
+    const total = opts.length + cercanos.length + estimables.length + libres.length;
     const parts = [];
     if (opts.length) parts.push(`${opts.length} exacto${opts.length === 1 ? "" : "s"}`);
-    if (nearRest.length) parts.push(`${nearRest.length} cercano${nearRest.length === 1 ? "" : "s"}`);
-    if (estimateRest.length) parts.push(`${estimateRest.length} estimable${estimateRest.length === 1 ? "" : "s"}`);
-    if (openOpts.length) parts.push(`${openOpts.length} cancha${openOpts.length === 1 ? "" : "s"} libre${openOpts.length === 1 ? "" : "s"}`);
+    if (cercanos.length) parts.push(`${cercanos.length} cercano${cercanos.length === 1 ? "" : "s"}`);
+    if (estimables.length) parts.push(`${estimables.length} estimable${estimables.length === 1 ? "" : "s"}`);
+    if (libres.length) parts.push(`${libres.length} cancha${libres.length === 1 ? "" : "s"} libre${libres.length === 1 ? "" : "s"}`);
     const placeholder = `${match?.dupHold ? "" : "2. "}Elegir entre ${parts.join(" + ")}…`;
     const hint = "Orden: exactos, cercanos, estimables y al final canchas libres. En una cancha libre se listan todos los inicios de 1:30.";
     // Separadores con <option disabled> (no anidar optgroup).
@@ -381,20 +390,20 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       ? `<option disabled value="">── Exactos (entran las dos) ──</option>
       ${groupsByDay(opts)}`
       : "";
-    const nearBlock = nearRest.length
+    const nearBlock = cercanos.length
       ? `<option disabled value="">────────────────────────────────</option>
       <option disabled value="">── Cercanos · poco desfase (aflojan) ──</option>
-      ${groupsByDay(nearRest, { near: true })}`
+      ${groupsByDay(cercanos, { near: true })}`
       : "";
-    const estimateBlock = estimateRest.length
+    const estimateBlock = estimables.length
       ? `<option disabled value="">────────────────────────────────</option>
       <option disabled value="">── Estimables ──</option>
-      ${groupsByDay(estimateRest, { near: true })}`
+      ${groupsByDay(estimables, { near: true })}`
       : "";
-    const openBlock = openOpts.length
+    const openBlock = libres.length
       ? `<option disabled value="">────────────────────────────────</option>
-      <option disabled value="">── Canchas libres · sin partido ese día ──</option>
-      ${groupsByDay(openOpts, { near: true })}`
+      <option disabled value="">── Canchas libres · quedan lejos ──</option>
+      ${groupsByDay(libres, { near: true })}`
       : "";
 
     return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="${escAttr(hint)}" data-fx-cover-total="${total}">

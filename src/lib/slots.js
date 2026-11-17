@@ -1152,6 +1152,25 @@ export function nearCoverCourtOptions(
   return out.slice(0, Math.max(1, Number(limit) || 12));
 }
 
+/** El menor desfase de quien sí tiene ese día. «Sin día» no cuenta como cerca. */
+export function bestKnownMiss(o) {
+  const known = [o?.homeMiss, o?.awayMiss].filter((n) => Number.isFinite(n) && n < 24 * 60);
+  return known.length ? Math.min(...known) : 24 * 60;
+}
+
+/**
+ * exact: entran las dos. near: desfase chico, o una entra en ok/+30' aunque la otra no tenga el día.
+ * estimate: la que tiene el día se estira hasta 2 h. free: más lejos (el resto de canchas libres).
+ */
+export function coverSlotTier(o) {
+  if (!o?.near && !o?.estimate) return "exact";
+  if (o.close) return "near";
+  const best = bestKnownMiss(o);
+  if (best <= 30) return "near";
+  if (best <= 120) return "estimate";
+  return "free";
+}
+
 /**
  * Un turno dura 90'. En la misma cancha no se listan inicios cada 30'
  * que se pisan (19:00-20:30 y 19:30-21:00 no pueden jugarse los dos).

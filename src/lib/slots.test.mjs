@@ -9,6 +9,7 @@ import {
   isCourtTaken,
   matchStartsInWindow,
   matchViolatesAvailability,
+  coverSlotTier,
   nearCoverCourtOptions,
   packNonOverlappingTurns,
   pairsSharePlayableWindow,
@@ -971,6 +972,20 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
     expandCourtCandidates(until17).some((s) => s.time === "17:00 - 18:30" && s.outsideSheet),
     "un rango que cortaba a las 17 ahora ofrece 17:00-18:30"
   );
+}
+
+// Marien sin martes, Milagros entra de noche: eso es cercano, no una cancha libre.
+// El turno de la tarde, con +5 h, queda al final.
+{
+  const sinDia = 24 * 60 + 90;
+  const noche = { near: true, close: false, estimate: true, homeMiss: sinDia, awayMiss: 0, openDay: true };
+  const mediaHora = { near: true, close: false, estimate: true, homeMiss: sinDia, awayMiss: 30, openDay: true };
+  const tarde = { near: true, close: false, estimate: true, homeMiss: sinDia, awayMiss: 5 * 60 + 30, openDay: false };
+  const unaHora = { near: true, close: false, estimate: true, homeMiss: sinDia, awayMiss: 60, openDay: false };
+  assert.equal(coverSlotTier(noche), "near", "cubre ok sube a cercano aunque la cancha esté libre");
+  assert.equal(coverSlotTier(mediaHora), "near", "+30' también es cercano");
+  assert.equal(coverSlotTier(unaHora), "estimate", "+1 h sigue estimable");
+  assert.equal(coverSlotTier(tarde), "free", "+5 h queda en canchas libres");
 }
 
 console.log("slots ok");
