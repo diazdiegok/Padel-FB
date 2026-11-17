@@ -357,20 +357,15 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const total = opts.length + nearOpts.length + estimateOpts.length;
     const parts = [];
     if (opts.length) parts.push(`${opts.length} exacto${opts.length === 1 ? "" : "s"}`);
-    if (openOpts.length) parts.push(`${openOpts.length} sin partido ese día`);
     if (nearRest.length) parts.push(`${nearRest.length} cercano${nearRest.length === 1 ? "" : "s"}`);
     if (estimateRest.length) parts.push(`${estimateRest.length} estimable${estimateRest.length === 1 ? "" : "s"}`);
-    const placeholder = `2. Elegir entre ${parts.join(" + ")}…`;
-    const hint = "Cancha libre: se listan todos los inicios de 1:30, cada 30 minutos. 17:00, 16:30 y 18:00 pueden verse juntos; elegís uno.";
+    if (openOpts.length) parts.push(`${openOpts.length} cancha${openOpts.length === 1 ? "" : "s"} libre${openOpts.length === 1 ? "" : "s"}`);
+    const placeholder = `${match?.dupHold ? "" : "2. "}Elegir entre ${parts.join(" + ")}…`;
+    const hint = "Orden: exactos, cercanos, estimables y al final canchas libres. En una cancha libre se listan todos los inicios de 1:30.";
     // Separadores con <option disabled> (no anidar optgroup).
     const exactBlock = opts.length
-      ? `<option disabled value="">── Libres exactos (entran las dos) ──</option>
+      ? `<option disabled value="">── Exactos (entran las dos) ──</option>
       ${groupsByDay(opts)}`
-      : "";
-    const openBlock = openOpts.length
-      ? `<option disabled value="">────────────────────────────────</option>
-      <option disabled value="">── Cancha libre · todos los horarios (también las 17) ──</option>
-      ${groupsByDay(openOpts, { near: true })}`
       : "";
     const nearBlock = nearRest.length
       ? `<option disabled value="">────────────────────────────────</option>
@@ -379,16 +374,21 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       : "";
     const estimateBlock = estimateRest.length
       ? `<option disabled value="">────────────────────────────────</option>
-      <option disabled value="">── Estimables · cancha libre ──</option>
+      <option disabled value="">── Estimables ──</option>
       ${groupsByDay(estimateRest, { near: true })}`
+      : "";
+    const openBlock = openOpts.length
+      ? `<option disabled value="">────────────────────────────────</option>
+      <option disabled value="">── Canchas libres · sin partido ese día ──</option>
+      ${groupsByDay(openOpts, { near: true })}`
       : "";
 
     return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="${escAttr(hint)}" data-fx-cover-total="${total}">
       <option value="">${escAttr(placeholder)}</option>
       ${exactBlock}
-      ${openBlock}
       ${nearBlock}
       ${estimateBlock}
+      ${openBlock}
     </select>`;
   }
 
@@ -667,6 +667,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
                     <strong>${escAttr(m.home)} vs ${escAttr(m.away)}</strong>
                     <p class="admin-help" style="margin:4px 0 0">${weeks.length ? `Ya jugaron en ${escAttr(weeks.join(", "))}. ` : ""}${escAttr(when)}</p>
                     <div class="fx-pending-actions">
+                      ${coverSlotSelect(i, m, m.away)}
                       <button class="btn btn-lime" type="button" data-fx-dup-ok="${i}">Autorizar</button>
                       <button class="btn btn-ghost" type="button" data-fx-del="${i}">Quitar</button>
                     </div>
@@ -1912,9 +1913,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       if (coverSlot) {
         const i = Number(coverSlot.dataset.fxCoverSlot);
         const slot = ctx.fixture[i];
-        const cover = coverDraft.get(i) || "";
+        const dup = !!slot?.dupHold && isRealPairMatch(slot);
+        const cover = coverDraft.get(i) || (dup ? slot.away : "");
         const key = coverSlot.value;
-        if (!slot || !isPending(slot) || !cover || !key) return;
+        if (!slot || (!isPending(slot) && !dup) || !cover || !key) return;
         const choices = coverCourtChoices(slot, cover);
         const opt =
           choices.opts.find((o) => o.key === key) ||
@@ -1939,6 +1941,18 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
             coverSlot.value = "";
             return;
           }
+        }
+        if (dup) {
+          slot.day = opt.day;
+          slot.time = opt.time;
+          slot.venue = opt.venue;
+          slot.court = opt.court;
+          if (opt.near) slot.flexAvail = true;
+          else delete slot.flexAvail;
+          shell.markDirty("fixture");
+          render();
+          toast(`Horario del duplicado · ${courtOptionText(opt)}`, "ok");
+          return;
         }
         const next = cleanMatch(
           {
@@ -2041,6 +2055,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     };
     $("fx-pending")?.addEventListener("change", onCoverChange);
     $("fx-recover-box")?.addEventListener("change", onCoverChange);
+    $("fx-dup-box")?.addEventListener("change", onCoverChange);
 
     const onDelete = async (e) => {
       const btn = e.target.closest("[data-fx-del]");
