@@ -72,20 +72,6 @@
   },
   {
     "week": "Fecha 1",
-    "day": "Lunes",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "22:30 - 24:00",
-    "venue": "Terrazas Padel",
-    "court": "Cancha 1",
-    "home": "Sebastian Diaz / Pablo Zarate",
-    "away": "Sebastian Rodriguez / Gonzalo Barbero",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "week": "Fecha 1",
     "day": "Martes",
     "date": "",
     "temp": "T5",
@@ -406,21 +392,6 @@
     "away": "Ernesto Enz / Facundo Casals",
     "result": "",
     "appliedResult": ""
-  },
-  {
-    "week": "Fecha 1",
-    "day": "Lunes",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "21:00 - 22:30",
-    "venue": "La manzana Padel",
-    "court": "Cancha 2",
-    "home": "Marien Robledo / Valeria Joubert",
-    "away": "Milagros Solaro / Ana Paula Croce",
-    "result": "",
-    "appliedResult": "",
-    "flexAvail": true
   },
   {
     "week": "Fecha 1",
