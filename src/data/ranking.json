@@ -8798,7 +8798,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 26,
+    "pos": 24,
     "temp": "T5"
   },
   {
@@ -8852,7 +8852,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 23,
+    "pos": 21,
     "temp": "T5"
   },
   {
@@ -8930,19 +8930,19 @@
   {
     "name": "Alberto Javier Martínez / José María Starck",
     "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 3,
+    "pts": 3,
+    "pj": 1,
+    "dif": 2,
+    "pos": 1,
     "temp": "T5"
   },
   {
     "name": "Milton Reatto / Joaquín Lucero",
     "cat": "B Masculina",
     "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 19,
+    "pj": 1,
+    "dif": -2,
+    "pos": 27,
     "temp": "T5"
   },
   {
@@ -9005,7 +9005,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 27,
+    "pos": 26,
     "temp": "T5"
   },
   {
@@ -9068,7 +9068,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 22,
+    "pos": 20,
     "temp": "T5"
   },
   {
@@ -9077,7 +9077,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 4,
+    "pos": 5,
     "temp": "T5"
   },
   {
@@ -9185,7 +9185,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 25,
+    "pos": 23,
     "temp": "T5"
   },
   {
@@ -9329,16 +9329,16 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 24,
+    "pos": 22,
     "temp": "T5"
   },
   {
     "name": "Bruno Baarts / Thomas Pereira",
     "cat": "B Masculina",
     "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 5,
+    "pj": 1,
+    "dif": -2,
+    "pos": 25,
     "temp": "T5"
   },
   {
@@ -9356,7 +9356,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 1,
+    "pos": 2,
     "temp": "T5"
   },
   {
@@ -9389,10 +9389,10 @@
   {
     "name": "Pablo Cerdan / Mario Oviedo",
     "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 20,
+    "pts": 3,
+    "pj": 1,
+    "dif": 2,
+    "pos": 3,
     "temp": "T5"
   },
   {
@@ -9410,7 +9410,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 21,
+    "pos": 19,
     "temp": "T5"
   },
   {
@@ -9446,7 +9446,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 2,
+    "pos": 4,
     "temp": "T5"
   },
   {
