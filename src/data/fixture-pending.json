@@ -1,28 +1,6 @@
 [
   {
     "pending": true,
-    "reason": "Su rival ya no está inscripto.",
-    "avail": "Jueves 17:00 - 21:00 · Viernes 16:00 - 21:00 · Sábado 11:00 - 15:00",
-    "days": {
-      "Jueves": "17:00 - 21:00",
-      "Viernes": "16:00 - 21:00",
-      "Sábado": "11:00 - 15:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "María Laura Borsotti / Celia Senger",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Lunes 19:00 - 21:00 · Viernes 19:00 - 21:00",
     "days": {
@@ -178,29 +156,6 @@
     "venue": "",
     "court": "",
     "home": "Ariel Enrique / Marcelo Enrique",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
-    "avail": "Lunes 18:30 - 00:00 · Martes 18:30 - 00:00 · Miércoles 18:30 - 21:00 · Jueves 18:30 - 00:00",
-    "days": {
-      "Lunes": "18:30 - 00:00",
-      "Martes": "18:30 - 00:00",
-      "Miércoles": "18:30 - 21:00",
-      "Jueves": "18:30 - 00:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Marcos Saavedra / Luis Alberto Albornoz",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
