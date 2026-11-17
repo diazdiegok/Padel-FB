@@ -1,3 +1,4 @@
+import { mergeDriveFixtureRows, parseDriveSheetValues } from "../../src/lib/drive-sheet.js";
 import { addPairsToRanking, findPairIndex, pairsMatch } from "../../src/lib/scoring.js";
 import { closeStatus, deadlinePassed, validDeadline } from "../../src/lib/cierre.js";
 import { buildMail, cleanDays, pairLabel, validateDays, validateMail } from "../../src/lib/disponibilidad.js";
@@ -2589,6 +2590,7 @@ function fixtureSheetTitle(week) {
  * Escribe el fixture (sin pendientes) en una pestaña = nombre de la fecha.
  * Crea la hoja si no existe y la deja primera (izq); las fechas viejas quedan a la derecha.
  * Encabezado en negrita, fila congelada, columnas autoajustadas.
+ * Las filas que ya tienen resultado no se modifican ni se borran.
  */
 async function writeFixtureDriveSheet(env, { sheetId, week = "", rows = [] } = {}) {
   const id = String(sheetId || env.FIXTURE_DRIVE_SHEET_ID || FIXED_FIXTURE_DRIVE_SHEET)
@@ -2692,28 +2694,46 @@ async function writeFixtureDriveSheet(env, { sheetId, week = "", rows = [] } = {
     }
   }
 
-  const clear = await sheetsFetch(
-    accessToken,
-    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/${encodeURIComponent(`${quoted}!A:${lastCol}`)}:clear`,
-    { method: "POST", body: {} }
-  );
-  if (!clear.res.ok) {
-    throw sheetsAuthError(clear.json.error?.message || `No se pudo limpiar «${title}».`, sa, clear.res.status);
+  let existingValues = [];
+  if (tabId != null) {
+    const read = await sheetsFetch(
+      accessToken,
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/${encodeURIComponent(`${quoted}!A:${lastCol}`)}` +
+        `?majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`
+    );
+    if (!read.res.ok) {
+      throw sheetsAuthError(
+        read.json.error?.message || `No se pudo leer «${title}» antes de pegar.`,
+        sa,
+        read.res.status
+      );
+    }
+    existingValues = read.json.values || [];
   }
 
+  const incoming = (rows || []).map((r) => {
+    const obj = {};
+    for (const h of FIXTURE_DRIVE_HEADERS) {
+      const key = FIXTURE_DRIVE_HEADER_KEY[h];
+      obj[key] = String(r?.[key] ?? r?.[h] ?? "");
+    }
+    return obj;
+  });
+  const merged = mergeDriveFixtureRows(parseDriveSheetValues(existingValues), incoming);
   const values = [
     FIXTURE_DRIVE_HEADERS,
-    ...(rows || []).map((r) =>
-      FIXTURE_DRIVE_HEADERS.map((h) => String(r?.[FIXTURE_DRIVE_HEADER_KEY[h]] ?? r?.[h] ?? ""))
-    ),
+    ...merged.rows.map((r) => FIXTURE_DRIVE_HEADERS.map((h) => String(r?.[FIXTURE_DRIVE_HEADER_KEY[h]] ?? ""))),
   ];
+  const previousDataRows = existingValues.length > 0 ? Math.max(0, existingValues.length - 1) : 0;
+  const pad = Math.max(0, previousDataRows - merged.rows.length);
+  const writeValues = values.concat(Array.from({ length: pad }, () => Array(cols).fill("")));
   const endRow = values.length;
 
   const update = await sheetsFetch(
     accessToken,
     `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/${encodeURIComponent(`${quoted}!A1`)}` +
-      `?valueInputOption=USER_ENTERED`,
-    { method: "PUT", body: { values } }
+      `?valueInputOption=RAW`,
+    { method: "PUT", body: { values: writeValues } }
   );
   if (!update.res.ok) {
     throw sheetsAuthError(update.json.error?.message || `No se pudo escribir «${title}».`, sa, update.res.status);
@@ -2808,6 +2828,7 @@ async function writeFixtureDriveSheet(env, { sheetId, week = "", rows = [] } = {
     sheet: title,
     gid: tabId,
     rows: Math.max(0, values.length - 1),
+    kept: merged.kept,
     url: `https://docs.google.com/spreadsheets/d/${id}/edit#gid=${tabId}`,
   };
 }

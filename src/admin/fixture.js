@@ -1729,7 +1729,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         title: "Pegar fixture en Drive",
         body:
           `Se van a pegar ${rows.length} partido${rows.length === 1 ? "" : "s"} en la hoja «${filterWeek}» del Google Sheet (orden: ${mode}). ` +
-          "Los pendientes no se envían. Si la hoja no existe, se crea. Encabezados en negrita y columnas ajustadas.",
+          "Los que ya tienen resultado no se modifican ni se borran. El resto se actualiza. Los pendientes no se envían.",
         confirmLabel: "Pegar en Drive",
       });
       if (!ok) return;
@@ -1743,13 +1743,17 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           rows,
         });
         const n = Number(res?.rows) || rows.length;
+        const kept = Number(res?.kept) || 0;
         const sheetName = res?.sheet || filterWeek;
+        const keptTxt = kept
+          ? ` ${kept} con resultado quedaron como estaban.`
+          : "";
         setMsg(
           $("fx-msg"),
-          `Fixture pegado en Drive · hoja «${sheetName}» · ${n} partido${n === 1 ? "" : "s"} (sin pendientes).`,
+          `Fixture pegado en Drive · hoja «${sheetName}» · ${n} partido${n === 1 ? "" : "s"}.${keptTxt}`,
           "ok"
         );
-        toast(`Pegado · ${sheetName} · ${n}`, "ok");
+        toast(kept ? `Pegado · ${kept} con resultado intactos` : `Pegado · ${sheetName} · ${n}`, "ok");
         const openUrl =
           res?.url ||
           `${DEFAULT_FIXTURE_DRIVE_SHEET_URL}${res?.gid != null ? `#gid=${res.gid}` : ""}`;

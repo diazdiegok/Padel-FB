@@ -1,0 +1,84 @@
+import assert from "node:assert/strict";
+import { mergeDriveFixtureRows, parseDriveSheetValues } from "./drive-sheet.js";
+
+const header = ["Fecha", "Dia", "Horario", "Categoria", "Complejo", "Cancha", "Pareja 1", "Pareja 2", "Resultado"];
+
+const played = [
+  "Fecha 1",
+  "Lunes",
+  "17:00 - 18:30",
+  "B Masculina",
+  "Complejo Padel",
+  "Cancha 1",
+  "Jeronimo Acuña / Lucio Acuña",
+  "José Luis López / Martín Leguizamón",
+  "2/6 5/7",
+];
+const open = [
+  "Fecha 1",
+  "Martes",
+  "16:30 - 18:00",
+  "A Masculina",
+  "Americas Padel",
+  "Cancha 1",
+  "Julián Gea Sánchez / Joaquín Gea Sánchez",
+  "Mariano Carrere / Tomas Castillo",
+  "",
+];
+
+const existing = parseDriveSheetValues([header, played, open]);
+assert.equal(existing.length, 2);
+assert.equal(existing[0].resultado, "2/6 5/7");
+
+const incoming = [
+  {
+    fecha: "Fecha 1",
+    dia: "Lunes",
+    horario: "20:00 - 21:30",
+    categoria: "B Masculina",
+    complejo: "Otro",
+    cancha: "Cancha 9",
+    pareja1: "Lucio Acuña / Jerónimo Acuña",
+    pareja2: "Martín Leguizamón / José Luis López",
+    resultado: "",
+  },
+  {
+    fecha: "Fecha 1",
+    dia: "Martes",
+    horario: "19:00 - 20:30",
+    categoria: "A Masculina",
+    complejo: "Americas Padel",
+    cancha: "Cancha 2",
+    pareja1: "Julián Gea Sánchez / Joaquín Gea Sánchez",
+    pareja2: "Mariano Carrere / Tomas Castillo",
+    resultado: "",
+  },
+  {
+    fecha: "Fecha 1",
+    dia: "Miércoles",
+    horario: "18:00 - 19:30",
+    categoria: "C Masculina",
+    complejo: "Open Padel",
+    cancha: "Cancha 1",
+    pareja1: "Nueva Uno / Nueva Dos",
+    pareja2: "Otra Uno / Otra Dos",
+    resultado: "",
+  },
+];
+
+const merged = mergeDriveFixtureRows(existing, incoming);
+assert.equal(merged.kept, 1);
+assert.equal(merged.rows.length, 3);
+assert.equal(merged.rows[0].horario, "17:00 - 18:30", "el partido con resultado no cambia de horario");
+assert.equal(merged.rows[0].cancha, "Cancha 1");
+assert.equal(merged.rows[0].resultado, "2/6 5/7");
+assert.equal(merged.rows[1].horario, "19:00 - 20:30", "sin resultado se actualiza");
+assert.equal(merged.rows[1].cancha, "Cancha 2");
+assert.equal(merged.rows[2].pareja1, "Nueva Uno / Nueva Dos");
+
+const orphan = mergeDriveFixtureRows(existing, [incoming[1]]);
+assert.equal(orphan.rows.length, 2);
+assert.equal(orphan.rows[1].resultado, "2/6 5/7", "si el pegado no lo trae, el resultado igual queda");
+assert.equal(orphan.keptExtra, 1);
+
+console.log("drive-sheet.test.mjs passed");
