@@ -1153,5 +1153,19 @@
       "Sábado": "18:30 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwk0u36s99d9",
+    "createdAt": "2026-11-17T01:36:12.196Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Agustin Alfonso",
+    "p2": "Ricardo Martin Ramirez",
+    "days": {
+      "Lunes": "20:00 - 22:00",
+      "Martes": "20:00 - 22:00",
+      "Viernes": "21:00 - 22:30"
+    },
+    "note": ""
   }
 ]
