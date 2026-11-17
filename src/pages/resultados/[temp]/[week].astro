@@ -5,7 +5,7 @@ import fixture from "../../../data/fixture.json";
 import results from "../../../data/results.json";
 import { site } from "../../../data/site";
 import { combineResults, matchAnchor, seasonLabel, seasonSlug, weekSlug } from "../../../lib/liga.js";
-import { CATS, sortCats } from "../../../lib/disponibilidad.js";
+import { sortCats } from "../../../lib/disponibilidad.js";
 import { describeResult } from "../../../lib/scoring.js";
 import { page } from "../../../lib/paths";
 
@@ -118,7 +118,7 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
     <p class="empty" id="empty" hidden>No hay partidos con ese filtro.</p>
   </div>
 
-  <script define:vars={{ list, weekLabel, catOrder: CATS }}>
+  <script define:vars={{ list, weekLabel }}>
     const root = document.querySelector("#result-root");
     const empty = document.querySelector("#empty");
     const count = document.querySelector("#count");
@@ -143,8 +143,8 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
       const known = played(m);
       return `<article class="fixture-row" id="${esc(m.anchor)}">
         <div class="fixture-meta">
-          <span>${esc(m.day || m.date)}</span>
           <span>${esc(m.time)}</span>
+          <span>${esc(m.cat)}</span>
           <span>${esc(m.venue)}${m.court ? ` · ${esc(m.court)}` : ""}</span>
         </div>
         <div class="fixture-vs">
@@ -180,18 +180,12 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
         const blob = fold([m.home, m.away].filter(Boolean).join(" "));
         return okDay && okCat && okCourt && (!term || blob.includes(term));
       });
-      const rank = (name) => {
-        const i = catOrder.indexOf(name);
-        return i < 0 ? catOrder.length + 1 : i;
-      };
-      const groups = [...new Set(rows.map((m) => m.cat || "Sin categoría"))].sort(
-        (a, b) => rank(a) - rank(b) || a.localeCompare(b, "es")
-      );
+      const groups = [...new Set(rows.map((m) => m.day || "Sin día"))];
       root.innerHTML = rows.length
         ? `<section class="fixture-week" style="padding-top:0">
             ${groups
               .map((name) => {
-                const games = rows.filter((m) => (m.cat || "Sin categoría") === name);
+                const games = rows.filter((m) => (m.day || "Sin día") === name);
                 return `<h3 class="kicker" style="margin:18px 0 10px">${esc(name)}</h3>
                   <div class="fixture-list">${games.map(card).join("")}</div>`;
               })

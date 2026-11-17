@@ -189,7 +189,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
   function matchCard(m) {
     const parsed = describeResult(m.result);
     const hint = parsed ? `${parsed.label} · ${parsed.homePts}-${parsed.awayPts} pts` : "Sin resultado";
-    const when = [selWeek === ALL_WEEKS ? weekOf(m) : "", m.day, m.time].filter(Boolean).join(" · ") || "—";
+    const when = [selWeek === ALL_WEEKS ? weekOf(m) : "", m.time, m.cat].filter(Boolean).join(" · ") || "—";
     const shown = formatResult(m.result) || m.result || "";
     return `<article class="admin-result-card${parsed ? " has-score" : ""}">
       <div class="admin-result-meta">
@@ -260,9 +260,10 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
     if (q) shown = shown.filter((m) => fold(`${m.home || ""} ${m.away || ""}`).includes(q));
     shown.sort(
       (a, b) =>
-        compareCats(a.cat, b.cat) ||
+        (selWeek === ALL_WEEKS ? weekNumber(weekOf(a)) - weekNumber(weekOf(b)) : 0) ||
         dayIdx(a.day) - dayIdx(b.day) ||
-        String(a.time || "").localeCompare(String(b.time || ""), "es")
+        String(a.time || "").localeCompare(String(b.time || ""), "es") ||
+        compareCats(a.cat, b.cat)
     );
     const filters = `<div class="res-filters">
       ${pillSet(
@@ -288,12 +289,13 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
       )}
       <input class="admin-search" data-res-search type="search" placeholder="Buscar pareja…" autocomplete="off" value="${escAttr(term)}" />
     </div>`;
-    const cats = filterCat ? (shown.length ? [filterCat] : []) : [...new Set(shown.map((m) => m.cat || "Sin categoría"))].sort(compareCats);
-    const body = cats.length
-      ? cats
-          .map((cat) => {
-            const games = shown.filter((m) => (m.cat || "Sin categoría") === cat);
-            return `<h3 class="res-cat-title">${escAttr(cat)}<span>${escAttr(progress(games))}</span></h3>${games.map(matchCard).join("")}`;
+    const dayKey = (m) => (selWeek === ALL_WEEKS ? `${weekOf(m)} · ${m.day || "Sin día"}` : m.day || "Sin día");
+    const daysShown = [...new Set(shown.map(dayKey))];
+    const body = daysShown.length
+      ? daysShown
+          .map((label) => {
+            const games = shown.filter((m) => dayKey(m) === label);
+            return `<h3 class="res-cat-title">${escAttr(label)}<span>${escAttr(progress(games))}</span></h3>${games.map(matchCard).join("")}`;
           })
           .join("")
       : list.length
