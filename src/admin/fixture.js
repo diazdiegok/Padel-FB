@@ -174,6 +174,19 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         (st.recovering ? ` · ${st.recovering} recuperan` : "") +
         (st.live ? "" : " · archivo")
       : `Sin partidos en ${filterWeek}`;
+    updateStickyNote(st);
+  }
+
+  function updateStickyNote(st) {
+    const note = $("fx-sticky-note");
+    if (!note) return;
+    if (!st || !filterWeek) {
+      note.textContent = "Publicá los partidos con rival. Los pendientes quedan en el admin hasta cubrirlos. Los resultados se cargan en Resultados.";
+      return;
+    }
+    const n = st.n;
+    const label = `${n} partido${n === 1 ? "" : "s"} fixtureado${n === 1 ? "" : "s"}`;
+    note.innerHTML = `<strong>${escAttr(label)}</strong> en ${escAttr(filterWeek)}. Publicá los que tienen rival. Pendientes, recuperan fecha y duplicados no entran en este total.`;
   }
 
   function needsCourt(m) {

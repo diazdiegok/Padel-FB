@@ -1001,8 +1001,13 @@ body.is-admin .tag:empty {
 .admin-sticky-bar .admin-sticky-note {
   color: var(--muted);
   font-size: 12px;
-  max-width: 420px;
+  max-width: 460px;
   line-height: 1.4;
+}
+
+.admin-sticky-bar .admin-sticky-note strong {
+  color: #f4f7ef;
+  font-size: 14px;
 }
 
 .admin-sticky-actions {
