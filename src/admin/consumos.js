@@ -50,11 +50,27 @@ function formatRemaining(ms) {
   return rh ? `en ${d} d ${rh} h` : `en ${d} d`;
 }
 
+function isCountdown(value) {
+  return /^(?:en\s+.+|ahora)$/i.test(String(value || "").trim());
+}
+
+/** La API ya manda «16/11 12:00 AR · en 2 min». Si lo volvemos a pegar, queda duplicado. */
+function clockOnly(absolute) {
+  let s = String(absolute || "").trim();
+  let prev = "";
+  while (s && s !== prev) {
+    prev = s;
+    s = s.replace(/\s*·\s*(?:en\s+.+|ahora)\s*$/i, "").trim();
+  }
+  return isCountdown(s) ? "" : s;
+}
+
 function renewLine(absolute, ms) {
-  const abs = String(absolute || "").trim();
+  const raw = String(absolute || "").trim();
+  const abs = clockOnly(raw);
   const rel = formatRemaining(ms);
   if (abs && rel) return `${abs} · ${rel}`;
-  return abs || rel || "";
+  return abs || rel || raw;
 }
 
 const PROVIDER_META = {
@@ -118,19 +134,7 @@ function providerSection(p) {
     ? `<div class="consumos-meters">${meters.map((m) => meterCard(m, p?.renewsAt || "")).join("")}</div>`
     : `<p class="admin-help">Sin medidores para este proveedor ahora.</p>`;
 
-  const deployBanner =
-    id === "vercel" && p?.hacerDeployBanner
-      ? `<article class="consumos-hacer-deploy" data-hacer-deploy>
-      <div>
-        <strong>HACER DEPLOY</strong>
-        <p>Falta el deploy de Vercel para la UI pendiente (Consumos en 3 bloques, alerta ámbar, contraste Resultados). No toca Fixture.</p>
-      </div>
-      <button type="button" class="btn btn-ghost consumos-hacer-deploy-btn" data-hide-hacer-deploy>Ocultar cartel</button>
-    </article>`
-      : "";
-
-  // No repetir el aviso HACER DEPLOY dentro de alertas si ya hay cartel.
-  const alertsForUi = deployBanner ? alerts.filter((a) => !isHacerDeployAlert(a)) : alerts;
+  const alertsForUi = alerts.filter((a) => !isHacerDeployAlert(a));
   const alertHtmlFinal = alertsForUi.length
     ? `<div class="consumos-alerts">${alertsForUi
         .map(
@@ -151,7 +155,6 @@ function providerSection(p) {
       ${renew ? `<span class="consumos-provider-renew">Próximo reset<br><b>${esc(renew)}</b></span>` : ""}
     </header>
     <p class="consumos-explain">${esc(p?.explain || meta.blurb)}</p>
-    ${deployBanner}
     <h3 class="consumos-block-title">Cuotas</h3>
     ${metersHtml}
     ${kpiHtml ? `<h3 class="consumos-block-title">Resumen</h3>${kpiHtml}` : ""}
@@ -218,38 +221,20 @@ function renderBoard(data) {
 export function createConsumos(ctx, api) {
   let last = null;
 
-  function syncHideDeployBtn(on) {
-    const btn = $("consumos-hide-deploy");
-    if (btn) btn.hidden = !on;
-  }
-
-  async function hideHacerDeploy() {
-    try {
-      setMsg($("consumos-msg"), "Ocultando cartel…");
-      await api.worker("/usage/hacer-deploy", { hide: true });
-      syncHideDeployBtn(false);
-      setMsg($("consumos-msg"), "Cartel «HACER DEPLOY» oculto.", "ok");
-      await reload({ quiet: true });
-    } catch (err) {
-      setMsg($("consumos-msg"), err?.message || "No se pudo ocultar el cartel.", "err");
-    }
-  }
-
   async function reload({ quiet = false } = {}) {
     if (!quiet) setMsg($("consumos-msg"), "Leyendo consumos…");
     try {
       const data = await api.worker("/usage");
       last = data;
-      const actionable = (data?.alerts || []).some(
+      const notices = (data?.alerts || []).filter((a) => !isHacerDeployAlert(a));
+      const actionable = notices.some(
         (a) => (a.level === "critical" || a.level === "warn") && !isWaitOnlyAlert(a)
       );
-      const anyNotice = (data?.alerts || []).some((a) => a.level === "critical" || a.level === "warn");
+      const anyNotice = notices.some((a) => a.level === "critical" || a.level === "warn");
       setAlertDot(anyNotice);
-      syncHideDeployBtn(!!data?.hacerDeployBanner);
       const tag = $("consumos-status-tag");
       if (tag) {
         const parts = [];
-        if (data?.hacerDeployBanner) parts.push("HACER DEPLOY");
         const providers = Array.isArray(data?.providers) ? data.providers : [];
         for (const p of providers) {
           const crit = (p.alerts || []).some((a) => a.level === "critical" && !isWaitOnlyAlert(a));
@@ -331,12 +316,7 @@ export function createConsumos(ctx, api) {
 
   function bind() {
     $("consumos-reload")?.addEventListener("click", () => reload());
-    $("consumos-hide-deploy")?.addEventListener("click", () => hideHacerDeploy());
     $("consumos-storage-edit")?.addEventListener("click", () => editStorageGb());
-    $("consumos-board")?.addEventListener("click", (ev) => {
-      const btn = ev.target?.closest?.("[data-hide-hacer-deploy]");
-      if (btn) hideHacerDeploy();
-    });
   }
 
   return { bind, reload, getLast: () => last };
