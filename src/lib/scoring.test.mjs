@@ -72,6 +72,7 @@ import { addPairsToRanking, syncRankingToSeasonPairs } from "./scoring.js";
   const slash = describeResult("2/6 5/7");
   assert.equal(slash.homeWin, false);
   assert.equal(slash.score, "2/6 5/7");
+  assert.equal(slash.label, "(0-2)");
   assert.equal(slash.awayPts, 3);
   assert.equal(slash.homePts, 0);
   const old = describeResult("6-4 3-6 6-2");

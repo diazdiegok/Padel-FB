@@ -109,7 +109,7 @@ export function describeResult(raw) {
     ...parsed,
     ...pts,
     homeWin: parsed.homeSets > parsed.awaySets,
-    label: `${parsed.homeSets}-${parsed.awaySets}`,
+    label: `(${parsed.homeSets}-${parsed.awaySets})`,
     score,
   };
 }
