@@ -5,6 +5,7 @@ import {
   downloadXlsx,
   fixtureExportLabel,
   fixtureExportRows,
+  splitLine,
   courtSlotObjectsFromText,
   parseCourtSlotObjects,
   parseCourtSlotText,
@@ -33,7 +34,8 @@ import {
   splitMatchToPending,
   syncFixtureWithPairs,
 } from "../lib/pair-fixture-sync.js";
-import { pairsMatch } from "../lib/scoring.js";
+import { mergeDriveFixtureRows, parseDriveSheetValues } from "../lib/drive-sheet.js";
+import { fold, pairsMatch } from "../lib/scoring.js";
 import { courtsSheetIdForSeason, DEFAULT_FIXTURE_DRIVE_SHEET_ID, DEFAULT_FIXTURE_DRIVE_SHEET_URL } from "../lib/sheets.js";
 import {
   applyVenuePlan,
@@ -1712,6 +1714,26 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
     });
 
+    async function existingDriveRows(week) {
+      const url =
+        `https://docs.google.com/spreadsheets/d/${DEFAULT_FIXTURE_DRIVE_SHEET_ID}/export?format=csv&sheet=` +
+        encodeURIComponent(week);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("No pude leer la hoja de Drive. No pegué nada.");
+      const text = await res.text();
+      const head = text.slice(0, 200).trim().toLowerCase();
+      if (!text.trim() || head.startsWith("<!doctype") || head.startsWith("<html")) {
+        throw new Error("No pude leer la hoja de Drive. No pegué nada.");
+      }
+      const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim());
+      const parsed = parseDriveSheetValues(lines.map((line) => splitLine(line, ",")));
+      const want = fold(week);
+      const tagged = parsed.filter((row) => fold(row.fecha));
+      // Si el nombre de pestaña no existe, Drive devuelve otra fecha. Esa no se mezcla.
+      if (tagged.length && !tagged.some((row) => fold(row.fecha) === want)) return [];
+      return parsed.filter((row) => !fold(row.fecha) || fold(row.fecha) === want);
+    }
+
     $("fx-drive-paste")?.addEventListener("click", async () => {
       const unique = exportableMatches({ includePending: false });
       if (!unique.length) {
@@ -1725,35 +1747,51 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         toast("Entrá a una fecha del fixture antes de pegar en Drive.", "err");
         return;
       }
+      const btn = $("fx-drive-paste");
+      setBusy(btn, true, "Leyendo…");
+      let existing;
+      try {
+        existing = await existingDriveRows(filterWeek);
+      } catch (err) {
+        setBusy(btn, false);
+        setMsg($("fx-msg"), err.message || "No pude leer la hoja de Drive. No pegué nada.", "err");
+        toast(err.message || "No pude leer la hoja", "err");
+        return;
+      }
+      setBusy(btn, false);
+      const merged = mergeDriveFixtureRows(existing, rows);
+      const kept = merged.kept;
       const ok = await confirmModal({
         title: "Pegar fixture en Drive",
         body:
-          `Se van a pegar ${rows.length} partido${rows.length === 1 ? "" : "s"} en la hoja «${filterWeek}» del Google Sheet (orden: ${mode}). ` +
-          "Los que ya tienen resultado no se modifican ni se borran. El resto se actualiza. Los pendientes no se envían.",
+          `Se van a pegar ${merged.rows.length} partido${merged.rows.length === 1 ? "" : "s"} en la hoja «${filterWeek}» del Google Sheet (orden: ${mode}). ` +
+          (kept
+            ? `${kept} con resultado quedan como están y no se borran. `
+            : "Todavía no hay resultados en esa hoja. ") +
+          "El resto se actualiza. Los pendientes no se envían.",
         confirmLabel: "Pegar en Drive",
       });
       if (!ok) return;
-      const btn = $("fx-drive-paste");
       setBusy(btn, true, "Pegando…");
       try {
         const res = await api.worker("/fixture/drive", {
           sheetId: DEFAULT_FIXTURE_DRIVE_SHEET_ID,
           week: filterWeek,
           mode,
-          rows,
+          rows: merged.rows,
         });
-        const n = Number(res?.rows) || rows.length;
-        const kept = Number(res?.kept) || 0;
+        const n = Number(res?.rows) || merged.rows.length;
+        const keptNow = Number(res?.kept) || kept;
         const sheetName = res?.sheet || filterWeek;
-        const keptTxt = kept
-          ? ` ${kept} con resultado quedaron como estaban.`
+        const keptTxt = keptNow
+          ? ` ${keptNow} con resultado quedaron como estaban.`
           : "";
         setMsg(
           $("fx-msg"),
           `Fixture pegado en Drive · hoja «${sheetName}» · ${n} partido${n === 1 ? "" : "s"}.${keptTxt}`,
           "ok"
         );
-        toast(kept ? `Pegado · ${kept} con resultado intactos` : `Pegado · ${sheetName} · ${n}`, "ok");
+        toast(keptNow ? `Pegado · ${keptNow} con resultado intactos` : `Pegado · ${sheetName} · ${n}`, "ok");
         const openUrl =
           res?.url ||
           `${DEFAULT_FIXTURE_DRIVE_SHEET_URL}${res?.gid != null ? `#gid=${res.gid}` : ""}`;
