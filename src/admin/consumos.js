@@ -218,16 +218,10 @@ function renderBoard(data) {
 export function createConsumos(ctx, api) {
   let last = null;
 
-  function syncHideDeployBtn(on) {
-    const btn = $("consumos-hide-deploy");
-    if (btn) btn.hidden = !on;
-  }
-
   async function hideHacerDeploy() {
     try {
       setMsg($("consumos-msg"), "Ocultando cartel…");
       await api.worker("/usage/hacer-deploy", { hide: true });
-      syncHideDeployBtn(false);
       setMsg($("consumos-msg"), "Cartel «HACER DEPLOY» oculto.", "ok");
       await reload({ quiet: true });
     } catch (err) {
@@ -245,7 +239,6 @@ export function createConsumos(ctx, api) {
       );
       const anyNotice = (data?.alerts || []).some((a) => a.level === "critical" || a.level === "warn");
       setAlertDot(anyNotice);
-      syncHideDeployBtn(!!data?.hacerDeployBanner);
       const tag = $("consumos-status-tag");
       if (tag) {
         const parts = [];
@@ -331,7 +324,6 @@ export function createConsumos(ctx, api) {
 
   function bind() {
     $("consumos-reload")?.addEventListener("click", () => reload());
-    $("consumos-hide-deploy")?.addEventListener("click", () => hideHacerDeploy());
     $("consumos-storage-edit")?.addEventListener("click", () => editStorageGb());
     $("consumos-board")?.addEventListener("click", (ev) => {
       const btn = ev.target?.closest?.("[data-hide-hacer-deploy]");

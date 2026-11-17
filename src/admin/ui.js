@@ -64,6 +64,39 @@ export function confirmModal({ title, body, confirmLabel = "Confirmar", danger =
   });
 }
 
+export function noticeModal({ title, body, confirmLabel = "Listo" }) {
+  return new Promise((resolve) => {
+    const dialog = $("admin-modal");
+    const titleEl = $("admin-modal-title");
+    const bodyEl = $("admin-modal-body");
+    const okBtn = $("admin-modal-ok");
+    const cancelBtn = $("admin-modal-cancel");
+    if (!dialog || !titleEl || !bodyEl || !okBtn || !cancelBtn) {
+      window.alert(body || title);
+      resolve();
+      return;
+    }
+    titleEl.textContent = title;
+    bodyEl.textContent = body;
+    okBtn.textContent = confirmLabel;
+    okBtn.className = "btn btn-lime";
+    cancelBtn.hidden = true;
+    let settled = false;
+    const cleanup = () => {
+      if (settled) return;
+      settled = true;
+      okBtn.onclick = null;
+      dialog.onclose = null;
+      cancelBtn.hidden = false;
+      if (dialog.open) dialog.close();
+      resolve();
+    };
+    okBtn.onclick = () => cleanup();
+    dialog.onclose = () => cleanup();
+    dialog.showModal();
+  });
+}
+
 export function setBusy(btn, busy, label) {
   if (!btn) return;
   if (busy) {

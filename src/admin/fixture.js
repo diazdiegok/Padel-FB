@@ -52,7 +52,7 @@ import {
   weekFromName,
   widenUnusedCourtWindows,
 } from "../lib/slots.js";
-import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
+import { $, confirmModal, escAttr, noticeModal, setBusy, setMsg, toast } from "./ui.js";
 
 const isPending = (m) => isPendingMatch(m);
 
@@ -1080,35 +1080,28 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     );
   }
 
-  function reviewCourtDuplicates() {
+  async function reviewCourtDuplicates() {
     if (!filterTemp || !filterWeek) {
-      toast("Entrá a una fecha para revisar.", "err");
+      await noticeModal({ title: "Revisar duplicados", body: "Entrá a una fecha para revisar." });
       return;
     }
     const conflicts = findCourtConflicts(matchesInOpenWeek());
     if (!conflicts.length) {
-      setMsg($("fx-msg"), `${filterWeek}: no hay canchas duplicadas.`, "ok");
-      toast("No hay canchas duplicadas", "ok");
+      await noticeModal({ title: filterWeek, body: "No hay canchas duplicadas." });
       return;
     }
-    const lines = conflicts.slice(0, 4).map((g) => {
+    const lines = conflicts.map((g) => {
       const who = g.matches.map((m) => `${m.time ? m.time + " " : ""}${m.home} vs ${m.away}`).join(" / ");
       const court = String(g.court || "").trim();
       const courtTxt = /^cancha\b/i.test(court) ? court : court ? `Cancha ${court}` : "";
-      return `${g.day} ${g.time} · ${g.venue}${courtTxt ? ` · ${courtTxt}` : ""} (${who})`;
+      return `${g.day} ${g.time} · ${g.venue}${courtTxt ? ` · ${courtTxt}` : ""}\n${who}`;
     });
-    const extra = conflicts.length > 4 ? ` y ${conflicts.length - 4} más` : "";
     if (isLiveWeek(filterTemp, filterWeek)) render();
-    setMsg(
-      $("fx-msg"),
-      `${filterWeek}: ${conflicts.length} cancha${conflicts.length === 1 ? "" : "s"} duplicada${conflicts.length === 1 ? "" : "s"}. ${lines.join(" · ")}${extra}.`,
-      "err"
-    );
-    toast(
-      `${conflicts.length} cancha${conflicts.length === 1 ? "" : "s"} duplicada${conflicts.length === 1 ? "" : "s"}`,
-      "err"
-    );
-    $("fx-warnings")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const n = conflicts.length;
+    await noticeModal({
+      title: `${filterWeek}: ${n} cancha${n === 1 ? "" : "s"} duplicada${n === 1 ? "" : "s"}`,
+      body: lines.join("\n\n"),
+    });
   }
 
   function render() {

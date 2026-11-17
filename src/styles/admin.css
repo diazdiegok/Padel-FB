@@ -3453,6 +3453,7 @@ body.is-admin .chk input[type="checkbox"] {
   color: var(--muted);
   font-size: 14px;
   line-height: 1.5;
+  white-space: pre-line;
 }
 
 .admin-modal-actions {
