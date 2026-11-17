@@ -19,9 +19,23 @@ const ALL_WEEKS = "*";
 export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
   let selTemp = "";
   let selWeek = "";
+  let filterDay = "";
   let filterCat = "";
+  let filterCourt = "";
   let term = "";
   let loaded = false;
+
+  const DAY_ORDER = ["lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado", "domingo"];
+  const dayIdx = (d) => {
+    const i = DAY_ORDER.indexOf(String(d || "").trim().toLowerCase());
+    return i < 0 ? 99 : i;
+  };
+  const clearListFilters = () => {
+    filterDay = "";
+    filterCat = "";
+    filterCourt = "";
+    term = "";
+  };
 
   function allMatches() {
     const season = ctx.siteData.currentSeason || "T4";
@@ -214,22 +228,57 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
     });
   }
 
-  function listHtml(list) {
-    const q = fold(term);
-    let shown = filterCat ? list.filter((m) => (m.cat || "Sin categoría") === filterCat) : list;
-    if (q) shown = shown.filter((m) => fold(`${m.home || ""} ${m.away || ""}`).includes(q));
-    const used = [...new Set(list.map((m) => m.cat || "Sin categoría"))].sort((a, b) => a.localeCompare(b, "es"));
-    if (filterCat && !used.includes(filterCat)) filterCat = "";
-    const filters = `<div class="res-filters">
+  function pillSet(label, items, current, attr, total) {
+    const allLabel = attr === "day" ? "Todos" : "Todas";
+    return `<div class="res-filter">
+      <span>${label}</span>
       <div class="pills">
-        <button class="pill${filterCat === "" ? " on" : ""}" type="button" data-res-cat="">Todas <small>${list.length}</small></button>
-        ${used
-          .map((c) => {
-            const n = list.filter((m) => (m.cat || "Sin categoría") === c).length;
-            return `<button class="pill${filterCat === c ? " on" : ""}" type="button" data-res-cat="${escAttr(c)}">${escAttr(c)} <small>${n}</small></button>`;
-          })
+        <button class="pill${current === "" ? " on" : ""}" type="button" data-res-${attr}="">${allLabel} <small>${total}</small></button>
+        ${items
+          .map(
+            (item) =>
+              `<button class="pill${current === item.value ? " on" : ""}" type="button" data-res-${attr}="${escAttr(item.value)}">${escAttr(item.value)} <small>${item.n}</small></button>`
+          )
           .join("")}
       </div>
+    </div>`;
+  }
+
+  function listHtml(list) {
+    const days = [...new Set(list.map((m) => m.day).filter(Boolean))].sort((a, b) => dayIdx(a) - dayIdx(b) || String(a).localeCompare(String(b), "es"));
+    const used = [...new Set(list.map((m) => m.cat || "Sin categoría"))].sort((a, b) => a.localeCompare(b, "es"));
+    const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
+    if (filterDay && !days.includes(filterDay)) filterDay = "";
+    if (filterCat && !used.includes(filterCat)) filterCat = "";
+    if (filterCourt && !courts.includes(filterCourt)) filterCourt = "";
+    const q = fold(term);
+    let shown = list.slice();
+    if (filterDay) shown = shown.filter((m) => m.day === filterDay);
+    if (filterCat) shown = shown.filter((m) => (m.cat || "Sin categoría") === filterCat);
+    if (filterCourt) shown = shown.filter((m) => m.venue === filterCourt);
+    if (q) shown = shown.filter((m) => fold(`${m.home || ""} ${m.away || ""}`).includes(q));
+    const filters = `<div class="res-filters">
+      ${pillSet(
+        "Día",
+        days.map((value) => ({ value, n: list.filter((m) => m.day === value).length })),
+        filterDay,
+        "day",
+        list.length
+      )}
+      ${pillSet(
+        "Categoría",
+        used.map((value) => ({ value, n: list.filter((m) => (m.cat || "Sin categoría") === value).length })),
+        filterCat,
+        "cat",
+        list.length
+      )}
+      ${pillSet(
+        "Cancha",
+        courts.map((value) => ({ value, n: list.filter((m) => m.venue === value).length })),
+        filterCourt,
+        "court",
+        list.length
+      )}
       <input class="admin-search" data-res-search type="search" placeholder="Buscar pareja…" autocomplete="off" value="${escAttr(term)}" />
     </div>`;
     const cats = filterCat ? (shown.length ? [filterCat] : []) : [...new Set(shown.map((m) => m.cat || "Sin categoría"))].sort((a, b) => a.localeCompare(b, "es"));
@@ -254,8 +303,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
     if (selTemp && !temps.includes(selTemp)) {
       selTemp = "";
       selWeek = "";
-      filterCat = "";
-      term = "";
+      clearListFilters();
     }
 
     const empty = $("res-empty");
@@ -296,8 +344,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
     const weeks = weeksOf(games);
     if (selWeek && selWeek !== ALL_WEEKS && !weeks.includes(selWeek)) {
       selWeek = "";
-      filterCat = "";
-      term = "";
+      clearListFilters();
     }
     const live = selTemp === ctx.siteData.currentSeason;
     const list = selWeek
@@ -378,8 +425,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
       if (e.target.closest("[data-res-back]")) {
         selTemp = "";
         selWeek = "";
-        filterCat = "";
-        term = "";
+        clearListFilters();
         render();
         return;
       }
@@ -387,22 +433,32 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
       if (openBtn) {
         selTemp = openBtn.dataset.resOpen;
         selWeek = "";
-        filterCat = "";
-        term = "";
+        clearListFilters();
         render();
         return;
       }
       const weekBtn = e.target.closest("[data-res-week]");
+      const dayBtn = e.target.closest("[data-res-day]");
+      if (dayBtn) {
+        filterDay = dayBtn.dataset.resDay || "";
+        render();
+        return;
+      }
       const catBtn = e.target.closest("[data-res-cat]");
       if (catBtn) {
         filterCat = catBtn.dataset.resCat || "";
         render();
         return;
       }
+      const courtBtn = e.target.closest("[data-res-court]");
+      if (courtBtn) {
+        filterCourt = courtBtn.dataset.resCourt || "";
+        render();
+        return;
+      }
       if (!weekBtn) return;
       selWeek = weekBtn.dataset.resWeek || "";
-      filterCat = "";
-      term = "";
+      clearListFilters();
       render();
     });
     $("res-boxes")?.addEventListener("input", (e) => {

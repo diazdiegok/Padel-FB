@@ -2276,6 +2276,18 @@ body.is-admin .chk input[type="checkbox"] {
   margin-bottom: 0;
 }
 
+.res-filter {
+  display: grid;
+  gap: 6px;
+}
+
+.res-filter > span {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 #res-list,
 .admin-disp-rows {
   display: grid;
