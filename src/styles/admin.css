@@ -1001,13 +1001,21 @@ body.is-admin .tag:empty {
 .admin-sticky-bar .admin-sticky-note {
   color: var(--muted);
   font-size: 12px;
-  max-width: 460px;
+  max-width: 420px;
   line-height: 1.4;
 }
 
-.admin-sticky-bar .admin-sticky-note strong {
-  color: #f4f7ef;
+.fx-grid-count {
+  margin: 4px 0 10px;
+  color: var(--muted);
   font-size: 14px;
+}
+
+.fx-grid-count strong {
+  color: #f4f7ef;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  margin-right: 4px;
 }
 
 .admin-sticky-actions {
