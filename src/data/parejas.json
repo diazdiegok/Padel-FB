@@ -1212,5 +1212,20 @@
     },
     "note": "",
     "source": "admin"
+  },
+  {
+    "id": "pmwl7tras11df",
+    "createdAt": "2026-11-17T21:39:40.276Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Bircher Gonzalo Fabian",
+    "p2": "Maggioni Leonardo Javier",
+    "days": {
+      "Lunes": "18:00 - 22:30",
+      "Martes": "18:00 - 22:30",
+      "Miércoles": "18:00 - 22:30",
+      "Jueves": "18:00 - 22:30"
+    },
+    "note": ""
   }
 ]
