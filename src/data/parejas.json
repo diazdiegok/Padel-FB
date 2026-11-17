@@ -1198,5 +1198,20 @@
       "Sábado": "14:00 - 19:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwkw8frsd915",
+    "createdAt": "2026-11-17T16:15:09.784Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Saavedra, Marcos",
+    "p2": "Albornoz, Luis Alberto",
+    "days": {
+      "Lunes": "18:30 - 00:00",
+      "Martes": "18:30 - 00:00",
+      "Miércoles": "18:30 - 21:00",
+      "Jueves": "18:30 - 00:00"
+    },
+    "note": "Ante la opción, preferimos jugar en Palermo por proximidad. El comprobante es el pago por ambos integrantes (50% off)"
   }
 ]
