@@ -9,7 +9,7 @@ import {
   parseResultsImportText,
 } from "./csv.js";
 import { isPendingMatch, isRealPairMatch } from "../lib/fixturer.js";
-import { applyFixtureResults, describeResult, fold, formatResult, pairsMatch, parseResult } from "../lib/scoring.js";
+import { applyFixtureResults, describeResult, fold, formatResult, pairsMatch, parseResult, queryMatchesText } from "../lib/scoring.js";
 import { compareCats } from "../lib/disponibilidad.js";
 import { combineResults, seasonLabel, seasonNumber, weekKey, weekNumber } from "../lib/liga.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
@@ -259,7 +259,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
     if (filterCourt) shown = shown.filter((m) => m.venue === filterCourt);
     if (q) {
       shown = shown.filter((m) =>
-        fold(`${m.home || ""} ${m.away || ""} ${m.venue || ""} ${weekOf(m)} ${m.cat || ""} ${m.day || ""}`).includes(q)
+        queryMatchesText(`${m.home || ""} ${m.away || ""} ${m.venue || ""} ${weekOf(m)} ${m.cat || ""} ${m.day || ""}`, q)
       );
     }
     shown.sort(

@@ -53,7 +53,14 @@ import { addPairsToRanking, syncRankingToSeasonPairs } from "./scoring.js";
 }
 
 {
-  const { playersMatch, pairsMatch } = await import("./scoring.js");
+  const { playersMatch, pairsMatch, queryMatchesText } = await import("./scoring.js");
+  const diego = "Diego Diaz / Emiliano Fontanetto";
+  assert.equal(queryMatchesText(diego, "Diaz Die"), true, "apellido y arranque del nombre");
+  assert.equal(queryMatchesText(diego, "diego diaz"), true);
+  assert.equal(queryMatchesText(diego, "Diego"), true);
+  assert.equal(queryMatchesText("Gonzalo Damian Diaz", "Diaz Die"), false);
+  assert.equal(queryMatchesText("Martin Mendez / Diego Godoy", "Diego"), true);
+  assert.equal(queryMatchesText("Martin Mendez / Diego Godoy", "diego diaz"), false);
   assert.equal(playersMatch("Juan Perez", "Juan Pérez"), true);
   assert.equal(playersMatch("Ana Paula Croce", "Ana Croce"), true);
   assert.equal(playersMatch("Martin Mendez", "Martin Rondan"), false, "mismo nombre ≠ misma persona");

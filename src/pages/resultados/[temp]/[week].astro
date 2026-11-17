@@ -138,6 +138,12 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
     }
+    function queryMatches(text, query) {
+      const words = fold(query).split(/[^a-z0-9]+/).filter((w) => w.length > 1);
+      if (!words.length) return true;
+      const tokens = fold(text).split(/[^a-z0-9]+/).filter(Boolean);
+      return words.every((w) => tokens.some((t) => t.startsWith(w)));
+    }
     const played = (m) => m.homeWin === true || m.homeWin === false;
     function card(m) {
       const known = played(m);
@@ -177,8 +183,8 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
         const okDay = day === "Todas" || m.day === day;
         const okCat = cat === "Todas" || m.cat === cat;
         const okCourt = court === "Todas" || m.venue === court;
-        const blob = fold([m.home, m.away].filter(Boolean).join(" "));
-        return okDay && okCat && okCourt && (!term || blob.includes(term));
+        const blob = fold([m.home, m.away, m.venue, m.week, m.cat, m.day, m.court].filter(Boolean).join(" "));
+        return okDay && okCat && okCourt && queryMatches(blob, term);
       });
       const groups = [...new Set(rows.map((m) => m.day || "Sin día"))];
       root.innerHTML = rows.length

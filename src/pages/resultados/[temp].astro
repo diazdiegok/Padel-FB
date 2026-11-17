@@ -135,6 +135,12 @@ const pending = list.filter((m) => m.homeWin !== true && m.homeWin !== false && 
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
     }
+    function queryMatches(text, query) {
+      const words = fold(query).split(/[^a-z0-9]+/).filter((w) => w.length > 1);
+      if (!words.length) return true;
+      const tokens = fold(text).split(/[^a-z0-9]+/).filter(Boolean);
+      return words.every((w) => tokens.some((t) => t.startsWith(w)));
+    }
     const played = (m) => m.homeWin === true || m.homeWin === false;
     function card(m) {
       const known = played(m);
@@ -175,7 +181,7 @@ const pending = list.filter((m) => m.homeWin !== true && m.homeWin !== false && 
         const okVenue = venue === "Todas" || m.venue === venue;
         const okCat = cat === "Todas" || m.cat === cat;
         const blob = fold([m.home, m.away, m.venue, m.week, m.cat, m.day, m.court].filter(Boolean).join(" "));
-        return okWeek && okVenue && okCat && (!term || blob.includes(term));
+        return okWeek && okVenue && okCat && queryMatches(blob, term);
       });
       const weekNames = [...new Set(rows.map((m) => m.week || "Sin fecha"))];
       root.innerHTML = rows.length

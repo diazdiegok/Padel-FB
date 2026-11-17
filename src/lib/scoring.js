@@ -14,6 +14,14 @@ export function playerTokens(name) {
   return fold(name).split(" ").filter((w) => w.length > 1);
 }
 
+/** Cada palabra del buscador alcanza con el comienzo de un nombre o apellido, en cualquier orden. */
+export function queryMatchesText(text, query) {
+  const words = fold(query).split(" ").filter((w) => w.length > 1);
+  if (!words.length) return true;
+  const tokens = fold(text).split(" ").filter(Boolean);
+  return words.every((w) => tokens.some((t) => t.startsWith(w)));
+}
+
 export function splitPair(name) {
   return String(name || "")
     .split(/\s*(?:\/|\s+vs\.?\s+|\s+-\s+)\s*/i)
