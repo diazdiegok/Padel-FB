@@ -57,17 +57,18 @@
   },
   {
     "week": "Fecha 1",
-    "day": "Lunes",
+    "day": "Martes",
     "date": "",
     "temp": "T5",
     "cat": "C Masculina",
-    "time": "21:30 - 23:00",
+    "time": "22:00 - 23:30",
     "venue": "Open Padel",
     "court": "Cancha 1",
     "home": "Jorge Antonio Zapata / Gonzalo Damian Diaz",
     "away": "Juan Ignacio Oldani / Lo Cascio Jose Carlos",
     "result": "",
-    "appliedResult": ""
+    "appliedResult": "",
+    "flexAvail": true
   },
   {
     "week": "Fecha 1",
