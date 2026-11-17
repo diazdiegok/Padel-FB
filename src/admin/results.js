@@ -10,6 +10,7 @@ import {
 } from "./csv.js";
 import { isPendingMatch, isRealPairMatch } from "../lib/fixturer.js";
 import { applyFixtureResults, describeResult, fold, formatResult, pairsMatch, parseResult } from "../lib/scoring.js";
+import { compareCats } from "../lib/disponibilidad.js";
 import { combineResults, seasonLabel, seasonNumber, weekKey, weekNumber } from "../lib/liga.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
@@ -246,7 +247,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
 
   function listHtml(list) {
     const days = [...new Set(list.map((m) => m.day).filter(Boolean))].sort((a, b) => dayIdx(a) - dayIdx(b) || String(a).localeCompare(String(b), "es"));
-    const used = [...new Set(list.map((m) => m.cat || "Sin categoría"))].sort((a, b) => a.localeCompare(b, "es"));
+    const used = [...new Set(list.map((m) => m.cat || "Sin categoría"))].sort(compareCats);
     const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
     if (filterDay && !days.includes(filterDay)) filterDay = "";
     if (filterCat && !used.includes(filterCat)) filterCat = "";
@@ -257,6 +258,12 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
     if (filterCat) shown = shown.filter((m) => (m.cat || "Sin categoría") === filterCat);
     if (filterCourt) shown = shown.filter((m) => m.venue === filterCourt);
     if (q) shown = shown.filter((m) => fold(`${m.home || ""} ${m.away || ""}`).includes(q));
+    shown.sort(
+      (a, b) =>
+        compareCats(a.cat, b.cat) ||
+        dayIdx(a.day) - dayIdx(b.day) ||
+        String(a.time || "").localeCompare(String(b.time || ""), "es")
+    );
     const filters = `<div class="res-filters">
       ${pillSet(
         "Día",
@@ -281,7 +288,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
       )}
       <input class="admin-search" data-res-search type="search" placeholder="Buscar pareja…" autocomplete="off" value="${escAttr(term)}" />
     </div>`;
-    const cats = filterCat ? (shown.length ? [filterCat] : []) : [...new Set(shown.map((m) => m.cat || "Sin categoría"))].sort((a, b) => a.localeCompare(b, "es"));
+    const cats = filterCat ? (shown.length ? [filterCat] : []) : [...new Set(shown.map((m) => m.cat || "Sin categoría"))].sort(compareCats);
     const body = cats.length
       ? cats
           .map((cat) => {

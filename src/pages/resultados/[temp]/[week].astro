@@ -5,6 +5,7 @@ import fixture from "../../../data/fixture.json";
 import results from "../../../data/results.json";
 import { site } from "../../../data/site";
 import { combineResults, matchAnchor, seasonLabel, seasonSlug, weekSlug } from "../../../lib/liga.js";
+import { CATS, sortCats } from "../../../lib/disponibilidad.js";
 import { describeResult } from "../../../lib/scoring.js";
 import { page } from "../../../lib/paths";
 
@@ -64,7 +65,7 @@ const list = combineResults(results, fixture.filter((m: any) => m.home && m.away
 const title = seasonLabel(tempCode);
 const seasonHref = page(`resultados/${seasonSlug(tempCode)}/`);
 const days = [...new Set(list.map((m) => m.day).filter(Boolean))].sort((a, b) => dayIdx(a) - dayIdx(b));
-const cats = [...new Set(list.map((m) => m.cat).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
+const cats = sortCats(list.map((m) => m.cat));
 const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
 ---
 <Layout title={`${weekLabel} · ${title} | Padel FB`} description={`Resultados de ${weekLabel} · ${title}.`}>
@@ -117,7 +118,7 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
     <p class="empty" id="empty" hidden>No hay partidos con ese filtro.</p>
   </div>
 
-  <script define:vars={{ list, weekLabel }}>
+  <script define:vars={{ list, weekLabel, catOrder: CATS }}>
     const root = document.querySelector("#result-root");
     const empty = document.querySelector("#empty");
     const count = document.querySelector("#count");
@@ -179,7 +180,13 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
         const blob = fold([m.home, m.away].filter(Boolean).join(" "));
         return okDay && okCat && okCourt && (!term || blob.includes(term));
       });
-      const groups = [...new Set(rows.map((m) => m.cat || "Sin categoría"))];
+      const rank = (name) => {
+        const i = catOrder.indexOf(name);
+        return i < 0 ? catOrder.length + 1 : i;
+      };
+      const groups = [...new Set(rows.map((m) => m.cat || "Sin categoría"))].sort(
+        (a, b) => rank(a) - rank(b) || a.localeCompare(b, "es")
+      );
       root.innerHTML = rows.length
         ? `<section class="fixture-week" style="padding-top:0">
             ${groups
