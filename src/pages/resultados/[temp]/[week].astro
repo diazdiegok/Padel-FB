@@ -97,15 +97,17 @@ const seasonHref = page(`resultados/${seasonSlug(tempCode)}/`);
                       <span>${esc(m.venue)}${m.court ? ` · ${esc(m.court)}` : ""}</span>
                     </div>
                     <div class="fixture-vs">
-                      <div class="pair pair-a${info?.homeWin ? " winner" : ""}">
+                      <div class="pair pair-a${info?.homeWin ? " winner" : info ? " loser" : ""}">
                         <span class="pair-label">Pareja 1</span>
                         <strong>${esc(m.home)}</strong>
+                        ${info?.homeWin ? `<span class="pair-won">Ganó</span>` : ""}
                         ${info ? `<span class="pair-pts">${info.homePts} pts</span>` : ""}
                       </div>
                       <span class="vs">vs</span>
-                      <div class="pair pair-b${info && !info.homeWin ? " winner" : ""}">
+                      <div class="pair pair-b${info && !info.homeWin ? " winner" : info ? " loser" : ""}">
                         <span class="pair-label">Pareja 2</span>
                         <strong>${esc(m.away)}</strong>
+                        ${info && !info.homeWin ? `<span class="pair-won">Ganó</span>` : ""}
                         ${info ? `<span class="pair-pts">${info.awayPts} pts</span>` : ""}
                       </div>
                     </div>

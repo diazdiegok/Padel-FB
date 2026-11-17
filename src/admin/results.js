@@ -9,7 +9,7 @@ import {
   parseResultsImportText,
 } from "./csv.js";
 import { isPendingMatch, isRealPairMatch } from "../lib/fixturer.js";
-import { applyFixtureResults, describeResult, fold, pairsMatch, parseResult } from "../lib/scoring.js";
+import { applyFixtureResults, describeResult, fold, formatResult, pairsMatch, parseResult } from "../lib/scoring.js";
 import { combineResults, seasonLabel, seasonNumber, weekKey, weekNumber } from "../lib/liga.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
@@ -50,7 +50,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
   function flipResult(raw) {
     const parsed = parseResult(raw);
     if (!parsed?.sets?.length) return raw;
-    return parsed.sets.map(([a, b]) => `${b}-${a}`).join(" ");
+    return parsed.sets.map(([a, b]) => `${b}/${a}`).join(" ");
   }
 
   function findImportTarget(pool, row) {
@@ -137,7 +137,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
         missing += 1;
         continue;
       }
-      target.result = result;
+      target.result = formatResult(result) || result;
       applied += 1;
     }
     if (applied) {
@@ -167,22 +167,51 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
     return list.length ? `${played(list)} / ${count(list.length, "resultado", "resultados")}` : "Todavía sin partidos";
   }
 
+  function sideHtml(name, win) {
+    return `<span data-res-side class="${win ? "is-win" : ""}">${escAttr(name || "—")}${win ? `<em class="res-won">Ganó</em>` : ""}</span>`;
+  }
+
   function matchCard(m) {
     const parsed = describeResult(m.result);
     const hint = parsed ? `${parsed.label} · ${parsed.homePts}-${parsed.awayPts} pts` : "Sin resultado";
     const when = [selWeek === ALL_WEEKS ? weekOf(m) : "", m.day, m.time].filter(Boolean).join(" · ") || "—";
-    return `<article class="admin-result-card">
+    const shown = formatResult(m.result) || m.result || "";
+    return `<article class="admin-result-card${parsed ? " has-score" : ""}">
       <div class="admin-result-meta">
         <span>${escAttr(when)}</span>
         ${m._source === "fixture" ? `<span class="admin-chip-live">Fecha en juego</span>` : `<span class="admin-chip-arch">Archivo</span>`}
       </div>
-      <strong>${escAttr(m.home || "—")} <span class="muted">vs</span> ${escAttr(m.away || "—")}</strong>
+      <strong class="res-vs">${sideHtml(m.home, !!parsed?.homeWin)} <span class="muted">vs</span> ${sideHtml(m.away, !!(parsed && !parsed.homeWin))}</strong>
       <p class="admin-help">${escAttr([m.venue, m.court].filter(Boolean).join(" · "))}</p>
       <label class="admin-result-score">Resultado
-        <input data-res-source="${m._source}" data-res-i="${m._i}" value="${escAttr(m.result)}" placeholder="6-4 6-2" />
+        <input data-res-source="${m._source}" data-res-i="${m._i}" value="${escAttr(shown)}" placeholder="6/4 6/2" />
       </label>
       <p class="admin-hint" data-res-hint>${escAttr(hint)}</p>
     </article>`;
+  }
+
+  function paintCard(card, raw) {
+    const parsed = describeResult(raw);
+    const hint = card?.querySelector("[data-res-hint]");
+    if (hint) {
+      hint.textContent = parsed
+        ? `${parsed.label} · ${parsed.homePts}-${parsed.awayPts} pts`
+        : String(raw || "").trim()
+          ? "Resultado inválido"
+          : "Sin resultado";
+    }
+    const sides = card?.querySelectorAll("[data-res-side]") || [];
+    sides.forEach((el, i) => {
+      const win = parsed && (i === 0 ? parsed.homeWin : !parsed.homeWin);
+      el.classList.toggle("is-win", !!win);
+      const tag = el.querySelector(".res-won");
+      if (win && !tag) {
+        const em = document.createElement("em");
+        em.className = "res-won";
+        em.textContent = "Ganó";
+        el.appendChild(em);
+      } else if (!win && tag) tag.remove();
+    });
   }
 
   function listHtml(list) {
@@ -395,10 +424,19 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
       if (!match) return;
       match.result = input.value;
       shell.markDirty("resultados");
-      const card = input.closest(".admin-result-card");
-      const hint = card?.querySelector("[data-res-hint]");
-      const parsed = describeResult(input.value);
-      if (hint) hint.textContent = parsed ? `${parsed.label} · ${parsed.homePts}-${parsed.awayPts} pts` : input.value.trim() ? "Resultado inválido" : "Sin resultado";
+      paintCard(input.closest(".admin-result-card"), input.value);
+    });
+    $("res-boxes")?.addEventListener("focusout", (e) => {
+      const input = e.target.closest("[data-res-source]");
+      if (!input) return;
+      const nice = formatResult(input.value);
+      if (!nice || nice === input.value) return;
+      const match = sourceMatch({ _source: input.dataset.resSource, _i: Number(input.dataset.resI) });
+      if (!match) return;
+      input.value = nice;
+      match.result = nice;
+      shell.markDirty("resultados");
+      paintCard(input.closest(".admin-result-card"), nice);
     });
     $("res-reload")?.addEventListener("click", reload);
     $("res-template")?.addEventListener("click", exportTemplate);
@@ -441,7 +479,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
       const pending = [...(ctx.fixture || []), ...(ctx.results || [])];
       const invalid = pending.find((m) => String(m.result || "").trim() && !describeResult(m.result));
       if (invalid) {
-        const message = `Resultado inválido (${invalid.home || "pareja"} vs ${invalid.away || "pareja"}). Usá 6-4 6-2 o 6-4 3-6 6-2.`;
+        const message = `Resultado inválido (${invalid.home || "pareja"} vs ${invalid.away || "pareja"}). Usá 6/4 6/2 o 6/4 3/6 6/2.`;
         setMsg($("res-msg"), message, "err");
         toast(message, "err");
         return;

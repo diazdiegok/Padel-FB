@@ -62,7 +62,7 @@ export function parseResult(raw) {
     .replace(/\s+/g, " ");
   if (!s) return null;
 
-  const sets = [...s.matchAll(/(\d+)\s*-\s*(\d+)/g)].map((m) => [Number(m[1]), Number(m[2])]);
+  const sets = [...s.matchAll(/(\d+)\s*[-\/]\s*(\d+)/g)].map((m) => [Number(m[1]), Number(m[2])]);
   if (!sets.length) return null;
 
   if (sets.length === 1) {
@@ -92,12 +92,19 @@ export function pointsFor(homeSets, awaySets) {
   return null;
 }
 
+/** Score canónico: 6/4 6/2. Acepta también el guión viejo. */
+export function formatResult(raw) {
+  const parsed = parseResult(raw);
+  if (!parsed?.sets?.length) return "";
+  return parsed.sets.map(([a, b]) => `${a}/${b}`).join(" ");
+}
+
 export function describeResult(raw) {
   const parsed = parseResult(raw);
   if (!parsed) return null;
   const pts = pointsFor(parsed.homeSets, parsed.awaySets);
   if (!pts) return null;
-  const score = parsed.sets.length > 1 ? parsed.sets.map((s) => s.join("-")).join(" ") : `${parsed.homeSets}-${parsed.awaySets}`;
+  const score = formatResult(raw);
   return {
     ...parsed,
     ...pts,
@@ -288,7 +295,7 @@ export function applyFixtureResults(ranking, matches) {
     const prevScore = prev ? describeResult(prev) : null;
 
     if (next && !nextScore) {
-      unmatched.push(`Resultado inválido (${match.home} vs ${match.away}): "${next}". Usá 6-4 6-2 o 2-1.`);
+      unmatched.push(`Resultado inválido (${match.home} vs ${match.away}): "${next}". Usá 6/4 6/2 o 2/1.`);
       continue;
     }
 

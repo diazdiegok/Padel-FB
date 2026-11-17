@@ -1988,6 +1988,19 @@ footer strong { color: var(--cream); }
   text-transform: uppercase;
 }
 .pair.winner strong { color: var(--lime); }
+.pair.loser strong { color: var(--muted); }
+.pair-won {
+  color: #141814;
+  background: var(--lime);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  width: fit-content;
+}
+.pair-b .pair-won { justify-self: end; }
 .pair-pts {
   color: var(--muted);
   font-size: 12px;

@@ -67,4 +67,20 @@ import { addPairsToRanking, syncRankingToSeasonPairs } from "./scoring.js";
   console.log("ok: playersMatch no confunde solo por nombre de pila");
 }
 
+{
+  const { parseResult, describeResult, formatResult } = await import("./scoring.js");
+  const slash = describeResult("2/6 5/7");
+  assert.equal(slash.homeWin, false);
+  assert.equal(slash.score, "2/6 5/7");
+  assert.equal(slash.awayPts, 3);
+  assert.equal(slash.homePts, 0);
+  const old = describeResult("6-4 3-6 6-2");
+  assert.equal(old.homeWin, true);
+  assert.equal(old.score, "6/4 3/6 6/2");
+  assert.equal(old.awayPts, 1);
+  assert.equal(formatResult("6-4 6-2"), "6/4 6/2");
+  assert.equal(parseResult("6/4"), null);
+  console.log("ok: el score se lee con / y se muestra con /");
+}
+
 console.log("scoring.test.mjs passed");

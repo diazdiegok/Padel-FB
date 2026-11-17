@@ -968,7 +968,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           <td>${escAttr(m.court || "—")}</td>
           <td>${escAttr(m.home)}</td>
           <td>${escAttr(m.away)}</td>
-          <td class="col-actions"><span class="admin-chip-arch">${escAttr(m.result || "Sin score")}</span></td>
+          <td class="col-actions"></td>
         </tr>`
         )
         .join("");

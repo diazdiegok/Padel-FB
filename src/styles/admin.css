@@ -1510,6 +1510,29 @@ body.is-admin .chk input[type="checkbox"] {
   font-weight: 500;
 }
 
+.res-vs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.res-vs [data-res-side].is-win {
+  color: var(--lime);
+}
+
+.res-won {
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--lime);
+  color: #141814;
+}
+
 .admin-result-score {
   display: grid;
   gap: 6px;
