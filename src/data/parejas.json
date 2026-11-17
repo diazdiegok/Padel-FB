@@ -1181,5 +1181,22 @@
       "Viernes": "17:00 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwkmuj8re8bb",
+    "createdAt": "2026-11-17T11:52:24.555Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Nelson Fernando MONTORFANO",
+    "p2": "Jonatan gaston jerez",
+    "days": {
+      "Lunes": "21:00 - 22:30",
+      "Martes": "18:00 - 22:30",
+      "Miércoles": "21:00 - 23:00",
+      "Jueves": "19:00 - 22:00",
+      "Viernes": "20:30 - 22:30",
+      "Sábado": "14:00 - 19:00"
+    },
+    "note": ""
   }
 ]
