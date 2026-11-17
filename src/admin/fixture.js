@@ -382,9 +382,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     if (opts.length) parts.push(`${opts.length} exacto${opts.length === 1 ? "" : "s"}`);
     if (cercanos.length) parts.push(`${cercanos.length} cercano${cercanos.length === 1 ? "" : "s"}`);
     if (estimables.length) parts.push(`${estimables.length} estimable${estimables.length === 1 ? "" : "s"}`);
-    if (libres.length) parts.push(`${libres.length} cancha${libres.length === 1 ? "" : "s"} libre${libres.length === 1 ? "" : "s"}`);
+    if (libres.length) parts.push(`${libres.length} en cancha vacía`);
     const placeholder = `${match?.dupHold ? "" : "2. "}Elegir entre ${parts.join(" + ")}…`;
-    const hint = "Orden: exactos, cercanos, estimables y al final canchas libres. En una cancha libre se listan todos los inicios de 1:30.";
+    const hint = "Orden: exactos, cercanos, estimables y al final cancha vacía. Esos turnos libres suelen ser los más lejos: se proponen por si pueden jugar.";
     // Separadores con <option disabled> (no anidar optgroup).
     const exactBlock = opts.length
       ? `<option disabled value="">── Exactos (entran las dos) ──</option>
@@ -402,7 +402,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       : "";
     const openBlock = libres.length
       ? `<option disabled value="">────────────────────────────────</option>
-      <option disabled value="">── Canchas libres · quedan lejos ──</option>
+      <option disabled value="">── Cancha vacía · turnos libres, por si pueden ──</option>
       ${groupsByDay(libres, { near: true })}`
       : "";
 

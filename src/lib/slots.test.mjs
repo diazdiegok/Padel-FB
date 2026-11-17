@@ -985,7 +985,8 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   assert.equal(coverSlotTier(noche), "near", "cubre ok sube a cercano aunque la cancha esté libre");
   assert.equal(coverSlotTier(mediaHora), "near", "+30' también es cercano");
   assert.equal(coverSlotTier(unaHora), "estimate", "+1 h sigue estimable");
-  assert.equal(coverSlotTier(tarde), "free", "+5 h queda en canchas libres");
+  assert.equal(coverSlotTier(tarde), "estimate", "+5 h en cancha ocupada no es cancha vacía");
+  assert.equal(coverSlotTier({ ...tarde, openDay: true }), "free", "cancha vacía y lejos queda última");
 }
 
 console.log("slots ok");

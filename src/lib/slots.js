@@ -1160,7 +1160,8 @@ export function bestKnownMiss(o) {
 
 /**
  * exact: entran las dos. near: desfase chico, o una entra en ok/+30' aunque la otra no tenga el día.
- * estimate: la que tiene el día se estira hasta 2 h. free: más lejos (el resto de canchas libres).
+ * estimate: se estira hasta 2 h, o queda lejos pero la cancha ya tiene partido.
+ * free: cancha vacía y el turno queda lejos. Es la última opción, para proponerlo por si pueden.
  */
 export function coverSlotTier(o) {
   if (!o?.near && !o?.estimate) return "exact";
@@ -1168,7 +1169,7 @@ export function coverSlotTier(o) {
   const best = bestKnownMiss(o);
   if (best <= 30) return "near";
   if (best <= 120) return "estimate";
-  return "free";
+  return o?.openDay ? "free" : "estimate";
 }
 
 /**
