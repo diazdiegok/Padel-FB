@@ -12,6 +12,19 @@ export function seasonSlug(temp) {
   return String(temp || "").trim().toLowerCase();
 }
 
+/** Ancla estable para abrir el resultado de un partido desde el fixture. */
+export function matchAnchor(m) {
+  const raw = [m?.cat, m?.day, m?.time, m?.home, m?.away].filter(Boolean).join(" ");
+  const slug = String(raw)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 96);
+  return slug ? `partido-${slug}` : "partido";
+}
+
 export function weekSlug(week) {
   const raw = String(week || "Sin fecha")
     .trim()

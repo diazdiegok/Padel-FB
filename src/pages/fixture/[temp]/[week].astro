@@ -5,7 +5,7 @@ import fixture from "../../../data/fixture.json";
 import results from "../../../data/results.json";
 import { site } from "../../../data/site";
 import { isPendingMatch, isRealPairMatch } from "../../../lib/fixturer.js";
-import { combineResults, seasonLabel, seasonSlug, weekSlug } from "../../../lib/liga.js";
+import { combineResults, matchAnchor, seasonLabel, seasonSlug, weekSlug } from "../../../lib/liga.js";
 import { page } from "../../../lib/paths";
 
 const fxVisible = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) && !isPendingMatch(m));
@@ -51,7 +51,14 @@ const list = combineResults(results, fxVisible)
     const db = dayIdx(b.day);
     if (da !== db) return da - db;
     return String(a.time || "").localeCompare(String(b.time || ""), "es");
-  });
+  })
+  .map((m) => ({
+    ...m,
+    played: !!String(m.result || "").trim(),
+    resultHref: page(
+      `resultados/${seasonSlug(tempCode)}/${weekSlug(weekLabel)}/#${matchAnchor(m)}`
+    ),
+  }));
 const title = seasonLabel(tempCode);
 const seasonHref = page(`fixture/${seasonSlug(tempCode)}/`);
 const days = [...new Set(list.map((m) => m.day).filter(Boolean))].sort((a, b) => dayIdx(a) - dayIdx(b));
@@ -206,7 +213,11 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
                   </div>
                 </div>
                 <div class="fixture-score">${
-                  open ? `<span class="tag">Por cubrir</span>` : `<span class="tag">Por jugar</span>`
+                  open
+                    ? `<span class="tag">Por cubrir</span>`
+                    : m.played
+                      ? `<span class="tag tag-played">¡Ya jugado!</span><a class="fixture-result-link" href="${esc(m.resultHref)}">Ver resultado</a>`
+                      : `<span class="tag">Por jugar</span>`
                 }</div>
                 <div class="fixture-place">
                   <span>${esc(m.venue || (open ? "Sin sede aún" : ""))}${m.court ? ` · ${esc(m.court)}` : ""}</span>

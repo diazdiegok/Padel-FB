@@ -4,7 +4,8 @@ import BackNav from "../../../components/BackNav.astro";
 import fixture from "../../../data/fixture.json";
 import results from "../../../data/results.json";
 import { site } from "../../../data/site";
-import { combineResults, seasonLabel, seasonSlug, weekSlug } from "../../../lib/liga.js";
+import { combineResults, matchAnchor, seasonLabel, seasonSlug, weekSlug } from "../../../lib/liga.js";
+import { describeResult } from "../../../lib/scoring.js";
 import { page } from "../../../lib/paths";
 
 export function getStaticPaths() {
@@ -47,6 +48,18 @@ const list = combineResults(results, fixture.filter((m: any) => m.home && m.away
     const db = dayIdx(b.day);
     if (da !== db) return da - db;
     return String(a.time || "").localeCompare(String(b.time || ""), "es");
+  })
+  .map((m) => {
+    const info = describeResult(m.result);
+    return {
+      ...m,
+      anchor: matchAnchor(m),
+      scoreText: info?.score || "",
+      setsLabel: info?.label || "",
+      homeWin: info ? !!info.homeWin : null,
+      homePts: info?.homePts ?? null,
+      awayPts: info?.awayPts ?? null,
+    };
   });
 const title = seasonLabel(tempCode);
 const seasonHref = page(`resultados/${seasonSlug(tempCode)}/`);
@@ -67,19 +80,15 @@ const seasonHref = page(`resultados/${seasonSlug(tempCode)}/`);
     <div id="result-root" class="result-panel"></div>
   </div>
 
-  <script>
-    import { describeResult } from "../../../lib/scoring.js";
-    window.__ligaScoring = { describeResult };
-  </script>
   <script define:vars={{ list, weekLabel }}>
     const root = document.querySelector("#result-root");
     if (!root) throw new Error("resultados week");
-    const describeResult = (raw) => window.__ligaScoring?.describeResult?.(raw) || null;
     function esc(s) {
       return String(s ?? "").replace(/[&<>"']/g, (c) =>
         ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
       );
     }
+    const played = (m) => m.homeWin === true || m.homeWin === false;
     const groups = [...new Set(list.map((m) => m.cat || "Sin categoría"))];
     root.innerHTML = `<section class="fixture-week" style="padding-top:0">
       ${groups
@@ -89,31 +98,31 @@ const seasonHref = page(`resultados/${seasonSlug(tempCode)}/`);
             <div class="fixture-list">
               ${rows
                 .map((m) => {
-                  const info = describeResult(m.result);
-                  return `<article class="fixture-row">
+                  const known = played(m);
+                  return `<article class="fixture-row" id="${esc(m.anchor)}">
                     <div class="fixture-meta">
                       <span>${esc(m.day || m.date)}</span>
                       <span>${esc(m.time)}</span>
                       <span>${esc(m.venue)}${m.court ? ` · ${esc(m.court)}` : ""}</span>
                     </div>
                     <div class="fixture-vs">
-                      <div class="pair pair-a${info?.homeWin ? " winner" : info ? " loser" : ""}">
+                      <div class="pair pair-a${m.homeWin ? " winner" : known ? " loser" : ""}">
                         <span class="pair-label">Pareja 1</span>
                         <strong>${esc(m.home)}</strong>
-                        ${info?.homeWin ? `<span class="pair-won">Ganó</span>` : ""}
-                        ${info ? `<span class="pair-pts">${info.homePts} pts</span>` : ""}
+                        ${m.homeWin ? `<span class="pair-won">Ganó</span>` : ""}
+                        ${known ? `<span class="pair-pts">${m.homePts} pts</span>` : ""}
                       </div>
                       <span class="vs">vs</span>
-                      <div class="pair pair-b${info && !info.homeWin ? " winner" : info ? " loser" : ""}">
+                      <div class="pair pair-b${known && !m.homeWin ? " winner" : known ? " loser" : ""}">
                         <span class="pair-label">Pareja 2</span>
                         <strong>${esc(m.away)}</strong>
-                        ${info && !info.homeWin ? `<span class="pair-won">Ganó</span>` : ""}
-                        ${info ? `<span class="pair-pts">${info.awayPts} pts</span>` : ""}
+                        ${known && !m.homeWin ? `<span class="pair-won">Ganó</span>` : ""}
+                        ${known ? `<span class="pair-pts">${m.awayPts} pts</span>` : ""}
                       </div>
                     </div>
                     <div class="fixture-score">${
-                      info
-                        ? `<b>${esc(info.score)}</b><span>${info.label}</span>`
+                      known
+                        ? `<b>${esc(m.scoreText)}</b><span>${esc(m.setsLabel)}</span>`
                         : m.result
                           ? `<b>${esc(m.result)}</b>`
                           : `<span class="tag">Pendiente</span>`
@@ -125,5 +134,13 @@ const seasonHref = page(`resultados/${seasonSlug(tempCode)}/`);
         })
         .join("")}
     </section>`;
+    const hash = decodeURIComponent(location.hash || "").replace(/^#/, "");
+    if (hash) {
+      const el = document.getElementById(hash);
+      if (el) {
+        el.classList.add("is-target");
+        el.scrollIntoView({ block: "center" });
+      }
+    }
   </script>
 </Layout>
