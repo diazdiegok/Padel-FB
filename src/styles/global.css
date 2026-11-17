@@ -1987,16 +1987,14 @@ footer strong { color: var(--cream); }
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
-.pair.winner {
-  background: rgba(214, 255, 47, 0.1);
-  border-radius: 12px;
-  padding: 8px 10px;
-}
 .pair.winner strong { color: var(--lime); }
 .pair.loser strong { color: var(--muted); }
+.fixture-row,
+.fixture-week .kicker {
+  scroll-margin-top: calc(var(--nav) + 28px);
+}
 .fixture-row.is-target {
-  border-color: rgba(214, 255, 47, 0.7);
-  box-shadow: 0 0 0 1px rgba(214, 255, 47, 0.35);
+  border-color: rgba(214, 255, 47, 0.55);
 }
 .tag-played {
   color: var(--lime);
@@ -2012,14 +2010,12 @@ footer strong { color: var(--cream); }
 }
 .fixture-result-link:hover { text-decoration: underline; }
 .pair-won {
-  color: #141814;
-  background: var(--lime);
+  color: var(--lime);
+  background: none;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 2px 8px;
-  border-radius: 999px;
   width: fit-content;
 }
 .pair-b .pair-won { justify-self: end; }

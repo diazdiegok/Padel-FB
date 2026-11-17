@@ -139,7 +139,8 @@ const seasonHref = page(`resultados/${seasonSlug(tempCode)}/`);
       const el = document.getElementById(hash);
       if (el) {
         el.classList.add("is-target");
-        el.scrollIntoView({ block: "center" });
+        const head = el.closest(".fixture-list")?.previousElementSibling;
+        (head || el).scrollIntoView({ block: "start" });
       }
     }
   </script>
