@@ -1167,5 +1167,19 @@
       "Viernes": "21:00 - 22:30"
     },
     "note": ""
+  },
+  {
+    "id": "pmwkls5qh2ed5",
+    "createdAt": "2026-11-17T11:22:34.121Z",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "p1": "Ariel Enrique",
+    "p2": "A. Marcelo Enrique",
+    "days": {
+      "Lunes": "17:00 - 19:00",
+      "Miércoles": "17:00 - 19:00",
+      "Viernes": "17:00 - 00:00"
+    },
+    "note": ""
   }
 ]
