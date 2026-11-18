@@ -679,6 +679,7 @@ async function listPayments(env) {
   let cursor;
   do {
     const page = await env.AUTH_KV.list({ prefix: "pay:", cursor });
+    await meterBump(env, { lists: 1 });
     for (const key of page.keys) {
       const id = key.name.slice("pay:".length);
       const meta = key.metadata || {};
@@ -766,6 +767,7 @@ async function listAcademy(env) {
   let cursor;
   do {
     const page = await env.AUTH_KV.list({ prefix: "acad:", cursor });
+    await meterBump(env, { lists: 1, reads: (page.keys || []).length });
     const values = await Promise.all(page.keys.map((key) => env.AUTH_KV.get(key.name)));
     for (const value of values) {
       try {
@@ -792,6 +794,7 @@ async function listContacts(env) {
   let cursor;
   do {
     const page = await env.AUTH_KV.list({ prefix: "contact:", cursor });
+    await meterBump(env, { lists: 1 });
     for (const key of page.keys) out[key.name.slice("contact:".length)] = key.metadata || {};
     cursor = page.list_complete ? undefined : page.cursor;
   } while (cursor);
@@ -932,6 +935,7 @@ async function hitRateOk(env, request) {
 const HIT_FLUSH_SECONDS = 300; // como mucho 1 flush KV / 5 min / colo
 /** Límites orientativos Workers Free (Cloudflare). */
 const KV_WRITE_LIMIT_DAY = 1000;
+const KV_LIST_LIMIT_DAY = 1000;
 const KV_READ_LIMIT_DAY = 100_000;
 const KV_KEYS_SOFT_LIMIT = 10_000;
 const VISITS_SOFT_LIMIT_DAY = 2_000;
@@ -1159,18 +1163,27 @@ function mergeMaps(into, from) {
   for (const [k, v] of Object.entries(from || {})) into[k] = (into[k] || 0) + Number(v || 0);
 }
 
-async function countKvPrefix(env, prefix) {
-  if (!env.AUTH_KV) return 0;
-  let n = 0;
+/** Una sola lista del namespace: KV no acepta varios prefijos en un list. */
+async function countStoredKeys(env) {
+  const totals = { "contact:": 0, "pay:": 0, "acad:": 0 };
+  if (!env.AUTH_KV) return totals;
   let cursor;
+  let pages = 0;
   for (let i = 0; i < 20; i++) {
-    const page = await env.AUTH_KV.list({ prefix, cursor, limit: 1000 });
-    n += (page.keys || []).length;
+    const page = await env.AUTH_KV.list({ cursor, limit: 1000 });
+    pages += 1;
+    for (const key of page.keys || []) {
+      const name = key.name || "";
+      if (name.startsWith("contact:")) totals["contact:"] += 1;
+      else if (name.startsWith("pay:")) totals["pay:"] += 1;
+      else if (name.startsWith("acad:")) totals["acad:"] += 1;
+    }
     if (page.list_complete) break;
     cursor = page.cursor;
     if (!cursor) break;
   }
-  return n;
+  if (pages) await meterBump(env, { lists: pages });
+  return totals;
 }
 
 const VERCEL_DEPLOY_LIMIT_DAY = 100; // Hobby · ventana rodante 24 h
@@ -1776,10 +1789,12 @@ async function readUsage(env) {
   const day = utcDay(0);
   const alerts = [];
   const tips = [
-    "Los % de Cloudflare son del plan Workers Free (orientativos): 1000 escrituras KV/día.",
-    "Cloudflare se reinicia a las 00:00 UTC (~21:00 Argentina).",
-    "Escrituras KV: login, inscripción, comprobantes y visitas (flush cada ~5 min).",
-    "Si Escrituras KV llega a ~100%, se cortan inscripción y publish hasta el reset.",
+    "Estas barras las cuenta este Worker. El mail de Cloudflare mira toda la cuenta (todos los proyectos) y avisa al 50% de escrituras, listas o borrados.",
+    "Listas KV: cada Actualizar hace 1 sola lista y de ahí cuenta contactos, pagos y academia. Tope 1000/día. No corta la inscripción.",
+    "Visitas: se anotan en caché y, como mucho, cada 5 min se guardan 2 escrituras. No hacen listas.",
+    "Lo que corta inscripción, login y comprobantes es Escrituras KV al 100%. El mail del 50% no bloquea el sitio.",
+    "Borrados son otro tope de 1000/día. Este panel no los muestra: pueden venir de otro proyecto de la misma cuenta.",
+    "Cloudflare se reinicia a las 00:00 UTC (21:00 Argentina).",
   ];
 
   let visitsToday = 0;
@@ -1799,10 +1814,10 @@ async function readUsage(env) {
   let payments = 0;
   let acad = 0;
   try {
-    contacts = await countKvPrefix(env, "contact:");
-    payments = await countKvPrefix(env, "pay:");
-    acad = await countKvPrefix(env, "acad:");
-    await meterBump(env, { lists: 3, reads: 3 });
+    const stored = await countStoredKeys(env);
+    contacts = stored["contact:"];
+    payments = stored["pay:"];
+    acad = stored["acad:"];
   } catch (err) {
     alerts.push({
       level: "warn",
@@ -1884,6 +1899,17 @@ async function readUsage(env) {
     },
     {
       ...meterRow({
+        id: "lists",
+        label: "Listas KV (hoy)",
+        used: meter.lists,
+        limit: KV_LIST_LIMIT_DAY,
+        unit: "listas",
+      }),
+      renewsAt: resetsAtLocal,
+      renewsAtMs: cfRenewMs,
+    },
+    {
+      ...meterRow({
         id: "reads",
         label: "Lecturas KV (hoy, estimadas)",
         used: readsUsed,
@@ -1917,6 +1943,22 @@ async function readUsage(env) {
   ];
 
   const writeMeter = meters.find((m) => m.id === "writes");
+  const listMeter = meters.find((m) => m.id === "lists");
+  if (listMeter && listMeter.used > listMeter.limit) {
+    listMeter.usedPct = Math.round((listMeter.used / listMeter.limit) * 1000) / 10;
+    listMeter.left = 0;
+    listMeter.leftPct = 0;
+    listMeter.tone = "critical";
+  } else if (listMeter && listMeter.usedPct >= 50 && listMeter.tone === "ok") {
+    listMeter.tone = "warn";
+  }
+  if (listMeter && listMeter.usedPct >= 50) {
+    alerts.push({
+      level: listMeter.usedPct >= 95 ? "critical" : "warn",
+      title: `Listas KV al ${listMeter.usedPct}%`,
+      body: `Usadas ${listMeter.used} de ${listMeter.limit}. El mail de Cloudflare sale al 50% de este tope, o del de escrituras, borrados, u otro proyecto de la misma cuenta. No corta la inscripción.`,
+    });
+  }
   if (writeOk && writeMeter.usedPct >= 70 && writeMeter.usedPct < 95) {
     alerts.push({
       level: "warn",
@@ -1952,7 +1994,7 @@ async function readUsage(env) {
     id: "cloudflare",
     name: "Cloudflare",
     explain:
-      "Worker + KV: login, inscripción, comprobantes y visitas. Si se agotan las escrituras KV, se corta la API hasta las 21:00 AR.",
+      "Estas barras las cuenta este Worker. El mail de Cloudflare mira toda la cuenta y avisa al 50% de escrituras, listas o borrados. La inscripción se corta solo si Escrituras llega al 100% (21:00 AR).",
     meters: cfMeters,
     kpis: [
       { label: "Quedan escrituras", value: String(writeMeter.left), sub: `${writeMeter.leftPct}% libre` },
