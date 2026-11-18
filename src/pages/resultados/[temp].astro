@@ -4,13 +4,13 @@ import BackNav from "../../components/BackNav.astro";
 import fixture from "../../data/fixture.json";
 import results from "../../data/results.json";
 import { site } from "../../data/site";
-import { combineResults, matchAnchor, seasonLabel, seasonSlug, weekNumber } from "../../lib/liga.js";
-import { sortCats } from "../../lib/disponibilidad.js";
-import { describeResult } from "../../lib/scoring.js";
 import { isRealPairMatch } from "../../lib/fixturer.js";
+import { combineResults, seasonLabel, seasonSlug, weekNumber, weekSlug } from "../../lib/liga.js";
+import { page } from "../../lib/paths";
 
 export function getStaticPaths() {
-  const pool = combineResults(results, fixture.filter((m: any) => isRealPairMatch(m)));
+  const realMatches = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m));
+  const pool = combineResults(results, realMatches);
   const seasons = [...new Set(pool.map((m) => m.temp || site.currentSeason || "T4"))];
   return seasons.map((temp) => ({
     params: { temp: seasonSlug(temp) },
@@ -19,50 +19,28 @@ export function getStaticPaths() {
 }
 
 const { tempCode } = Astro.props;
-const DAY_ORDER = ["lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado", "domingo"];
-const dayIdx = (d: string) => {
-  const i = DAY_ORDER.indexOf(String(d || "").trim().toLowerCase());
-  return i < 0 ? 99 : i;
-};
-const list = combineResults(results, fixture.filter((m: any) => isRealPairMatch(m)))
-  .filter((m) => (m.temp || site.currentSeason || "T4") === tempCode)
-  .sort((a, b) => {
-    const weeks = weekNumber(a.week) - weekNumber(b.week);
-    if (weeks) return weeks;
-    const byName = String(a.week || "").localeCompare(String(b.week || ""), "es");
-    if (byName) return byName;
-    const days = dayIdx(a.day) - dayIdx(b.day);
-    if (days) return days;
-    return String(a.time || "").localeCompare(String(b.time || ""), "es");
-  })
-  .map((m) => {
-    const info = describeResult(m.result);
-    return {
-      week: m.week || "Sin fecha",
-      day: m.day || "",
-      time: m.time || "",
-      cat: m.cat || "",
-      venue: m.venue || "",
-      court: m.court || "",
-      home: m.home || "",
-      away: m.away || "",
-      result: m.result || "",
-      anchor: matchAnchor(m),
-      scoreText: info?.score || "",
-      setsLabel: info?.label || "",
-      homeWin: info ? !!info.homeWin : null,
-      homePts: info?.homePts ?? null,
-      awayPts: info?.awayPts ?? null,
-    };
-  });
-const weeks = [...new Set(list.map((m) => m.week))];
-const venues = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
-const cats = sortCats(list.map((m) => m.cat).filter(Boolean));
+const real = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m));
+const all = combineResults(results, real);
+const liveKeys = new Set(real.map((m) => `${m.temp || ""}|${m.week || ""}`));
+const list = all.filter((m) => (m.temp || site.currentSeason || "T4") === tempCode);
+const weeks = [...new Set(list.map((m) => m.week || "Sin fecha"))].sort(
+  (a, b) => weekNumber(b) - weekNumber(a) || String(a).localeCompare(String(b), "es")
+);
+const cards = weeks.map((week) => {
+  const weekList = list.filter((m) => (m.week || "Sin fecha") === week);
+  const live = liveKeys.has(`${tempCode}|${week}`);
+  return {
+    week,
+    total: weekList.length,
+    live,
+    href: page(`resultados/${seasonSlug(tempCode)}/${weekSlug(week)}/`),
+  };
+});
+const allHref = page(`resultados/${seasonSlug(tempCode)}/todas/`);
 const title = seasonLabel(tempCode);
 const live = tempCode === site.currentSeason;
-const pending = list.filter((m) => m.homeWin !== true && m.homeWin !== false && !m.result).length;
 ---
-<Layout title={`Resultados ${title} | Padel FB`} description={`Historial de partidos de ${title} de Padel FB en Paraná.`}>
+<Layout title={`Resultados ${title} | Padel FB`} description={`Resultados de ${title} de Padel FB.`}>
   <div class="wrap">
     <header class="page-hero">
       <BackNav crumbs={[
@@ -71,160 +49,26 @@ const pending = list.filter((m) => m.homeWin !== true && m.homeWin !== false && 
       ]} />
       <p class="kicker">{live ? "En juego" : "Histórico"}</p>
       <h1>Resultados · {title}</h1>
-      <p>Todas las fechas, también las que todavía no tienen resultado. Buscá por pareja, complejo o fecha.</p>
+      <p>Elegí la fecha para ver los resultados.</p>
     </header>
 
-    {list.length === 0 ? (
-      <p class="empty" id="empty" style="display:block;padding:48px 0">Sin partidos</p>
+    {cards.length === 0 ? (
+      <p class="empty" style="display:block;padding:48px 0">Todavía no hay resultados en esta temporada.</p>
     ) : (
-      <div class="filters fixture-filters">
-        <input class="search" id="q" type="search" placeholder="Buscar pareja, jugador, complejo o fecha…" autocomplete="off" />
-        <div class="filter-group">
-          <span>Fecha</span>
-          <div class="pills" id="f-weeks">
-            <button class="pill on" data-week="Todas" type="button">Todas</button>
-            {weeks.map((w) => (
-              <button class="pill" data-week={w} type="button">{w}</button>
-            ))}
-          </div>
-        </div>
-        <div class="filter-group">
-          <span>Complejo</span>
-          <div class="pills" id="f-venues">
-            <button class="pill on" data-venue="Todas" type="button">Todos</button>
-            {venues.map((v) => (
-              <button class="pill" data-venue={v} type="button">{v}</button>
-            ))}
-          </div>
-        </div>
-        {cats.length > 0 && (
-          <div class="filter-group">
-            <span>Categoría</span>
-            <div class="pills" id="f-cats">
-              <button class="pill on" data-cat="Todas" type="button">Todas</button>
-              {cats.map((c) => (
-                <button class="pill" data-cat={c} type="button">{c}</button>
-              ))}
-            </div>
-          </div>
-        )}
-        <span class="tag" id="count">{list.length} partidos{pending ? ` · ${pending} sin resultado` : ""}</span>
+      <div class="hub-grid hub-fill">
+        <a class="hub-card" href={allHref}>
+          <p class="kicker" style="margin:0">Temporada</p>
+          <h2>Todas las fechas</h2>
+          <p>{list.length} partido{list.length === 1 ? "" : "s"} · {weeks.length} fecha{weeks.length === 1 ? "" : "s"}</p>
+        </a>
+        {cards.map((c) => (
+          <a class="hub-card" href={c.href}>
+            <p class="kicker" style="margin:0">Fecha{c.live ? " · En juego" : ""}</p>
+            <h2>{c.week}</h2>
+            <p>{c.total} partido{c.total === 1 ? "" : "s"}</p>
+          </a>
+        ))}
       </div>
     )}
-    <div id="result-root" class="result-panel"></div>
-    <p class="empty" id="filtered-empty" hidden>Sin partidos</p>
   </div>
-
-  <script define:vars={{ list }}>
-    const root = document.querySelector("#result-root");
-    const empty = document.querySelector("#filtered-empty");
-    const count = document.querySelector("#count");
-    const q = document.querySelector("#q");
-    if (!root) throw new Error("resultados temporada");
-    let week = "Todas";
-    let venue = "Todas";
-    let cat = "Todas";
-    function esc(s) {
-      return String(s ?? "").replace(/[&<>"']/g, (c) =>
-        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
-      );
-    }
-    function fold(s) {
-      return String(s || "")
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-    }
-    function queryMatches(text, query) {
-      const words = fold(query).split(/[^a-z0-9]+/).filter((w) => w.length > 1);
-      if (!words.length) return true;
-      const tokens = fold(text).split(/[^a-z0-9]+/).filter(Boolean);
-      return words.every((w) => tokens.some((t) => t.startsWith(w)));
-    }
-    const played = (m) => m.homeWin === true || m.homeWin === false;
-    function card(m) {
-      const known = played(m);
-      return `<article class="fixture-row" id="${esc(m.anchor)}">
-        <div class="fixture-meta">
-          <span>${esc(m.time || "Sin horario")}</span>
-          <span>${esc(m.cat)}</span>
-          <span>${esc(m.venue || "Sin complejo")}${m.court ? ` · ${esc(m.court)}` : ""}</span>
-        </div>
-        <div class="fixture-vs">
-          <div class="pair pair-a${m.homeWin ? " winner" : known ? " loser" : ""}">
-            <span class="pair-label">Pareja 1</span>
-            <strong>${esc(m.home)}</strong>
-            ${m.homeWin ? `<span class="pair-won">Ganó</span>` : ""}
-            ${known ? `<span class="pair-pts">${m.homePts} pts</span>` : ""}
-          </div>
-          <span class="vs">vs</span>
-          <div class="pair pair-b${known && !m.homeWin ? " winner" : known ? " loser" : ""}">
-            <span class="pair-label">Pareja 2</span>
-            <strong>${esc(m.away)}</strong>
-            ${known && !m.homeWin ? `<span class="pair-won">Ganó</span>` : ""}
-            ${known ? `<span class="pair-pts">${m.awayPts} pts</span>` : ""}
-          </div>
-        </div>
-        <div class="fixture-score">${
-          known
-            ? `<b>${esc(m.scoreText)}</b><span>${esc(m.setsLabel)}</span>`
-            : m.result
-              ? `<b>${esc(m.result)}</b>`
-              : `<span class="tag">Sin resultado</span>`
-        }</div>
-      </article>`;
-    }
-    function render() {
-      const term = fold((q?.value || "").trim());
-      const rows = list.filter((m) => {
-        const okWeek = week === "Todas" || m.week === week;
-        const okVenue = venue === "Todas" || m.venue === venue;
-        const okCat = cat === "Todas" || m.cat === cat;
-        const blob = fold([m.home, m.away, m.venue, m.week, m.cat, m.day, m.court].filter(Boolean).join(" "));
-        return okWeek && okVenue && okCat && queryMatches(blob, term);
-      });
-      const weekNames = [...new Set(rows.map((m) => m.week || "Sin fecha"))];
-      root.innerHTML = rows.length
-        ? weekNames
-            .map((name) => {
-              const games = rows.filter((m) => (m.week || "Sin fecha") === name);
-              const days = [...new Set(games.map((m) => m.day || "Sin día"))];
-              return `<section class="fixture-week">
-                <h2 class="kicker" style="margin:8px 0 4px">${esc(name)}</h2>
-                ${days
-                  .map((day) => {
-                    const dayGames = games.filter((m) => (m.day || "Sin día") === day);
-                    return `<h3 class="kicker" style="margin:18px 0 10px">${esc(day)}</h3>
-                      <div class="fixture-list">${dayGames.map(card).join("")}</div>`;
-                  })
-                  .join("")}
-              </section>`;
-            })
-            .join("")
-        : "";
-      if (empty) empty.hidden = rows.length > 0 || list.length === 0;
-      if (count) {
-        const open = rows.filter((m) => !played(m) && !m.result).length;
-        count.textContent =
-          rows.length +
-          (rows.length === 1 ? " partido" : " partidos") +
-          (open ? ` · ${open} sin resultado` : "");
-      }
-    }
-    function bind(selector, key, setter) {
-      document.querySelectorAll(selector).forEach((btn) => {
-        btn.addEventListener("click", () => {
-          document.querySelectorAll(selector).forEach((b) => b.classList.remove("on"));
-          btn.classList.add("on");
-          setter(btn.dataset[key]);
-          render();
-        });
-      });
-    }
-    q?.addEventListener("input", render);
-    bind("#f-weeks .pill", "week", (v) => { week = v; });
-    bind("#f-venues .pill", "venue", (v) => { venue = v; });
-    bind("#f-cats .pill", "cat", (v) => { cat = v; });
-    render();
-  </script>
 </Layout>
