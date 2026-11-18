@@ -1270,5 +1270,17 @@
       "Viernes": "17:00 - 20:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwmn8h7r9aba",
+    "createdAt": "2026-11-18T21:38:47.463Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Melina Drabble",
+    "p2": "Cecilia García Formenti",
+    "days": {
+      "Sábado": "10:30 - 00:00"
+    },
+    "note": ""
   }
 ]
