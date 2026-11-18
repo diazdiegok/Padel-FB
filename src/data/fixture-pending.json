@@ -2,6 +2,53 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 18:00 - 00:00 · Martes 18:00 - 00:00 · Miércoles 18:30 - 00:00 · Jueves 18:00 - 00:00 · Viernes 18:00 - 00:00 · Sábado 18:00 - 00:00",
+    "days": {
+      "Lunes": "18:00 - 00:00",
+      "Martes": "18:00 - 00:00",
+      "Miércoles": "18:30 - 00:00",
+      "Jueves": "18:00 - 00:00",
+      "Viernes": "18:00 - 00:00",
+      "Sábado": "18:00 - 00:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Soraya Campostrini Labour / Catalina Otamendi",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 18:00 - 21:00 · Miércoles 18:00 - 21:00 · Sábado 17:00 - 20:00",
+    "days": {
+      "Lunes": "18:00 - 21:00",
+      "Miércoles": "18:00 - 21:00",
+      "Sábado": "17:00 - 20:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Rocio Feltes / Sofia Kamlopky",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Lunes 19:00 - 21:00 · Viernes 19:00 - 21:00",
     "days": {
       "Lunes": "19:00 - 21:00",
