@@ -162,31 +162,6 @@
   },
   {
     "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 16:00 - 00:00 · Martes 16:00 - 00:00 · Miércoles 16:00 - 00:00 · Jueves 16:00 - 00:00 · Viernes 16:00 - 00:00 · Sábado 16:00 - 00:00",
-    "days": {
-      "Lunes": "16:00 - 00:00",
-      "Martes": "16:00 - 00:00",
-      "Miércoles": "16:00 - 00:00",
-      "Jueves": "16:00 - 00:00",
-      "Viernes": "16:00 - 00:00",
-      "Sábado": "16:00 - 00:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Diego Ramirez / Martin Rondan",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
     "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
     "avail": "Lunes 17:00 - 19:00 · Miércoles 17:00 - 19:00 · Viernes 17:00 - 00:00",
     "days": {
@@ -269,29 +244,6 @@
     "venue": "",
     "court": "",
     "home": "Juan Claudio Arredondo / Estanislao Julián Coronel",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
-    "avail": "Lunes 20:00 - 00:00 · Martes 20:00 - 00:00 · Jueves 20:00 - 00:00 · Viernes 20:00 - 00:00",
-    "days": {
-      "Lunes": "20:00 - 00:00",
-      "Martes": "20:00 - 00:00",
-      "Jueves": "20:00 - 00:00",
-      "Viernes": "20:00 - 00:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Gustavo Zappala / Gonzalo Pérez",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""

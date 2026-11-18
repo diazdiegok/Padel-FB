@@ -511,5 +511,19 @@
     "result": "",
     "appliedResult": "",
     "flexAvail": true
+  },
+  {
+    "week": "Fecha 1",
+    "day": "Jueves",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "22:00 - 23:30",
+    "venue": "Palermo Padel",
+    "court": "Cancha 1",
+    "home": "Diego Ramirez / Martin Rondan",
+    "away": "Gustavo Zappala / Gonzalo Pérez",
+    "result": "",
+    "appliedResult": ""
   }
 ]
