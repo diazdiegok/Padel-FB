@@ -34,10 +34,7 @@ const DAY_ALIASES = {
 const DAY_END = 24 * 60;
 /** Dentro de un rango (ej. 16:30-21:00) los partidos de 90' pueden empezar cada 30'. */
 const START_STEP = 30;
-/**
- * Si ese día el complejo no tiene partidos, el horario del Sheet se estira
- * 1:30 para cada lado. Así un rango que llega hasta las 17 también ofrece 17:00-18:30.
- */
+/** Margen máximo (en minutos) que puede aflojar la disponibilidad de la pareja para entrar en «cercanos». */
 export const FREE_COURT_MARGIN = 90;
 
 function fold(s) {
@@ -257,33 +254,9 @@ export function courtDayIsOpen(day, venue, court, taken = []) {
   });
 }
 
-export function widenUnusedCourtWindows(slots = [], taken = [], margin = FREE_COURT_MARGIN) {
-  const pad = Math.max(0, Number(margin) || 0);
-  if (!pad) return slots || [];
-  const used = new Set();
-  for (const m of taken || []) {
-    const day = normalizeDay(m?.day);
-    if (!day || !String(m?.venue || "").trim() || !String(m?.court || "").trim()) continue;
-    if (!parseCourtWindow(m.time)) continue;
-    used.add(courtDayKey(day, m.venue, m.court));
-  }
-  return (slots || []).map((s) => {
-    const day = normalizeDay(s.day);
-    if (!day || used.has(courtDayKey(day, s.venue, s.court))) return s;
-    const from = Math.max(0, Number(s.from) - pad);
-    const to = Math.min(DAY_END, Number(s.to) + pad);
-    if (!(to - from >= MATCH_MINUTES) || (from === s.from && to === s.to)) return s;
-    return {
-      ...s,
-      from,
-      to,
-      single: false,
-      time: clockRange(from, to),
-      capacity: Math.max(1, windowCapacity(from, to)),
-      _sheetFrom: Number.isFinite(s._sheetFrom) ? s._sheetFrom : s.from,
-      _sheetTo: Number.isFinite(s._sheetTo) ? s._sheetTo : s.to,
-    };
-  });
+/** Las canchas libres conservan el horario exacto del Drive (no se inventan turnos). */
+export function widenUnusedCourtWindows(slots = []) {
+  return Array.isArray(slots) ? slots : [];
 }
 
 function fitsWindowMargin(days, slot, margin) {

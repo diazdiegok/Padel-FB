@@ -63,7 +63,6 @@ import {
   rematchForCourts,
   summarizeCourtSlots,
   weekFromName,
-  widenUnusedCourtWindows,
 } from "../lib/slots.js";
 import { $, confirmModal, escAttr, noticeModal, setBusy, setMsg, toast } from "./ui.js";
 
@@ -240,7 +239,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         homeDays: match.homeDays || daysOfPair(match.home, match.cat),
         awayDays: match.awayDays || daysOfPair(match.away, match.cat),
       },
-      widenUnusedCourtWindows(loadedSlots, taken),
+      loadedSlots,
       taken
     );
   }
@@ -286,8 +285,6 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       return { opts: [], nearOpts: [], estimateOpts: [], homeDays, coverDays: null, bothPending, shareWindow: false };
     }
     const taken = takenCourts(match);
-    // Jueves en Américas no tiene partidos: el rango del Sheet se estira 1:30.
-    const offerSlots = widenUnusedCourtWindows(loadedSlots, taken);
     const opts = driveCourtOptions(
       {
         week: match.week,
@@ -303,14 +300,14 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         homeDays,
         awayDays: coverDays,
       },
-      offerSlots,
+      loadedSlots,
       taken,
       { softAway: false }
     );
     // Exactos arriba. Después cercanos (desfase chico) y, si no coinciden,
     // todas las canchas libres del Drive como horarios estimables.
     const exactKeys = new Set(opts.map((o) => o.key));
-    const flex = nearCoverCourtOptions({ homeDays, awayDays: coverDays }, offerSlots, taken, {
+    const flex = nearCoverCourtOptions({ homeDays, awayDays: coverDays }, loadedSlots, taken, {
       includeFar: true,
     }).filter((o) => !exactKeys.has(o.key));
     const nearOptsAll = flex.filter((o) => o.close);
