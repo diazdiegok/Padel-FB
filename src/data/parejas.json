@@ -1227,5 +1227,19 @@
       "Jueves": "18:00 - 22:30"
     },
     "note": ""
+  },
+  {
+    "id": "pmwlcze50dc75",
+    "createdAt": "2026-11-18T00:04:01.236Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Juan claudio Arredondo",
+    "p2": "Estanislao Julián Coronel",
+    "days": {
+      "Lunes": "18:30 - 00:00",
+      "Martes": "18:30 - 00:00",
+      "Jueves": "18:30 - 00:00"
+    },
+    "note": ""
   }
 ]
