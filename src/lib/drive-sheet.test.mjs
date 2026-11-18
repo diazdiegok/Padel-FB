@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { mergeDriveFixtureRows, parseDriveSheetValues, pendingDriveRows } from "./drive-sheet.js";
+import { pairsMatch } from "./scoring.js";
 
 const header = ["Fecha", "Dia", "Horario", "Categoria", "Complejo", "Cancha", "Pareja 1", "Pareja 2", "Resultado"];
 
@@ -104,11 +105,17 @@ const pending = pendingDriveRows(
       result: "6/4 6/3",
     },
   ],
-  (m) => Object.entries(m.days || {}).map(([d, h]) => `${d} ${h}`).join(" · ")
+  (m) => Object.entries(m.days || {}).map(([d, h]) => `${d} ${h}`).join(" · "),
+  (m) =>
+    pairsMatch(m.home, "Marien Robledo / Valeria Joubert")
+      ? { tel1: "5493411111111", tel2: "5493412222222" }
+      : {}
 );
 assert.equal(pending.length, 1, "el partido con resultado no va a pendientes");
 assert.equal(pending[0].puede, "Lunes 19:00 - 21:00");
 assert.equal(pending[0].nota, "Su rival ya no está inscripto.");
 assert.equal(pending[0].pareja, "Marien Robledo / Valeria Joubert");
+assert.equal(pending[0].whatsapp1, "5493411111111");
+assert.equal(pending[0].whatsapp2, "5493412222222");
 
 console.log("drive-sheet.test.mjs passed");

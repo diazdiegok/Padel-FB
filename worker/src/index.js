@@ -2838,11 +2838,13 @@ async function writeFixtureDriveSheet(env, { sheetId, week = "", rows = [] } = {
   };
 }
 
-const PENDING_DRIVE_HEADERS = ["Fecha", "Categoria", "Pareja", "Puede", "Nota"];
+const PENDING_DRIVE_HEADERS = ["Fecha", "Categoria", "Pareja", "WhatsApp 1", "WhatsApp 2", "Puede", "Nota"];
 const PENDING_DRIVE_HEADER_KEY = {
   Fecha: "fecha",
   Categoria: "categoria",
   Pareja: "pareja",
+  "WhatsApp 1": "whatsapp1",
+  "WhatsApp 2": "whatsapp2",
   Puede: "puede",
   Nota: "nota",
 };
@@ -3039,8 +3041,22 @@ async function writePendingDriveSheet(env, { sheetId, week = "", rows = [] } = {
           },
           {
             updateDimensionProperties: {
-              range: { sheetId: tabId, dimension: "COLUMNS", startIndex: 2, endIndex: 5 },
-              properties: { pixelSize: 320 },
+              range: { sheetId: tabId, dimension: "COLUMNS", startIndex: 2, endIndex: 3 },
+              properties: { pixelSize: 280 },
+              fields: "pixelSize",
+            },
+          },
+          {
+            updateDimensionProperties: {
+              range: { sheetId: tabId, dimension: "COLUMNS", startIndex: 3, endIndex: 5 },
+              properties: { pixelSize: 140 },
+              fields: "pixelSize",
+            },
+          },
+          {
+            updateDimensionProperties: {
+              range: { sheetId: tabId, dimension: "COLUMNS", startIndex: 5, endIndex: 7 },
+              properties: { pixelSize: 280 },
               fields: "pixelSize",
             },
           },

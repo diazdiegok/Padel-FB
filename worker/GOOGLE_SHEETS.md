@@ -32,6 +32,7 @@ https://docs.google.com/spreadsheets/d/1-iy8HSNkDDUJg4do08aydAK1MMtfhqrWmO4PGebk
 
 - El mismo botón **Pegar en Drive** lo actualiza después de pegar resultados
 - **Una pestaña por fecha**. Quien ya tiene partido deja de figurar
-- Columnas: Fecha, Categoria, Pareja, Puede, Nota
+- Columnas: Fecha, Categoria, Pareja, WhatsApp 1, WhatsApp 2, Puede, Nota
+- `WhatsApp 1` / `WhatsApp 2` salen de los contactos de la inscripción (solo en este sheet)
 - `Puede` es la disponibilidad de la inscripción (ej. `Lunes 19:00 - 21:00`)
 - Compartido con el `client_email` de la cuenta de servicio como **Editor**

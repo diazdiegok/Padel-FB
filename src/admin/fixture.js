@@ -1796,16 +1796,43 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       return parsed.filter((row) => !fold(row.fecha) || fold(row.fecha) === want);
     }
 
-    function pendingRowsForWeek() {
+    function phonesOfPending(m) {
+      const season = String(filterTemp || m?.temp || "").toUpperCase();
+      const found = (ctx.pairs || []).find((p) => {
+        if (String(p.temp || "").toUpperCase() !== season) return false;
+        if (m?.cat && p.cat && p.cat !== m.cat) return false;
+        return pairsMatch(pairLabel(p), m.home);
+      });
+      if (!found?.id) return { tel1: "", tel2: "" };
+      const c = ctx.contacts?.[found.id] || {};
+      return { tel1: c.tel1 || "", tel2: c.tel2 || "" };
+    }
+
+    async function ensureContactsLoaded() {
+      if (ctx.contacts && Object.keys(ctx.contacts).length) return;
+      try {
+        const remote = await api.worker("/pairs/contacts");
+        ctx.contacts = remote && typeof remote === "object" ? remote : {};
+      } catch {
+        ctx.contacts = ctx.contacts || {};
+      }
+    }
+
+    async function pendingRowsForWeek() {
+      await ensureContactsLoaded();
       const list = (ctx.fixture || []).filter(
         (m) => seasonOf(m) === filterTemp && (m.week || "") === filterWeek && isPending(m) && !m.dupHold
       );
-      return pendingDriveRows(list, (m) => availHint(daysOfPair(m.home, m.cat) || m.homeDays || m.days));
+      return pendingDriveRows(
+        list,
+        (m) => availHint(daysOfPair(m.home, m.cat) || m.homeDays || m.days),
+        phonesOfPending
+      );
     }
 
     $("fx-drive-paste")?.addEventListener("click", async () => {
       const unique = exportableMatches({ includePending: false });
-      const pendingRows = pendingRowsForWeek();
+      const pendingRows = await pendingRowsForWeek();
       if (!unique.length && !pendingRows.length) {
         toast("No hay partidos ni pendientes para pegar en esta fecha.", "err");
         return;

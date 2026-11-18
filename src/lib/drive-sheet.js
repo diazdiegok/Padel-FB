@@ -103,8 +103,8 @@ export function mergeDriveFixtureRows(existingRows = [], incomingRows = []) {
   return { rows: out, kept: locked.length, keptExtra };
 }
 
-/** Una fila por pareja pendiente, con el horario en que puede. */
-export function pendingDriveRows(matches = [], puedeOf = () => "") {
+/** Una fila por pareja pendiente, con el horario en que puede y sus WhatsApp. */
+export function pendingDriveRows(matches = [], puedeOf = () => "", phonesOf = () => ({})) {
   return (matches || [])
     .filter((m) => isPendingMatch(m))
     .map((m) => {
@@ -113,10 +113,13 @@ export function pendingDriveRows(matches = [], puedeOf = () => "") {
       if (owed) bits.push(`Le falta 1 partido en ${owed}.`);
       const reason = String(m?.reason || "").trim();
       if (reason) bits.push(reason);
+      const phones = phonesOf(m) || {};
       return {
         fecha: String(m?.week || "").trim(),
         categoria: String(m?.cat || "").trim(),
         pareja: String(m?.home || "").trim(),
+        whatsapp1: String(phones.tel1 || phones.whatsapp1 || "").trim(),
+        whatsapp2: String(phones.tel2 || phones.whatsapp2 || "").trim(),
         puede: String(puedeOf(m) || "").trim(),
         nota: bits.join(" "),
       };
