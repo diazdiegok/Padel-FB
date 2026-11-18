@@ -577,7 +577,8 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
       const pairs = seasonPairs()
         .map(({ p }) => p)
         .filter((p) => p.p1 && p.p2 && p.cat);
-      const { removed: dropped, renamed } = syncRankingToSeasonPairs(ctx.rows || [], pairs, temp);
+      const history = [...(ctx.results || []), ...(ctx.fixture || [])];
+      const { removed: dropped, renamed } = syncRankingToSeasonPairs(ctx.rows || [], pairs, temp, history);
       const added = addPairsToRanking(ctx.rows || [], pairs);
       if (!dropped.length && !added.length && !renamed.length) {
         toast("El ranking ya estaba alineado", "ok");
@@ -753,12 +754,19 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
           ? findPairIndex(ctx.rows || [], `${pair.p1} / ${pair.p2}`, pair.cat, pair.temp || season())
           : -1;
       const rankRow = rankIdx >= 0 ? ctx.rows[rankIdx] : null;
-      const hasStats = rankRow && (Number(rankRow.pts) || Number(rankRow.pj));
+      const history = [...(ctx.results || []), ...(ctx.fixture || [])];
+      const played = history.some(
+        (m) =>
+          String(m?.result || "").trim() &&
+          String(m?.temp || season()).toUpperCase() === String(pair.temp || season()).toUpperCase() &&
+          (pairsMatch(m.home, label) || pairsMatch(m.away, label))
+      );
+      const hasHistory = played || (rankRow && (Number(rankRow.pts) > 0 || Number(rankRow.pj) > 0));
       const ok = await confirmModal({
         title: "Quitar pareja",
-        body: hasStats
-          ? `${label} se quita de las inscripciones y del ranking (${Number(rankRow.pts) || 0} pts, ${Number(rankRow.pj) || 0} PJ). Si tenía partido en el fixture, el rival queda pendiente. Publicá parejas (y fixture si hace falta) para confirmarlo.`
-          : `${label} se quita de las inscripciones y del ranking. Si tenía partido, el rival queda pendiente. Publicá para confirmarlo.`,
+        body: hasHistory
+          ? `${label} se quita de las inscripciones. En esta fecha el partido se desarma y el rival queda pendiente. Ellos no salen más en esta fecha ni en las próximas. Ranking, fechas ya jugadas y resultados quedan. Publicá parejas para confirmarlo.`
+          : `${label} se quita de las inscripciones y del ranking. Si tenía partido en esta fecha, el rival queda pendiente. Publicá para confirmarlo.`,
         confirmLabel: "Quitar",
         danger: true,
       });
@@ -769,7 +777,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
       contactsDirty.add(pair.id);
       api.worker("/pairs/payment/delete", { id: pair.id }).catch(() => {});
       ctx.pairs.splice(Number(btn.dataset.pairDel), 1);
-      if (removePairsFromRanking(ctx.rows || [], [pair]).length) {
+      if (!hasHistory && removePairsFromRanking(ctx.rows || [], [pair]).length) {
         shell.markDirty("ranking");
         onRankingChanged?.();
       }
@@ -813,7 +821,8 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
         const seasonPairs = next.filter((p) => p.temp === season());
         const ranking = await api.readRemoteJson(RANK_PATH, []);
         const rankRows = Array.isArray(ranking) ? ranking : [];
-        const { removed: dropped, renamed } = syncRankingToSeasonPairs(rankRows, seasonPairs, season());
+        const history = [...(ctx.results || []), ...(ctx.fixture || [])];
+        const { removed: dropped, renamed } = syncRankingToSeasonPairs(rankRows, seasonPairs, season(), history);
         const toRanking = addPairsToRanking(rankRows, seasonPairs);
         const rankingChanged = dropped.length > 0 || toRanking.length > 0 || renamed.length > 0;
         const closing = config.open === false;

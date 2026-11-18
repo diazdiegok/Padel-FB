@@ -190,12 +190,25 @@ function bestSeasonPairForRow(row, seasonPairs) {
 }
 
 /**
- * Deja en `temp` solo filas que coincidan con inscripciones vigentes.
+ * Deja en `temp` las filas que siguen inscriptas, más las que ya jugaron.
+ * Una baja con partidos jugados se queda en el ranking. Sin partidos, sale.
  * Si matchean, el nombre del ranking pasa a ser el de la inscripción (p1 / p2).
  * Otras temporadas no se tocan.
  * @returns {{ removed: object[], renamed: { from: string, to: string, cat: string }[] }}
  */
-export function syncRankingToSeasonPairs(rows, pairs, temp) {
+function rowHasHistory(row, matches, season) {
+  if (Number(row?.pj) > 0 || Number(row?.pts) > 0) return true;
+  const name = row?.name || "";
+  return (matches || []).some(
+    (m) =>
+      String(m?.temp || "").toUpperCase() === season &&
+      String(m?.result || "").trim() &&
+      (!row?.cat || !m.cat || m.cat === row.cat) &&
+      (pairsMatch(m.home, name) || pairsMatch(m.away, name))
+  );
+}
+
+export function syncRankingToSeasonPairs(rows, pairs, temp, matches = []) {
   const empty = { removed: [], renamed: [] };
   const season = String(temp || "").toUpperCase();
   if (!season || !Array.isArray(rows)) return empty;
@@ -213,6 +226,10 @@ export function syncRankingToSeasonPairs(rows, pairs, temp) {
     }
     const matched = bestSeasonPairForRow(row, seasonPairs);
     if (!matched) {
+      if (rowHasHistory(row, matches, season)) {
+        keep.push(row);
+        continue;
+      }
       removed.push(row);
       continue;
     }

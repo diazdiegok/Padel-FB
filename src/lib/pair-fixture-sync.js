@@ -1,5 +1,6 @@
 import { DAYS, pairLabel } from "./disponibilidad.js";
 import { PENDING_AWAY, isPendingMatch, isPlaceholderPair, isRealPairMatch } from "./fixturer.js";
+import { weekNumber } from "./liga.js";
 import { fold, pairsMatch } from "./scoring.js";
 
 function availText(days) {
@@ -71,14 +72,30 @@ function playsInWeek(matches, name, week, temp) {
   });
 }
 
+function hasResult(m) {
+  return String(m?.result || "").trim().length > 0;
+}
+
+/** Fechas anteriores a la que se está armando: el partido ya es historial. */
+function isPastWeek(week, liveWeek) {
+  const live = weekNumber(liveWeek);
+  const n = weekNumber(week);
+  if (!live || !n) return false;
+  return n < live;
+}
+
 /**
  * Alinea el fixture (y pendientes) con las inscripciones de la temporada.
  *
- * - Pareja borrada: el rival queda pendiente (sin cancha); el partido viejo se saca.
+ * - Pareja dada de baja en la fecha en curso o en una posterior, sin resultado:
+ *   ese partido se desarma y el rival queda pendiente. La baja no queda pendiente
+ *   ni vuelve a entrar.
+ * - Fechas anteriores a `historyWeek` (o a `liveWeek`), y cualquier partido con resultado, se conservan.
  * - Cambio de categoría: ambas puntas del partido pasan a pendiente en su cat actual.
  * - Pareja nueva: entra como pendiente en `liveWeek` (si se indica).
  */
-export function syncFixtureWithPairs({ matches = [], pairs = [], temp = "", liveWeek = "" } = {}) {
+export function syncFixtureWithPairs({ matches = [], pairs = [], temp = "", liveWeek = "", historyWeek = "" } = {}) {
+  const cutoff = historyWeek || liveWeek;
   const season = String(temp || "").toUpperCase();
   const inscribed = seasonPairs(pairs, season);
   const byName = new Map();
@@ -162,6 +179,12 @@ export function syncFixtureWithPairs({ matches = [], pairs = [], temp = "", live
         away: pairLabel(awayEntry),
         cat: homeCat || awayCat || m.cat,
       });
+      continue;
+    }
+
+    // Historial: fechas ya pasadas, o un partido con resultado, no se desarman.
+    if ((!homeOk || !awayOk) && (isPastWeek(m.week, cutoff) || hasResult(m))) {
+      out.push(m);
       continue;
     }
 

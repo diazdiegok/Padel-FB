@@ -2407,17 +2407,17 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
    */
   function syncFromPairs({ toastResult = true } = {}) {
     const temp = ctx.siteData.currentSeason || filterTemp || "T4";
-    const liveWeek =
-      filterWeek ||
-      latestWeek((ctx.fixture || []).filter((m) => seasonOf(m) === temp && !isPending(m))) ||
-      latestWeek((ctx.fixture || []).filter((m) => seasonOf(m) === temp)) ||
-      "Fecha 1";
+    const seasonMatches = (ctx.fixture || []).filter((m) => seasonOf(m) === temp);
+    const historyWeek =
+      latestWeek(seasonMatches.filter((m) => !isPending(m))) || latestWeek(seasonMatches) || "Fecha 1";
+    const liveWeek = filterWeek || historyWeek;
     const before = JSON.stringify(ctx.fixture || []);
     const synced = syncFixtureWithPairs({
       matches: ctx.fixture || [],
       pairs: ctx.pairs || [],
       temp,
       liveWeek,
+      historyWeek,
     });
     ctx.fixture = synced.matches.map((m) => cleanMatch(m, {}, temp));
     const changed = JSON.stringify(ctx.fixture) !== before;

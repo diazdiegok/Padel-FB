@@ -168,4 +168,89 @@ const pairs = [
   assert.ok(rows.some((m) => !m.recoverFrom));
 }
 
+{
+  const past = {
+    week: "Fecha 1",
+    temp,
+    cat: "C Femenino",
+    day: "Lunes",
+    time: "21:00",
+    venue: "La Emilia",
+    court: "1",
+    home: "Milagros Solaro / Ana Paula Croce",
+    away: "Marien Robledo / Valeria Joubert",
+    result: "6/4 6/3",
+  };
+  const current = {
+    week: "Fecha 5",
+    temp,
+    cat: "C Femenino",
+    day: "Lunes",
+    time: "22:00",
+    venue: "La Emilia",
+    court: "2",
+    home: "Milagros Solaro / Ana Paula Croce",
+    away: "Marien Robledo / Valeria Joubert",
+  };
+  const earlierOpen = {
+    week: "Fecha 4",
+    temp,
+    cat: "C Femenino",
+    day: "Lunes",
+    time: "19:30",
+    venue: "Open Padel",
+    court: "1",
+    home: "Marien Robledo / Valeria Joubert",
+    away: "Milagros Solaro / Ana Paula Croce",
+  };
+  const later = {
+    week: "Fecha 6",
+    temp,
+    cat: "C Femenino",
+    day: "Lunes",
+    time: "20:00",
+    venue: "Open Padel",
+    court: "3",
+    home: "Marien Robledo / Valeria Joubert",
+    away: "Milagros Solaro / Ana Paula Croce",
+  };
+  const out = syncFixtureWithPairs({
+    matches: [past, earlierOpen, current, later],
+    pairs: pairs.filter((p) => p.p1 !== "Milagros Solaro"),
+    temp,
+    liveWeek: "Fecha 1",
+    historyWeek: "Fecha 5",
+  });
+  const kept = out.matches.find((m) => m.week === "Fecha 1" && m.result);
+  assert.ok(kept, "la fecha ya jugada queda");
+  assert.equal(kept.venue, "La Emilia");
+  assert.equal(kept.home, "Milagros Solaro / Ana Paula Croce");
+  const fecha4 = out.matches.find((m) => m.week === "Fecha 4" && !isPendingMatch(m));
+  assert.ok(fecha4, "una fecha anterior sin resultado también queda");
+  assert.equal(fecha4.venue, "Open Padel");
+  assert.ok(
+    !out.matches.some(
+      (m) =>
+        (m.week === "Fecha 5" || m.week === "Fecha 6") &&
+        !isPendingMatch(m) &&
+        (pairsMatch(m.home, "Milagros Solaro / Ana Paula Croce") || pairsMatch(m.away, "Milagros Solaro / Ana Paula Croce"))
+    ),
+    "la baja no queda en la fecha en curso ni en las próximas"
+  );
+  const rival = out.matches.filter(
+    (m) => m.week === "Fecha 5" && isPendingMatch(m) && pairsMatch(m.home, "Marien Robledo / Valeria Joubert")
+  );
+  assert.equal(rival.length, 1, "el rival de la fecha en curso pasa a pendiente");
+  assert.equal(rival[0].venue, "");
+  assert.ok(
+    out.matches.some((m) => m.week === "Fecha 6" && isPendingMatch(m) && pairsMatch(m.home, "Marien Robledo / Valeria Joubert")),
+    "en la fecha siguiente también queda pendiente el rival"
+  );
+  assert.ok(
+    !out.matches.some((m) => isPendingMatch(m) && pairsMatch(m.home, "Milagros Solaro / Ana Paula Croce")),
+    "la baja no pasa a pendiente"
+  );
+  console.log("ok: la baja conserva el historial y desarma solo la fecha en curso y las próximas");
+}
+
 console.log("pair-fixture-sync ok");

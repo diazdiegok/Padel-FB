@@ -26,16 +26,42 @@ import { addPairsToRanking, syncRankingToSeasonPairs } from "./scoring.js";
 }
 
 {
-  const rows = [{ name: "Vieja / Pareja", cat: "6ta", pts: 3, pj: 1, dif: 0, pos: 1, temp: "T5" }];
+  const rows = [
+    { name: "Vieja / Pareja", cat: "6ta", pts: 3, pj: 1, dif: 0, pos: 1, temp: "T5" },
+    { name: "Nunca / Jugo", cat: "6ta", pts: 0, pj: 0, dif: 0, pos: 2, temp: "T5" },
+  ];
   const pairs = [{ p1: "Nueva", p2: "Completa", cat: "6ta", temp: "T5" }];
   const { removed, renamed } = syncRankingToSeasonPairs(rows, pairs, "T5");
   assert.equal(renamed.length, 0);
   assert.equal(removed.length, 1);
-  assert.equal(rows.length, 0);
+  assert.equal(removed[0].name, "Nunca / Jugo");
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].name, "Vieja / Pareja");
+  assert.equal(rows[0].pts, 3);
   const added = addPairsToRanking(rows, pairs);
   assert.deepEqual(added, ["Nueva / Completa"]);
-  assert.equal(rows[0].pts, 0);
-  console.log("ok: unmatched row dropped, new pair added at 0");
+  assert.equal(rows.find((r) => r.name === "Nueva / Completa").pts, 0);
+  console.log("ok: la baja con partidos queda en el ranking; sin partidos, sale");
+}
+
+{
+  const rows = [{ name: "Milagros Solaro / Ana Paula Croce", cat: "C Femenino", pts: 0, pj: 0, dif: 0, pos: 1, temp: "T5" }];
+  const pairs = [{ p1: "Marien Robledo", p2: "Valeria Joubert", cat: "C Femenino", temp: "T5" }];
+  const matches = [
+    {
+      temp: "T5",
+      cat: "C Femenino",
+      week: "Fecha 1",
+      result: "6/4 6/3",
+      home: "Milagros Solaro / Ana Paula Croce",
+      away: "Marien Robledo / Valeria Joubert",
+    },
+  ];
+  const { removed } = syncRankingToSeasonPairs(rows, pairs, "T5", matches);
+  assert.equal(removed.length, 0);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].name, "Milagros Solaro / Ana Paula Croce");
+  console.log("ok: un resultado jugado alcanza para quedar en el ranking");
 }
 
 {
