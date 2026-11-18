@@ -37,7 +37,7 @@ import {
   syncFixtureWithPairs,
 } from "../lib/pair-fixture-sync.js";
 import { mergeDriveFixtureRows, parseDriveSheetValues, pendingDriveRows } from "../lib/drive-sheet.js";
-import { fold, pairsMatch } from "../lib/scoring.js";
+import { fold, pairsMatch, preserveRemoteMatchScores } from "../lib/scoring.js";
 import {
   courtsSheetIdForSeason,
   DEFAULT_FIXTURE_DRIVE_SHEET_ID,
@@ -2465,7 +2465,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         ]);
         const carryLive = remoteLive.filter((m) => !replacing.has(weekKey(m)));
         const carryPending = remotePending.filter((m) => isPending(m) && !replacing.has(weekKey(m)));
-        let nextPublished = [...carryLive, ...regularLive];
+        // El borrador local puede no traer scores: no borrar result/appliedResult ya publicados.
+        const liveWithScores = preserveRemoteMatchScores(regularLive, remoteLive);
+        let nextPublished = [...carryLive, ...liveWithScores];
         const nextPending = [...carryPending, ...draftPending, ...draftDup];
         const keptWeeks = new Set([...nextPublished, ...nextPending.filter((m) => !m.recoverFrom)].map(weekKey));
         const toArchive = remoteLive.filter((m) => isRealPairMatch(m) && !m.recoverFrom && !keptWeeks.has(weekKey(m)));

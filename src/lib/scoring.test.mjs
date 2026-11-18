@@ -117,4 +117,55 @@ import { addPairsToRanking, syncRankingToSeasonPairs } from "./scoring.js";
   console.log("ok: el score se lee con / y se muestra con /");
 }
 
+{
+  const { applyFixtureResults, preserveRemoteMatchScores } = await import("./scoring.js");
+  const remote = [
+    {
+      week: "Fecha 1",
+      temp: "T5",
+      cat: "A Masculina",
+      home: "Julián Gea / Joaquín Gea",
+      away: "Mariano Carrere / Tomas Castillo",
+      result: "6/3 7/5",
+      appliedResult: "6/3 7/5",
+    },
+  ];
+  const local = [
+    {
+      week: "Fecha 1",
+      temp: "T5",
+      cat: "A Masculina",
+      home: "Julián Gea / Joaquín Gea",
+      away: "Mariano Carrere / Tomas Castillo",
+      day: "Martes",
+      time: "16:30 - 18:00",
+      result: "",
+      appliedResult: "",
+    },
+  ];
+  const kept = preserveRemoteMatchScores(local, remote);
+  assert.equal(kept[0].result, "6/3 7/5");
+  assert.equal(kept[0].appliedResult, "6/3 7/5");
+
+  const ranking = [
+    { name: "Julián Gea / Joaquín Gea", cat: "A Masculina", pts: 3, pj: 1, dif: 2, pos: 1, temp: "T5" },
+    { name: "Mariano Carrere / Tomas Castillo", cat: "A Masculina", pts: 0, pj: 1, dif: -2, pos: 2, temp: "T5" },
+  ];
+  const match = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "A Masculina",
+    home: "Julián Gea / Joaquín Gea",
+    away: "Mariano Carrere / Tomas Castillo",
+    result: "6-3 7-5",
+    appliedResult: "6/3 7/5",
+  };
+  const report = applyFixtureResults(ranking, [match]);
+  assert.equal(report.applied, 0, "mismo score con otro formato no vuelve a sumar");
+  assert.equal(ranking[0].pj, 1);
+  assert.equal(ranking[0].pts, 3);
+  assert.equal(match.appliedResult, "6/3 7/5");
+  console.log("ok: no se pisan scores al republicar ni se dobla el PJ por formato");
+}
+
 console.log("scoring.test.mjs passed");

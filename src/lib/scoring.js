@@ -298,6 +298,39 @@ export function recomputePositions(rows) {
   return rows;
 }
 
+function sameMatchup(a, b) {
+  if (!a || !b) return false;
+  if (String(a.week || "") !== String(b.week || "")) return false;
+  if (String(a.temp || "").toUpperCase() !== String(b.temp || "").toUpperCase()) return false;
+  if (String(a.cat || "") && String(b.cat || "") && String(a.cat) !== String(b.cat)) return false;
+  const direct = pairsMatch(a.home, b.home) && pairsMatch(a.away, b.away);
+  const swap = pairsMatch(a.home, b.away) && pairsMatch(a.away, b.home);
+  return direct || swap;
+}
+
+/**
+ * Al republicar el fixture, no pisar scores ya cargados en remoto
+ * si el borrador local todavía los tiene vacíos.
+ */
+export function preserveRemoteMatchScores(localMatches = [], remoteMatches = []) {
+  const remote = Array.isArray(remoteMatches) ? remoteMatches : [];
+  return (localMatches || []).map((local) => {
+    const localResult = String(local?.result || "").trim();
+    const localApplied = String(local?.appliedResult || "").trim();
+    if (localResult || localApplied) return local;
+    const hit = remote.find((r) => sameMatchup(local, r));
+    if (!hit) return local;
+    const result = String(hit.result || "").trim();
+    const appliedResult = String(hit.appliedResult || "").trim();
+    if (!result && !appliedResult) return local;
+    return {
+      ...local,
+      result: result || appliedResult,
+      appliedResult: appliedResult || result,
+    };
+  });
+}
+
 export function applyFixtureResults(ranking, matches) {
   const unmatched = [];
   const created = [];
@@ -305,9 +338,15 @@ export function applyFixtureResults(ranking, matches) {
   let reverted = 0;
 
   for (const match of matches) {
-    const next = String(match.result || "").trim();
-    const prev = String(match.appliedResult || "").trim();
-    if (next === prev) continue;
+    const nextRaw = String(match.result || "").trim();
+    const prevRaw = String(match.appliedResult || "").trim();
+    const next = nextRaw ? formatResult(nextRaw) || nextRaw : "";
+    const prev = prevRaw ? formatResult(prevRaw) || prevRaw : "";
+    if (next === prev) {
+      // Misma marca con otro formato (6-3 vs 6/3): no volver a sumar PJ.
+      if (nextRaw && nextRaw !== prevRaw) match.appliedResult = next;
+      continue;
+    }
     const homeName = String(match.home || "").trim();
     const awayName = String(match.away || "").trim();
     const placeholder = (name) => !name || fold(name) === fold("Pendiente / Pendiente");
@@ -320,7 +359,7 @@ export function applyFixtureResults(ranking, matches) {
     const prevScore = prev ? describeResult(prev) : null;
 
     if (next && !nextScore) {
-      unmatched.push(`Resultado inválido (${match.home} vs ${match.away}): "${next}". Usá 6/4 6/2 o 2/1.`);
+      unmatched.push(`Resultado inválido (${match.home} vs ${match.away}): "${nextRaw}". Usá 6/4 6/2 o 2/1.`);
       continue;
     }
 
@@ -344,6 +383,7 @@ export function applyFixtureResults(ranking, matches) {
       applied += 1;
     }
     match.appliedResult = next;
+    if (next && nextRaw !== next) match.result = next;
   }
 
   recomputePositions(ranking);
