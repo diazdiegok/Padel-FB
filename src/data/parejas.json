@@ -1241,5 +1241,21 @@
       "Jueves": "18:30 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwm9v1dv334d",
+    "createdAt": "2026-11-18T15:24:25.411Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Gustavo Zappala",
+    "p2": "Gonzalo Pérez",
+    "days": {
+      "Lunes": "20:00 - 00:00",
+      "Martes": "20:00 - 00:00",
+      "Jueves": "20:00 - 00:00",
+      "Viernes": "20:00 - 00:00"
+    },
+    "note": "",
+    "source": "admin"
   }
 ]
