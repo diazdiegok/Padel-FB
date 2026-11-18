@@ -36,9 +36,15 @@ import {
   splitMatchToPending,
   syncFixtureWithPairs,
 } from "../lib/pair-fixture-sync.js";
-import { mergeDriveFixtureRows, parseDriveSheetValues } from "../lib/drive-sheet.js";
+import { mergeDriveFixtureRows, parseDriveSheetValues, pendingDriveRows } from "../lib/drive-sheet.js";
 import { fold, pairsMatch } from "../lib/scoring.js";
-import { courtsSheetIdForSeason, DEFAULT_FIXTURE_DRIVE_SHEET_ID, DEFAULT_FIXTURE_DRIVE_SHEET_URL } from "../lib/sheets.js";
+import {
+  courtsSheetIdForSeason,
+  DEFAULT_FIXTURE_DRIVE_SHEET_ID,
+  DEFAULT_FIXTURE_DRIVE_SHEET_URL,
+  DEFAULT_PENDING_DRIVE_SHEET_ID,
+  DEFAULT_PENDING_DRIVE_SHEET_URL,
+} from "../lib/sheets.js";
 import {
   applyVenuePlan,
   attachPairDaysFromPairs,
@@ -1793,41 +1799,58 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       return parsed.filter((row) => !fold(row.fecha) || fold(row.fecha) === want);
     }
 
+    function pendingRowsForWeek() {
+      const list = (ctx.fixture || []).filter(
+        (m) => seasonOf(m) === filterTemp && (m.week || "") === filterWeek && isPending(m) && !m.dupHold
+      );
+      return pendingDriveRows(list, (m) => availHint(daysOfPair(m.home, m.cat) || m.homeDays || m.days));
+    }
+
     $("fx-drive-paste")?.addEventListener("click", async () => {
       const unique = exportableMatches({ includePending: false });
-      if (!unique.length) {
-        toast("No hay partidos con rival para pegar (los pendientes no van al Drive).", "err");
+      const pendingRows = pendingRowsForWeek();
+      if (!unique.length && !pendingRows.length) {
+        toast("No hay partidos ni pendientes para pegar en esta fecha.", "err");
         return;
       }
-      const mode = $("fx-dl-sort")?.value || "complejo";
-      const sorted = sortMatchesForExport(unique, mode);
-      const rows = fixtureExportRows(sorted);
       if (!filterWeek) {
         toast("Entrá a una fecha del fixture antes de pegar en Drive.", "err");
         return;
       }
+      const mode = $("fx-dl-sort")?.value || "complejo";
       const btn = $("fx-drive-paste");
-      setBusy(btn, true, "Leyendo…");
-      let existing;
-      try {
-        existing = await existingDriveRows(filterWeek);
-      } catch (err) {
+      let merged = null;
+      if (unique.length) {
+        const sorted = sortMatchesForExport(unique, mode);
+        const rows = fixtureExportRows(sorted);
+        setBusy(btn, true, "Leyendo…");
+        let existing;
+        try {
+          existing = await existingDriveRows(filterWeek);
+        } catch (err) {
+          setBusy(btn, false);
+          setMsg($("fx-msg"), err.message || "No pude leer la hoja de resultados. No pegué nada.", "err");
+          toast(err.message || "No pude leer la hoja", "err");
+          return;
+        }
         setBusy(btn, false);
-        setMsg($("fx-msg"), err.message || "No pude leer la hoja de Drive. No pegué nada.", "err");
-        toast(err.message || "No pude leer la hoja", "err");
-        return;
+        merged = mergeDriveFixtureRows(existing, rows);
       }
-      setBusy(btn, false);
-      const merged = mergeDriveFixtureRows(existing, rows);
-      const kept = merged.kept;
+      const kept = merged?.kept || 0;
+      const pendingN = pendingRows.length;
       const ok = await confirmModal({
-        title: "Pegar fixture en Drive",
+        title: "Pegar en Drive",
         body:
-          `Se van a pegar ${merged.rows.length} partido${merged.rows.length === 1 ? "" : "s"} en la hoja «${filterWeek}» del Google Sheet (orden: ${mode}). ` +
-          (kept
-            ? `${kept} con resultado quedan como están y no se borran. `
-            : "Todavía no hay resultados en esa hoja. ") +
-          "El resto se actualiza. Los pendientes no se envían.",
+          (merged
+            ? `Se van a pegar ${merged.rows.length} partido${merged.rows.length === 1 ? "" : "s"} en la hoja «${filterWeek}» del sheet de resultados (orden: ${mode}). ` +
+              (kept
+                ? `${kept} que ya tienen score quedan igual: no se pisan ni se borran. `
+                : "En esa hoja todavía no hay scores. ") +
+              "El resto de los partidos sin score se actualiza. "
+            : "No hay partidos con rival. El sheet de resultados no se toca. ") +
+          (pendingN
+            ? `En el sheet Pendientes se pegan ${pendingN} pareja${pendingN === 1 ? "" : "s"}, con el horario en que puede cada una.`
+            : `La hoja «${filterWeek}» del sheet Pendientes queda sin parejas.`),
         confirmLabel: "Pegar en Drive",
       });
       if (!ok) return;
@@ -1835,26 +1858,49 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       try {
         const res = await api.worker("/fixture/drive", {
           sheetId: DEFAULT_FIXTURE_DRIVE_SHEET_ID,
+          pendingSheetId: DEFAULT_PENDING_DRIVE_SHEET_ID,
           week: filterWeek,
           mode,
-          rows: merged.rows,
+          rows: merged ? merged.rows : [],
+          pendingRows,
         });
-        const n = Number(res?.rows) || merged.rows.length;
-        const keptNow = Number(res?.kept) || kept;
+        const n = merged ? Number(res?.rows) || merged.rows.length : 0;
+        const keptNow = merged ? Number(res?.kept) || kept : 0;
         const sheetName = res?.sheet || filterWeek;
-        const keptTxt = keptNow
-          ? ` ${keptNow} con resultado quedaron como estaban.`
-          : "";
-        setMsg(
-          $("fx-msg"),
-          `Fixture pegado en Drive · hoja «${sheetName}» · ${n} partido${n === 1 ? "" : "s"}.${keptTxt}`,
-          "ok"
-        );
-        toast(keptNow ? `Pegado · ${keptNow} con resultado intactos` : `Pegado · ${sheetName} · ${n}`, "ok");
-        const openUrl =
-          res?.url ||
-          `${DEFAULT_FIXTURE_DRIVE_SHEET_URL}${res?.gid != null ? `#gid=${res.gid}` : ""}`;
-        window.open(openUrl, "_blank", "noopener,noreferrer");
+        const pendingOk = !!res?.pending?.ok;
+        const pendingWrote = Number(res?.pending?.rows);
+        const bits = [];
+        if (merged) {
+          bits.push(
+            `Resultados «${sheetName}»: ${n} partido${n === 1 ? "" : "s"}` +
+              (keptNow ? `. ${keptNow} con score quedaron igual` : "")
+          );
+        }
+        if (pendingOk) {
+          bits.push(
+            pendingWrote
+              ? `Pendientes: ${pendingWrote} pareja${pendingWrote === 1 ? "" : "s"} con su horario`
+              : `Pendientes «${filterWeek}» quedó sin parejas`
+          );
+        } else if (res?.pendingError) {
+          bits.push(`Pendientes no se pudo pegar: ${res.pendingError}`);
+        } else if (pendingN) {
+          bits.push("Pendientes no se actualizó.");
+        }
+        const okPaste = !merged || res?.ok !== false;
+        const level = pendingOk || !pendingN ? (okPaste ? "ok" : "err") : "err";
+        setMsg($("fx-msg"), bits.join(". ") + ".", level === "ok" ? "ok" : "err");
+        const toastTxt =
+          pendingOk || !pendingN
+            ? keptNow
+              ? `Pegado · ${keptNow} con score intactos`
+              : bits[0] || "Pegado"
+            : "Resultados pegados. Pendientes no.";
+        toast(toastTxt, level === "ok" ? "ok" : "err");
+        const openUrl = merged
+          ? res?.url || `${DEFAULT_FIXTURE_DRIVE_SHEET_URL}${res?.gid != null ? `#gid=${res.gid}` : ""}`
+          : res?.pending?.url || DEFAULT_PENDING_DRIVE_SHEET_URL;
+        if (openUrl) window.open(openUrl, "_blank", "noopener,noreferrer");
       } catch (err) {
         setMsg($("fx-msg"), err.message || "No se pudo pegar en Drive.", "err");
         toast(err.message || "No se pudo pegar en Drive", "err");

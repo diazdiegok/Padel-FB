@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mergeDriveFixtureRows, parseDriveSheetValues } from "./drive-sheet.js";
+import { mergeDriveFixtureRows, parseDriveSheetValues, pendingDriveRows } from "./drive-sheet.js";
 
 const header = ["Fecha", "Dia", "Horario", "Categoria", "Complejo", "Cancha", "Pareja 1", "Pareja 2", "Resultado"];
 
@@ -80,5 +80,35 @@ const orphan = mergeDriveFixtureRows(existing, [incoming[1]]);
 assert.equal(orphan.rows.length, 2);
 assert.equal(orphan.rows[1].resultado, "2/6 5/7", "si el pegado no lo trae, el resultado igual queda");
 assert.equal(orphan.keptExtra, 1);
+
+const withOtherScore = mergeDriveFixtureRows(existing, [{ ...incoming[0], resultado: "6/0 6/0" }]);
+assert.equal(withOtherScore.rows[0].resultado, "2/6 5/7", "un score ya cargado no se pisa");
+assert.equal(withOtherScore.rows[0].horario, "17:00 - 18:30");
+
+const pending = pendingDriveRows(
+  [
+    {
+      week: "Fecha 5",
+      cat: "C Femenino",
+      home: "Marien Robledo / Valeria Joubert",
+      away: "Pendiente / Pendiente",
+      pending: true,
+      reason: "Su rival ya no está inscripto.",
+      days: { Lunes: "19:00 - 21:00" },
+    },
+    {
+      week: "Fecha 5",
+      cat: "B Masculina",
+      home: "Diego Diaz / Emiliano Fontanetto",
+      away: "Alguien / Otro",
+      result: "6/4 6/3",
+    },
+  ],
+  (m) => Object.entries(m.days || {}).map(([d, h]) => `${d} ${h}`).join(" · ")
+);
+assert.equal(pending.length, 1, "el partido con resultado no va a pendientes");
+assert.equal(pending[0].puede, "Lunes 19:00 - 21:00");
+assert.equal(pending[0].nota, "Su rival ya no está inscripto.");
+assert.equal(pending[0].pareja, "Marien Robledo / Valeria Joubert");
 
 console.log("drive-sheet.test.mjs passed");

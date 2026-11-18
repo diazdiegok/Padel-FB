@@ -8,6 +8,11 @@ export const DEFAULT_FIXTURE_DRIVE_SHEET_ID = "1OI6ogfmdOAQ5mz3JqP482cDPT_xp-PjW
 export const DEFAULT_FIXTURE_DRIVE_SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1OI6ogfmdOAQ5mz3JqP482cDPT_xp-PjWdE07k54AAiQ/edit";
 
+/** Sheet donde se pegan solo las parejas pendientes, con el horario en que pueden. */
+export const DEFAULT_PENDING_DRIVE_SHEET_ID = "1-iy8HSNkDDUJg4do08aydAK1MMtfhqrWmO4PGebkxe4";
+export const DEFAULT_PENDING_DRIVE_SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/1-iy8HSNkDDUJg4do08aydAK1MMtfhqrWmO4PGebkxe4/edit";
+
 /** Extrae el ID de un Google Sheet desde URL o ID suelto. */
 export function parseGoogleSheetId(value) {
   const raw = String(value || "").trim();

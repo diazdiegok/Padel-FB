@@ -2593,6 +2593,11 @@ function fixtureSheetTitle(week) {
  * Las filas que ya tienen resultado no se modifican ni se borran.
  */
 async function writeFixtureDriveSheet(env, { sheetId, week = "", rows = [] } = {}) {
+  if (!Array.isArray(rows) || !rows.length) {
+    const err = new Error("No hay partidos con rival para pegar. La hoja de resultados no se tocó.");
+    err.status = 400;
+    throw err;
+  }
   const id = String(sheetId || env.FIXTURE_DRIVE_SHEET_ID || FIXED_FIXTURE_DRIVE_SHEET)
     .trim()
     .replace(/^.*\/spreadsheets\/d\//i, "")
@@ -2833,6 +2838,228 @@ async function writeFixtureDriveSheet(env, { sheetId, week = "", rows = [] } = {
   };
 }
 
+const PENDING_DRIVE_HEADERS = ["Fecha", "Categoria", "Pareja", "Puede", "Nota"];
+const PENDING_DRIVE_HEADER_KEY = {
+  Fecha: "fecha",
+  Categoria: "categoria",
+  Pareja: "pareja",
+  Puede: "puede",
+  Nota: "nota",
+};
+const FIXED_PENDING_DRIVE_SHEET = "1-iy8HSNkDDUJg4do08aydAK1MMtfhqrWmO4PGebkxe4";
+
+/**
+ * Pega solo parejas pendientes en el sheet Pendientes, una pestaña por fecha.
+ * Reemplaza esa pestaña: quien ya tiene partido deja de figurar.
+ * No escribe el sheet de resultados.
+ */
+async function writePendingDriveSheet(env, { sheetId, week = "", rows = [] } = {}) {
+  const id = String(sheetId || env.PENDING_DRIVE_SHEET_ID || FIXED_PENDING_DRIVE_SHEET)
+    .trim()
+    .replace(/^.*\/spreadsheets\/d\//i, "")
+    .replace(/\/.*$/, "");
+  if (!/^[a-zA-Z0-9-_]{20,}$/.test(id)) {
+    const err = new Error("ID del Sheet Pendientes inválido.");
+    err.status = 400;
+    throw err;
+  }
+  const sa = await googleServiceAccount(env);
+  if (!sa?.client_email || !sa?.private_key) {
+    const err = new Error("Falta el secret GOOGLE_SERVICE_ACCOUNT en el Worker para escribir el Sheet.");
+    err.status = 500;
+    throw err;
+  }
+  const accessToken = await googleAccessToken(sa, "https://www.googleapis.com/auth/spreadsheets");
+  const title = fixtureSheetTitle(week);
+  const quoted = `'${title.replace(/'/g, "''")}'`;
+  const cols = PENDING_DRIVE_HEADERS.length;
+  const lastCol = String.fromCharCode("A".charCodeAt(0) + cols - 1);
+
+  const meta = await sheetsFetch(
+    accessToken,
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}?fields=sheets.properties(sheetId,title,index)`
+  );
+  if (!meta.res.ok) {
+    throw sheetsAuthError(meta.json.error?.message || `Google Sheets ${meta.res.status}`, sa, meta.res.status);
+  }
+
+  let tabId = null;
+  let tabIndex = null;
+  const want = title.toLowerCase();
+  for (const s of meta.json.sheets || []) {
+    const t = String(s?.properties?.title || "");
+    if (t.toLowerCase() === want) {
+      tabId = s.properties.sheetId;
+      tabIndex = s.properties.index;
+      break;
+    }
+  }
+
+  if (tabId == null) {
+    const created = await sheetsFetch(
+      accessToken,
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
+      {
+        method: "POST",
+        body: {
+          requests: [
+            {
+              addSheet: {
+                properties: {
+                  title,
+                  index: 0,
+                  gridProperties: { frozenRowCount: 1, columnCount: cols, rowCount: Math.max(50, (rows?.length || 0) + 20) },
+                },
+              },
+            },
+          ],
+        },
+      }
+    );
+    if (!created.res.ok) {
+      throw sheetsAuthError(created.json.error?.message || `No se pudo crear la hoja «${title}».`, sa, created.res.status);
+    }
+    tabId = created.json.replies?.[0]?.addSheet?.properties?.sheetId;
+    tabIndex = 0;
+    if (tabId == null) {
+      const err = new Error(`No se pudo crear la hoja «${title}» en Pendientes.`);
+      err.status = 502;
+      throw err;
+    }
+  } else if (tabIndex !== 0) {
+    const moved = await sheetsFetch(
+      accessToken,
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
+      {
+        method: "POST",
+        body: {
+          requests: [
+            {
+              updateSheetProperties: {
+                properties: { sheetId: tabId, index: 0 },
+                fields: "index",
+              },
+            },
+          ],
+        },
+      }
+    );
+    if (!moved.res.ok) console.warn("pending drive tab order", moved.json.error?.message || moved.res.status);
+  }
+
+  let previousDataRows = 0;
+  const read = await sheetsFetch(
+    accessToken,
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/${encodeURIComponent(`${quoted}!A:${lastCol}`)}` +
+      `?majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`
+  );
+  if (read.res.ok) previousDataRows = Math.max(0, (read.json.values || []).length - 1);
+
+  const values = [
+    PENDING_DRIVE_HEADERS,
+    ...(rows || []).map((r) => PENDING_DRIVE_HEADERS.map((h) => String(r?.[PENDING_DRIVE_HEADER_KEY[h]] ?? ""))),
+  ];
+  const pad = Math.max(0, previousDataRows - Math.max(0, values.length - 1));
+  const writeValues = values.concat(Array.from({ length: pad }, () => Array(cols).fill("")));
+  const endRow = values.length;
+
+  const update = await sheetsFetch(
+    accessToken,
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/${encodeURIComponent(`${quoted}!A1`)}` +
+      `?valueInputOption=RAW`,
+    { method: "PUT", body: { values: writeValues } }
+  );
+  if (!update.res.ok) {
+    throw sheetsAuthError(update.json.error?.message || `No se pudo escribir «${title}» en Pendientes.`, sa, update.res.status);
+  }
+
+  const format = await sheetsFetch(
+    accessToken,
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
+    {
+      method: "POST",
+      body: {
+        requests: [
+          {
+            repeatCell: {
+              range: { sheetId: tabId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: cols },
+              cell: {
+                userEnteredFormat: {
+                  textFormat: { bold: true, fontSize: 11 },
+                  backgroundColor: { red: 0.93, green: 0.95, blue: 0.9 },
+                  horizontalAlignment: "CENTER",
+                  verticalAlignment: "MIDDLE",
+                },
+              },
+              fields: "userEnteredFormat(textFormat,backgroundColor,horizontalAlignment,verticalAlignment)",
+            },
+          },
+          {
+            updateSheetProperties: {
+              properties: { sheetId: tabId, gridProperties: { frozenRowCount: 1 } },
+              fields: "gridProperties.frozenRowCount",
+            },
+          },
+          {
+            setBasicFilter: {
+              filter: {
+                range: {
+                  sheetId: tabId,
+                  startRowIndex: 0,
+                  endRowIndex: Math.max(endRow, 2),
+                  startColumnIndex: 0,
+                  endColumnIndex: cols,
+                },
+              },
+            },
+          },
+          {
+            repeatCell: {
+              range: {
+                sheetId: tabId,
+                startRowIndex: 1,
+                endRowIndex: Math.max(endRow, 2),
+                startColumnIndex: 0,
+                endColumnIndex: cols,
+              },
+              cell: {
+                userEnteredFormat: {
+                  textFormat: { bold: false, fontSize: 10 },
+                  verticalAlignment: "MIDDLE",
+                  wrapStrategy: "WRAP",
+                },
+              },
+              fields: "userEnteredFormat(textFormat,verticalAlignment,wrapStrategy)",
+            },
+          },
+          {
+            autoResizeDimensions: {
+              dimensions: { sheetId: tabId, dimension: "COLUMNS", startIndex: 0, endIndex: cols },
+            },
+          },
+          {
+            updateDimensionProperties: {
+              range: { sheetId: tabId, dimension: "COLUMNS", startIndex: 2, endIndex: 5 },
+              properties: { pixelSize: 320 },
+              fields: "pixelSize",
+            },
+          },
+        ],
+      },
+    }
+  );
+  if (!format.res.ok) console.warn("pending drive format", format.json.error?.message || format.res.status);
+
+  return {
+    ok: true,
+    sheetId: id,
+    sheet: title,
+    gid: tabId,
+    rows: Math.max(0, values.length - 1),
+    url: `https://docs.google.com/spreadsheets/d/${id}/edit#gid=${tabId}`,
+  };
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(request, env) });
@@ -2924,12 +3151,15 @@ export default {
         }
       }
 
-      // Pega el fixture armado (solo partidos con rival) en el Google Sheet de fixture.
+      // Pega los partidos con rival en el sheet de resultados y las pendientes en el sheet Pendientes.
+      // Un score ya cargado en resultados no se pisa.
       if (url.pathname === "/fixture/drive" && request.method === "POST") {
         if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
         const body = await request.json().catch(() => ({}));
         const rows = Array.isArray(body?.rows) ? body.rows : [];
-        if (!rows.length) {
+        const hasPending = Array.isArray(body?.pendingRows);
+        const pendingRows = hasPending ? body.pendingRows : [];
+        if (!rows.length && !hasPending) {
           return response(request, env, { message: "No hay partidos para pegar (solo se envían los que tienen rival)." }, 400);
         }
         try {
@@ -2937,12 +3167,28 @@ export default {
           if (!week) {
             return response(request, env, { message: "Falta la fecha (ej. Fecha 1) para elegir la hoja." }, 400);
           }
-          const result = await writeFixtureDriveSheet(env, {
-            sheetId: body.sheetId || env.FIXTURE_DRIVE_SHEET_ID || FIXED_FIXTURE_DRIVE_SHEET,
-            week,
-            rows,
-          });
-          return response(request, env, result);
+          let result = { ok: true, rows: 0, kept: 0 };
+          if (rows.length) {
+            result = await writeFixtureDriveSheet(env, {
+              sheetId: body.sheetId || env.FIXTURE_DRIVE_SHEET_ID || FIXED_FIXTURE_DRIVE_SHEET,
+              week,
+              rows,
+            });
+          }
+          let pending = null;
+          let pendingError = "";
+          if (hasPending) {
+            try {
+              pending = await writePendingDriveSheet(env, {
+                sheetId: body.pendingSheetId || env.PENDING_DRIVE_SHEET_ID || FIXED_PENDING_DRIVE_SHEET,
+                week,
+                rows: pendingRows,
+              });
+            } catch (err) {
+              pendingError = err.message || "No se pudo pegar en Pendientes.";
+            }
+          }
+          return response(request, env, { ...result, pending, pendingError });
         } catch (err) {
           return response(request, env, { message: err.message || "No se pudo pegar en Drive." }, err.status || 502);
         }

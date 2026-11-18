@@ -22,4 +22,16 @@ https://docs.google.com/spreadsheets/d/1OI6ogfmdOAQ5mz3JqP482cDPT_xp-PjWdE07k54A
 - Columnas: Fecha, Dia, Horario, Categoria, Complejo, Cancha, Pareja 1, Pareja 2, Resultado
 - Formato: encabezado en **negrita** (fondo suave), fila congelada, filtro, columnas autoajustadas; datos sin negrita
 - El Worker necesita el secret `GOOGLE_SERVICE_ACCOUNT` y que ese Sheet esté compartido con el `client_email` de la SA como **Editor**
-- Botón en Fixture: **Pegar en Drive** (usa el mismo orden que Descargar Excel; no envía pendientes)
+- Botón en Fixture: **Pegar en Drive** (usa el mismo orden que Descargar Excel para los partidos con rival)
+- Un score que ya está en la hoja no se pisa ni se borra, aunque el fixture lo traiga distinto
+
+## Pendientes
+
+Sheet fijo, solo parejas que todavía no tienen rival:  
+https://docs.google.com/spreadsheets/d/1-iy8HSNkDDUJg4do08aydAK1MMtfhqrWmO4PGebkxe4/edit
+
+- El mismo botón **Pegar en Drive** lo actualiza después de pegar resultados
+- **Una pestaña por fecha**. Quien ya tiene partido deja de figurar
+- Columnas: Fecha, Categoria, Pareja, Puede, Nota
+- `Puede` es la disponibilidad de la inscripción (ej. `Lunes 19:00 - 21:00`)
+- Compartido con el `client_email` de la cuenta de servicio como **Editor**

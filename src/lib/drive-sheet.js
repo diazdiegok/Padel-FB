@@ -1,3 +1,4 @@
+import { isPendingMatch } from "./fixturer.js";
 import { fold, pairsMatch } from "./scoring.js";
 
 export const DRIVE_FIELDS = [
@@ -100,4 +101,28 @@ export function mergeDriveFixtureRows(existingRows = [], incomingRows = []) {
     keptExtra += 1;
   });
   return { rows: out, kept: locked.length, keptExtra };
+}
+
+/** Una fila por pareja pendiente, con el horario en que puede. */
+export function pendingDriveRows(matches = [], puedeOf = () => "") {
+  return (matches || [])
+    .filter((m) => isPendingMatch(m))
+    .map((m) => {
+      const bits = [];
+      const owed = String(m?.recoverFrom || "").trim();
+      if (owed) bits.push(`Le falta 1 partido en ${owed}.`);
+      const reason = String(m?.reason || "").trim();
+      if (reason) bits.push(reason);
+      return {
+        fecha: String(m?.week || "").trim(),
+        categoria: String(m?.cat || "").trim(),
+        pareja: String(m?.home || "").trim(),
+        puede: String(puedeOf(m) || "").trim(),
+        nota: bits.join(" "),
+      };
+    })
+    .sort(
+      (a, b) =>
+        a.categoria.localeCompare(b.categoria, "es") || a.pareja.localeCompare(b.pareja, "es")
+    );
 }
