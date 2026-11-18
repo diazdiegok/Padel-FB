@@ -1257,5 +1257,18 @@
     },
     "note": "",
     "source": "admin"
+  },
+  {
+    "id": "pmwmjxjl5cc4c",
+    "createdAt": "2026-11-18T20:06:18.473Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Alva Esteban",
+    "p2": "Kler Leandro",
+    "days": {
+      "Miércoles": "17:00 - 20:00",
+      "Viernes": "17:00 - 20:00"
+    },
+    "note": ""
   }
 ]
