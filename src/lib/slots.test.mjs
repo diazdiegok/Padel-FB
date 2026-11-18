@@ -22,6 +22,7 @@ import {
   slotAvailabilityMiss,
   slotFitsPairAvailability,
   summarizeCourtSlots,
+  freeWindowCapacity,
   weekFromName,
   windowCapacity,
   courtDayIsOpen,
@@ -81,6 +82,37 @@ assert.equal(slots.length, 3);
 
 const summary = summarizeCourtSlots(slots);
 assert.equal(summary.length, 2);
+assert.equal(summary.find((s) => s.venue === "Terrazas Padel")?.total, 2);
+assert.equal(summary.find((s) => s.venue === "Terrazas Padel")?.sheetTotal, 2);
+
+// Si ya hay partidos en esas canchas, bajan los libres (sin repetir turno).
+const takenLunes = [
+  { day: "Lunes", time: "19:00 - 20:30", venue: "Terrazas Padel", court: "1" },
+];
+assert.equal(freeWindowCapacity(slots[0], takenLunes), 0);
+assert.equal(freeWindowCapacity(slots[1], takenLunes), 1);
+const summaryFree = summarizeCourtSlots(slots, takenLunes);
+assert.equal(summaryFree.find((s) => s.venue === "Terrazas Padel")?.total, 1);
+assert.equal(summaryFree.find((s) => s.venue === "Terrazas Padel")?.sheetTotal, 2);
+assert.equal(summaryFree.find((s) => s.venue === "Terrazas Padel")?.days.find((d) => d.day === "Lunes")?.count, 1);
+
+// Ventana larga: un partido de 90' resta un cupo empaquetado.
+const longWin = parseCourtSlot({
+  Complejo: "Americas",
+  Cancha: "1",
+  Dia: "Jueves",
+  Horario: "16:30 - 21:00",
+});
+assert.equal(longWin.capacity, 3);
+assert.equal(
+  freeWindowCapacity(longWin, [{ day: "Jueves", time: "16:30 - 18:00", venue: "Americas Padel", court: "1" }]),
+  2
+);
+assert.equal(
+  freeWindowCapacity(longWin, [{ day: "Jueves", time: "17:00 - 18:30", venue: "Americas Padel", court: "1" }]),
+  1,
+  "un turno corrido tapa dos bloques empaquetados"
+);
 
 const planned = applyVenuePlan(slots, [
   { venue: "Terrazas Padel", count: 1, days: ["Lunes"] },

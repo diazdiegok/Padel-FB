@@ -57,9 +57,11 @@ import {
   courtDayIsOpen,
   coverSlotTier,
   nearCoverCourtOptions,
+  normalizeDay,
   pairsSharePlayableWindow,
   parkAvailabilityViolations,
   parkBareMatchesAsPending,
+  parseCourtWindow,
   rematchForCourts,
   summarizeCourtSlots,
   weekFromName,
@@ -754,6 +756,21 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     return pairs ? Math.floor(pairs / 2) : 0;
   }
 
+  /** Partidos de esta fecha que ya tomaron una cancha del Drive (sin repetir). */
+  function weekTakenCourts() {
+    return (ctx.fixture || []).filter((m) => {
+      if (seasonOf(m) !== filterTemp || (m.week || "") !== filterWeek) return false;
+      if (!String(m?.venue || "").trim() || !String(m?.court || "").trim()) return false;
+      if (!normalizeDay(m.day)) return false;
+      const win = parseCourtWindow(m.time);
+      return !!(win && win.to > win.from);
+    });
+  }
+
+  function courtSlotSummary() {
+    return summarizeCourtSlots(loadedSlots, weekTakenCourts());
+  }
+
   function effectiveChosen(plan, summary) {
     const byVenue = new Map(summary.map((s) => [s.venue, s]));
     let chosen = 0;
@@ -805,7 +822,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
    */
   function syncVenueCountInputs({ editedVenue = null, announce = false } = {}) {
     const list = $("fx-advanced-list");
-    const summary = summarizeCourtSlots(loadedSlots);
+    const summary = courtSlotSummary();
     if (!list || !summary.length) return { overflow: false, need: 0 };
     const need = matchesNeeded();
     const raw = rawVenueCounts(list);
@@ -847,7 +864,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   function updatePlanSummary(opts = {}) {
     const el = $("fx-plan-summary");
     const status = $("fx-slots-status");
-    const summary = summarizeCourtSlots(loadedSlots);
+    const summary = courtSlotSummary();
     if (!summary.length) {
       if (el) {
         el.hidden = true;
@@ -858,12 +875,20 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     // El toast avisa si intentaron pasarse; el banner refleja el valor ya corregido.
     syncVenueCountInputs(opts);
     const plan = readVenuePlanFromDom();
-    const assigned = plan.reduce((n, p) => n + Math.max(0, Number(p.count) || 0), 0);
-    const sheetTotal = summary.reduce((n, s) => n + s.total, 0);
+    const planned = plan.reduce((n, p) => n + Math.max(0, Number(p.count) || 0), 0);
+    const used = weekTakenCourts().length;
+    // Si ya hay partidos en cancha, Asignados refleja eso; si no, el plan «Partidos a usar».
+    const assigned = used > 0 ? used : planned;
+    const freeTotal = summary.reduce((n, s) => n + s.total, 0);
+    const sheetTotal = summary.reduce((n, s) => n + (Number(s.sheetTotal) || s.total), 0);
     const pairs = playablePairCount();
     const need = matchesNeeded();
-    const over = Boolean(need && assigned > need);
+    const over = Boolean(need && planned > need);
     const leftNeed = Math.max(0, need - assigned);
+    const sheetTxt =
+      used > 0 && sheetTotal !== freeTotal
+        ? `Sheet: ${freeTotal} libres (de ${sheetTotal})`
+        : `Sheet: ${sheetTotal} posibles`;
     const text = need
       ? `Asignados: ${assigned} / ${need}` +
         (over
@@ -871,16 +896,18 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           : leftNeed
             ? ` · Quedan por asignar: ${leftNeed}`
             : " · completo") +
-        ` · ${pairs} parejas jugables (máx. ${MAX_PAIR_MATCHES} PJ c/u) · Sheet: ${sheetTotal} posibles`
-      : `Sin parejas jugables (o todas en tope de ${MAX_PAIR_MATCHES} PJ) · Sheet: ${sheetTotal} posibles`;
+        (used > 0 && planned > 0 ? ` · Plan armar: ${planned}` : "") +
+        ` · ${pairs} parejas jugables (máx. ${MAX_PAIR_MATCHES} PJ c/u) · ${sheetTxt}`
+      : `Sin parejas jugables (o todas en tope de ${MAX_PAIR_MATCHES} PJ) · ${sheetTxt}`;
     if (el) {
       el.hidden = false;
       el.textContent = text;
-      el.className = "fx-plan-summary" + (over ? " is-err" : need && assigned === need ? " is-ok" : "");
+      el.className =
+        "fx-plan-summary" + (over ? " is-err" : need && assigned >= need ? " is-ok" : "");
     }
     if (status && loadedSlots.length) {
       status.hidden = false;
-      status.textContent = `Drive${slotsFileName ? ` · ${slotsFileName}` : ""}: ${sheetTotal} posibles · ${summary.length} complejos · ${text}`;
+      status.textContent = `Drive${slotsFileName ? ` · ${slotsFileName}` : ""}: ${sheetTxt} · ${summary.length} complejos · ${text}`;
     }
   }
 
@@ -889,13 +916,20 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const list = $("fx-advanced-list");
     const build = $("fx-build");
     const status = $("fx-slots-status");
-    const summary = summarizeCourtSlots(loadedSlots);
+    const summary = courtSlotSummary();
+    const used = weekTakenCourts().length;
     const showPlan = summary.length > 0 && advancedOpen;
     if (build) build.hidden = !(showPlan && isLiveWeek(filterTemp, filterWeek));
     if (status) {
       status.hidden = !loadedSlots.length;
+      const freeTotal = summary.reduce((n, s) => n + s.total, 0);
+      const sheetTotal = summary.reduce((n, s) => n + (Number(s.sheetTotal) || s.total), 0);
       status.textContent = loadedSlots.length
-        ? `Drive${slotsFileName ? ` · ${slotsFileName}` : ""}: ${summary.reduce((n, s) => n + s.total, 0)} partidos posibles · ${summary.length} complejo${summary.length === 1 ? "" : "s"}.`
+        ? `Drive${slotsFileName ? ` · ${slotsFileName}` : ""}: ${
+            used > 0 && sheetTotal !== freeTotal
+              ? `${freeTotal} libres (de ${sheetTotal})`
+              : `${sheetTotal} partidos posibles`
+          } · ${summary.length} complejo${summary.length === 1 ? "" : "s"}.`
         : "";
     }
     if (!panel || !list) return;
@@ -916,21 +950,33 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         const count = counts[row.venue] ?? 0;
         const max = venueCountCap(row.venue, summary, need, counts);
         const selectedDays = new Set(saved?.days?.length ? saved.days : row.days.map((d) => d.day));
+        const sheetRow = Number(row.sheetTotal) || row.total;
         const dayChecks = DAYS.map((day) => {
           const avail = row.daySet.has(day);
-          const n = row.days.find((d) => d.day === day)?.count || 0;
+          const dayRow = row.days.find((d) => d.day === day);
+          const n = dayRow?.count || 0;
+          const sheetN = dayRow?.sheet || n;
           const checked = avail && selectedDays.has(day);
-          return `<label class="ball-check${!avail ? " is-disabled" : ""}" title="${avail ? `${n} partido${n === 1 ? "" : "s"} de 1:30 caben este día en el Sheet` : "Sin turnos este día en el Sheet"}">
+          const title = avail
+            ? used > 0 && sheetN !== n
+              ? `${n} libre${n === 1 ? "" : "s"} de ${sheetN} en el Sheet este día`
+              : `${n} partido${n === 1 ? "" : "s"} de 1:30 caben este día en el Sheet`
+            : "Sin turnos este día en el Sheet";
+          return `<label class="ball-check${!avail ? " is-disabled" : ""}" title="${escAttr(title)}">
             <input type="checkbox" data-fx-day value="${escAttr(day)}"${checked ? " checked" : ""}${avail ? "" : " disabled"} />
             <span class="ball-check-face">${BALL_SVG}</span>
             <span class="ball-check-label">${escAttr(day)}${avail ? ` · ${n} disp.` : ""}</span>
           </label>`;
         }).join("");
+        const venueHelp =
+          used > 0 && sheetRow !== row.total
+            ? `${row.total} libres (de ${sheetRow} en el Sheet)`
+            : `${row.total} posibles en el Sheet`;
         return `<article class="fx-venue-card" data-fx-venue="${escAttr(row.venue)}">
           <div class="fx-venue-top">
             <div>
               <strong>${escAttr(row.venue)}</strong>
-              <p class="admin-help">${row.total} posibles en el Sheet · cupo de la fecha: ${need} · la suma de todos no puede pasar ${need}</p>
+              <p class="admin-help">${venueHelp} · cupo de la fecha: ${need} · la suma de todos no puede pasar ${need}</p>
             </div>
             <label class="fx-venue-count">
               <span>Partidos a usar</span>
@@ -1586,14 +1632,20 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       slotsFileName = label || "";
       advancedOpen = true;
       render();
-      const summary = summarizeCourtSlots(slots);
-      const cap = summary.reduce((n, s) => n + s.total, 0);
+      const taken = weekTakenCourts();
+      const summary = summarizeCourtSlots(slots, taken);
+      const free = summary.reduce((n, s) => n + s.total, 0);
+      const sheetCap = summary.reduce((n, s) => n + (Number(s.sheetTotal) || s.total), 0);
       const gapTxt = gaps.length
         ? ` Ojo: ${gaps.map((g) => `${g.venue} (${g.count} filas sin horario)`).join(" · ")}. Revisá la columna Horario en el Sheet (ej. 16:30 - 18:00).`
         : "";
+      const usedTxt =
+        taken.length && sheetCap !== free
+          ? `${free} libres de ${sheetCap} (${taken.length} ya en cancha)`
+          : `${sheetCap} partido${sheetCap === 1 ? "" : "s"} posibles`;
       setMsg(
         $("fx-msg"),
-        `${label || "Canchas"} listo: ${cap} partido${cap === 1 ? "" : "s"} posibles en ${summary.length} complejo${summary.length === 1 ? "" : "s"}.${gapTxt} Ajustá cupos/días y armá el fixture.`,
+        `${label || "Canchas"} listo: ${usedTxt} en ${summary.length} complejo${summary.length === 1 ? "" : "s"}.${gapTxt} Ajustá cupos/días y armá el fixture.`,
         gaps.length ? "err" : "ok"
       );
       toast(gaps.length ? "Canchas OK · faltan horarios en el Sheet" : "Canchas cargadas", gaps.length ? "err" : "ok");

@@ -270,29 +270,69 @@ function fitsWindowMargin(days, slot, margin) {
   return Number(slot.from) >= win.from - pad && Number(slot.to) <= win.to + pad;
 }
 
-/** Agrupa ventanas por complejo: capacidad = partidos de 90' que entran. */
-export function summarizeCourtSlots(slots = []) {
+function windowsOverlap(aFrom, aTo, bFrom, bTo) {
+  return aFrom < bTo && bFrom < aTo;
+}
+
+/**
+ * Partidos de 90' que todavía entran en una ventana del Sheet,
+ * restando los que ya ocupan esa cancha/día (sin repetir turnos).
+ */
+export function freeWindowCapacity(slot, taken = []) {
+  if (!slot) return 0;
+  const from = Number(slot.from);
+  const to = Number(slot.to);
+  if (!(to > from)) return 0;
+  const busy = [];
+  for (const m of taken || []) {
+    if (!String(m?.venue || "").trim() || !String(m?.court || "").trim()) continue;
+    if (fold(m.venue) !== fold(slot.venue) || courtKey(m.court) !== courtKey(slot.court)) continue;
+    if (normalizeDay(m.day) !== normalizeDay(slot.day)) continue;
+    const win = parseCourtWindow(m.time);
+    if (!win || !(win.to > win.from)) continue;
+    if (!windowsOverlap(from, to, win.from, win.to)) continue;
+    busy.push(win);
+  }
+  if (slot.single || to - from === MATCH_MINUTES) {
+    if (from + MATCH_MINUTES > to && windowCapacity(from, to) < 1) return 0;
+    const end = from + MATCH_MINUTES <= to ? from + MATCH_MINUTES : to;
+    return busy.some((b) => windowsOverlap(from, end, b.from, b.to)) ? 0 : Math.max(1, windowCapacity(from, to) || 1);
+  }
+  let free = 0;
+  for (let start = from; start + MATCH_MINUTES <= to; start += MATCH_MINUTES) {
+    if (!busy.some((b) => windowsOverlap(start, start + MATCH_MINUTES, b.from, b.to))) free += 1;
+  }
+  return free;
+}
+
+/** Agrupa ventanas por complejo: capacidad = partidos de 90' libres (resta los ya fixtureados). */
+export function summarizeCourtSlots(slots = [], taken = []) {
   const map = new Map();
+  const occupied = Array.isArray(taken) ? taken : [];
   for (const s of slots) {
     const key = s.venue || "Sin complejo";
-    if (!map.has(key)) map.set(key, { venue: key, total: 0, days: new Map() });
+    if (!map.has(key)) map.set(key, { venue: key, total: 0, sheetTotal: 0, days: new Map(), sheetDays: new Map() });
     const row = map.get(key);
-    const cap = Number(s.capacity) || windowCapacity(s.from, s.to) || 1;
+    const sheetCap = Number(s.capacity) || windowCapacity(s.from, s.to) || 1;
+    const cap = freeWindowCapacity(s, occupied);
     row.total += cap;
+    row.sheetTotal += sheetCap;
     row.days.set(s.day, (row.days.get(s.day) || 0) + cap);
+    row.sheetDays.set(s.day, (row.sheetDays.get(s.day) || 0) + sheetCap);
   }
   return [...map.values()]
     .map((r) => ({
       venue: r.venue,
       total: r.total,
-      days: DAYS.filter((d) => r.days.has(d)).map((d) => ({ day: d, count: r.days.get(d) })),
-      daySet: new Set(DAYS.filter((d) => r.days.has(d))),
+      sheetTotal: r.sheetTotal,
+      days: DAYS.filter((d) => r.sheetDays.has(d)).map((d) => ({
+        day: d,
+        count: r.days.get(d) || 0,
+        sheet: r.sheetDays.get(d) || 0,
+      })),
+      daySet: new Set(DAYS.filter((d) => (r.sheetDays.get(d) || 0) > 0)),
     }))
     .sort((a, b) => a.venue.localeCompare(b.venue, "es"));
-}
-
-function windowsOverlap(aFrom, aTo, bFrom, bTo) {
-  return aFrom < bTo && bFrom < aTo;
 }
 
 /** "Cancha 1", "1", "Pista 1" → misma cancha. */
