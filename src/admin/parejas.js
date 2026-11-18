@@ -766,7 +766,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
         title: "Quitar pareja",
         body: hasHistory
           ? `${label} se quita de las inscripciones. En esta fecha el partido se desarma y el rival queda pendiente. Ellos no salen más en esta fecha ni en las próximas. Ranking, fechas ya jugadas y resultados quedan. Publicá parejas para confirmarlo.`
-          : `${label} se quita de las inscripciones y del ranking. Si tenía partido en esta fecha, el rival queda pendiente. Publicá para confirmarlo.`,
+          : `${label} se quita de las inscripciones, del fixture y del ranking. Si tenía partido, el rival queda pendiente. Si estaba en pendientes, sale de ahí. Publicá para confirmarlo.`,
         confirmLabel: "Quitar",
         danger: true,
       });

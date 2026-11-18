@@ -253,4 +253,54 @@ const pairs = [
   console.log("ok: la baja conserva el historial y desarma solo la fecha en curso y las próximas");
 }
 
+{
+  const never = pairs.find((p) => p.p1 === "Abril Diamela Migueles");
+  const rival = pairs.find((p) => p.p1 === "Marien Robledo");
+  const scheduled = {
+    week: "Fecha 2",
+    temp,
+    cat: "B Femenino",
+    day: "Martes",
+    time: "20:00",
+    venue: "La Emilia",
+    court: "1",
+    home: "Abril Diamela Migueles / Yamila Bertotti",
+    away: "Marien Robledo / Valeria Joubert",
+  };
+  const waiting = {
+    week: "Fecha 3",
+    temp,
+    cat: "B Femenino",
+    day: "",
+    time: "",
+    venue: "",
+    court: "",
+    home: "Abril Diamela Migueles / Yamila Bertotti",
+    away: PENDING_AWAY,
+    pending: true,
+    reason: "Pendiente de rival.",
+  };
+  const out = syncFixtureWithPairs({
+    matches: [scheduled, waiting],
+    pairs: pairs.filter((p) => p !== never),
+    temp,
+    liveWeek: "Fecha 5",
+    historyWeek: "Fecha 5",
+  });
+  assert.ok(
+    !out.matches.some(
+      (m) =>
+        pairsMatch(m.home, "Abril Diamela Migueles / Yamila Bertotti") ||
+        pairsMatch(m.away, "Abril Diamela Migueles / Yamila Bertotti")
+    ),
+    "la que nunca jugó no queda en fixture ni en pendientes"
+  );
+  const rivalPending = out.matches.filter(
+    (m) => m.week === "Fecha 2" && isPendingMatch(m) && pairsMatch(m.home, "Marien Robledo / Valeria Joubert")
+  );
+  assert.equal(rivalPending.length, 1, "el rival del partido armado pasa a pendiente");
+  assert.equal(rival.p1, "Marien Robledo");
+  console.log("ok: sin partidos sale de fixture y pendientes, y el rival queda pendiente");
+}
+
 console.log("pair-fixture-sync ok");

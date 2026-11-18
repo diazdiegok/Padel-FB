@@ -87,10 +87,11 @@ function isPastWeek(week, liveWeek) {
 /**
  * Alinea el fixture (y pendientes) con las inscripciones de la temporada.
  *
- * - Pareja dada de baja en la fecha en curso o en una posterior, sin resultado:
- *   ese partido se desarma y el rival queda pendiente. La baja no queda pendiente
- *   ni vuelve a entrar.
- * - Fechas anteriores a `historyWeek` (o a `liveWeek`), y cualquier partido con resultado, se conservan.
+ * - Pareja que nunca jugó: sale de todos los partidos. Si tenía partido armado, el rival
+ *   queda pendiente en esa fecha. Si ella estaba en pendientes, esa fila se borra.
+ * - Pareja con partidos jugados: la fecha en curso y las siguientes, sin resultado, se
+ *   desarman y el rival queda pendiente. Ella no queda pendiente ni vuelve a entrar.
+ * - Fechas anteriores de una pareja que ya jugó, y cualquier partido con resultado, se conservan.
  * - Cambio de categoría: ambas puntas del partido pasan a pendiente en su cat actual.
  * - Pareja nueva: entra como pendiente en `liveWeek` (si se indica).
  */
@@ -116,6 +117,17 @@ export function syncFixtureWithPairs({ matches = [], pairs = [], temp = "", live
     }
     seenPending.add(key);
     out.push(row);
+  }
+
+  function sidePlayed(name) {
+    const label = String(name || "").trim();
+    if (!label) return false;
+    return (matches || []).some(
+      (row) =>
+        String(row?.temp || "").toUpperCase() === season &&
+        hasResult(row) &&
+        (pairsMatch(row.home, label) || pairsMatch(row.away, label))
+    );
   }
 
   function keepRecoverFlags(row, source) {
@@ -182,8 +194,11 @@ export function syncFixtureWithPairs({ matches = [], pairs = [], temp = "", live
       continue;
     }
 
-    // Historial: fechas ya pasadas, o un partido con resultado, no se desarman.
-    if ((!homeOk || !awayOk) && (isPastWeek(m.week, cutoff) || hasResult(m))) {
+    // Sin partidos jugados no queda historial: se desarma en cualquier fecha.
+    // Con historial, se conservan las fechas anteriores y el partido que ya tiene resultado.
+    const missingPlayed =
+      (!homeOk ? sidePlayed(m.home) : true) && (!awayOk ? sidePlayed(m.away) : true);
+    if ((!homeOk || !awayOk) && (hasResult(m) || (isPastWeek(m.week, cutoff) && missingPlayed))) {
       out.push(m);
       continue;
     }
