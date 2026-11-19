@@ -1282,5 +1282,21 @@
       "Sábado": "10:30 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwmwg1mzc995",
+    "createdAt": "2026-11-19T01:56:37.067Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Werner Stefania",
+    "p2": "Sangoy Carla",
+    "days": {
+      "Lunes": "19:00 - 22:30",
+      "Martes": "19:00 - 22:30",
+      "Miércoles": "19:00 - 22:30",
+      "Jueves": "20:00 - 22:30",
+      "Viernes": "20:00 - 22:30"
+    },
+    "note": ""
   }
 ]
