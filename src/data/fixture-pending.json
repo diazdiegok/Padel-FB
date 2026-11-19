@@ -247,5 +247,70 @@
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Miércoles 17:00 - 20:00 · Viernes 17:00 - 20:00",
+    "days": {
+      "Miércoles": "17:00 - 20:00",
+      "Viernes": "17:00 - 20:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Esteban Alva / Leandro Kler",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Sábado 10:30 - 00:00",
+    "days": {
+      "Sábado": "10:30 - 00:00"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Melina Drabble / Cecilia García Formenti",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Lunes 19:00 - 22:30 · Martes 19:00 - 22:30 · Miércoles 19:00 - 22:30 · Jueves 20:00 - 22:30 · Viernes 20:00 - 22:30",
+    "days": {
+      "Lunes": "19:00 - 22:30",
+      "Martes": "19:00 - 22:30",
+      "Miércoles": "19:00 - 22:30",
+      "Jueves": "20:00 - 22:30",
+      "Viernes": "20:00 - 22:30"
+    },
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Stefania Werner / Carla Sangoy",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
   }
 ]

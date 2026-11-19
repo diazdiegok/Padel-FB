@@ -1263,8 +1263,8 @@
     "createdAt": "2026-11-18T20:06:18.473Z",
     "temp": "T5",
     "cat": "B Masculina",
-    "p1": "Alva Esteban",
-    "p2": "Kler Leandro",
+    "p1": "Esteban Alva",
+    "p2": "Leandro Kler",
     "days": {
       "Miércoles": "17:00 - 20:00",
       "Viernes": "17:00 - 20:00"
@@ -1288,8 +1288,8 @@
     "createdAt": "2026-11-19T01:56:37.067Z",
     "temp": "T5",
     "cat": "C Femenino",
-    "p1": "Werner Stefania",
-    "p2": "Sangoy Carla",
+    "p1": "Stefania Werner",
+    "p2": "Carla Sangoy",
     "days": {
       "Lunes": "19:00 - 22:30",
       "Martes": "19:00 - 22:30",
