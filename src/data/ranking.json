@@ -8798,7 +8798,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 25,
+    "pos": 23,
     "temp": "T5"
   },
   {
@@ -8807,7 +8807,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 1,
+    "pos": 2,
     "temp": "T5"
   },
   {
@@ -8816,7 +8816,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 12,
+    "pos": 13,
     "temp": "T5"
   },
   {
@@ -8834,7 +8834,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 11,
+    "pos": 12,
     "temp": "T5"
   },
   {
@@ -8859,9 +8859,9 @@
     "name": "Diego Diaz / Emiliano Fontanetto",
     "cat": "A Masculina",
     "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 6,
+    "pj": 1,
+    "dif": -2,
+    "pos": 10,
     "temp": "T5"
   },
   {
@@ -8879,7 +8879,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 14,
+    "pos": 13,
     "temp": "T5"
   },
   {
@@ -8906,7 +8906,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 12,
+    "pos": 11,
     "temp": "T5"
   },
   {
@@ -8960,7 +8960,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 3,
+    "pos": 4,
     "temp": "T5"
   },
   {
@@ -8969,7 +8969,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 20,
+    "pos": 19,
     "temp": "T5"
   },
   {
@@ -8978,7 +8978,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 16,
+    "pos": 15,
     "temp": "T5"
   },
   {
@@ -8987,16 +8987,16 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 1,
+    "pos": 2,
     "temp": "T5"
   },
   {
     "name": "Juan Leban / German Truffer",
     "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 16,
+    "pts": 3,
+    "pj": 1,
+    "dif": 2,
+    "pos": 4,
     "temp": "T5"
   },
   {
@@ -9005,7 +9005,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 27,
+    "pos": 25,
     "temp": "T5"
   },
   {
@@ -9014,7 +9014,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 13,
+    "pos": 14,
     "temp": "T5"
   },
   {
@@ -9023,7 +9023,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 2,
+    "pos": 3,
     "temp": "T5"
   },
   {
@@ -9048,9 +9048,9 @@
     "name": "Andrés Gasparrini / Tomas Zabala",
     "cat": "C Masculina",
     "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 5,
+    "pj": 1,
+    "dif": -2,
+    "pos": 16,
     "temp": "T5"
   },
   {
@@ -9059,7 +9059,7 @@
     "pts": 1,
     "pj": 1,
     "dif": -1,
-    "pos": 3,
+    "pos": 5,
     "temp": "T5"
   },
   {
@@ -9068,7 +9068,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 23,
+    "pos": 21,
     "temp": "T5"
   },
   {
@@ -9077,7 +9077,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 6,
+    "pos": 8,
     "temp": "T5"
   },
   {
@@ -9104,7 +9104,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 8,
+    "pos": 9,
     "temp": "T5"
   },
   {
@@ -9122,16 +9122,16 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 19,
+    "pos": 18,
     "temp": "T5"
   },
   {
     "name": "Denis Márquez / Omar Ramira",
     "cat": "A Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 5,
+    "pts": 3,
+    "pj": 1,
+    "dif": 2,
+    "pos": 1,
     "temp": "T5"
   },
   {
@@ -9176,7 +9176,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 18,
+    "pos": 17,
     "temp": "T5"
   },
   {
@@ -9185,16 +9185,16 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 24,
+    "pos": 22,
     "temp": "T5"
   },
   {
     "name": "Claudio Roldán / Joaquin Roldán",
     "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 7,
+    "pts": 3,
+    "pj": 1,
+    "dif": 2,
+    "pos": 2,
     "temp": "T5"
   },
   {
@@ -9221,7 +9221,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 7,
+    "pos": 6,
     "temp": "T5"
   },
   {
@@ -9237,9 +9237,9 @@
     "name": "Luciano Loizate / Carlos Dinamo",
     "cat": "B Masculina",
     "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 17,
+    "pj": 1,
+    "dif": -2,
+    "pos": 26,
     "temp": "T5"
   },
   {
@@ -9257,7 +9257,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 9,
+    "pos": 10,
     "temp": "T5"
   },
   {
@@ -9266,7 +9266,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 8,
+    "pos": 7,
     "temp": "T5"
   },
   {
@@ -9275,7 +9275,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 14,
+    "pos": 15,
     "temp": "T5"
   },
   {
@@ -9284,7 +9284,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 13,
+    "pos": 12,
     "temp": "T5"
   },
   {
@@ -9308,10 +9308,10 @@
   {
     "name": "Choco Muñoz / Felipe Muñoz",
     "cat": "C Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 6,
+    "pts": 3,
+    "pj": 1,
+    "dif": 2,
+    "pos": 1,
     "temp": "T5"
   },
   {
@@ -9320,7 +9320,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 1,
-    "pos": 2,
+    "pos": 4,
     "temp": "T5"
   },
   {
@@ -9329,7 +9329,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 4,
+    "pos": 6,
     "temp": "T5"
   },
   {
@@ -9338,16 +9338,16 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 26,
+    "pos": 24,
     "temp": "T5"
   },
   {
     "name": "Miguel Darío Screpis / Facundo Roberto Capatto",
     "cat": "B Masculina",
     "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 21,
+    "pj": 1,
+    "dif": -2,
+    "pos": 27,
     "temp": "T5"
   },
   {
@@ -9356,7 +9356,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 2,
+    "pos": 3,
     "temp": "T5"
   },
   {
@@ -9392,7 +9392,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 3,
+    "pos": 5,
     "temp": "T5"
   },
   {
@@ -9410,7 +9410,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 22,
+    "pos": 20,
     "temp": "T5"
   },
   {
@@ -9428,7 +9428,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 9,
+    "pos": 8,
     "temp": "T5"
   },
   {
@@ -9437,16 +9437,16 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 5,
+    "pos": 7,
     "temp": "T5"
   },
   {
     "name": "Luis Roberto Herrera / Carlos Cantagallo",
     "cat": "C Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 11,
+    "pts": 3,
+    "pj": 1,
+    "dif": 2,
+    "pos": 3,
     "temp": "T5"
   },
   {
@@ -9462,9 +9462,9 @@
     "name": "Tomás Rodríguez / Sergio Alem",
     "cat": "C Masculina",
     "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 17,
+    "pj": 1,
+    "dif": -2,
+    "pos": 18,
     "temp": "T5"
   },
   {
@@ -9482,7 +9482,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 4,
+    "pos": 6,
     "temp": "T5"
   },
   {
@@ -9491,7 +9491,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 4,
+    "pos": 5,
     "temp": "T5"
   },
   {
@@ -9500,7 +9500,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 15,
+    "pos": 14,
     "temp": "T5"
   },
   {
@@ -9509,7 +9509,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 18,
+    "pos": 17,
     "temp": "T5"
   },
   {
@@ -9518,7 +9518,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 10,
+    "pos": 9,
     "temp": "T5"
   },
   {
@@ -9545,7 +9545,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 15,
+    "pos": 16,
     "temp": "T5"
   },
   {
@@ -9554,7 +9554,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 10,
+    "pos": 11,
     "temp": "T5"
   },
   {

@@ -151,8 +151,8 @@
     "court": "Cancha 2",
     "home": "Andrés Gasparrini / Tomas Zabala",
     "away": "Choco Muñoz / Felipe Muñoz",
-    "result": "",
-    "appliedResult": ""
+    "result": "0/6 1/6",
+    "appliedResult": "0/6 1/6"
   },
   {
     "week": "Fecha 1",
@@ -179,8 +179,8 @@
     "court": "Cancha 1",
     "home": "Juan Leban / German Truffer",
     "away": "Luciano Loizate / Carlos Dinamo",
-    "result": "",
-    "appliedResult": ""
+    "result": "6/4 7/5",
+    "appliedResult": "6/4 7/5"
   },
   {
     "week": "Fecha 1",
@@ -391,8 +391,8 @@
     "court": "Cancha 2",
     "home": "Luis Roberto Herrera / Carlos Cantagallo",
     "away": "Tomás Rodríguez / Sergio Alem",
-    "result": "",
-    "appliedResult": "",
+    "result": "6/1 6/2",
+    "appliedResult": "6/1 6/2",
     "flexAvail": true
   },
   {
@@ -406,8 +406,8 @@
     "court": "Cancha 2",
     "home": "Claudio Roldán / Joaquin Roldán",
     "away": "Miguel Darío Screpis / Facundo Roberto Capatto",
-    "result": "",
-    "appliedResult": "",
+    "result": "6/1 6/3",
+    "appliedResult": "6/1 6/3",
     "flexAvail": true
   },
   {
@@ -493,8 +493,8 @@
     "court": "Cancha 1",
     "home": "Denis Márquez / Omar Ramira",
     "away": "Diego Diaz / Emiliano Fontanetto",
-    "result": "",
-    "appliedResult": "",
+    "result": "6/4 7/6",
+    "appliedResult": "6/4 7/6",
     "flexAvail": true
   },
   {
