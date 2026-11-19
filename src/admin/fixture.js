@@ -28,6 +28,7 @@ import {
   isPlaceholderPair,
   isRealPairMatch,
   releaseRecoveryDebt,
+  rematchWeeks,
 } from "../lib/fixturer.js";
 import { latestWeek, listSeasons, mergeArchivedMatches, seasonLabel, weekKey, weekNumber } from "../lib/liga.js";
 import {
@@ -601,23 +602,28 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   }
 
   function facedBefore(m, history = null) {
-    if (!isRealPairMatch(m)) return [];
     const pool = history || [...(ctx.results || []), ...(ctx.fixture || [])];
-    const weeks = pool
-      .filter(
-        (p) =>
-          p !== m &&
-          isRealPairMatch(p) &&
-          !p.dupHold &&
-          seasonOf(p) === seasonOf(m) &&
-          (p.cat || "") === (m.cat || "") &&
-          (p.week || "") !== (m.week || "") &&
-          ((pairsMatch(p.home, m.home) && pairsMatch(p.away, m.away)) ||
-            (pairsMatch(p.home, m.away) && pairsMatch(p.away, m.home)))
-      )
-      .map((p) => p.week)
-      .filter(Boolean);
-    return [...new Set(weeks)].sort((a, b) => weekNumber(a) - weekNumber(b));
+    return rematchWeeks(m, pool);
+  }
+
+  /** Si el cruce ya se jugó, queda en Duplicados (igual que al armar fixture). */
+  function holdIfRematch(match) {
+    const weeks = facedBefore(match);
+    if (!weeks.length) return [];
+    match.dupHold = true;
+    foldOpen.add("dup");
+    return weeks;
+  }
+
+  function duplicateRows() {
+    return ctx.fixture
+      .map((m, i) => ({ m, i }))
+      .filter(({ m }) => {
+        if (seasonOf(m) !== filterTemp || !m.dupHold || !isRealPairMatch(m)) return false;
+        if ((m.week || "") === filterWeek) return true;
+        // Recupero cubierto desde esta fecha: se ve acá hasta autorizar.
+        return !!(m.recoverFrom && (m.recoveredIn || "") === filterWeek);
+      });
   }
 
   function foldBox(box, { key, title, help, count, body, tone }) {
@@ -695,7 +701,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   function renderDuplicates() {
     const box = $("fx-dup-box");
     if (!box) return;
-    const rows = weekRows((m) => m.dupHold && isRealPairMatch(m));
+    const rows = duplicateRows();
     const cats = [...new Set(rows.map(({ m }) => m.cat || "Sin categoría"))];
     const body = rows.length
       ? cats
@@ -2053,10 +2059,18 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         delete match.pending;
         delete match.reason;
         delete match.avail;
+        const rematch = isRealPairMatch(match) ? holdIfRematch(match) : [];
+        if (rematch.length) {
+          shell.markDirty("fixture");
+          render();
+          toast(`Cruce repetido (ya jugaron en ${rematch.join(", ")}) · quedó en Duplicados`, "ok");
+          return;
+        }
       }
       if (k === "home" && pairsMatch(match.home, match.away)) {
         match.away = PENDING_AWAY;
         match.pending = true;
+        delete match.dupHold;
       }
 
       if (["day", "time", "venue", "court"].includes(k)) {
@@ -2156,6 +2170,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         delete next.reason;
         delete next.avail;
         if (!opt.near) delete next.flexAvail;
+        const rematch = holdIfRematch(next);
         ctx.fixture[i] = next;
         // Si quien cubre también estaba pendiente, sale de la lista (ambas van al partido).
         const before = ctx.fixture.length;
@@ -2164,6 +2179,13 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         shell.markDirty("fixture");
         render();
         const dropped = before - ctx.fixture.length;
+        if (rematch.length) {
+          toast(
+            `Cruce repetido (ya jugaron en ${rematch.join(", ")}) · quedó en Duplicados · ${courtOptionText(opt)}`,
+            "ok"
+          );
+          return;
+        }
         toast(
           dropped
             ? `Cubierto · ambas pendientes → partido · ${courtOptionText(opt)}`

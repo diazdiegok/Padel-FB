@@ -3,6 +3,7 @@ import {
   PENDING_AWAY,
   MAX_PAIR_MATCHES,
   absorbCoveredPending,
+  rematchWeeks,
   buildFixture,
   parseWindow,
   countPairMatches,
@@ -241,6 +242,36 @@ console.log("--- cover", covers.map((c) => `${c.label} (${c.pj})`).join(" · "))
   const out2 = absorbCoveredPending([normal, makeup, coveredMakeup], coveredMakeup, coveredMakeup.away);
   assert.ok(out2.includes(normal), "cubrir el recupero no saca el partido normal");
   assert.ok(!out2.includes(makeup));
+}
+
+// Cubrir pendiente / recupero con un rival ya enfrentado → rematchWeeks (Duplicados).
+{
+  const played = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "A Masculina",
+    home: "Julián Gea / Joaquín Gea",
+    away: "Martin Mendez / Diego Godoy",
+    result: "6/3 7/5",
+  };
+  const covered = {
+    week: "Fecha 2",
+    temp: "T5",
+    cat: "A Masculina",
+    home: "Julián Gea / Joaquín Gea",
+    away: "Martin Mendez / Diego Godoy",
+    day: "Martes",
+    time: "16:30 - 18:00",
+  };
+  assert.deepEqual(rematchWeeks(covered, [played]), ["Fecha 1"]);
+  const makeup = { ...covered, week: "Fecha 1", recoverFrom: "Fecha 1", recoveredIn: "Fecha 2" };
+  assert.deepEqual(
+    rematchWeeks(makeup, [{ ...played, week: "Fecha 2" }]),
+    ["Fecha 2"],
+    "recupero de Fecha 1 vs rival ya jugado en Fecha 2"
+  );
+  assert.deepEqual(rematchWeeks({ ...covered, away: PENDING_AWAY, pending: true }, [played]), []);
+  assert.deepEqual(rematchWeeks(covered, [{ ...played, week: "Fecha 2" }]), [], "misma fecha no cuenta");
 }
 
 {

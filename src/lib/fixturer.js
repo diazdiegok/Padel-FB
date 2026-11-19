@@ -25,6 +25,32 @@ export function isRealPairMatch(m) {
   return Boolean(m && String(m.home || "").trim() && !isPlaceholderPair(m.home) && !isPlaceholderPair(m.away));
 }
 
+/**
+ * Fechas de esta temporada donde el mismo cruce ya se jugó (otro week).
+ * Sirve para mandar a Duplicados al cubrir pendientes / recuperan.
+ */
+export function rematchWeeks(match, history = []) {
+  if (!isRealPairMatch(match) || isPendingMatch(match)) return [];
+  const season = String(match.temp || "").toUpperCase();
+  const week = match.week || "";
+  const cat = match.cat || "";
+  const weeks = (history || [])
+    .filter((p) => {
+      if (p === match) return false;
+      if (!isRealPairMatch(p) || p.dupHold) return false;
+      if (String(p.temp || "").toUpperCase() !== season) return false;
+      if ((p.cat || "") !== cat) return false;
+      if ((p.week || "") === week) return false;
+      return (
+        (pairsMatch(p.home, match.home) && pairsMatch(p.away, match.away)) ||
+        (pairsMatch(p.home, match.away) && pairsMatch(p.away, match.home))
+      );
+    })
+    .map((p) => p.week)
+    .filter(Boolean);
+  return [...new Set(weeks)].sort((a, b) => weekNumber(a) - weekNumber(b));
+}
+
 /** Pendiente que no juega esa fecha: se recupera en una fecha siguiente. */
 export function isRecoverLater(m) {
   return !!(m && isPendingMatch(m) && m.recoverLater);
