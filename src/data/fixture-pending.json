@@ -27,28 +27,6 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 18:00 - 21:00 · Miércoles 18:00 - 21:00 · Sábado 17:00 - 20:00",
-    "days": {
-      "Lunes": "18:00 - 21:00",
-      "Miércoles": "18:00 - 21:00",
-      "Sábado": "17:00 - 20:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Rocio Feltes / Sofia Kamlopky",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Lunes 19:00 - 21:00 · Viernes 19:00 - 21:00",
     "days": {
       "Lunes": "19:00 - 21:00",
@@ -265,28 +243,6 @@
     "venue": "",
     "court": "",
     "home": "Esteban Alva / Leandro Kler",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
-    "avail": "Martes 19:30 - 23:00 · Jueves 19:30 - 23:00 · Sábado 10:30 - 00:00",
-    "days": {
-      "Martes": "19:30 - 23:00",
-      "Jueves": "19:30 - 23:00",
-      "Sábado": "10:30 - 00:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Melina Drabble / Cecilia García Formenti",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
