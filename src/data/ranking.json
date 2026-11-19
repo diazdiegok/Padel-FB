@@ -9443,10 +9443,10 @@
   {
     "name": "Luis Roberto Herrera / Carlos Cantagallo",
     "cat": "C Masculina",
-    "pts": 3,
+    "pts": 0,
     "pj": 1,
-    "dif": 2,
-    "pos": 3,
+    "dif": -2,
+    "pos": 18,
     "temp": "T5"
   },
   {
@@ -9461,10 +9461,10 @@
   {
     "name": "Tomás Rodríguez / Sergio Alem",
     "cat": "C Masculina",
-    "pts": 0,
+    "pts": 3,
     "pj": 1,
-    "dif": -2,
-    "pos": 18,
+    "dif": 2,
+    "pos": 3,
     "temp": "T5"
   },
   {
