@@ -1300,5 +1300,18 @@
       "Viernes": "20:00 - 22:30"
     },
     "note": ""
+  },
+  {
+    "id": "pmwnrlspr8317",
+    "createdAt": "2026-11-19T16:28:53.535Z",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "p1": "Raquel Habitzreuter",
+    "p2": "Valeria Basa",
+    "days": {
+      "Miércoles": "15:00 - 23:00",
+      "Viernes": "15:00 - 23:00"
+    },
+    "note": ""
   }
 ]
