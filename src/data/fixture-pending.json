@@ -141,51 +141,6 @@
   {
     "pending": true,
     "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
-    "avail": "Lunes 18:00 - 22:30 · Martes 18:00 - 22:30 · Miércoles 18:00 - 22:30 · Jueves 18:00 - 22:30",
-    "days": {
-      "Lunes": "18:00 - 22:30",
-      "Martes": "18:00 - 22:30",
-      "Miércoles": "18:00 - 22:30",
-      "Jueves": "18:00 - 22:30"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Gonzalo Fabian Bircher / Leonardo Javier Maggioni",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
-    "avail": "Lunes 18:30 - 00:00 · Martes 18:30 - 00:00 · Jueves 18:30 - 00:00",
-    "days": {
-      "Lunes": "18:30 - 00:00",
-      "Martes": "18:30 - 00:00",
-      "Jueves": "18:30 - 00:00"
-    },
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Juan Claudio Arredondo / Estanislao Julián Coronel",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
     "avail": "Miércoles 17:00 - 20:00 · Viernes 17:00 - 20:00",
     "days": {
       "Miércoles": "17:00 - 20:00",
