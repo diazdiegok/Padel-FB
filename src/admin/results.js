@@ -23,6 +23,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
   let filterDay = "";
   let filterCat = "";
   let filterCourt = "";
+  let filterScore = ""; // "" | "open" | "done"
   let term = "";
   let loaded = false;
 
@@ -31,10 +32,12 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
     const i = DAY_ORDER.indexOf(String(d || "").trim().toLowerCase());
     return i < 0 ? 99 : i;
   };
+  const hasResult = (m) => String(m?.result || "").trim().length > 0;
   const clearListFilters = () => {
     filterDay = "";
     filterCat = "";
     filterCourt = "";
+    filterScore = "";
     term = "";
   };
 
@@ -230,7 +233,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
   }
 
   function pillSet(label, items, current, attr, total) {
-    const allLabel = attr === "day" ? "Todos" : "Todas";
+    const allLabel = attr === "cat" ? "Todas" : "Todos";
     return `<div class="res-filter">
       <span>${label}</span>
       <div class="pills">
@@ -238,7 +241,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
         ${items
           .map(
             (item) =>
-              `<button class="pill${current === item.value ? " on" : ""}" type="button" data-res-${attr}="${escAttr(item.value)}">${escAttr(item.value)} <small>${item.n}</small></button>`
+              `<button class="pill${current === item.value ? " on" : ""}" type="button" data-res-${attr}="${escAttr(item.value)}">${escAttr(item.label || item.value)} <small>${item.n}</small></button>`
           )
           .join("")}
       </div>
@@ -252,11 +255,16 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
     if (filterDay && !days.includes(filterDay)) filterDay = "";
     if (filterCat && !used.includes(filterCat)) filterCat = "";
     if (filterCourt && !courts.includes(filterCourt)) filterCourt = "";
+    if (filterScore && filterScore !== "open" && filterScore !== "done") filterScore = "";
+    const openN = list.filter((m) => !hasResult(m)).length;
+    const doneN = list.filter((m) => hasResult(m)).length;
     const q = fold(term);
     let shown = list.slice();
     if (filterDay) shown = shown.filter((m) => m.day === filterDay);
     if (filterCat) shown = shown.filter((m) => (m.cat || "Sin categoría") === filterCat);
     if (filterCourt) shown = shown.filter((m) => m.venue === filterCourt);
+    if (filterScore === "open") shown = shown.filter((m) => !hasResult(m));
+    if (filterScore === "done") shown = shown.filter((m) => hasResult(m));
     if (q) {
       shown = shown.filter((m) =>
         queryMatchesText(`${m.home || ""} ${m.away || ""} ${m.venue || ""} ${weekOf(m)} ${m.cat || ""} ${m.day || ""}`, q)
@@ -270,6 +278,16 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
         compareCats(a.cat, b.cat)
     );
     const filters = `<div class="res-filters">
+      ${pillSet(
+        "Resultado",
+        [
+          { value: "open", label: "Sin resultado", n: openN },
+          { value: "done", label: "Con resultado", n: doneN },
+        ],
+        filterScore,
+        "score",
+        list.length
+      )}
       ${pillSet(
         "Día",
         days.map((value) => ({ value, n: list.filter((m) => m.day === value).length })),
@@ -451,6 +469,12 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
         return;
       }
       const weekBtn = e.target.closest("[data-res-week]");
+      const scoreBtn = e.target.closest("[data-res-score]");
+      if (scoreBtn) {
+        filterScore = scoreBtn.dataset.resScore || "";
+        render();
+        return;
+      }
       const dayBtn = e.target.closest("[data-res-day]");
       if (dayBtn) {
         filterDay = dayBtn.dataset.resDay || "";
