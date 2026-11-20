@@ -52,6 +52,8 @@ function formatRemaining(ms) {
 
 function renewLine(absolute, ms) {
   const abs = String(absolute || "").trim();
+  // El worker a veces ya manda "fecha · en X min"; no lo dupliques.
+  if (/\s·\s+en\s/i.test(abs)) return abs;
   const rel = formatRemaining(ms);
   if (abs && rel) return `${abs} · ${rel}`;
   return abs || rel || "";

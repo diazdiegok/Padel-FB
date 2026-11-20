@@ -1219,12 +1219,17 @@ function renewLabel(absolute, ms, nowMs = Date.now()) {
 function tagMeters(providerName, list, fallbackRenew = "", fallbackMs) {
   const nowMs = Date.now();
   return (Array.isArray(list) ? list : []).map((m) => {
-    const abs = m.renewsAt || fallbackRenew || "";
-    const ms = m.renewsAtMs || fallbackMs;
+    const ownAbs = String(m.renewsAt || "").trim();
+    const ownMs = m.renewsAtMs;
+    // Si el medidor trae texto propio sin timestamp (ej. retention de storage),
+    // no le pegues el countdown del cupo de deploys de Vercel.
+    const abs = ownAbs || fallbackRenew || "";
+    const ms = ownMs != null ? ownMs : ownAbs ? undefined : fallbackMs;
     return {
       ...m,
       label: m.label?.startsWith(`${providerName} ·`) ? m.label : `${providerName} · ${m.label || ""}`,
       renewsAt: renewLabel(abs, ms, nowMs) || abs,
+      renewsAtMs: ms,
     };
   });
 }
@@ -1570,7 +1575,8 @@ async function readVercelUsage(env) {
       unit: "GB",
       tone,
       blocked: usedPct >= 100,
-      renewsAt: "auto (retention ~30 d · guarda últimos 3 prod)",
+      // No es un reset por reloj: Hobby libera GB cuando borra deploys viejos.
+      renewsAt: "no es diario · retention ~30 d (guarda últimos 3 prod)",
     });
     if (usedPct >= 85) {
       alerts.push({
