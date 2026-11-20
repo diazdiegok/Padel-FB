@@ -179,8 +179,8 @@
     "court": "Cancha 1",
     "home": "Juan Leban / German Truffer",
     "away": "Luciano Loizate / Carlos Dinamo",
-    "result": "6/4 7/5",
-    "appliedResult": "6/4 7/5"
+    "result": "4/6 5/7",
+    "appliedResult": "4/6 5/7"
   },
   {
     "week": "Fecha 1",
@@ -193,8 +193,8 @@
     "court": "Cancha 1",
     "home": "Cynthia Atum / Cyhthia Hereñu",
     "away": "Daiana Bastidas / Jesica Michelin",
-    "result": "",
-    "appliedResult": ""
+    "result": "6/4 6/1",
+    "appliedResult": "6/4 6/1"
   },
   {
     "week": "Fecha 1",
@@ -207,8 +207,8 @@
     "court": "Cancha 1",
     "home": "María Laura Borsotti / Celia Senger",
     "away": "Marcos Saavedra / Luis Alberto Albornoz",
-    "result": "",
-    "appliedResult": "",
+    "result": "6/4 6/4",
+    "appliedResult": "6/4 6/4",
     "flexAvail": true
   },
   {
@@ -236,8 +236,8 @@
     "court": "Cancha 2",
     "home": "Maximiliano Satler / Daniel Grinovero",
     "away": "Nahuel Mayor / Exequiel Lyardet",
-    "result": "",
-    "appliedResult": ""
+    "result": "6/4 3/6 7/6",
+    "appliedResult": "6/4 3/6 7/6"
   },
   {
     "week": "Fecha 1",
@@ -264,8 +264,8 @@
     "court": "Cancha 2",
     "home": "Maximiliano Ivan Sanchez / Ezequiel Mangona",
     "away": "Nestor Sione / Ulises Almarante",
-    "result": "",
-    "appliedResult": ""
+    "result": "6/2 6/3",
+    "appliedResult": "6/2 6/3"
   },
   {
     "week": "Fecha 1",
@@ -348,8 +348,8 @@
     "court": "Cancha 1",
     "home": "Brenda Cauvet / Valeria Santamaria",
     "away": "Laura Martínez / Dalila Sosa",
-    "result": "",
-    "appliedResult": "",
+    "result": "6/0 6/0",
+    "appliedResult": "6/0 6/0",
     "flexAvail": true
   },
   {
@@ -363,8 +363,8 @@
     "court": "Cancha 1",
     "home": "Agustin Grippo / Franco Sanchez",
     "away": "Matias Minigutti / Omar Izza",
-    "result": "",
-    "appliedResult": ""
+    "result": "2/6 7/6 3/6",
+    "appliedResult": "2/6 7/6 3/6"
   },
   {
     "week": "Fecha 1",
@@ -450,8 +450,8 @@
     "court": "Cancha 1",
     "home": "Manuela Vinuales / Delfina Vinuales",
     "away": "Morena Jaureguiberry / Mariela Jaureguiberry",
-    "result": "",
-    "appliedResult": "",
+    "result": "6/7 3/6",
+    "appliedResult": "6/7 3/6",
     "flexAvail": true
   },
   {
@@ -465,8 +465,8 @@
     "court": "Cancha 2",
     "home": "Lucia Rausch / Luciana Marconi",
     "away": "Araceli Ferreyra / Agostina Bonilla",
-    "result": "",
-    "appliedResult": ""
+    "result": "0/6 1/6",
+    "appliedResult": "0/6 1/6"
   },
   {
     "week": "Fecha 1",
@@ -566,8 +566,8 @@
     "court": "Cancha 1",
     "home": "Gonzalo Fabian Bircher / Leonardo Javier Maggioni",
     "away": "Juan Claudio Arredondo / Estanislao Julián Coronel",
-    "result": "",
-    "appliedResult": "",
+    "result": "6/2 6/3",
+    "appliedResult": "6/2 6/3",
     "flexAvail": true
   }
 ]
