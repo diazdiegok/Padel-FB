@@ -20,6 +20,8 @@ import {
   parseCourtWindow,
   rematchForCourts,
   releaseOverlappingCourts,
+  filterSharedSlotsToDrive,
+  pairsHaveDriveCourt,
   slotAvailabilityMiss,
   slotFitsPairAvailability,
   summarizeCourtSlots,
@@ -30,7 +32,8 @@ import {
   widenUnusedCourtWindows,
   expandCourtCandidates,
 } from "./slots.js";
-import { isPendingMatch, isRealPairMatch, PENDING_AWAY } from "./fixturer.js";
+import { buildFixture, isPendingMatch, isRealPairMatch, PENDING_AWAY, parseWindow } from "./fixturer.js";
+import { DAYS } from "./disponibilidad.js";
 
 assert.equal(weekFromName("Fecha 1.xlsx"), "Fecha 1");
 assert.equal(weekFromName("fecha-2-canchas.csv"), "Fecha 2");
@@ -125,6 +128,66 @@ assert.equal(planned.length, 2);
 const allSlots = applyVenuePlan(slots, [], { mode: "pool" });
 assert.ok(allSlots.length >= planned.length, "sin cupos se usan todos los candidatos");
 assert.equal(allSlots.length, expandCourtCandidates(slots).length);
+
+// Cruce solo si hay cancha del Drive en el overlap (si no, después caía a pendiente).
+{
+  const sheet = parseCourtSlotRows([
+    { Complejo: "Open", Cancha: "1", Dia: "Lunes", Horario: "22:30 - 24:00" },
+    { Complejo: "Open", Cancha: "2", Dia: "Lunes", Horario: "22:30 - 24:00" },
+  ]);
+  const pool = applyVenuePlan(sheet, [], { mode: "pool" });
+  const lateA = { days: { Lunes: "20:30 - 00:00", Martes: "20:30 - 00:00" } };
+  const lateB = { days: { Lunes: "18:30 - 00:00", Martes: "18:30 - 00:00" } };
+  const earlyA = { days: { Lunes: "16:00 - 18:00" } };
+  const earlyB = { days: { Lunes: "16:00 - 18:00" } };
+  assert.equal(pairsHaveDriveCourt(lateA, lateB, pool), true, "nocturnos tienen Terrazas/Open 22:30");
+  assert.equal(pairsHaveDriveCourt(earlyA, earlyB, pool), false, "tarde sin cancha en el Drive");
+
+  const MATCH = 90;
+  function shared(a, b) {
+    const out = [];
+    for (const day of DAYS) {
+      if (!(day in a.days) || !(day in b.days)) continue;
+      const [fa, ta] = parseWindow(a.days[day]);
+      const [fb, tb] = parseWindow(b.days[day]);
+      const end = Math.min(ta, tb);
+      for (let start = Math.ceil(Math.max(fa, fb) / 30) * 30; start + MATCH <= end; start += 30) out.push({ day, start });
+    }
+    return out;
+  }
+  const lateSlots = filterSharedSlotsToDrive(shared(lateA, lateB), lateA, lateB, pool);
+  assert.ok(lateSlots.some((s) => s.day === "Lunes" && s.start === 22 * 60 + 30), "prioriza el turno exacto del Drive");
+  assert.deepEqual(filterSharedSlotsToDrive(shared(earlyA, earlyB), earlyA, earlyB, pool), []);
+
+  const entries = [
+    { p1: "Milton", p2: "Lucero", cat: "B Masculina", days: lateA.days },
+    { p1: "Marcos", p2: "Albornoz", cat: "B Masculina", days: lateB.days },
+    { p1: "Early", p2: "One", cat: "B Masculina", days: earlyA.days },
+    { p1: "Early", p2: "Two", cat: "B Masculina", days: earlyB.days },
+  ];
+  const out = buildFixture({
+    entries,
+    ranking: [],
+    history: [],
+    week: "Fecha 2",
+    temp: "T5",
+    seed: 1,
+    filterSharedSlots: (slots, a, b) => filterSharedSlotsToDrive(slots, a, b, pool),
+  });
+  const real = out.matches.filter((m) => isRealPairMatch(m) && !isPendingMatch(m));
+  const pending = out.matches.filter(isPendingMatch);
+  assert.equal(real.length, 1, "solo el cruce nocturno con cancha");
+  assert.ok(
+    real.some((m) => /Milton/i.test(m.home) && /Marcos|Albornoz/i.test(m.away)) ||
+      real.some((m) => /Marcos|Albornoz/i.test(m.home) && /Milton/i.test(m.away)),
+    "Milton vs Marcos se arma porque hay exactos en el Drive"
+  );
+  assert.equal(pending.length, 2, "los early sin cancha quedan pendientes");
+  assert.ok(
+    pending.every((p) => /cancha en el Drive/i.test(p.reason || "")),
+    "motivo: sin cancha en Drive"
+  );
+}
 
 // Sin cupos: no se pisan canchas y se respetan horarios de parejas.
 {

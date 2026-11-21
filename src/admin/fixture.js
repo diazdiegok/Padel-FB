@@ -48,6 +48,7 @@ import {
 } from "../lib/sheets.js";
 import {
   applyVenuePlan,
+  assignCourtSlots,
   attachPairDaysFromPairs,
   driveCourtOptions,
   findCourtConflicts,
@@ -60,6 +61,7 @@ import {
   nearCoverCourtOptions,
   normalizeDay,
   pairsSharePlayableWindow,
+  filterSharedSlotsToDrive,
   parkAvailabilityViolations,
   parkBareMatchesAsPending,
   parseCourtWindow,
@@ -662,7 +664,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       title: "Pendientes",
       tone: "",
       count: pending.length,
-      help: "Quedaron sin rival: no había un horario exacto de 1:30 en común, el número era impar o no quedó cancha libre.",
+      help: "Sin rival o sin cancha del Drive en un horario en común (también si el número de parejas es impar). Al cubrir, priorizá exactos.",
       body: pending.length ? pendingCards(pending) : `<p class="admin-help">No hay pendientes en esta fecha.</p>`,
     });
   }
@@ -1516,46 +1518,81 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       });
       if (!ok) return;
       setBuildProgress(5, `Preparando ${week}…`);
-      await tickBuildProgress(15, "Armando cruces…");
+      await tickBuildProgress(15, "Armando cruces (con canchas del Drive)…");
 
       const history = [...(ctx.results || []), ...(ctx.fixture || [])].filter(
         (m) => m.temp === temp && m.week !== week && isRealPairMatch(m)
       );
-      buildCount += 1;
-      const out = buildFixture({ entries, ranking: ctx.rows, history, week, temp, seed: buildCount });
-      await tickBuildProgress(40, "Asignando canchas…");
-      let built = out.matches.map((m) => {
-        const cleaned = cleanMatch(m, {}, season);
-        if (!cleaned.pending) {
-          return {
-            ...cleaned,
-            homeDays: m.homeDays && typeof m.homeDays === "object" ? m.homeDays : undefined,
-            awayDays: m.awayDays && typeof m.awayDays === "object" ? m.awayDays : undefined,
-          };
+      // Solo armar cruces que tengan al menos un turno del Drive donde entren las dos.
+      // Si no, después caían a pendientes aunque “coincidían” en inscripción.
+      const filterSharedSlots = (slots, entryA, entryB) =>
+        filterSharedSlotsToDrive(slots, entryA, entryB, plannedSlots);
+
+      const mapBuilt = (rawMatches) =>
+        attachPairDaysFromPairs(
+          rawMatches.map((m) => {
+            const cleaned = cleanMatch(m, {}, season);
+            if (!cleaned.pending) {
+              return {
+                ...cleaned,
+                homeDays: m.homeDays && typeof m.homeDays === "object" ? m.homeDays : undefined,
+                awayDays: m.awayDays && typeof m.awayDays === "object" ? m.awayDays : undefined,
+              };
+            }
+            return {
+              ...cleanMatch(
+                {
+                  ...cleaned,
+                  pending: true,
+                  away: PENDING_AWAY,
+                  reason: m.reason || cleaned.reason || "",
+                  avail:
+                    cleaned.avail ||
+                    Object.entries(m.days || {})
+                      .map(([d, h]) => `${d} ${h}`)
+                      .join(" · "),
+                  note: m.note || cleaned.note || "",
+                },
+                {},
+                season
+              ),
+              days: m.days && typeof m.days === "object" ? m.days : undefined,
+            };
+          }),
+          ctx.pairs || []
+        );
+
+      // Varias semillas: nos quedamos con la que más partidos pone en cancha (menos pendientes).
+      const SEED_TRIES = 12;
+      let best = null;
+      for (let t = 0; t < SEED_TRIES; t++) {
+        buildCount += 1;
+        const trialOut = buildFixture({
+          entries,
+          ranking: ctx.rows,
+          history,
+          week,
+          temp,
+          seed: buildCount,
+          filterSharedSlots,
+        });
+        const trialBuilt = mapBuilt(trialOut.matches);
+        const trialAssign = assignCourtSlots(trialBuilt, plannedSlots, courtOpts);
+        const withCourt = trialAssign.matches.filter(
+          (m) => isRealPairMatch(m) && !isPending(m) && String(m.venue || "").trim()
+        ).length;
+        const pend = trialAssign.matches.filter(isPending).length + (trialAssign.skipped || 0);
+        const score = withCourt * 1000 - pend;
+        if (!best || score > best.score) {
+          best = { out: trialOut, built: trialBuilt, score, withCourt, pend };
         }
-        // days se pasa a assignCourtSlots para respetar disponibilidad; luego se limpia.
-        return {
-          ...cleanMatch(
-            {
-              ...cleaned,
-              pending: true,
-              away: PENDING_AWAY,
-              reason: m.reason || cleaned.reason || "",
-              avail:
-                cleaned.avail ||
-                Object.entries(m.days || {})
-                  .map(([d, h]) => `${d} ${h}`)
-                  .join(" · "),
-              note: m.note || cleaned.note || "",
-            },
-            {},
-            season
-          ),
-          days: m.days && typeof m.days === "object" ? m.days : undefined,
-        };
-      });
-      // Rehidratar días desde inscripciones por si cleanMatch los había perdido.
-      built = attachPairDaysFromPairs(built, ctx.pairs || []);
+        if (t === 0 || t === SEED_TRIES - 1 || score === best.score) {
+          await tickBuildProgress(15 + Math.round(((t + 1) / SEED_TRIES) * 20), `Probando cruces ${t + 1}/${SEED_TRIES}…`);
+        }
+      }
+      const out = best.out;
+      await tickBuildProgress(40, "Asignando canchas…");
+      let built = best.built;
       // Asigna canchas: 1 cancha = 1 partido (sin solapes) y solo horarios que entran
       // en la disponibilidad de ambas parejas. Sin venueCaps también aplica.
       const assigned = rematchForCourts(built, plannedSlots, courtOpts);

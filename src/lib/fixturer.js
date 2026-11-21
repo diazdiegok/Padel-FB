@@ -490,8 +490,19 @@ function solveCategory(pairs, edges, seed) {
  * Arma los partidos de una fecha a partir de las inscripciones.
  * Una pareja juega un partido (dos si pidió recuperar) contra otra de su categoría con la que
  * comparta al menos 1:30 en el mismo día. Se prioriza no repetir rival y cruzar posiciones cercanas.
+ *
+ * `filterSharedSlots(slots, entryA, entryB)` (opcional): deja solo huecos que existan en el Drive.
+ * Así no se arman cruces “en papel” que después caen a pendientes por falta de cancha.
  */
-export function buildFixture({ entries = [], ranking = [], history = [], week = "", temp = "", seed = 1 } = {}) {
+export function buildFixture({
+  entries = [],
+  ranking = [],
+  history = [],
+  week = "",
+  temp = "",
+  seed = 1,
+  filterSharedSlots = null,
+} = {}) {
   const matches = [];
   const pending = [];
   const active = entries.filter((e) => !e.bye && e.p1 && e.p2 && e.cat);
@@ -520,7 +531,10 @@ export function buildFixture({ entries = [], ranking = [], history = [], week = 
       for (let j = i + 1; j < pairs.length; j++) {
         const a = pairs[i];
         const b = pairs[j];
-        const slots = sharedSlots(a.entry, b.entry);
+        let slots = sharedSlots(a.entry, b.entry);
+        if (typeof filterSharedSlots === "function") {
+          slots = filterSharedSlots(slots, a.entry, b.entry) || [];
+        }
         if (!slots.length) continue;
         const pa = a.pos || maxPos + 1;
         const pb = b.pos || maxPos + 1;
@@ -558,7 +572,9 @@ export function buildFixture({ entries = [], ranking = [], history = [], week = 
         pairs.length === 1
           ? "Es la única pareja anotada en su categoría."
           : p.options === 0
-            ? "No coincide en día y horario con ninguna pareja de su categoría."
+            ? filterSharedSlots
+              ? "No hay cancha en el Drive en un horario en común con otra pareja de su categoría."
+              : "No coincide en día y horario con ninguna pareja de su categoría."
             : "Las parejas con las que coincide ya tienen partido.";
       const slot = {
         week,

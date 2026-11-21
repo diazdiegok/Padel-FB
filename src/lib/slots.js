@@ -1322,6 +1322,38 @@ function courtAssignedCount(matches = []) {
 }
 
 /**
+ * Filtra los huecos teóricos de 1:30 entre dos parejas a los que existen en el Drive.
+ * Si no hay ninguna cancha del pool donde entren las dos, devuelve [] (no armar ese cruce).
+ */
+export function filterSharedSlotsToDrive(slots = [], entryA = {}, entryB = {}, courtPool = []) {
+  if (!courtPool?.length) return slots || [];
+  const match = {
+    homeDays: entryA?.days && typeof entryA.days === "object" ? entryA.days : undefined,
+    awayDays: entryB?.days && typeof entryB.days === "object" ? entryB.days : undefined,
+  };
+  const fitting = (courtPool || []).filter((c) => slotFitsPairAvailability(c, match, { pending: false }));
+  if (!fitting.length) return [];
+  const list = Array.isArray(slots) ? slots : [];
+  const exact = list.filter((sl) =>
+    fitting.some((c) => normalizeDay(c.day) === normalizeDay(sl.day) && Number(c.from) === Number(sl.start))
+  );
+  if (exact.length) return exact;
+  // Hay cancha en el overlap pero no calza el grid de :00/:30 tentativo: igual se puede armar;
+  // assignCourtSlots con preferPlan elige el turno real.
+  return list.filter((sl) => fitting.some((c) => normalizeDay(c.day) === normalizeDay(sl.day)));
+}
+
+/** True si el Drive tiene al menos un turno donde ambas parejas pueden jugar. */
+export function pairsHaveDriveCourt(entryA, entryB, courtPool = []) {
+  if (!courtPool?.length) return true;
+  const match = {
+    homeDays: entryA?.days && typeof entryA.days === "object" ? entryA.days : undefined,
+    awayDays: entryB?.days && typeof entryB.days === "object" ? entryB.days : undefined,
+  };
+  return (courtPool || []).some((c) => slotFitsPairAvailability(c, match, { pending: false }));
+}
+
+/**
  * Si un partido real quedó sin cancha, prueba cambiar el rival (con otro partido
  * de la misma categoría, o con un pendiente) para que ambas puntas entren en un
  * turno libre del plan/Sheet. No baja la cantidad de canchas ya asignadas.
