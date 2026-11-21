@@ -1149,7 +1149,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           if (!on) return escAttr(m[k] || "");
           if (k === "day") return selectField("day", m.day || "", sched.days, { allowEmpty: true, emptyLabel: "Día…" });
           if (k === "time") return selectField("time", m.time || "", sched.times, { allowEmpty: true, emptyLabel: "Horario…" });
-          if (k === "cat") return selectField("cat", m.cat || "", CATS);
+          if (k === "cat") return selectField("cat", m.cat || "", CATS, { allowEmpty: true, emptyLabel: "Categoría…" });
           if (k === "venue") return selectField("venue", m.venue || "", sched.venues, { allowEmpty: true, emptyLabel: "Complejo…" });
           if (k === "court") return selectField("court", m.court || "", courts, { allowEmpty: true, emptyLabel: "Cancha…" });
           if (k === "home") {
@@ -1177,9 +1177,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           .filter(Boolean)
           .join(" ");
         return `<tr data-i="${i}"${cls ? ` class="${cls}"` : ""}${titles.length ? ` title="${escAttr(titles.join(" "))}"` : ""}>
+          <td>${on ? field("cat", "A Masculina") : `${escAttr(m.cat || "—")}${m.recoverFrom ? ` · recupera ${escAttr(m.recoverFrom)}` : ""}`}</td>
           <td>${field("day", "Jueves")}</td>
           <td>${field("time", "19:00 - 20:30")}</td>
-          <td>${on ? field("cat", "A Masculina") : `${escAttr(m.cat || "—")}${m.recoverFrom ? ` · recupera ${escAttr(m.recoverFrom)}` : ""}`}</td>
           ${
             bare
               ? `<td class="fx-court-fallback" colspan="2">${courtFallbackSelect(i, m)}</td>`
@@ -2111,16 +2111,16 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
 
     $("fx-add")?.addEventListener("click", () => {
       if (!filterTemp || !filterWeek) return;
-      const sched = scheduleOpts();
+      // Categoría primero: sin cat no hay rivales; día/cancha se eligen después.
       ctx.fixture.push(
         cleanMatch(
           {
             week: filterWeek,
-            day: sched.days[0] || "",
+            day: "",
             temp: filterTemp,
-            cat: CATS[0] || "",
-            time: sched.times[0] || "",
-            venue: sched.venues[0] || "",
+            cat: "",
+            time: "",
+            venue: "",
             court: "",
             home: "",
             away: "",
@@ -2134,6 +2134,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       focusEdit = true;
       shell.markDirty("fixture");
       render();
+      toast("Elegí la categoría primero", "ok");
     });
 
     $("fx-body")?.addEventListener("change", (e) => {
@@ -2381,6 +2382,35 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const onDelete = async (e) => {
       const btn = e.target.closest("[data-fx-del]");
       if (!btn) return;
+      const i = Number(btn.dataset.fxDel);
+      const match = ctx.fixture[i];
+      // Quitar de Duplicados → ambas puntas vuelven a Pendientes (no se borran).
+      if (match?.dupHold && isRealPairMatch(match) && !isPending(match)) {
+        const ok = await confirmModal({
+          title: "Quitar de Duplicados",
+          body: `Se anula el cruce repetido y ${match.home} y ${match.away} vuelven a Pendientes para cubrirlas de nuevo.`,
+          confirmLabel: "A pendientes",
+          danger: false,
+        });
+        if (!ok) return;
+        const season = filterTemp || match.temp || ctx.siteData.currentSeason || "T4";
+        const pendingRows = splitMatchToPending(match, ctx.pairs || []).map((row) => {
+          const cleaned = cleanMatch(row, {}, season);
+          delete cleaned.dupHold;
+          return cleaned;
+        });
+        if (pendingRows.length < 2) {
+          toast("No se pudieron armar las pendientes.", "err");
+          return;
+        }
+        ctx.fixture.splice(i, 1, ...pendingRows);
+        coverDraft.clear();
+        foldOpen.add("pending");
+        shell.markDirty("fixture");
+        render();
+        toast("Volvieron a Pendientes", "ok");
+        return;
+      }
       const ok = await confirmModal({
         title: "Eliminar partido",
         body: "Se quita del fixture local. Publicá para que impacte en la web.",
@@ -2388,7 +2418,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         danger: true,
       });
       if (!ok) return;
-      ctx.fixture.splice(Number(btn.dataset.fxDel), 1);
+      ctx.fixture.splice(i, 1);
       shell.markDirty("fixture");
       render();
     };
