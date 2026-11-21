@@ -1337,6 +1337,40 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       });
   }
 
+  function setBuildProgress(pct, label) {
+    const wrap = $("fx-build-progress");
+    const fill = $("fx-build-progress-fill");
+    const pctEl = $("fx-build-progress-pct");
+    const labelEl = $("fx-build-progress-label");
+    const bar = wrap?.querySelector(".fx-build-progress-bar");
+    if (!wrap) return;
+    const n = Math.max(0, Math.min(100, Math.round(Number(pct) || 0)));
+    wrap.hidden = false;
+    if (fill) fill.style.width = `${n}%`;
+    if (pctEl) pctEl.textContent = `${n}%`;
+    if (labelEl && label) labelEl.textContent = label;
+    if (bar) bar.setAttribute("aria-valuenow", String(n));
+  }
+
+  function clearBuildProgress() {
+    const wrap = $("fx-build-progress");
+    const fill = $("fx-build-progress-fill");
+    const pctEl = $("fx-build-progress-pct");
+    const labelEl = $("fx-build-progress-label");
+    const bar = wrap?.querySelector(".fx-build-progress-bar");
+    if (!wrap) return;
+    wrap.hidden = true;
+    if (fill) fill.style.width = "0%";
+    if (pctEl) pctEl.textContent = "0%";
+    if (labelEl) labelEl.textContent = "Armando fixture…";
+    if (bar) bar.setAttribute("aria-valuenow", "0");
+  }
+
+  async function tickBuildProgress(pct, label) {
+    setBuildProgress(pct, label);
+    await new Promise((r) => setTimeout(r, 0));
+  }
+
   async function buildFromFecha() {
     if ((await shell.setSection("fixture")) === false) return;
     if (!loadedSlots.length) {
@@ -1437,12 +1471,15 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         confirmLabel: "Armar fixture",
       });
       if (!ok) return;
+      setBuildProgress(5, `Preparando ${week}…`);
+      await tickBuildProgress(15, "Armando cruces…");
 
       const history = [...(ctx.results || []), ...(ctx.fixture || [])].filter(
         (m) => m.temp === temp && m.week !== week && isRealPairMatch(m)
       );
       buildCount += 1;
       const out = buildFixture({ entries, ranking: ctx.rows, history, week, temp, seed: buildCount });
+      await tickBuildProgress(40, "Asignando canchas…");
       let built = out.matches.map((m) => {
         const cleaned = cleanMatch(m, {}, season);
         if (!cleaned.pending) {
@@ -1479,6 +1516,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       built = attachPairDaysFromPairs(built, ctx.pairs || []);
       // Primero asigna canchas; si alguna pareja no entra, prueba cambiarle el rival.
       const assigned = rematchForCourts(built, plannedSlots, courtOpts);
+      await tickBuildProgress(70, "Revisando duplicados y pendientes…");
       // Cruces que ya se jugaron: se prearman (cancha y horario si coinciden) y no entran a la grilla.
       const fresh = [];
       const held = [];
@@ -1525,19 +1563,20 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           (isRealPairMatch(m) || isPending(m)) &&
           (!String(m.venue || "").trim() || !String(m.court || "").trim())
       );
-      const keepOther = (ctx.fixture || []).filter(
-        (m) => isPending(m) && seasonOf(m) === season && (m.week || "") !== week
-      );
-      const keepMakeup = (ctx.fixture || []).filter(
-        (m) => isMakeupPending(m) && seasonOf(m) === season && (m.week || "") === week
+      // Conservar las otras fechas enteras (con resultados). Si solo se dejan
+      // pendientes, draftAwarePools tapa Fecha 1 publicada y el PJ de «Cubrir con» queda en 0.
+      const keepOtherWeeks = (ctx.fixture || []).filter(
+        (m) => seasonOf(m) === season && (m.week || "") !== week
       );
       built.sort(compareByDayTime);
-      ctx.fixture = [...keepOther, ...keepMakeup, ...built];
+      ctx.fixture = [...keepOtherWeeks, ...built];
       filterTemp = season;
       filterWeek = week;
       if ($("fx-week")) $("fx-week").value = week;
       shell.markDirty("fixture");
+      await tickBuildProgress(92, "Actualizando grilla…");
       render();
+      await tickBuildProgress(100, "Listo");
       const parts = [
         `${real.length} partido${real.length === 1 ? "" : "s"}`,
         `${assigned.assigned} con cancha`,
@@ -1577,7 +1616,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
       setMsg($("fx-msg"), `${week} armada: ${parts.join(" · ")}. Revisá y publicá.`, "ok");
       toast(`${week} armada`, "ok");
+      await new Promise((r) => setTimeout(r, 450));
+      clearBuildProgress();
     } catch (err) {
+      clearBuildProgress();
       setMsg($("fx-msg"), err.message, "err");
       toast(err.message, "err");
     } finally {

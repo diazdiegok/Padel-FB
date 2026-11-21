@@ -95,6 +95,9 @@ export function countPairMatches(name, cat, temp, pools = []) {
  * El borrador de una fecha reemplaza lo ya publicado de esa misma fecha.
  * Así, pasar un partido a pendiente baja el PJ en el admin antes de publicar.
  * Si el borrador no se guarda, la fecha publicada sigue contando.
+ *
+ * Importante: el borrador debe conservar las otras fechas (partidos reales).
+ * Si al armar Fecha 2 se tiran los de Fecha 1, el PJ de «Cubrir con» queda en 0.
  */
 export function draftAwarePools(results = [], published = [], draft = [], season = "") {
   const key = (m) => `${String(m?.temp || season || "").toUpperCase()}|${m?.week || ""}`;

@@ -139,6 +139,52 @@ assert.equal(
   );
 }
 
+// Al armar Fecha 2 hay que conservar Fecha 1 en el borrador para que el PJ de «Cubrir con» no baje a 0.
+{
+  const fecha1 = {
+    temp: "T5",
+    cat: "B Masculina",
+    week: "Fecha 1",
+    home: "Valentin Beltzer / Ariel Jaureguiberry",
+    away: "Valentino Sánchez / Thiago Rivera",
+    result: "7/6 6/1",
+  };
+  const draftAfterBuild = [
+    fecha1,
+    {
+      temp: "T5",
+      cat: "B Masculina",
+      week: "Fecha 2",
+      home: "Milton Reatto / Joaquín Lucero",
+      away: PENDING_AWAY,
+      pending: true,
+    },
+  ];
+  const pools = draftAwarePools([], [fecha1], draftAfterBuild, "T5");
+  assert.equal(
+    countPairMatches("Valentino Sánchez / Thiago Rivera", "B Masculina", "T5", pools),
+    1,
+    "Fecha 1 sigue contando PJ al armar Fecha 2"
+  );
+  // Bug viejo: al armar Fecha 2 solo quedaban pendientes de Fecha 1 → se tapaba la publicada.
+  const brokenDraft = [
+    {
+      temp: "T5",
+      cat: "B Masculina",
+      week: "Fecha 1",
+      home: "Otra / Pendiente",
+      away: PENDING_AWAY,
+      pending: true,
+    },
+    draftAfterBuild[1],
+  ];
+  assert.equal(
+    countPairMatches("Valentino Sánchez / Thiago Rivera", "B Masculina", "T5", draftAwarePools([], [fecha1], brokenDraft, "T5")),
+    0,
+    "si el borrador tapa Fecha 1 sin traer el partido jugado, el PJ se pierde"
+  );
+}
+
 const pendingSlot = {
   temp: "T5",
   cat: "A Masculina",

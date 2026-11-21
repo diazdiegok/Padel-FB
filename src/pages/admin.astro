@@ -268,6 +268,22 @@ import "../styles/admin.css";
                   <button class="btn btn-lime" type="button" id="fx-drive-paste" title="Pega los partidos con rival en el sheet de resultados, sin pisar un score ya cargado, y las pendientes en el sheet Pendientes">Pegar en Drive</button>
                 </div>
               </div>
+              <div class="fx-build-progress" id="fx-build-progress" hidden>
+                <div class="fx-build-progress-top">
+                  <span id="fx-build-progress-label">Armando fixture…</span>
+                  <strong id="fx-build-progress-pct">0%</strong>
+                </div>
+                <div
+                  class="fx-build-progress-bar"
+                  role="progressbar"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow="0"
+                  aria-label="Progreso al armar fixture"
+                >
+                  <i id="fx-build-progress-fill"></i>
+                </div>
+              </div>
               <p class="admin-help" id="fx-slots-status" hidden></p>
               <div class="fx-advanced" id="fx-advanced" hidden>
                 <div class="fx-advanced-head">

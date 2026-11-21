@@ -2839,6 +2839,51 @@ body.is-admin .chk input[type="checkbox"] {
   justify-content: space-between;
 }
 
+.fx-build-progress {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(214, 255, 47, 0.28);
+  background: rgba(214, 255, 47, 0.06);
+  display: grid;
+  gap: 8px;
+}
+
+.fx-build-progress-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 13px;
+}
+
+.fx-build-progress-top span {
+  color: var(--muted);
+}
+
+.fx-build-progress-top strong {
+  color: var(--lime);
+  font-family: var(--display);
+  font-size: 18px;
+  letter-spacing: 0.04em;
+}
+
+.fx-build-progress-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.fx-build-progress-bar > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--lime-dim), var(--lime));
+  transition: width 0.2s ease;
+}
+
 .fx-toolbar-main {
   display: flex;
   flex-wrap: wrap;
