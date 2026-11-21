@@ -1475,6 +1475,29 @@ function availText(days) {
 }
 
 /**
+ * Si por algún bug quedaron dos partidos en la misma cancha/horario, libera el 2º+
+ * (saca venue/court) para que parkBareMatchesAsPending los mande a pendientes.
+ * assignCourtSlots ya evita esto; es red de seguridad.
+ */
+export function releaseOverlappingCourts(matches = []) {
+  const next = (matches || []).map((m) => ({ ...m }));
+  const groups = findCourtConflicts(next);
+  let released = 0;
+  for (const g of groups) {
+    for (const idx of (g.indexes || []).slice(1)) {
+      const m = next[idx];
+      if (!m) continue;
+      m.venue = "";
+      m.court = "";
+      m.day = "";
+      m.time = "";
+      released += 1;
+    }
+  }
+  return { matches: next, released, groups };
+}
+
+/**
  * Partidos reales que quedaron sin cancha → dos pendientes (como impar / sin cruce).
  * Así ninguna pareja queda “colgada” con rival pero sin sede.
  */

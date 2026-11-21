@@ -63,6 +63,7 @@ import {
   parkAvailabilityViolations,
   parkBareMatchesAsPending,
   parseCourtWindow,
+  releaseOverlappingCourts,
   rematchForCourts,
   summarizeCourtSlots,
   weekFromName,
@@ -1510,7 +1511,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         body:
           `Se arma ${week} (${seasonLabel(season)}) con ${playable.length} pareja${playable.length === 1 ? "" : "s"} y ${capacityTxt}. ` +
           (warnings.length ? warnings.join(" ") + " " : "") +
-          "Los horarios respetan la disponibilidad de cada pareja. Nada se publica hasta que toques Publicar fixture.",
+          "Cada cancha queda en un solo partido (sin pisarse) y los horarios respetan la disponibilidad de cada pareja. Nada se publica hasta que toques Publicar fixture.",
         confirmLabel: "Armar fixture",
       });
       if (!ok) return;
@@ -1555,13 +1556,16 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       });
       // Rehidratar días desde inscripciones por si cleanMatch los había perdido.
       built = attachPairDaysFromPairs(built, ctx.pairs || []);
-      // Primero asigna canchas; si alguna pareja no entra, prueba cambiarle el rival.
+      // Asigna canchas: 1 cancha = 1 partido (sin solapes) y solo horarios que entran
+      // en la disponibilidad de ambas parejas. Sin venueCaps también aplica.
       const assigned = rematchForCourts(built, plannedSlots, courtOpts);
+      // Red de seguridad: si algo quedó pisando cancha, se libera y pasa a pendientes.
+      const releasedCourts = releaseOverlappingCourts(assigned.matches);
       await tickBuildProgress(70, "Revisando duplicados y pendientes…");
       // Cruces que ya se jugaron: se prearman (cancha y horario si coinciden) y no entran a la grilla.
       const fresh = [];
       const held = [];
-      for (const m of assigned.matches) {
+      for (const m of releasedCourts.matches) {
         if (isRealPairMatch(m) && !isPending(m) && facedBefore(m, history).length) {
           held.push({ ...m, dupHold: true });
         } else fresh.push(m);
@@ -1628,6 +1632,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           `${assigned.swaps} rival${assigned.swaps === 1 ? "" : "es"} rearmado${assigned.swaps === 1 ? "" : "s"} para encontrar cancha`
         );
       }
+      if (releasedCourts.released) {
+        parts.push(
+          `${releasedCourts.released} cancha${releasedCourts.released === 1 ? "" : "s"} duplicada${releasedCourts.released === 1 ? "" : "s"} liberada${releasedCourts.released === 1 ? "" : "s"}`
+        );
+      }
       if (parkedBare.parked) {
         parts.push(
           `${parkedBare.parked} cruce${parkedBare.parked === 1 ? "" : "s"} sin cancha → pendiente${parkedBare.parked === 1 ? "" : "s"}`
@@ -1637,6 +1646,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         parts.push(
           `${parkedBad.parked} fuera de disponibilidad → pendiente${parkedBad.parked === 1 ? "" : "s"}`
         );
+      }
+      const stillConflict = findCourtConflicts(real);
+      if (stillConflict.length) {
+        parts.push(`${stillConflict.length} aviso${stillConflict.length === 1 ? "" : "s"} de cancha repetida (Revisar duplicados)`);
       }
       if (pendingBare.length) {
         parts.push(`${pendingBare.length} pendiente${pendingBare.length === 1 ? "" : "s"} sin cancha reservada`);

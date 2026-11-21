@@ -19,6 +19,7 @@ import {
   parseCourtSlotRows,
   parseCourtWindow,
   rematchForCourts,
+  releaseOverlappingCourts,
   slotAvailabilityMiss,
   slotFitsPairAvailability,
   summarizeCourtSlots,
@@ -124,6 +125,89 @@ assert.equal(planned.length, 2);
 const allSlots = applyVenuePlan(slots, [], { mode: "pool" });
 assert.ok(allSlots.length >= planned.length, "sin cupos se usan todos los candidatos");
 assert.equal(allSlots.length, expandCourtCandidates(slots).length);
+
+// Sin cupos: no se pisan canchas y se respetan horarios de parejas.
+{
+  const sheet = parseCourtSlotRows([
+    { Complejo: "Open", Cancha: "Cancha 1", Dia: "Lunes", Horario: "16:00 - 22:00" },
+    { Complejo: "Open", Cancha: "Cancha 2", Dia: "Lunes", Horario: "16:00 - 22:00" },
+    { Complejo: "Open", Cancha: "Cancha 1", Dia: "Martes", Horario: "18:00 - 22:00" },
+    { Complejo: "Terrazas", Cancha: "1", Dia: "Lunes", Horario: "19:00 - 22:00" },
+  ]);
+  const pool = applyVenuePlan(sheet, [], { mode: "pool" });
+  const crowd = [
+    {
+      week: "Fecha 2",
+      temp: "T5",
+      cat: "B Masculina",
+      home: "A1 / A2",
+      away: "B1 / B2",
+      homeDays: { Lunes: "16:30 - 20:00" },
+      awayDays: { Lunes: "16:00 - 21:00" },
+    },
+    {
+      week: "Fecha 2",
+      temp: "T5",
+      cat: "B Masculina",
+      home: "C1 / C2",
+      away: "D1 / D2",
+      homeDays: { Lunes: "16:30 - 20:00" },
+      awayDays: { Lunes: "16:00 - 21:00" },
+    },
+    {
+      week: "Fecha 2",
+      temp: "T5",
+      cat: "A Masculina",
+      home: "E1 / E2",
+      away: "F1 / F2",
+      homeDays: { Lunes: "19:00 - 23:00" },
+      awayDays: { Lunes: "19:00 - 23:00" },
+    },
+    {
+      week: "Fecha 2",
+      temp: "T5",
+      cat: "C Masculina",
+      home: "G1 / G2",
+      away: "H1 / H2",
+      homeDays: { Martes: "18:00 - 22:00" },
+      awayDays: { Martes: "18:00 - 22:00" },
+    },
+    {
+      week: "Fecha 2",
+      temp: "T5",
+      cat: "B Femenino",
+      home: "I1 / I2",
+      away: "J1 / J2",
+      homeDays: { Lunes: "15:00 - 16:00" },
+      awayDays: { Lunes: "15:00 - 16:00" },
+    },
+  ];
+  const out = rematchForCourts(crowd, pool, { onlyEmpty: true, preferPlan: true });
+  assert.equal(findCourtConflicts(out.matches).length, 0, "sin cupos: 0 canchas pisadas");
+  for (const m of out.matches) {
+    if (!isRealPairMatch(m) || isPendingMatch(m) || !m.venue) continue;
+    assert.equal(matchViolatesAvailability(m), false, `horario inválido: ${m.home} ${m.day} ${m.time}`);
+  }
+  const lateOnly = out.matches.find((m) => m.home === "E1 / E2");
+  assert.ok(lateOnly?.venue, "pareja de 19hs consigue cancha");
+  assert.ok(
+    !lateOnly.time.startsWith("16:") && !lateOnly.time.startsWith("17:"),
+    "no le dan un turno antes de su disponibilidad"
+  );
+  const noFit = out.matches.find((m) => m.home === "I1 / I2");
+  assert.ok(!noFit?.venue || isPendingMatch(noFit), "sin ventana en el Drive queda sin cancha");
+
+  // Red de seguridad: si forzamos un doble book, releaseOverlappingCourts libera el exceso.
+  const forced = [
+    { week: "Fecha 2", temp: "T5", day: "Lunes", time: "19:00 - 20:30", venue: "Open Padel", court: "Cancha 1", home: "X / Y", away: "Z / W" },
+    { week: "Fecha 2", temp: "T5", day: "Lunes", time: "19:00 - 20:30", venue: "Open Padel", court: "1", home: "P / Q", away: "R / S" },
+  ];
+  assert.equal(findCourtConflicts(forced).length, 1, "Cancha 1 y 1 son la misma");
+  const freed = releaseOverlappingCourts(forced);
+  assert.equal(freed.released, 1);
+  assert.equal(findCourtConflicts(freed.matches).length, 0);
+  assert.ok(!freed.matches[1].venue, "el segundo pierde la cancha");
+}
 
 const matches = [
   { week: "Fecha 1", cat: "A Masculina", day: "Lunes", time: "19:00 - 20:30", home: "A / B", away: "C / D", venue: "", court: "" },
