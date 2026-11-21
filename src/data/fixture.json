@@ -250,8 +250,8 @@
     "court": "Cancha 2",
     "home": "Francisco Martinez / Lucas Lanzi",
     "away": "Guillermo Andrini / Dario Diaz",
-    "result": "",
-    "appliedResult": ""
+    "result": "1/6 0/6",
+    "appliedResult": "1/6 0/6"
   },
   {
     "week": "Fecha 1",
@@ -278,8 +278,8 @@
     "court": "Cancha 1",
     "home": "Francisco Benedetich / Facundo Llover",
     "away": "Francisco Espinoza / Joaquin Rodriguez",
-    "result": "",
-    "appliedResult": ""
+    "result": "3/6 2/6",
+    "appliedResult": "3/6 2/6"
   },
   {
     "week": "Fecha 1",
@@ -306,8 +306,8 @@
     "court": "Cancha 1",
     "home": "Ramiro Romero / Angelica Alcaraz",
     "away": "Sebastian Bregant / Luis Valla",
-    "result": "",
-    "appliedResult": ""
+    "result": "6/4 3/6 4/6",
+    "appliedResult": "6/4 3/6 4/6"
   },
   {
     "week": "Fecha 1",
@@ -320,8 +320,8 @@
     "court": "Cancha 2",
     "home": "Alexis Sostersich / José Sagasta",
     "away": "Mario Martin Sbarbaro / Ronaldo Antonio Fontana",
-    "result": "",
-    "appliedResult": ""
+    "result": "1/6 3/6",
+    "appliedResult": "1/6 3/6"
   },
   {
     "week": "Fecha 1",
@@ -334,8 +334,8 @@
     "court": "Cancha 4",
     "home": "Imanol Agnoli / Hernan Masine",
     "away": "Iván Perez / Fernando Munguia",
-    "result": "",
-    "appliedResult": ""
+    "result": "4/6 6/3 6/3",
+    "appliedResult": "4/6 6/3 6/3"
   },
   {
     "week": "Fecha 1",
@@ -377,8 +377,8 @@
     "court": "Cancha 2",
     "home": "Adrian Romero / Roberto Challol",
     "away": "Ernesto Enz / Facundo Casals",
-    "result": "",
-    "appliedResult": ""
+    "result": "0/6 0/6",
+    "appliedResult": "0/6 0/6"
   },
   {
     "week": "Fecha 1",
@@ -421,8 +421,8 @@
     "court": "Cancha 1",
     "home": "Camila Gauna / Luana Falcón",
     "away": "Delfina Olmedo / Vanina Antonella Vallejos",
-    "result": "",
-    "appliedResult": ""
+    "result": "0/6 2/6",
+    "appliedResult": "0/6 2/6"
   },
   {
     "week": "Fecha 1",
@@ -435,8 +435,8 @@
     "court": "Cancha 2",
     "home": "Stefania Benedetich / Florencia Benedetich",
     "away": "Andrea Scoreanzi / Gisela Mansilla",
-    "result": "",
-    "appliedResult": "",
+    "result": "6/4 3/6 6/3",
+    "appliedResult": "6/4 3/6 6/3",
     "flexAvail": true
   },
   {
@@ -508,8 +508,8 @@
     "court": "Cancha 2",
     "home": "Agustin Alfonso / Ricardo Martin Ramirez",
     "away": "Nelson Fernando Montorfano / Jonatan Gaston Jerez",
-    "result": "",
-    "appliedResult": "",
+    "result": "3/6 3/6",
+    "appliedResult": "3/6 3/6",
     "flexAvail": true
   },
   {

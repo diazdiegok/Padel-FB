@@ -8798,7 +8798,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 21,
+    "pos": 17,
     "temp": "T5"
   },
   {
@@ -8813,28 +8813,28 @@
   {
     "name": "Francisco Espinoza / Joaquin Rodriguez",
     "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 14,
+    "pts": 3,
+    "pj": 1,
+    "dif": 2,
+    "pos": 4,
     "temp": "T5"
   },
   {
     "name": "Stefania Benedetich / Florencia Benedetich",
     "cat": "C Femenino",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 20,
+    "pts": 3,
+    "pj": 1,
+    "dif": 1,
+    "pos": 7,
     "temp": "T5"
   },
   {
     "name": "Francisco Benedetich / Facundo Llover",
     "cat": "B Masculina",
     "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 13,
+    "pj": 1,
+    "dif": -2,
+    "pos": 22,
     "temp": "T5"
   },
   {
@@ -8879,7 +8879,7 @@
     "pts": 1,
     "pj": 1,
     "dif": -1,
-    "pos": 9,
+    "pos": 10,
     "temp": "T5"
   },
   {
@@ -8924,7 +8924,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 4,
+    "pos": 5,
     "temp": "T5"
   },
   {
@@ -8960,16 +8960,16 @@
     "pts": 1,
     "pj": 1,
     "dif": -1,
-    "pos": 5,
+    "pos": 6,
     "temp": "T5"
   },
   {
     "name": "Mario Martin Sbarbaro / Ronaldo Antonio Fontana",
     "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 17,
+    "pts": 3,
+    "pj": 1,
+    "dif": 2,
+    "pos": 10,
     "temp": "T5"
   },
   {
@@ -9012,9 +9012,9 @@
     "name": "Francisco Martinez / Lucas Lanzi",
     "cat": "B Masculina",
     "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 15,
+    "pj": 1,
+    "dif": -2,
+    "pos": 23,
     "temp": "T5"
   },
   {
@@ -9059,25 +9059,25 @@
     "pts": 1,
     "pj": 1,
     "dif": -1,
-    "pos": 8,
+    "pos": 9,
     "temp": "T5"
   },
   {
     "name": "Sebastian Bregant / Luis Valla",
     "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 19,
+    "pts": 3,
+    "pj": 1,
+    "dif": 1,
+    "pos": 13,
     "temp": "T5"
   },
   {
     "name": "Alexis Sostersich / José Sagasta",
     "cat": "B Masculina",
     "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 10,
+    "pj": 1,
+    "dif": -2,
+    "pos": 19,
     "temp": "T5"
   },
   {
@@ -9095,7 +9095,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 1,
-    "pos": 6,
+    "pos": 8,
     "temp": "T5"
   },
   {
@@ -9104,7 +9104,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 23,
+    "pos": 21,
     "temp": "T5"
   },
   {
@@ -9122,7 +9122,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 6,
+    "pos": 9,
     "temp": "T5"
   },
   {
@@ -9140,7 +9140,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 5,
+    "pos": 6,
     "temp": "T5"
   },
   {
@@ -9185,7 +9185,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 20,
+    "pos": 16,
     "temp": "T5"
   },
   {
@@ -9218,10 +9218,10 @@
   {
     "name": "Imanol Agnoli / Hernan Masine",
     "cat": "A Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 7,
+    "pts": 3,
+    "pj": 1,
+    "dif": 1,
+    "pos": 4,
     "temp": "T5"
   },
   {
@@ -9239,7 +9239,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 5,
+    "pos": 8,
     "temp": "T5"
   },
   {
@@ -9254,28 +9254,28 @@
   {
     "name": "Ernesto Enz / Facundo Casals",
     "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 11,
+    "pts": 3,
+    "pj": 1,
+    "dif": 2,
+    "pos": 3,
     "temp": "T5"
   },
   {
     "name": "Iván Perez / Fernando Munguia",
     "cat": "A Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 8,
+    "pts": 1,
+    "pj": 1,
+    "dif": -1,
+    "pos": 7,
     "temp": "T5"
   },
   {
     "name": "Guillermo Andrini / Dario Diaz",
     "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 16,
+    "pts": 3,
+    "pj": 1,
+    "dif": 2,
+    "pos": 5,
     "temp": "T5"
   },
   {
@@ -9284,7 +9284,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 1,
-    "pos": 7,
+    "pos": 8,
     "temp": "T5"
   },
   {
@@ -9293,7 +9293,7 @@
     "pts": 1,
     "pj": 1,
     "dif": -1,
-    "pos": 7,
+    "pos": 10,
     "temp": "T5"
   },
   {
@@ -9320,7 +9320,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 1,
-    "pos": 6,
+    "pos": 7,
     "temp": "T5"
   },
   {
@@ -9329,7 +9329,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 8,
+    "pos": 12,
     "temp": "T5"
   },
   {
@@ -9338,7 +9338,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 22,
+    "pos": 20,
     "temp": "T5"
   },
   {
@@ -9356,16 +9356,16 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 4,
+    "pos": 7,
     "temp": "T5"
   },
   {
     "name": "Andrea Scoreanzi / Gisela Mansilla",
     "cat": "C Femenino",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 8,
+    "pts": 1,
+    "pj": 1,
+    "dif": -1,
+    "pos": 9,
     "temp": "T5"
   },
   {
@@ -9392,7 +9392,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 7,
+    "pos": 11,
     "temp": "T5"
   },
   {
@@ -9407,19 +9407,19 @@
   {
     "name": "Ramiro Romero / Angelica Alcaraz",
     "cat": "B Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 18,
+    "pts": 1,
+    "pj": 1,
+    "dif": -1,
+    "pos": 14,
     "temp": "T5"
   },
   {
     "name": "Camila Gauna / Luana Falcón",
     "cat": "C Femenino",
     "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 9,
+    "pj": 1,
+    "dif": -2,
+    "pos": 21,
     "temp": "T5"
   },
   {
@@ -9428,16 +9428,16 @@
     "pts": 3,
     "pj": 1,
     "dif": 1,
-    "pos": 4,
+    "pos": 5,
     "temp": "T5"
   },
   {
     "name": "Adrian Romero / Roberto Challol",
     "cat": "B Masculina",
     "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 9,
+    "pj": 1,
+    "dif": -2,
+    "pos": 18,
     "temp": "T5"
   },
   {
@@ -9452,10 +9452,10 @@
   {
     "name": "Delfina Olmedo / Vanina Antonella Vallejos",
     "cat": "C Femenino",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 10,
+    "pts": 3,
+    "pj": 1,
+    "dif": 2,
+    "pos": 4,
     "temp": "T5"
   },
   {
@@ -9464,7 +9464,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 5,
+    "pos": 6,
     "temp": "T5"
   },
   {
@@ -9480,9 +9480,9 @@
     "name": "Agustin Alfonso / Ricardo Martin Ramirez",
     "cat": "C Masculina",
     "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 10,
+    "pj": 1,
+    "dif": -2,
+    "pos": 13,
     "temp": "T5"
   },
   {
@@ -9491,16 +9491,16 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 6,
+    "pos": 8,
     "temp": "T5"
   },
   {
     "name": "Nelson Fernando Montorfano / Jonatan Gaston Jerez",
     "cat": "C Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 13,
+    "pts": 3,
+    "pj": 1,
+    "dif": 2,
+    "pos": 5,
     "temp": "T5"
   },
   {
@@ -9545,7 +9545,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 3,
+    "pos": 6,
     "temp": "T5"
   },
   {
@@ -9554,7 +9554,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 12,
+    "pos": 15,
     "temp": "T5"
   },
   {
@@ -9572,7 +9572,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 21,
+    "pos": 20,
     "temp": "T5"
   },
   {
