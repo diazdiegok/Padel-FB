@@ -1564,7 +1564,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       if (bare.filter(isRealPairMatch).length) {
         parts.push(`${bare.filter(isRealPairMatch).length} sin complejo/cancha`);
       }
-      if (assigned.skipped && !parked.parked) parts.push(`${assigned.skipped} sin cancha compatible`);
+      if (assigned.skipped && !parkedBare.parked && !parkedBad.parked) {
+        parts.push(`${assigned.skipped} sin cancha compatible`);
+      }
       const byesNoCap = out.byes.filter((e) => !e._capped);
       if (byesNoCap.length) parts.push(`${byesNoCap.length} sin disponibilidad`);
       if (capped) parts.push(`${capped} en tope ${MAX_PAIR_MATCHES} PJ`);
