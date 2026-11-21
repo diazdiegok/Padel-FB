@@ -107,6 +107,8 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   let advancedMode = false;
   /** Índice de pendiente → pareja elegida en «Cubrir con» (aún sin confirmar cancha). */
   const coverDraft = new Map();
+  /** «+ Partido»: categoría → pareja 1 → pareja 2 → turno del Drive. null = cerrado. */
+  let newDraft = null;
   /** Ventanas abiertas. Recuperan fecha y Duplicados arrancan plegados. */
   const foldOpen = new Set(["pending"]);
 
@@ -1035,6 +1037,157 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     return { ...base, venues };
   }
 
+  /** Parejas de la fecha que ya tienen partido con rival (para avisar en el desplegable). */
+  function playingThisWeek() {
+    const out = [];
+    for (const m of ctx.fixture || []) {
+      if (seasonOf(m) !== filterTemp || (m.week || "") !== filterWeek) continue;
+      if (isPending(m) || !isRealPairMatch(m)) continue;
+      out.push(m.home, m.away);
+    }
+    return out;
+  }
+
+  function newDraftMatch() {
+    const d = newDraft || {};
+    return {
+      week: filterWeek,
+      temp: filterTemp,
+      cat: d.cat || "",
+      home: d.home || "",
+      away: d.away || "",
+      day: "",
+      time: "",
+      venue: "",
+      court: "",
+      result: "",
+    };
+  }
+
+  function renderNewMatch() {
+    const box = $("fx-new");
+    if (!box) return;
+    if (!newDraft || !isLiveWeek(filterTemp, filterWeek)) {
+      box.hidden = true;
+      box.innerHTML = "";
+      return;
+    }
+    const d = newDraft;
+    const playing = playingThisWeek();
+    const tag = (label) => (playing.some((p) => pairsMatch(p, label)) ? " · ya juega esta fecha" : "");
+    const pairOpts = (list, value, empty) =>
+      `<option value="">${escAttr(empty)}</option>` +
+      list
+        .map(
+          (p) =>
+            `<option value="${escAttr(p)}"${pairsMatch(p, value) ? " selected" : ""}>${escAttr(p + tag(p))}</option>`
+        )
+        .join("");
+
+    const catsWithPairs = CATS.filter(
+      (c) => rivalOptionsFromPairs({ pairs: ctx.pairs || [], temp: filterTemp, cat: c }).length >= 2
+    );
+    const homes = d.cat ? rivalOptionsFromPairs({ pairs: ctx.pairs || [], temp: filterTemp, cat: d.cat }) : [];
+    const aways = d.home ? homes.filter((p) => !pairsMatch(p, d.home)) : [];
+
+    let slotSel = `<select disabled aria-label="Horario"><option>4. Primero elegí las dos parejas</option></select>`;
+    let hint = "";
+    let canAdd = false;
+    if (d.home && d.away) {
+      const m = newDraftMatch();
+      const homeDays = daysOfPair(m.home, m.cat);
+      const awayDays = daysOfPair(m.away, m.cat);
+      if (!loadedSlots.length) {
+        slotSel = `<select disabled aria-label="Horario"><option>Leé el Drive para ver horarios</option></select>`;
+      } else if (!homeDays || !awayDays) {
+        slotSel = `<select disabled aria-label="Horario"><option>Falta la disponibilidad de una pareja</option></select>`;
+      } else {
+        const opts = courtChoicesFor({ ...m, homeDays, awayDays });
+        if (!opts.length) {
+          slotSel = `<select disabled aria-label="Horario"><option>Sin horario libre del Drive donde coincidan</option></select>`;
+          hint = `Disponibilidad: ${availHint(homeDays)} — ${availHint(awayDays)}`;
+        } else {
+          slotSel = `<select data-fx-new="slot" aria-label="Horario">
+            <option value="">4. Horario (${opts.length} coinciden)…</option>
+            ${opts
+              .map(
+                (o) =>
+                  `<option value="${escAttr(o.key)}"${o.key === d.slot ? " selected" : ""}>${escAttr(courtOptionText(o))}</option>`
+              )
+              .join("")}
+          </select>`;
+          canAdd = !!d.slot && opts.some((o) => o.key === d.slot);
+        }
+      }
+      const weeks = facedBefore(m);
+      if (weeks.length) hint = `Ya se enfrentaron en ${weeks.join(", ")}: va a quedar en Duplicados.${hint ? ` ${hint}` : ""}`;
+    }
+
+    box.hidden = false;
+    box.innerHTML = `<section class="fx-new-match" aria-label="Nuevo partido">
+      <h4>Nuevo partido · ${escAttr(filterWeek)}</h4>
+      <div class="fx-pending-actions">
+        <select data-fx-new="cat" aria-label="Categoría">
+          <option value="">1. Categoría…</option>
+          ${catsWithPairs.map((c) => `<option value="${escAttr(c)}"${c === d.cat ? " selected" : ""}>${escAttr(c)}</option>`).join("")}
+        </select>
+        <select data-fx-new="home" aria-label="Pareja 1"${d.cat ? "" : " disabled"}>
+          ${pairOpts(homes, d.home, d.cat ? "2. Pareja 1…" : "2. Primero elegí categoría")}
+        </select>
+        <select data-fx-new="away" aria-label="Pareja 2"${d.home ? "" : " disabled"}>
+          ${pairOpts(aways, d.away, d.home ? "3. Pareja 2…" : "3. Primero elegí pareja 1")}
+        </select>
+        ${slotSel}
+        <button class="btn btn-lime" type="button" data-fx-new-ok${canAdd ? "" : " disabled"}>Agregar</button>
+        <button class="btn btn-ghost" type="button" data-fx-new-cancel>Cancelar</button>
+      </div>
+      ${hint ? `<p class="admin-help" style="margin:6px 0 0">${escAttr(hint)}</p>` : ""}
+    </section>`;
+  }
+
+  function addNewMatch() {
+    if (!newDraft?.home || !newDraft?.away || !newDraft?.slot) return;
+    const base = newDraftMatch();
+    const homeDays = daysOfPair(base.home, base.cat);
+    const awayDays = daysOfPair(base.away, base.cat);
+    const opt = courtChoicesFor({ ...base, homeDays, awayDays }).find((o) => o.key === newDraft.slot);
+    if (!opt) {
+      toast("Ese horario ya no está libre. Elegí otro.", "err");
+      newDraft.slot = "";
+      renderNewMatch();
+      return;
+    }
+    const match = cleanMatch(
+      { ...base, day: opt.day, time: opt.time, venue: opt.venue, court: opt.court },
+      {},
+      filterTemp
+    );
+    // Si alguna estaba en Pendientes esta fecha, deja de estarlo.
+    ctx.fixture = (ctx.fixture || []).filter(
+      (m) =>
+        !(
+          isPending(m) &&
+          !m.recoverFrom &&
+          seasonOf(m) === filterTemp &&
+          (m.week || "") === filterWeek &&
+          (pairsMatch(m.home, base.home) || pairsMatch(m.home, base.away))
+        )
+    );
+    ctx.fixture.push(match);
+    const rematch = holdIfRematch(match);
+    coverDraft.clear();
+    newDraft = null;
+    editing = -1;
+    shell.markDirty("fixture");
+    render();
+    toast(
+      rematch.length
+        ? `Cruce repetido (ya jugaron en ${rematch.join(", ")}) · quedó en Duplicados`
+        : `Partido agregado · ${courtOptionText(opt)}`,
+      "ok"
+    );
+  }
+
   function selectField(k, value, options, { allowEmpty = false, emptyLabel = "—" } = {}) {
     const opts = [...options];
     if (value && !opts.some((o) => String(o) === String(value))) opts.unshift(value);
@@ -1064,6 +1217,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     if (bar) bar.hidden = !live;
     if (dl) dl.hidden = !filterWeek;
     renderAdvanced();
+    renderNewMatch();
     const sched = scheduleOpts();
 
     if (!live) {
@@ -1245,7 +1399,21 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     });
   }
 
+  /** Filas vacías del «+ Partido» viejo (sin categoría ni pareja) que quedaban como pendientes. */
+  function purgeBlankRows() {
+    const before = (ctx.fixture || []).length;
+    ctx.fixture = (ctx.fixture || []).filter(
+      (m) => !(!String(m.home || "").trim() && !String(m.cat || "").trim() && !isRealPairMatch(m))
+    );
+    if (ctx.fixture.length !== before) {
+      editing = -1;
+      coverDraft.clear();
+      shell.markDirty("fixture");
+    }
+  }
+
   function render() {
+    purgeBlankRows();
     updateSummary();
     renderVenues();
     const root = $("fx-boxes");
@@ -2182,30 +2350,35 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
 
     $("fx-add")?.addEventListener("click", () => {
       if (!filterTemp || !filterWeek) return;
-      // Categoría primero: sin cat no hay rivales; día/cancha se eligen después.
-      ctx.fixture.push(
-        cleanMatch(
-          {
-            week: filterWeek,
-            day: "",
-            temp: filterTemp,
-            cat: "",
-            time: "",
-            venue: "",
-            court: "",
-            home: "",
-            away: "",
-            result: "",
-          },
-          {},
-          filterTemp
-        )
-      );
-      editing = ctx.fixture.length - 1;
-      focusEdit = true;
-      shell.markDirty("fixture");
-      render();
-      toast("Elegí la categoría primero", "ok");
+      newDraft = { cat: "", home: "", away: "", slot: "" };
+      renderNewMatch();
+      const box = $("fx-new");
+      box?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      box?.querySelector('select[data-fx-new="cat"]')?.focus();
+    });
+
+    $("fx-new")?.addEventListener("change", (e) => {
+      const sel = e.target.closest("[data-fx-new]");
+      if (!sel || !newDraft) return;
+      const k = sel.dataset.fxNew;
+      newDraft[k] = sel.value;
+      // Cada paso limpia los siguientes.
+      if (k === "cat") Object.assign(newDraft, { home: "", away: "", slot: "" });
+      if (k === "home") Object.assign(newDraft, { away: "", slot: "" });
+      if (k === "away") newDraft.slot = "";
+      renderNewMatch();
+      const nextStep = { cat: "home", home: "away", away: "slot" }[k];
+      const target = nextStep && $("fx-new")?.querySelector(`select[data-fx-new="${nextStep}"]:not([disabled])`);
+      (target || $("fx-new")?.querySelector("[data-fx-new-ok]:not([disabled])"))?.focus();
+    });
+
+    $("fx-new")?.addEventListener("click", (e) => {
+      if (e.target.closest("[data-fx-new-cancel]")) {
+        newDraft = null;
+        renderNewMatch();
+        return;
+      }
+      if (e.target.closest("[data-fx-new-ok]")) addNewMatch();
     });
 
     $("fx-body")?.addEventListener("change", (e) => {

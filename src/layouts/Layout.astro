@@ -72,7 +72,7 @@ const inTorneos = path.includes("/torneos");
     </script>
   </head>
   <body class:list={["court", { "is-admin": noindex, "is-home": isHome }]}>
-    <a class="skip-link" href="#main-content">Saltar al contenido</a>
+    {!noindex && <a class="skip-link" href="#main-content">Saltar al contenido</a>}
     {!noindex && (
       <div class="splash" id="splash" hidden>
         <div class="splash-scene" aria-hidden="true">
