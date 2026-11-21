@@ -22,6 +22,7 @@ import {
   releaseOverlappingCourts,
   filterSharedSlotsToDrive,
   pairsHaveDriveCourt,
+  pairPendingsWithExactCourts,
   slotAvailabilityMiss,
   slotFitsPairAvailability,
   summarizeCourtSlots,
@@ -184,9 +185,37 @@ assert.equal(allSlots.length, expandCourtCandidates(slots).length);
   );
   assert.equal(pending.length, 2, "los early sin cancha quedan pendientes");
   assert.ok(
-    pending.every((p) => /cancha en el Drive/i.test(p.reason || "")),
-    "motivo: sin cancha en Drive"
+    pending.every((p) => /exacto|Drive/i.test(p.reason || "")),
+    "motivo: sin exacto en Drive"
   );
+
+  // Dos pendientes con exacto libre se rearman solos (no quedan para cercanos).
+  const pendings = [
+    {
+      week: "Fecha 2",
+      temp: "T5",
+      cat: "B Masculina",
+      home: "Milton Reatto / Joaquín Lucero",
+      away: PENDING_AWAY,
+      pending: true,
+      days: lateA.days,
+      homeDays: lateA.days,
+    },
+    {
+      week: "Fecha 2",
+      temp: "T5",
+      cat: "B Masculina",
+      home: "Marcos Saavedra / Luis Alberto Albornoz",
+      away: PENDING_AWAY,
+      pending: true,
+      days: lateB.days,
+      homeDays: lateB.days,
+    },
+  ];
+  const rejoined = pairPendingsWithExactCourts(pendings, pool, { onlyEmpty: true, preferPlan: true });
+  assert.equal(rejoined.paired, 1, "exactos se matchean entre pendientes");
+  assert.equal(rejoined.matches.filter(isPendingMatch).length, 0);
+  assert.ok(rejoined.matches.some((m) => isRealPairMatch(m) && m.venue), "quedan con cancha exacta");
 }
 
 // Sin cupos: no se pisan canchas y se respetan horarios de parejas.

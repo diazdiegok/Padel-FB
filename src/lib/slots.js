@@ -1322,8 +1322,9 @@ function courtAssignedCount(matches = []) {
 }
 
 /**
- * Filtra los huecos teóricos de 1:30 entre dos parejas a los que existen en el Drive.
- * Si no hay ninguna cancha del pool donde entren las dos, devuelve [] (no armar ese cruce).
+ * Solo turnos EXACTOS del Drive (entran las dos en el horario de la cancha).
+ * Cercanos / estimables / cancha vacía no cuentan acá: eso es para cubrir pendientes a mano.
+ * Si no hay exacto, [].
  */
 export function filterSharedSlotsToDrive(slots = [], entryA = {}, entryB = {}, courtPool = []) {
   if (!courtPool?.length) return slots || [];
@@ -1333,17 +1334,23 @@ export function filterSharedSlotsToDrive(slots = [], entryA = {}, entryB = {}, c
   };
   const fitting = (courtPool || []).filter((c) => slotFitsPairAvailability(c, match, { pending: false }));
   if (!fitting.length) return [];
+  // Slots = inicios exactos de canchas del Drive donde caben las dos (no el grid teórico suelto).
+  const byKey = new Map();
+  for (const c of fitting) {
+    const day = normalizeDay(c.day);
+    const start = Number(c.from);
+    if (!day || !Number.isFinite(start)) continue;
+    byKey.set(`${day}|${start}`, { day, start });
+  }
+  if (byKey.size) return [...byKey.values()];
+  // Respaldo: si el pool no trae from, intersectar con el grid teórico.
   const list = Array.isArray(slots) ? slots : [];
-  const exact = list.filter((sl) =>
+  return list.filter((sl) =>
     fitting.some((c) => normalizeDay(c.day) === normalizeDay(sl.day) && Number(c.from) === Number(sl.start))
   );
-  if (exact.length) return exact;
-  // Hay cancha en el overlap pero no calza el grid de :00/:30 tentativo: igual se puede armar;
-  // assignCourtSlots con preferPlan elige el turno real.
-  return list.filter((sl) => fitting.some((c) => normalizeDay(c.day) === normalizeDay(sl.day)));
 }
 
-/** True si el Drive tiene al menos un turno donde ambas parejas pueden jugar. */
+/** True si hay al menos un turno EXACTO del Drive donde ambas pueden jugar. */
 export function pairsHaveDriveCourt(entryA, entryB, courtPool = []) {
   if (!courtPool?.length) return true;
   const match = {
@@ -1351,6 +1358,79 @@ export function pairsHaveDriveCourt(entryA, entryB, courtPool = []) {
     awayDays: entryB?.days && typeof entryB.days === "object" ? entryB.days : undefined,
   };
   return (courtPool || []).some((c) => slotFitsPairAvailability(c, match, { pending: false }));
+}
+
+/**
+ * Segunda pasada: une pendientes de la misma categoría que todavía tienen exacto libre en el Drive.
+ * Así los exactos no quedan en Pendientes (cercanos/estimables/vacía son solo para cubrir a mano).
+ */
+export function pairPendingsWithExactCourts(matches = [], courtPool = [], opts = {}) {
+  let current = (matches || []).map((m) => ({ ...m }));
+  if (!courtPool?.length) return { matches: current, paired: 0 };
+
+  let paired = 0;
+  let guard = 0;
+  while (guard++ < Math.max(8, current.length)) {
+    const pendingIdx = current
+      .map((m, i) => i)
+      .filter((i) => isPendingMatch(current[i]) && String(current[i].home || "").trim());
+    if (pendingIdx.length < 2) break;
+
+    let found = null;
+    for (let a = 0; a < pendingIdx.length && !found; a++) {
+      for (let b = a + 1; b < pendingIdx.length; b++) {
+        const ia = pendingIdx[a];
+        const ib = pendingIdx[b];
+        const pa = current[ia];
+        const pb = current[ib];
+        if ((pa.cat || "") !== (pb.cat || "")) continue;
+        if (String(pa.temp || "").toUpperCase() !== String(pb.temp || "").toUpperCase()) continue;
+        if ((pa.week || "") !== (pb.week || "")) continue;
+        // Recuperan fecha se cubren a mano (cercanos / estimables).
+        if (pa.recoverFrom || pb.recoverFrom) continue;
+        const entryA = { days: pa.days || pa.homeDays };
+        const entryB = { days: pb.days || pb.homeDays };
+        if (!pairsHaveDriveCourt(entryA, entryB, courtPool)) continue;
+        found = { ia, ib, pa, pb, entryA, entryB };
+        break;
+      }
+    }
+    if (!found) break;
+
+    const trial = current.map((m) => ({ ...m }));
+    const home = found.pa;
+    const away = found.pb;
+    trial[found.ia] = {
+      ...home,
+      away: away.home,
+      pending: false,
+      reason: "",
+      avail: "",
+      venue: "",
+      court: "",
+      day: "",
+      time: "",
+      result: "",
+      homeDays: found.entryA.days,
+      awayDays: found.entryB.days,
+      days: undefined,
+    };
+    // Saca el otro pendiente de la lista.
+    trial.splice(found.ib, 1);
+    const assigned = assignCourtSlots(trial, courtPool, { ...opts, onlyEmpty: true, preferPlan: true });
+    const linked = assigned.matches.find(
+      (m) =>
+        isRealPairMatch(m) &&
+        !isPendingMatch(m) &&
+        String(m.venue || "").trim() &&
+        ((pairsMatch(m.home, home.home) && pairsMatch(m.away, away.home)) ||
+          (pairsMatch(m.home, away.home) && pairsMatch(m.away, home.home)))
+    );
+    if (!linked) break;
+    current = assigned.matches;
+    paired += 1;
+  }
+  return { matches: current, paired };
 }
 
 /**

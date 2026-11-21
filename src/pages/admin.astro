@@ -222,7 +222,7 @@ import "../styles/admin.css";
         <section data-section="fixture" hidden>
           <div class="admin-callout">
             <strong>Cómo se arma</strong>
-            <span>1) Leer Drive toma la pestaña del Google Sheet con el mismo nombre que la fecha (Fecha 1, Fecha 2…). Un horario solo = 1:30; un rango (16:30-21:00) = ventana para partidos de 1:30. 2) Armar fixture usa todos los horarios del Sheet (si no hay cancha, puede cambiar el rival). 3) Complejos avanzados (opcional): cupos y días por complejo. 4) Publicar: salen los partidos con rival; los pendientes quedan en el admin hasta cubrirlos. Si al cubrir (pendientes o recuperan) el cruce ya se jugó, va a Duplicados hasta autorizarlo.</span>
+            <span>1) Leer Drive toma la pestaña del Google Sheet con el mismo nombre que la fecha. 2) Armar fixture matchea solo cruces con turno exacto en el Drive. 3) Complejos avanzados (opcional): cupos y días por complejo. 4) Pendientes: sin exacto; al cubrir usá cercanos, estimables o cancha vacía. Si el cruce ya se jugó, va a Duplicados. 5) Publicar.</span>
           </div>
           <div class="admin-section-tools">
             <span class="tag" id="fx-summary">Sin partidos</span>
@@ -236,8 +236,6 @@ import "../styles/admin.css";
               <div class="admin-toolbar fx-toolbar">
                 <div class="fx-toolbar-main">
                   <button class="btn btn-lime" type="button" id="fx-drive">Leer Drive</button>
-                  <button class="btn btn-ghost" type="button" id="fx-slots">Subir archivo</button>
-                  <input id="fx-slots-file" type="file" accept=".xlsx,.xls,.csv,.txt" hidden />
                   <button
                     class="btn btn-ghost"
                     type="button"
@@ -306,7 +304,7 @@ import "../styles/admin.css";
               </div>
             </div>
             <div class="admin-empty" id="fx-empty" hidden>
-              <p>Todavía no hay partidos. Leé el Drive (o subí el archivo) y armá el fixture. Complejos avanzados es opcional.</p>
+              <p>Todavía no hay partidos. Leé el Drive y armá el fixture. Complejos avanzados es opcional.</p>
             </div>
             <div class="fx-warnings" id="fx-warnings" role="status" hidden></div>
             <div id="fx-pending" hidden></div>

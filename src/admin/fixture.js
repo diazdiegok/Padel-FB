@@ -8,7 +8,6 @@ import {
   splitLine,
   courtSlotObjectsFromText,
   parseCourtSlotObjects,
-  parseCourtSlotText,
   sortMatchesForExport,
 } from "./csv.js";
 import { DAYS, pairLabel, validateDays } from "../lib/disponibilidad.js";
@@ -62,13 +61,13 @@ import {
   normalizeDay,
   pairsSharePlayableWindow,
   filterSharedSlotsToDrive,
+  pairPendingsWithExactCourts,
   parkAvailabilityViolations,
   parkBareMatchesAsPending,
   parseCourtWindow,
   releaseOverlappingCourts,
   rematchForCourts,
   summarizeCourtSlots,
-  weekFromName,
 } from "../lib/slots.js";
 import { $, confirmModal, escAttr, noticeModal, setBusy, setMsg, toast } from "./ui.js";
 
@@ -664,7 +663,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       title: "Pendientes",
       tone: "",
       count: pending.length,
-      help: "Sin rival o sin cancha del Drive en un horario en común (también si el número de parejas es impar). Al cubrir, priorizá exactos.",
+      help: "Sin rival con turno exacto en el Drive (o número impar). Al cubrir: primero exactos; si no hay, cercanos, estimables o cancha vacía.",
       body: pending.length ? pendingCards(pending) : `<p class="admin-help">No hay pendientes en esta fecha.</p>`,
     });
   }
@@ -1050,12 +1049,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const detail = $("fx-detail");
     if (detail) detail.hidden = false;
     const build = $("fx-build");
-    const slotsBtn = $("fx-slots");
     const driveBtn = $("fx-drive");
     const add = $("fx-add");
     const bar = $("fx-publish")?.closest(".admin-sticky-bar");
     const dl = $("fx-download-wrap");
-    if (slotsBtn) slotsBtn.hidden = !live;
     if (driveBtn) driveBtn.hidden = !live;
     // + Partido solo cuando ya hay partidos (retoque manual)
     const hasGames =
@@ -1399,7 +1396,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   async function buildFromFecha() {
     if ((await shell.setSection("fixture")) === false) return;
     if (!loadedSlots.length) {
-      setMsg($("fx-msg"), "Primero leé el Drive (o subí el archivo) de canchas para esta fecha.", "err");
+      setMsg($("fx-msg"), "Primero leé el Drive de canchas para esta fecha.", "err");
       toast("Leé el Drive primero", "err");
       $("fx-drive")?.focus();
       return;
@@ -1609,7 +1606,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
       // Si igual no hay cancha, van a pendientes (como impar / sin cruce).
       const parkedBare = parkBareMatchesAsPending(fresh);
-      const parkedBad = parkAvailabilityViolations(attachPairDaysFromPairs(parkedBare.matches, ctx.pairs || []));
+      // Exactos primero: si dos pendientes todavía tienen turno exacto libre, se matchean.
+      // Cercanos / estimables / cancha vacía quedan para cubrir a mano en Pendientes.
+      const exactPaired = pairPendingsWithExactCourts(parkedBare.matches, plannedSlots, courtOpts);
+      const parkedBad = parkAvailabilityViolations(attachPairDaysFromPairs(exactPaired.matches, ctx.pairs || []));
       built = parkedBad.matches.map((m) => {
         if (isPending(m)) {
           const days = m.days || m.homeDays;
@@ -1677,6 +1677,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       if (parkedBare.parked) {
         parts.push(
           `${parkedBare.parked} cruce${parkedBare.parked === 1 ? "" : "s"} sin cancha → pendiente${parkedBare.parked === 1 ? "" : "s"}`
+        );
+      }
+      if (exactPaired.paired) {
+        parts.push(
+          `${exactPaired.paired} pendiente${exactPaired.paired === 1 ? "" : "s"} rearmado${exactPaired.paired === 1 ? "" : "s"} con exacto`
         );
       }
       if (parkedBad.parked) {
@@ -1838,25 +1843,6 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
     }
 
-    async function readSlotsFile(file) {
-      const lower = file.name.toLowerCase();
-      if (lower.endsWith(".csv") || lower.endsWith(".txt")) {
-        return { slots: parseCourtSlotText(await file.text()), weekHint: weekFromName(file.name) };
-      }
-      if (lower.endsWith(".xls") || lower.endsWith(".xlsx")) {
-        const XLSX = await import("xlsx");
-        const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
-        const sheetName = wb.SheetNames.find((n) => weekFromName(n)) || wb.SheetNames[0];
-        if (!sheetName) throw new Error("El Excel no tiene hojas.");
-        const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
-        return {
-          slots: parseCourtSlotObjects(rows),
-          weekHint: weekFromName(file.name) || weekFromName(sheetName),
-        };
-      }
-      throw new Error("Usá un archivo .xlsx, .xls o .csv con Complejo, Cancha, Dia y Horario.");
-    }
-
     $("fx-drive")?.addEventListener("click", () => loadSlotsFromDrive());
     $("fx-sync-pairs")?.addEventListener("click", () => {
       const res = syncFromPairs({ toastResult: false });
@@ -1882,38 +1868,6 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           : "Pendientes alineados con Inscripciones. Publicá fixture para confirmar.",
         "ok"
       );
-    });
-    $("fx-slots")?.addEventListener("click", () => $("fx-slots-file")?.click());
-    $("fx-slots-file")?.addEventListener("change", async (e) => {
-      const input = e.target;
-      const file = input.files?.[0];
-      input.value = "";
-      if (!file) return;
-      const week = String(filterWeek || "").trim();
-      const temp = String(filterTemp || "").trim();
-      if (!temp || !week) {
-        toast("Entrá a la fecha del fixture antes de subir el archivo.", "err");
-        return;
-      }
-      if ((await shell.setSection("fixture")) === false) return;
-      setBusy($("fx-slots"), true, "Leyendo…");
-      try {
-        const { slots, weekHint } = await readSlotsFile(file);
-        if (weekHint && weekHint !== week) {
-          const ok = await confirmModal({
-            title: "Fecha del archivo",
-            body: `El archivo parece de ${weekHint} y estás en ${week}. ¿Usarlo igual para ${week}?`,
-            confirmLabel: "Usar igual",
-          });
-          if (!ok) return;
-        }
-        applyLoadedSlots(slots, file.name);
-      } catch (err) {
-        setMsg($("fx-msg"), err.message || "No se pudo leer el archivo.", "err");
-        toast(err.message || "Error al leer el archivo", "err");
-      } finally {
-        setBusy($("fx-slots"), false);
-      }
     });
 
     $("fx-advanced-list")?.addEventListener("change", (e) => {

@@ -573,9 +573,9 @@ export function buildFixture({
           ? "Es la única pareja anotada en su categoría."
           : p.options === 0
             ? filterSharedSlots
-              ? "No hay cancha en el Drive en un horario en común con otra pareja de su categoría."
+              ? "Sin turno exacto en el Drive con otra pareja de su categoría (cercanos/estimables se cubren a mano)."
               : "No coincide en día y horario con ninguna pareja de su categoría."
-            : "Las parejas con las que coincide ya tienen partido.";
+            : "Las parejas con las que coincide en exacto ya tienen partido.";
       const slot = {
         week,
         temp,
