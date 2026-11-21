@@ -47,7 +47,6 @@ import {
 } from "../lib/sheets.js";
 import {
   applyVenuePlan,
-  assignCourtSlots,
   attachPairDaysFromPairs,
   driveCourtOptions,
   findCourtConflicts,
