@@ -222,7 +222,7 @@ import "../styles/admin.css";
         <section data-section="fixture" hidden>
           <div class="admin-callout">
             <strong>Cómo se arma</strong>
-            <span>1) Leer Drive toma la pestaña del Google Sheet con el mismo nombre que la fecha (Fecha 1, Fecha 2…). Un horario solo = 1:30; un rango (16:30-21:00) = ventana para partidos de 1:30. 2) Complejos avanzado: cupos y días. 3) Armar fixture (si no hay cancha, puede cambiar el rival). 4) Publicar: salen los partidos con rival; los pendientes quedan en el admin hasta cubrirlos.</span>
+            <span>1) Leer Drive toma la pestaña del Google Sheet con el mismo nombre que la fecha (Fecha 1, Fecha 2…). Un horario solo = 1:30; un rango (16:30-21:00) = ventana para partidos de 1:30. 2) Armar fixture usa todos los horarios del Sheet (si no hay cancha, puede cambiar el rival). 3) Complejos avanzados (opcional): cupos y días por complejo. 4) Publicar: salen los partidos con rival; los pendientes quedan en el admin hasta cubrirlos. Si al cubrir (pendientes o recuperan) el cruce ya se jugó, va a Duplicados hasta autorizarlo.</span>
           </div>
           <div class="admin-section-tools">
             <span class="tag" id="fx-summary">Sin partidos</span>
@@ -247,6 +247,17 @@ import "../styles/admin.css";
                     Sincronizar pendientes
                   </button>
                   <button class="btn btn-lime" type="button" id="fx-build" hidden>Armar fixture</button>
+                  <button
+                    class="btn btn-ghost"
+                    type="button"
+                    id="fx-advanced-toggle"
+                    hidden
+                    aria-expanded="false"
+                    aria-controls="fx-advanced"
+                    title="Activá cupos y días por complejo. Si está apagado, Armar usa todos los horarios del Drive"
+                  >
+                    Complejos avanzados
+                  </button>
                   <button class="btn btn-ghost" type="button" id="fx-add" hidden>+ Partido</button>
                   <button
                     class="btn btn-ghost"
@@ -287,15 +298,15 @@ import "../styles/admin.css";
               <p class="admin-help" id="fx-slots-status" hidden></p>
               <div class="fx-advanced" id="fx-advanced" hidden>
                 <div class="fx-advanced-head">
-                  <strong>Complejos y días</strong>
-                  <span class="admin-help">El cupo total es el de la fecha: parejas jugables ÷ 2 (no entran las que ya llegaron a 12 PJ). La suma de «Partidos a usar» no puede pasarlo. El número al lado del día (ej. Jueves · 4 disp.) es cuántos de 1:30 <b>quedan libres ese día en el Sheet</b> (resta los ya fixtureados). Marcá los días y Armar fixture.</span>
+                  <strong>Complejos avanzados</strong>
+                  <span class="admin-help">Opcional. Acá limitás «Partidos a usar» y días por complejo. El cupo total de la fecha es parejas jugables ÷ 2 (no entran las que ya llegaron a 12 PJ); la suma no puede pasarlo. Si apagás Complejos avanzados, Armar toma todos los horarios del Drive. El número al lado del día (ej. Jueves · 4 disp.) es cuántos de 1:30 <b>quedan libres ese día en el Sheet</b>.</span>
                   <p class="fx-plan-summary" id="fx-plan-summary" hidden></p>
                 </div>
                 <div class="fx-advanced-list" id="fx-advanced-list"></div>
               </div>
             </div>
             <div class="admin-empty" id="fx-empty" hidden>
-              <p>Todavía no hay partidos. Cargá el Excel, configurá complejos y armá el fixture.</p>
+              <p>Todavía no hay partidos. Leé el Drive (o subí el archivo) y armá el fixture. Complejos avanzados es opcional.</p>
             </div>
             <div class="fx-warnings" id="fx-warnings" role="status" hidden></div>
             <div id="fx-pending" hidden></div>

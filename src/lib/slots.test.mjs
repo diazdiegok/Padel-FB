@@ -120,6 +120,11 @@ const planned = applyVenuePlan(slots, [
 ]);
 assert.equal(planned.length, 2);
 
+// Complejos avanzados off: plan vacío = todos los horarios del Drive.
+const allSlots = applyVenuePlan(slots, [], { mode: "pool" });
+assert.ok(allSlots.length >= planned.length, "sin cupos se usan todos los candidatos");
+assert.equal(allSlots.length, expandCourtCandidates(slots).length);
+
 const matches = [
   { week: "Fecha 1", cat: "A Masculina", day: "Lunes", time: "19:00 - 20:30", home: "A / B", away: "C / D", venue: "", court: "" },
   { week: "Fecha 1", cat: "B Masculina", day: "Lunes", time: "19:00 - 20:30", home: "E / F", away: "G / H", venue: "", court: "" },

@@ -2839,6 +2839,12 @@ body.is-admin .chk input[type="checkbox"] {
   justify-content: space-between;
 }
 
+#fx-advanced-toggle.on {
+  color: var(--lime);
+  border-color: var(--lime);
+  font-weight: 700;
+}
+
 .fx-build-progress {
   margin-top: 12px;
   padding: 12px 14px;

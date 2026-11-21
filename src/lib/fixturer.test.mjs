@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { cleanMatch } from "../admin/csv.js";
 import {
   PENDING_AWAY,
   MAX_PAIR_MATCHES,
@@ -318,6 +319,24 @@ console.log("--- cover", covers.map((c) => `${c.label} (${c.pj})`).join(" · "))
   );
   assert.deepEqual(rematchWeeks({ ...covered, away: PENDING_AWAY, pending: true }, [played]), []);
   assert.deepEqual(rematchWeeks(covered, [{ ...played, week: "Fecha 2" }]), [], "misma fecha no cuenta");
+
+  // Al cubrir un recupero, cleanMatch debe conservar recoveredIn para que Duplicados
+  // lo liste en la fecha desde la que se cubrió (no solo en la adeudada).
+  const cleaned = cleanMatch(
+    {
+      ...makeup,
+      pending: false,
+      dupHold: true,
+      venue: "Open Padel",
+      court: "Cancha 1",
+    },
+    {},
+    "T5"
+  );
+  assert.equal(cleaned.recoverFrom, "Fecha 1");
+  assert.equal(cleaned.recoveredIn, "Fecha 2", "recoveredIn sobrevive al dejar de ser pendiente");
+  assert.equal(cleaned.dupHold, true);
+  assert.ok(!cleaned.pending);
 }
 
 {

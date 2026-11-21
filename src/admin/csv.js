@@ -179,9 +179,10 @@ export function cleanMatch(m, defaults = {}, currentSeason = "T4") {
     if (m.days && typeof m.days === "object") extra.days = m.days;
     if (m.homeDays && typeof m.homeDays === "object") extra.homeDays = m.homeDays;
     if (m.recoverLater) extra.recoverLater = true;
-    if (m.recoveredIn) extra.recoveredIn = String(m.recoveredIn).trim();
   }
   if (m.recoverFrom) extra.recoverFrom = String(m.recoverFrom).trim();
+  // recoveredIn también en cruces ya cubiertos (Duplicados / publicar recupero).
+  if (m.recoveredIn) extra.recoveredIn = String(m.recoveredIn).trim();
   if (m.dupHold) extra.dupHold = true;
   return {
     ...extra,

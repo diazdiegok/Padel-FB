@@ -101,7 +101,8 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   /** @type {any[]} */
   let loadedSlots = [];
   let slotsFileName = "";
-  let advancedOpen = false;
+  /** Cupos/días por complejo. Apagado = Armar usa todos los horarios del Drive. */
+  let advancedMode = false;
   /** Índice de pendiente → pareja elegida en «Cubrir con» (aún sin confirmar cancha). */
   const coverDraft = new Map();
   /** Ventanas abiertas. Recuperan fecha y Duplicados arrancan plegados. */
@@ -170,7 +171,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const recovering = seasonRows.filter(
       (m) => isMakeupPending(m) && ((m.recoveredIn || "") === week || (!m.recoveredIn && (m.week || "") === week))
     ).length;
-    const duplicates = live.filter((m) => m.dupHold && isRealPairMatch(m)).length;
+    const duplicates = seasonRows.filter((m) => {
+      if (!m.dupHold || !isRealPairMatch(m)) return false;
+      if ((m.week || "") === week) return true;
+      // Recupero cubierto desde esta fecha (week = fecha adeudada).
+      return !!(m.recoverFrom && (m.recoveredIn || "") === week);
+    }).length;
     return { games, pending, recovering, duplicates, live: live.length > 0, n: games.length };
   }
 
@@ -921,25 +927,42 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     const panel = $("fx-advanced");
     const list = $("fx-advanced-list");
     const build = $("fx-build");
+    const toggle = $("fx-advanced-toggle");
     const status = $("fx-slots-status");
     const summary = courtSlotSummary();
     const used = weekTakenCourts().length;
-    const showPlan = summary.length > 0 && advancedOpen;
-    if (build) build.hidden = !(showPlan && isLiveWeek(filterTemp, filterWeek));
+    const live = isLiveWeek(filterTemp, filterWeek);
+    const slotsReady = summary.length > 0 && live;
+    if (build) build.hidden = !(slotsReady && loadedSlots.length);
+    if (toggle) {
+      toggle.hidden = !(slotsReady && loadedSlots.length);
+      toggle.classList.toggle("on", advancedMode);
+      toggle.setAttribute("aria-expanded", advancedMode ? "true" : "false");
+    }
     if (status) {
       status.hidden = !loadedSlots.length;
       const freeTotal = summary.reduce((n, s) => n + s.total, 0);
       const sheetTotal = summary.reduce((n, s) => n + (Number(s.sheetTotal) || s.total), 0);
-      status.textContent = loadedSlots.length
+      const base = loadedSlots.length
         ? `Drive${slotsFileName ? ` · ${slotsFileName}` : ""}: ${
             used > 0 && sheetTotal !== freeTotal
               ? `${freeTotal} libres (de ${sheetTotal})`
               : `${sheetTotal} partidos posibles`
-          } · ${summary.length} complejo${summary.length === 1 ? "" : "s"}.`
+          } · ${summary.length} complejo${summary.length === 1 ? "" : "s"}`
+        : "";
+      status.textContent = base
+        ? `${base}${advancedMode ? "." : " · Armar usa todos los horarios (sin cupo por complejo)."}`
         : "";
     }
     if (!panel || !list) return;
+    const showPlan = slotsReady && advancedMode;
     panel.hidden = !showPlan;
+    if (!showPlan) {
+      list.innerHTML = "";
+      const planSummary = $("fx-plan-summary");
+      if (planSummary) planSummary.hidden = true;
+      return;
+    }
     if (!summary.length) {
       list.innerHTML = "";
       updatePlanSummary();
@@ -1041,7 +1064,6 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     if (bar) bar.hidden = !live;
     if (dl) dl.hidden = !filterWeek;
     renderAdvanced();
-    if (build) build.hidden = !(live && loadedSlots.length && advancedOpen);
     const sched = scheduleOpts();
 
     if (!live) {
@@ -1379,51 +1401,70 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       $("fx-drive")?.focus();
       return;
     }
-    if (!advancedOpen) {
-      advancedOpen = true;
-      renderAdvanced();
-    }
     const summary = summarizeCourtSlots(loadedSlots);
     const need = matchesNeeded();
-    const rawPlan = readVenuePlanFromDom();
-    const rawSum = rawPlan.reduce((n, p) => n + Math.max(0, Number(p.count) || 0), 0);
-    if (need && rawSum > need) {
-      syncVenueCountInputs({ announce: true });
-      updatePlanSummary();
-      setMsg(
-        $("fx-msg"),
-        `Esta fecha pide ${need} partido${need === 1 ? "" : "s"}; la suma de «Partidos a usar» no puede ser mayor (${rawSum}).`,
-        "err"
-      );
-      toast(`Tope: ${need} partidos`, "err");
-      return;
+    let plan = [];
+    let plannedSlots;
+    let planCapacity = 0;
+    let planTxt = "";
+    let courtOpts = { onlyEmpty: true, preferPlan: true };
+
+    if (advancedMode) {
+      const rawPlan = readVenuePlanFromDom();
+      const rawSum = rawPlan.reduce((n, p) => n + Math.max(0, Number(p.count) || 0), 0);
+      if (need && rawSum > need) {
+        syncVenueCountInputs({ announce: true });
+        updatePlanSummary();
+        setMsg(
+          $("fx-msg"),
+          `Esta fecha pide ${need} partido${need === 1 ? "" : "s"}; la suma de «Partidos a usar» no puede ser mayor (${rawSum}).`,
+          "err"
+        );
+        toast(`Tope: ${need} partidos`, "err");
+        return;
+      }
+      plan = rawPlan.filter((p) => p.count > 0 && p.days.length);
+      if (!plan.length) {
+        setMsg($("fx-msg"), "Poné cantidad de partidos (sin pasar el cupo de la fecha) y al menos un día por complejo.", "err");
+        toast("Configurá los complejos", "err");
+        return;
+      }
+      const chosen = effectiveChosen(plan, summary);
+      if (need && chosen > need) {
+        setMsg(
+          $("fx-msg"),
+          `Esta fecha pide ${need} partido${need === 1 ? "" : "s"}; la suma de «Partidos a usar» no puede ser mayor.`,
+          "err"
+        );
+        toast(`Tope: ${need} partidos`, "err");
+        return;
+      }
+      // pool = todos los turnos de los días elegidos; venueCaps limita «Partidos a usar».
+      plannedSlots = applyVenuePlan(loadedSlots, plan, { mode: "pool" });
+      planCapacity = plan.reduce((n, p) => n + Math.max(0, Number(p.count) || 0), 0);
+      if (!plannedSlots.length || !planCapacity) {
+        setMsg($("fx-msg"), "No hay disponibilidad que coincida con los días y cupos elegidos.", "err");
+        toast("Sin cupos para el plan", "err");
+        return;
+      }
+      planTxt = plan.map((p) => `${p.venue}: ${p.count} · ${p.days.join(", ")}`).join(" · ");
+      courtOpts = {
+        onlyEmpty: true,
+        preferPlan: true,
+        venueCaps: Object.fromEntries(plan.map((p) => [p.venue, p.count])),
+      };
+    } else {
+      // Sin cupos: todos los horarios del Drive, matching por disponibilidad.
+      plannedSlots = applyVenuePlan(loadedSlots, [], { mode: "pool" });
+      planCapacity = plannedSlots.length;
+      if (!plannedSlots.length) {
+        setMsg($("fx-msg"), "El Drive no tiene horarios de cancha para esta fecha.", "err");
+        toast("Sin horarios en el Drive", "err");
+        return;
+      }
+      planTxt = `todos los horarios del Drive (${summary.length} complejo${summary.length === 1 ? "" : "s"})`;
     }
-    const plan = rawPlan.filter((p) => p.count > 0 && p.days.length);
-    if (!plan.length) {
-      setMsg($("fx-msg"), "Poné cantidad de partidos (sin pasar el cupo de la fecha) y al menos un día por complejo.", "err");
-      toast("Configurá los complejos", "err");
-      return;
-    }
-    const chosen = effectiveChosen(plan, summary);
-    if (need && chosen > need) {
-      setMsg(
-        $("fx-msg"),
-        `Esta fecha pide ${need} partido${need === 1 ? "" : "s"}; la suma de «Partidos a usar» no puede ser mayor.`,
-        "err"
-      );
-      toast(`Tope: ${need} partidos`, "err");
-      return;
-    }
-    // pool = todos los turnos posibles de los días elegidos; venueCaps limita «Partidos a usar».
-    // Si usáramos solo el pack temprano, canchas de las 15:00 ocupaban el cupo y las parejas
-    // que solo pueden 16:30-19:30 quedaban sin complejo/cancha.
-    const plannedSlots = applyVenuePlan(loadedSlots, plan, { mode: "pool" });
-    const planCapacity = plan.reduce((n, p) => n + Math.max(0, Number(p.count) || 0), 0);
-    if (!plannedSlots.length || !planCapacity) {
-      setMsg($("fx-msg"), "No hay disponibilidad que coincida con los días y cupos elegidos.", "err");
-      toast("Sin cupos para el plan", "err");
-      return;
-    }
+
     const btn = $("fx-build");
     setBusy(btn, true, "Armando…");
     try {
@@ -1461,11 +1502,13 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         return;
       }
       if (replacing.length) warnings.push(`Se reemplazan los ${replacing.length} partidos de ${week} que ves en pantalla.`);
-      const planTxt = plan.map((p) => `${p.venue}: ${p.count} · ${p.days.join(", ")}`).join(" · ");
+      const capacityTxt = advancedMode
+        ? `${planCapacity} cupo${planCapacity === 1 ? "" : "s"} de cancha (${planTxt})`
+        : planTxt;
       const ok = await confirmModal({
         title: `Armar ${week}`,
         body:
-          `Se arma ${week} (${seasonLabel(season)}) con ${playable.length} pareja${playable.length === 1 ? "" : "s"} y ${planCapacity} cupo${planCapacity === 1 ? "" : "s"} de cancha (${planTxt}). ` +
+          `Se arma ${week} (${seasonLabel(season)}) con ${playable.length} pareja${playable.length === 1 ? "" : "s"} y ${capacityTxt}. ` +
           (warnings.length ? warnings.join(" ") + " " : "") +
           "Los horarios respetan la disponibilidad de cada pareja. Nada se publica hasta que toques Publicar fixture.",
         confirmLabel: "Armar fixture",
@@ -1510,8 +1553,6 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           days: m.days && typeof m.days === "object" ? m.days : undefined,
         };
       });
-      const venueCaps = Object.fromEntries(plan.map((p) => [p.venue, p.count]));
-      const courtOpts = { onlyEmpty: true, venueCaps, preferPlan: true };
       // Rehidratar días desde inscripciones por si cleanMatch los había perdido.
       built = attachPairDaysFromPairs(built, ctx.pairs || []);
       // Primero asigna canchas; si alguna pareja no entra, prueba cambiarle el rival.
@@ -1664,11 +1705,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         editing = -1;
         loadedSlots = [];
         slotsFileName = "";
-        advancedOpen = false;
+        advancedMode = false;
         render();
         setMsg(
           $("fx-msg"),
-          `${filterWeek}: 1) Leer Drive (pestaña «${filterWeek}»). 2) Configurá complejos/días. 3) Armar fixture.`,
+          `${filterWeek}: 1) Leer Drive (pestaña «${filterWeek}»). 2) Armar fixture (usa todos los horarios). Complejos avanzados es opcional.`,
           "ok"
         );
         loadSlotsFromDrive();
@@ -1677,10 +1718,25 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
 
     $("fx-build")?.addEventListener("click", buildFromFecha);
 
+    $("fx-advanced-toggle")?.addEventListener("click", () => {
+      if (!loadedSlots.length) {
+        toast("Leé el Drive primero", "err");
+        return;
+      }
+      advancedMode = !advancedMode;
+      renderAdvanced();
+      if (advancedMode) {
+        toast("Complejos avanzados · cupos y días por complejo", "ok");
+        $("fx-advanced")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      } else {
+        toast("Complejos avanzados off · Armar usa todos los horarios", "ok");
+      }
+    });
+
     function applyLoadedSlots(slots, label, { gaps = [] } = {}) {
       loadedSlots = slots;
       slotsFileName = label || "";
-      advancedOpen = true;
+      // No fuerza Complejos avanzados: por defecto Armar usa todos los horarios.
       render();
       const taken = weekTakenCourts();
       const summary = summarizeCourtSlots(slots, taken);
@@ -1695,7 +1751,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           : `${sheetCap} partido${sheetCap === 1 ? "" : "s"} posibles`;
       setMsg(
         $("fx-msg"),
-        `${label || "Canchas"} listo: ${usedTxt} en ${summary.length} complejo${summary.length === 1 ? "" : "s"}.${gapTxt} Ajustá cupos/días y armá el fixture.`,
+        `${label || "Canchas"} listo: ${usedTxt} en ${summary.length} complejo${summary.length === 1 ? "" : "s"}.${gapTxt} Podés Armar fixture (todos los horarios) o abrir Complejos avanzados.`,
         gaps.length ? "err" : "ok"
       );
       toast(gaps.length ? "Canchas OK · faltan horarios en el Sheet" : "Canchas cargadas", gaps.length ? "err" : "ok");
@@ -2205,6 +2261,8 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
             avail: "",
             note: slot.note || "",
             result: "",
+            recoverFrom: slot.recoverFrom || "",
+            recoveredIn: slot.recoveredIn || "",
             ...(opt.near ? { flexAvail: true } : {}),
           },
           {},
@@ -2214,6 +2272,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         delete next.reason;
         delete next.avail;
         if (!opt.near) delete next.flexAvail;
+        // Si el cruce ya se jugó → Duplicados (no entra al fixture hasta Autorizar).
         const rematch = holdIfRematch(next);
         ctx.fixture[i] = next;
         // Si quien cubre también estaba pendiente, sale de la lista (ambas van al partido).
