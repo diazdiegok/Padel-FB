@@ -674,7 +674,9 @@ export function assignCourtSlots(
   const next = matches.map((m) => ({ ...m }));
   const needsExpand = slots.some((s) => Number(s.to) - Number(s.from) > MATCH_MINUTES || s.capacity > 1);
   const poolSource = needsExpand ? expandCourtCandidates(slots) : slots.slice();
-  const pool = poolSource.map((s, i) => ({ ...s, _i: i }));
+  // _ck precalculado: sameCourt() normaliza strings y es el costo dominante en fechas grandes.
+  const pool = poolSource.map((s, i) => ({ ...s, _i: i, _ck: courtDayKey(s.day, s.venue, s.court) }));
+  const clash = (a, b) => a._ck === b._ck && windowsOverlap(a.from, a.to, b.from, b.to);
 
   /** matchIndex → pool index elegido */
   const owner = new Map();
@@ -735,8 +737,7 @@ export function assignCourtSlots(
     if (!underCapFor(slot, matchIndex)) return false;
     for (const [mi, osi] of owner) {
       if (mi === matchIndex) continue;
-      const other = pool[osi];
-      if (sameCourt(slot, other) && windowsOverlap(slot.from, slot.to, other.from, other.to)) return false;
+      if (clash(slot, pool[osi])) return false;
     }
     return true;
   }
@@ -808,6 +809,7 @@ export function assignCourtSlots(
       to: win.to,
       time: m.time || slotLabel(win.from),
       _i: si,
+      _ck: courtDayKey(day, venue, court),
       _seeded: true,
     });
     return si;
@@ -843,8 +845,7 @@ export function assignCourtSlots(
       let blocked = false;
       for (const [mi, osi] of owner) {
         if (mi === i) continue;
-        const other = pool[osi];
-        if (sameCourt(pool[si], other) && windowsOverlap(pool[si].from, pool[si].to, other.from, other.to)) {
+        if (clash(pool[si], pool[osi])) {
           blocked = true;
           break;
         }
@@ -863,10 +864,11 @@ export function assignCourtSlots(
   // Snapshot del día/hora del fixtureo (para restaurar si no hay cancha).
   const originalWhen = new Map(needIdx.map((i) => [i, { day: next[i].day || "", time: next[i].time || "" }]));
 
+  const optionCount = new Map(needIdx.map((i) => [i, optionsFor(i).length]));
   needIdx.sort(
     (a, b) =>
       Number(!!isPendingMatch(next[a])) - Number(!!isPendingMatch(next[b])) ||
-      optionsFor(a).length - optionsFor(b).length ||
+      optionCount.get(a) - optionCount.get(b) ||
       String(next[a].cat || "").localeCompare(String(next[b].cat || ""), "es")
   );
 
@@ -889,8 +891,7 @@ export function assignCourtSlots(
     for (const [mi, osi] of owner) {
       if (mi === ignoreMatch) continue;
       if (osi === si) return mi;
-      const other = pool[osi];
-      if (sameCourt(slot, other) && windowsOverlap(slot.from, slot.to, other.from, other.to)) return mi;
+      if (clash(slot, pool[osi])) return mi;
     }
     return null;
   }
@@ -965,9 +966,7 @@ export function assignCourtSlots(
   for (let si = 0; si < pool.length; si++) {
     let blocked = false;
     for (const osi of owner.values()) {
-      const a = pool[si];
-      const b = pool[osi];
-      if (sameCourt(a, b) && windowsOverlap(a.from, a.to, b.from, b.to)) {
+      if (clash(pool[si], pool[osi])) {
         blocked = true;
         break;
       }
@@ -1446,14 +1445,10 @@ export function pairPendingsWithExactCourts(matches = [], courtPool = [], opts =
           skipPendingAssign: true,
           freezeFilled: true,
         });
-        const linked = assigned.matches.find(
-          (m) =>
-            isRealPairMatch(m) &&
-            !isPendingMatch(m) &&
-            String(m.venue || "").trim() &&
-            ((pairsMatch(m.home, home.home) && pairsMatch(m.away, away.home)) ||
-              (pairsMatch(m.home, away.home) && pairsMatch(m.away, home.home)))
-        );
+        // Por índice (ia < ib, el splice no lo corre): pairsMatch por nombre confunde parejas parecidas.
+        const made = assigned.matches[ia];
+        const linked =
+          made && isRealPairMatch(made) && !isPendingMatch(made) && String(made.venue || "").trim() ? made : null;
         if (!linked) {
           // Este cruce no tiene cancha libre ahora; probar otro par de pendientes.
           skipKeys.add(key);
@@ -1605,13 +1600,8 @@ export function rematchForCourts(matches = [], slots = [], opts = {}) {
         });
         const before = courtAssignedCount(current);
         const after = courtAssignedCount(again.matches);
-        const bareFixed = again.matches.some(
-          (m) =>
-            isRealPairMatch(m) &&
-            String(m.venue || "").trim() &&
-            ((pairsMatch(m.home, variant.left.home) && pairsMatch(m.away, variant.left.away)) ||
-              (pairsMatch(m.home, variant.left.away) && pairsMatch(m.away, variant.left.home)))
-        );
+        const fixed = again.matches[bi];
+        const bareFixed = !!(fixed && isRealPairMatch(fixed) && String(fixed.venue || "").trim());
         if (after > before || (after === before && bareFixed)) {
           current = again.matches;
           assigned = again;

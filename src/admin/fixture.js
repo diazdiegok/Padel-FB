@@ -1140,11 +1140,13 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       .map(({ m, i }) => {
         const on = editing === i;
         const bare = !on && needsCourt(m);
-        const rivals = rivalOptionsFromPairs({
-          pairs: ctx.pairs || [],
-          temp: filterTemp || m.temp,
-          cat: m.cat || "",
-        });
+        const rivals = m.cat
+          ? rivalOptionsFromPairs({
+              pairs: ctx.pairs || [],
+              temp: filterTemp || m.temp,
+              cat: m.cat,
+            })
+          : [];
         const courts = sched.courtsByVenue[m.venue] || [];
         const field = (k, placeholder) => {
           if (!on) return escAttr(m[k] || "");
@@ -1523,8 +1525,19 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       );
       // Solo armar cruces que tengan al menos un turno del Drive donde entren las dos.
       // Si no, después caían a pendientes aunque “coincidían” en inscripción.
-      const filterSharedSlots = (slots, entryA, entryB) =>
-        filterSharedSlotsToDrive(slots, entryA, entryB, plannedSlots);
+      // Memo por par de inscripciones: no depende de la semilla y era ~1s por intento.
+      const sharedMemo = new WeakMap();
+      const filterSharedSlots = (slots, entryA, entryB) => {
+        let byB = sharedMemo.get(entryA);
+        if (!byB) {
+          byB = new WeakMap();
+          sharedMemo.set(entryA, byB);
+        }
+        if (byB.has(entryB)) return byB.get(entryB);
+        const hit = filterSharedSlotsToDrive(slots, entryA, entryB, plannedSlots);
+        byB.set(entryB, hit);
+        return hit;
+      };
 
       const mapBuilt = (rawMatches) =>
         attachPairDaysFromPairs(
@@ -1641,7 +1654,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           55 + Math.round(((p + 0.5) / Math.max(1, toPolish.length)) * 18),
           `Exactos ${p + 1}/${toPolish.length}…`
         );
-        const trialExact = pairPendingsWithExactCourts(trialParked.matches, plannedSlots, exactOpts);
+        const exactRaw = pairPendingsWithExactCourts(trialParked.matches, plannedSlots, exactOpts);
+        // Red de seguridad: ningún partido con rival queda sin cancha.
+        const trialExact = { ...exactRaw, matches: parkBareMatchesAsPending(exactRaw.matches).matches };
         const trialFinal = [...trialHeld, ...trialExact.matches];
         const withCourt = trialFinal.filter(
           (m) => isRealPairMatch(m) && !isPending(m) && !m.dupHold && String(m.venue || "").trim()
