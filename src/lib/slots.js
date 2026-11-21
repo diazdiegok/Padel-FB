@@ -1370,14 +1370,16 @@ export function pairPendingsWithExactCourts(matches = [], courtPool = [], opts =
 
   let paired = 0;
   let guard = 0;
-  while (guard++ < Math.max(8, current.length)) {
+  // Pares ya intentados que no entraron en cancha libre: no reintentar en bucle.
+  const skipKeys = new Set();
+  while (guard++ < Math.max(8, current.length * 2)) {
     const pendingIdx = current
       .map((m, i) => i)
       .filter((i) => isPendingMatch(current[i]) && String(current[i].home || "").trim());
     if (pendingIdx.length < 2) break;
 
-    let found = null;
-    for (let a = 0; a < pendingIdx.length && !found; a++) {
+    let progressed = false;
+    for (let a = 0; a < pendingIdx.length && !progressed; a++) {
       for (let b = a + 1; b < pendingIdx.length; b++) {
         const ia = pendingIdx[a];
         const ib = pendingIdx[b];
@@ -1388,47 +1390,56 @@ export function pairPendingsWithExactCourts(matches = [], courtPool = [], opts =
         if ((pa.week || "") !== (pb.week || "")) continue;
         // Recuperan fecha se cubren a mano (cercanos / estimables).
         if (pa.recoverFrom || pb.recoverFrom) continue;
+        const key = [fold(pa.home), fold(pb.home)].sort().join("|");
+        if (skipKeys.has(key)) continue;
         const entryA = { days: pa.days || pa.homeDays };
         const entryB = { days: pb.days || pb.homeDays };
-        if (!pairsHaveDriveCourt(entryA, entryB, courtPool)) continue;
-        found = { ia, ib, pa, pb, entryA, entryB };
+        if (!pairsHaveDriveCourt(entryA, entryB, courtPool)) {
+          skipKeys.add(key);
+          continue;
+        }
+
+        const trial = current.map((m) => ({ ...m }));
+        const home = pa;
+        const away = pb;
+        trial[ia] = {
+          ...home,
+          away: away.home,
+          pending: false,
+          reason: "",
+          avail: "",
+          venue: "",
+          court: "",
+          day: "",
+          time: "",
+          result: "",
+          homeDays: entryA.days,
+          awayDays: entryB.days,
+          days: undefined,
+        };
+        // Saca el otro pendiente de la lista (índice mayor primero si hiciera falta).
+        trial.splice(ib, 1);
+        const assigned = assignCourtSlots(trial, courtPool, { ...opts, onlyEmpty: true, preferPlan: true });
+        const linked = assigned.matches.find(
+          (m) =>
+            isRealPairMatch(m) &&
+            !isPendingMatch(m) &&
+            String(m.venue || "").trim() &&
+            ((pairsMatch(m.home, home.home) && pairsMatch(m.away, away.home)) ||
+              (pairsMatch(m.home, away.home) && pairsMatch(m.away, home.home)))
+        );
+        if (!linked) {
+          // Este cruce no tiene cancha libre ahora; probar otro par de pendientes.
+          skipKeys.add(key);
+          continue;
+        }
+        current = assigned.matches;
+        paired += 1;
+        progressed = true;
         break;
       }
     }
-    if (!found) break;
-
-    const trial = current.map((m) => ({ ...m }));
-    const home = found.pa;
-    const away = found.pb;
-    trial[found.ia] = {
-      ...home,
-      away: away.home,
-      pending: false,
-      reason: "",
-      avail: "",
-      venue: "",
-      court: "",
-      day: "",
-      time: "",
-      result: "",
-      homeDays: found.entryA.days,
-      awayDays: found.entryB.days,
-      days: undefined,
-    };
-    // Saca el otro pendiente de la lista.
-    trial.splice(found.ib, 1);
-    const assigned = assignCourtSlots(trial, courtPool, { ...opts, onlyEmpty: true, preferPlan: true });
-    const linked = assigned.matches.find(
-      (m) =>
-        isRealPairMatch(m) &&
-        !isPendingMatch(m) &&
-        String(m.venue || "").trim() &&
-        ((pairsMatch(m.home, home.home) && pairsMatch(m.away, away.home)) ||
-          (pairsMatch(m.home, away.home) && pairsMatch(m.away, home.home)))
-    );
-    if (!linked) break;
-    current = assigned.matches;
-    paired += 1;
+    if (!progressed) break;
   }
   return { matches: current, paired };
 }

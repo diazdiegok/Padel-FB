@@ -1559,9 +1559,14 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           ctx.pairs || []
         );
 
-      // Varias semillas: nos quedamos con la que más partidos pone en cancha (menos pendientes).
+      // Varias semillas: se puntúa DESPUÉS de rematch + rescue (no solo el assign barato),
+      // porque un cruce “bonito” en papel puede dejar más pendientes al no haber cancha.
       const SEED_TRIES = 12;
       let best = null;
+      let assigned = { matches: [], assigned: 0, swaps: 0 };
+      let releasedCourts = { matches: [], released: 0 };
+      let parkedBare = { matches: [], parked: 0 };
+      let exactPaired = { matches: [], paired: 0 };
       for (let t = 0; t < SEED_TRIES; t++) {
         buildCount += 1;
         const trialOut = buildFixture({
@@ -1574,43 +1579,51 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           filterSharedSlots,
         });
         const trialBuilt = mapBuilt(trialOut.matches);
-        const trialAssign = assignCourtSlots(trialBuilt, plannedSlots, courtOpts);
-        const withCourt = trialAssign.matches.filter(
-          (m) => isRealPairMatch(m) && !isPending(m) && String(m.venue || "").trim()
+        const trialAssigned = rematchForCourts(trialBuilt, plannedSlots, courtOpts);
+        const trialReleased = releaseOverlappingCourts(trialAssigned.matches);
+        const trialFresh = [];
+        const trialHeld = [];
+        for (const m of trialReleased.matches) {
+          if (isRealPairMatch(m) && !isPending(m) && facedBefore(m, history).length) {
+            trialHeld.push({ ...m, dupHold: true });
+          } else trialFresh.push(m);
+        }
+        const trialParked = parkBareMatchesAsPending(trialFresh);
+        const trialExact = pairPendingsWithExactCourts(trialParked.matches, plannedSlots, courtOpts);
+        const trialFinal = [...trialHeld, ...trialExact.matches];
+        const withCourt = trialFinal.filter(
+          (m) => isRealPairMatch(m) && !isPending(m) && !m.dupHold && String(m.venue || "").trim()
         ).length;
-        const pend = trialAssign.matches.filter(isPending).length + (trialAssign.skipped || 0);
+        const pend = trialFinal.filter(isPending).length;
         const score = withCourt * 1000 - pend;
         if (!best || score > best.score) {
-          best = { out: trialOut, built: trialBuilt, score, withCourt, pend };
+          best = {
+            out: trialOut,
+            score,
+            withCourt,
+            pend,
+            assigned: trialAssigned,
+            releasedCourts: trialReleased,
+            parkedBare: trialParked,
+            exactPaired: trialExact,
+            held: trialHeld,
+          };
         }
-        if (t === 0 || t === SEED_TRIES - 1 || score === best.score) {
-          await tickBuildProgress(15 + Math.round(((t + 1) / SEED_TRIES) * 20), `Probando cruces ${t + 1}/${SEED_TRIES}…`);
-        }
+        await tickBuildProgress(
+          15 + Math.round(((t + 1) / SEED_TRIES) * 50),
+          `Probando armado ${t + 1}/${SEED_TRIES}…`
+        );
       }
       const out = best.out;
-      await tickBuildProgress(40, "Asignando canchas…");
-      let built = best.built;
-      // Asigna canchas: 1 cancha = 1 partido (sin solapes) y solo horarios que entran
-      // en la disponibilidad de ambas parejas. Sin venueCaps también aplica.
-      const assigned = rematchForCourts(built, plannedSlots, courtOpts);
-      // Red de seguridad: si algo quedó pisando cancha, se libera y pasa a pendientes.
-      const releasedCourts = releaseOverlappingCourts(assigned.matches);
+      assigned = best.assigned;
+      releasedCourts = best.releasedCourts;
+      parkedBare = best.parkedBare;
+      exactPaired = best.exactPaired;
+      const held = best.held || [];
       await tickBuildProgress(70, "Revisando duplicados y pendientes…");
-      // Cruces que ya se jugaron: se prearman (cancha y horario si coinciden) y no entran a la grilla.
-      const fresh = [];
-      const held = [];
-      for (const m of releasedCourts.matches) {
-        if (isRealPairMatch(m) && !isPending(m) && facedBefore(m, history).length) {
-          held.push({ ...m, dupHold: true });
-        } else fresh.push(m);
-      }
-      // Si igual no hay cancha, van a pendientes (como impar / sin cruce).
-      const parkedBare = parkBareMatchesAsPending(fresh);
-      // Exactos primero: si dos pendientes todavía tienen turno exacto libre, se matchean.
-      // Cercanos / estimables / cancha vacía quedan para cubrir a mano en Pendientes.
-      const exactPaired = pairPendingsWithExactCourts(parkedBare.matches, plannedSlots, courtOpts);
+      // Exactos ya se probaron en el loop; cercanos / estimables / cancha vacía quedan a mano.
       const parkedBad = parkAvailabilityViolations(attachPairDaysFromPairs(exactPaired.matches, ctx.pairs || []));
-      built = parkedBad.matches.map((m) => {
+      let built = parkedBad.matches.map((m) => {
         if (isPending(m)) {
           const days = m.days || m.homeDays;
           return cleanMatch(

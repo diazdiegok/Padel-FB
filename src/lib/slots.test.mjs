@@ -216,6 +216,83 @@ assert.equal(allSlots.length, expandCourtCandidates(slots).length);
   assert.equal(rejoined.paired, 1, "exactos se matchean entre pendientes");
   assert.equal(rejoined.matches.filter(isPendingMatch).length, 0);
   assert.ok(rejoined.matches.some((m) => isRealPairMatch(m) && m.venue), "quedan con cancha exacta");
+
+  // Si el primer par de pendientes no entra (cancha ocupada), sigue con el siguiente.
+  const occupiedPool = applyVenuePlan(
+    parseCourtSlotRows([
+      { Complejo: "Terrazas", Cancha: "1", Dia: "Lunes", Horario: "22:30 - 24:00" },
+      { Complejo: "Open", Cancha: "1", Dia: "Martes", Horario: "19:00 - 20:30" },
+    ]),
+    [],
+    { mode: "pool" }
+  );
+  const crowded = [
+    {
+      week: "Fecha 2",
+      temp: "T5",
+      cat: "B Masculina",
+      home: "Late One / Late Two",
+      away: PENDING_AWAY,
+      pending: true,
+      days: { Lunes: "22:00 - 24:00" },
+      homeDays: { Lunes: "22:00 - 24:00" },
+    },
+    {
+      week: "Fecha 2",
+      temp: "T5",
+      cat: "B Masculina",
+      home: "Late Three / Late Four",
+      away: PENDING_AWAY,
+      pending: true,
+      days: { Lunes: "22:00 - 24:00" },
+      homeDays: { Lunes: "22:00 - 24:00" },
+    },
+    {
+      week: "Fecha 2",
+      temp: "T5",
+      cat: "B Masculina",
+      home: "Open One / Open Two",
+      away: PENDING_AWAY,
+      pending: true,
+      days: { Martes: "18:30 - 21:00" },
+      homeDays: { Martes: "18:30 - 21:00" },
+    },
+    {
+      week: "Fecha 2",
+      temp: "T5",
+      cat: "B Masculina",
+      home: "Open Three / Open Four",
+      away: PENDING_AWAY,
+      pending: true,
+      days: { Martes: "18:30 - 21:00" },
+      homeDays: { Martes: "18:30 - 21:00" },
+    },
+    // La única cancha de Lunes 22:30 ya está tomada.
+    {
+      week: "Fecha 2",
+      temp: "T5",
+      cat: "A Masculina",
+      home: "Taken / Pair",
+      away: "Other / Pair",
+      day: "Lunes",
+      time: "22:30 - 24:00",
+      venue: "Terrazas Padel",
+      court: "1",
+    },
+  ];
+  const skipped = pairPendingsWithExactCourts(crowded, occupiedPool, { onlyEmpty: true, preferPlan: true });
+  assert.equal(skipped.paired, 1, "salta el par sin cancha libre y arma el que sí entra");
+  assert.ok(
+    skipped.matches.some(
+      (m) => isRealPairMatch(m) && /Open One/i.test(m.home + m.away) && String(m.venue || "").trim()
+    ),
+    "Open One vs Open Three quedan con cancha"
+  );
+  assert.equal(
+    skipped.matches.filter((m) => isPendingMatch(m) && /Late/i.test(m.home)).length,
+    2,
+    "los late sin cancha libre siguen pendientes"
+  );
 }
 
 // Sin cupos: no se pisan canchas y se respetan horarios de parejas.
