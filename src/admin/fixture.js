@@ -1377,7 +1377,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
 
   async function reviewCourtDuplicates() {
     if (!filterTemp || !filterWeek) {
-      await noticeModal({ title: "Revisar duplicados", body: "Entrá a una fecha para revisar." });
+      await noticeModal({ title: "Revisar canchas duplicadas", body: "Entrá a una fecha para revisar." });
       return;
     }
     const conflicts = findCourtConflicts(matchesInOpenWeek());
@@ -1942,7 +1942,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
       const stillConflict = findCourtConflicts(real);
       if (stillConflict.length) {
-        parts.push(`${stillConflict.length} aviso${stillConflict.length === 1 ? "" : "s"} de cancha repetida (Revisar duplicados)`);
+        parts.push(`${stillConflict.length} aviso${stillConflict.length === 1 ? "" : "s"} de cancha repetida (Revisar canchas duplicadas)`);
       }
       if (pendingBare.length) {
         parts.push(`${pendingBare.length} pendiente${pendingBare.length === 1 ? "" : "s"} sin cancha reservada`);
