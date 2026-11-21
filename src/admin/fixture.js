@@ -335,8 +335,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     return { opts: packedExact, nearOpts, estimateOpts, homeDays, coverDays, bothPending, shareWindow };
   }
 
-  function coverSlotSelect(i, match, coverLabel) {
+  function coverSlotSelect(i, match, coverLabel, { attr = "", selected = "", step = "2. " } = {}) {
     const label = "Elegir día, complejo y cancha";
+    const dataAttr = attr || `data-fx-cover-slot="${i}"`;
     if (!loadedSlots.length) {
       return `<select disabled aria-label="${label}"><option>Leé el Drive para ver canchas</option></select>`;
     }
@@ -360,7 +361,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           const bits = [base];
           if (near && o.nearLabel) bits.push(o.nearLabel);
           const text = bits.join(" · ");
-          return `<option value="${escAttr(o.key)}">${escAttr(text)}</option>`;
+          return `<option value="${escAttr(o.key)}"${selected && o.key === selected ? " selected" : ""}>${escAttr(text)}</option>`;
         })
         .join("");
 
@@ -407,7 +408,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     if (cercanos.length) parts.push(`${cercanos.length} cercano${cercanos.length === 1 ? "" : "s"}`);
     if (estimables.length) parts.push(`${estimables.length} estimable${estimables.length === 1 ? "" : "s"}`);
     if (libres.length) parts.push(`${libres.length} en cancha vacía`);
-    const placeholder = `${match?.dupHold ? "" : "2. "}Elegir entre ${parts.join(" + ")}…`;
+    const placeholder = `${match?.dupHold ? "" : step}Elegir entre ${parts.join(" + ")}…`;
     const hint = "Orden: exactos, cercanos, estimables y al final cancha vacía. Esos turnos libres suelen ser los más lejos: se proponen por si pueden jugar.";
     // Separadores con <option disabled> (no anidar optgroup).
     const exactBlock = opts.length
@@ -430,7 +431,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       ${groupsByDay(libres, { near: true })}`
       : "";
 
-    return `<select data-fx-cover-slot="${i}" aria-label="${label}" title="${escAttr(hint)}" data-fx-cover-total="${total}">
+    return `<select ${dataAttr} aria-label="${label}" title="${escAttr(hint)}" data-fx-cover-total="${total}">
       <option value="">${escAttr(placeholder)}</option>
       ${exactBlock}
       ${nearBlock}
@@ -1095,30 +1096,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     let canAdd = false;
     if (d.home && d.away) {
       const m = newDraftMatch();
+      // Mismo desplegable que «Cubrir con»: exactos, cercanos, estimables y cancha vacía.
+      slotSel = coverSlotSelect(-1, m, m.away, { attr: 'data-fx-new="slot"', selected: d.slot, step: "4. " });
+      canAdd = !!d.slot && !!newSlotOption(d.slot);
       const homeDays = daysOfPair(m.home, m.cat);
       const awayDays = daysOfPair(m.away, m.cat);
-      if (!loadedSlots.length) {
-        slotSel = `<select disabled aria-label="Horario"><option>Leé el Drive para ver horarios</option></select>`;
-      } else if (!homeDays || !awayDays) {
-        slotSel = `<select disabled aria-label="Horario"><option>Falta la disponibilidad de una pareja</option></select>`;
-      } else {
-        const opts = courtChoicesFor({ ...m, homeDays, awayDays });
-        if (!opts.length) {
-          slotSel = `<select disabled aria-label="Horario"><option>Sin horario libre del Drive donde coincidan</option></select>`;
-          hint = `Disponibilidad: ${availHint(homeDays)} — ${availHint(awayDays)}`;
-        } else {
-          slotSel = `<select data-fx-new="slot" aria-label="Horario">
-            <option value="">4. Horario (${opts.length} coinciden)…</option>
-            ${opts
-              .map(
-                (o) =>
-                  `<option value="${escAttr(o.key)}"${o.key === d.slot ? " selected" : ""}>${escAttr(courtOptionText(o))}</option>`
-              )
-              .join("")}
-          </select>`;
-          canAdd = !!d.slot && opts.some((o) => o.key === d.slot);
-        }
-      }
+      if (homeDays && awayDays) hint = `Disponibilidad: ${availHint(homeDays)} — ${availHint(awayDays)}`;
       const weeks = facedBefore(m);
       if (weeks.length) hint = `Ya se enfrentaron en ${weeks.join(", ")}: va a quedar en Duplicados.${hint ? ` ${hint}` : ""}`;
     }
@@ -1145,20 +1128,49 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     </section>`;
   }
 
-  function addNewMatch() {
+  function newSlotOption(key) {
+    if (!key || !newDraft?.home || !newDraft?.away) return null;
+    const m = newDraftMatch();
+    const c = coverCourtChoices(m, m.away);
+    return (
+      c.opts.find((o) => o.key === key) ||
+      c.nearOpts.find((o) => o.key === key) ||
+      c.estimateOpts.find((o) => o.key === key) ||
+      null
+    );
+  }
+
+  async function addNewMatch() {
     if (!newDraft?.home || !newDraft?.away || !newDraft?.slot) return;
     const base = newDraftMatch();
-    const homeDays = daysOfPair(base.home, base.cat);
-    const awayDays = daysOfPair(base.away, base.cat);
-    const opt = courtChoicesFor({ ...base, homeDays, awayDays }).find((o) => o.key === newDraft.slot);
+    const opt = newSlotOption(newDraft.slot);
     if (!opt) {
       toast("Ese horario ya no está libre. Elegí otro.", "err");
       newDraft.slot = "";
       renderNewMatch();
       return;
     }
+    if (opt.near || opt.estimate) {
+      const ok = await confirmModal({
+        title: opt.estimate ? "Horario estimable" : "Horario cercano",
+        body:
+          `No entran exactas en 1:30 según Inscripciones. La cancha está libre: ${courtOptionText(opt)}` +
+          (opt.nearLabel ? ` (${opt.nearLabel})` : "") +
+          ". Alguna pareja afloja su disponibilidad. ¿Lo usamos igual?",
+        confirmLabel: "Usar igual",
+        danger: true,
+      });
+      if (!ok) return;
+    }
     const match = cleanMatch(
-      { ...base, day: opt.day, time: opt.time, venue: opt.venue, court: opt.court },
+      {
+        ...base,
+        day: opt.day,
+        time: opt.time,
+        venue: opt.venue,
+        court: opt.court,
+        ...(opt.near ? { flexAvail: true } : {}),
+      },
       {},
       filterTemp
     );
