@@ -41,7 +41,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
   font-weight: 800;
   transform: translateY(-150%);
 }
-.skip-link:focus { transform: translateY(0); }
+/* Solo con teclado (Tab): con clic o foco devuelto por el navegador no aparece. */
+.skip-link:focus-visible { transform: translateY(0); }
+.is-admin .skip-link { display: none; }
 
 .wrap { width: min(var(--max), calc(100% - 40px)); margin-inline: auto; }
 
