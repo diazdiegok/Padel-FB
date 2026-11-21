@@ -59,6 +59,7 @@ import {
   nearCoverCourtOptions,
   normalizeDay,
   pairsSharePlayableWindow,
+  assignCourtSlots,
   filterSharedSlotsToDrive,
   pairPendingsWithExactCourts,
   parkAvailabilityViolations,
@@ -1389,7 +1390,8 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
 
   async function tickBuildProgress(pct, label) {
     setBuildProgress(pct, label);
-    await new Promise((r) => setTimeout(r, 0));
+    // 16ms: alcanza a pintar la barra; setTimeout(0) a veces no refresca y parece trabado.
+    await new Promise((r) => setTimeout(r, 16));
   }
 
   async function buildFromFecha() {
@@ -1558,15 +1560,18 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           ctx.pairs || []
         );
 
-      // Varias semillas: se puntúa DESPUÉS de rematch + rescue (no solo el assign barato),
-      // porque un cruce “bonito” en papel puede dejar más pendientes al no haber cancha.
-      const SEED_TRIES = 12;
-      let best = null;
-      let assigned = { matches: [], assigned: 0, swaps: 0 };
-      let releasedCourts = { matches: [], released: 0 };
-      let parkedBare = { matches: [], parked: 0 };
-      let exactPaired = { matches: [], paired: 0 };
+      // Semillas baratas (assign) → afinar solo las mejores (rematch + exactos).
+      // Antes: 12× rematch completo (~50s c/u) dejaba el Armar trabado en «1/12 · 19%».
+      const SEED_TRIES = 8;
+      const POLISH_TOP = 2;
+      const polishOpts = { ...courtOpts, maxTrials: 80, maxPasses: 14, maxRealPartners: 8 };
+      const exactOpts = { ...courtOpts, maxTrials: 36, skipPendingAssign: true, freezeFilled: true };
+      const candidates = [];
       for (let t = 0; t < SEED_TRIES; t++) {
+        await tickBuildProgress(
+          15 + Math.round((t / SEED_TRIES) * 35),
+          `Probando armado ${t + 1}/${SEED_TRIES}…`
+        );
         buildCount += 1;
         const trialOut = buildFixture({
           entries,
@@ -1578,7 +1583,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           filterSharedSlots,
         });
         const trialBuilt = mapBuilt(trialOut.matches);
-        const trialAssigned = rematchForCourts(trialBuilt, plannedSlots, courtOpts);
+        const trialAssigned = assignCourtSlots(trialBuilt, plannedSlots, courtOpts);
         const trialReleased = releaseOverlappingCourts(trialAssigned.matches);
         const trialFresh = [];
         const trialHeld = [];
@@ -1588,7 +1593,55 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           } else trialFresh.push(m);
         }
         const trialParked = parkBareMatchesAsPending(trialFresh);
-        const trialExact = pairPendingsWithExactCourts(trialParked.matches, plannedSlots, courtOpts);
+        const trialFinal = [...trialHeld, ...trialParked.matches];
+        const withCourt = trialFinal.filter(
+          (m) => isRealPairMatch(m) && !isPending(m) && !m.dupHold && String(m.venue || "").trim()
+        ).length;
+        const pend = trialFinal.filter(isPending).length;
+        const score = withCourt * 1000 - pend;
+        candidates.push({
+          out: trialOut,
+          built: trialBuilt,
+          score,
+          withCourt,
+          pend,
+          assigned: {
+            matches: trialAssigned.matches,
+            assigned: trialAssigned.assigned,
+            skipped: trialAssigned.skipped,
+            leftover: trialAssigned.leftover,
+            swaps: 0,
+          },
+          releasedCourts: trialReleased,
+          parkedBare: trialParked,
+          held: trialHeld,
+        });
+      }
+      candidates.sort((a, b) => b.score - a.score || b.withCourt - a.withCourt);
+      const toPolish = candidates.slice(0, Math.min(POLISH_TOP, candidates.length));
+      let best = null;
+      for (let p = 0; p < toPolish.length; p++) {
+        const cand = toPolish[p];
+        await tickBuildProgress(
+          50 + Math.round((p / Math.max(1, toPolish.length)) * 18),
+          `Afinando armado ${p + 1}/${toPolish.length}…`
+        );
+        // Rematch sobre el borrador original (con bare), no sobre pendientes ya parqueadas.
+        const trialAssigned = rematchForCourts(cand.built, plannedSlots, polishOpts);
+        const trialReleased = releaseOverlappingCourts(trialAssigned.matches);
+        const trialFresh = [];
+        const trialHeld = [];
+        for (const m of trialReleased.matches) {
+          if (isRealPairMatch(m) && !isPending(m) && facedBefore(m, history).length) {
+            trialHeld.push({ ...m, dupHold: true });
+          } else trialFresh.push(m);
+        }
+        const trialParked = parkBareMatchesAsPending(trialFresh);
+        await tickBuildProgress(
+          55 + Math.round(((p + 0.5) / Math.max(1, toPolish.length)) * 18),
+          `Exactos ${p + 1}/${toPolish.length}…`
+        );
+        const trialExact = pairPendingsWithExactCourts(trialParked.matches, plannedSlots, exactOpts);
         const trialFinal = [...trialHeld, ...trialExact.matches];
         const withCourt = trialFinal.filter(
           (m) => isRealPairMatch(m) && !isPending(m) && !m.dupHold && String(m.venue || "").trim()
@@ -1597,7 +1650,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         const score = withCourt * 1000 - pend;
         if (!best || score > best.score) {
           best = {
-            out: trialOut,
+            out: cand.out,
             score,
             withCourt,
             pend,
@@ -1608,16 +1661,19 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
             held: trialHeld,
           };
         }
-        await tickBuildProgress(
-          15 + Math.round(((t + 1) / SEED_TRIES) * 50),
-          `Probando armado ${t + 1}/${SEED_TRIES}…`
-        );
+      }
+      if (!best) {
+        const fallback = candidates[0];
+        best = {
+          ...fallback,
+          exactPaired: { matches: fallback.parkedBare?.matches || [], paired: 0 },
+        };
       }
       const out = best.out;
-      assigned = best.assigned;
-      releasedCourts = best.releasedCourts;
-      parkedBare = best.parkedBare;
-      exactPaired = best.exactPaired;
+      let assigned = best.assigned;
+      let releasedCourts = best.releasedCourts;
+      let parkedBare = best.parkedBare;
+      let exactPaired = best.exactPaired;
       const held = best.held || [];
       await tickBuildProgress(70, "Revisando duplicados y pendientes…");
       // Exactos ya se probaron en el loop; cercanos / estimables / cancha vacía quedan a mano.

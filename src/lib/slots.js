@@ -659,7 +659,18 @@ export function applyVenuePlan(slots = [], plan = [], { mode = "pack" } = {}) {
  * 2) Reasignación: si uno quedó sin cancha, mueve a otro partido flexible y le cede el turno.
  * Nunca asigna fuera de la ventana inscripta (preferPlan solo reubica dentro de ella).
  */
-export function assignCourtSlots(matches = [], slots = [], { onlyEmpty = true, venueCaps = null, preferPlan = false } = {}) {
+export function assignCourtSlots(
+  matches = [],
+  slots = [],
+  {
+    onlyEmpty = true,
+    venueCaps = null,
+    preferPlan = false,
+    skipPendingAssign = false,
+    /** No muda partidos que ya tenían cancha (evita “robar” cupos al probar exactos). */
+    freezeFilled = false,
+  } = {}
+) {
   const next = matches.map((m) => ({ ...m }));
   const needsExpand = slots.some((s) => Number(s.to) - Number(s.from) > MATCH_MINUTES || s.capacity > 1);
   const poolSource = needsExpand ? expandCourtCandidates(slots) : slots.slice();
@@ -809,6 +820,8 @@ export function assignCourtSlots(matches = [], slots = [], { onlyEmpty = true, v
     const pending = isPendingMatch(m);
     const hasRealAway = String(m.away || "").trim() && !pending;
     if (!hasRealAway && !pending) continue;
+    // Exactos / rematch: no gastar en acomodar pendientes (solo el partido real nuevo).
+    if (pending && skipPendingAssign) continue;
     const filled =
       String(m.venue || "").trim() && String(m.court || "").trim() && String(m.time || "").trim() && String(m.day || "").trim();
     if (onlyEmpty && filled) {
@@ -883,52 +896,55 @@ export function assignCourtSlots(matches = [], slots = [], { onlyEmpty = true, v
   }
 
   // Reasignación: si un partido quedó sin cancha, pedirle el turno a uno que pueda mudarse.
-  let improved = true;
-  let guard = 0;
-  while (improved && guard++ < needIdx.length * 6) {
-    improved = false;
-    for (const u of needIdx) {
-      if (owner.has(u)) continue;
-      const direct = optionsFor(u)[0];
-      if (direct) {
-        applyOwner(u, direct.si);
-        improved = true;
-        continue;
-      }
-      if (!preferPlan) continue;
+  // freezeFilled: solo ocupa huecos libres (para probar exactos sin desalojar a nadie).
+  if (!freezeFilled) {
+    let improved = true;
+    let guard = 0;
+    while (improved && guard++ < needIdx.length * 6) {
+      improved = false;
+      for (const u of needIdx) {
+        if (owner.has(u)) continue;
+        const direct = optionsFor(u)[0];
+        if (direct) {
+          applyOwner(u, direct.si);
+          improved = true;
+          continue;
+        }
+        if (!preferPlan) continue;
 
-      const ranked = [];
-      for (let si = 0; si < pool.length; si++) {
-        if (!fitsAvailAndMode(u, si)) continue;
-        ranked.push({ si, score: scoreOf(pool[si], next[u], isPendingMatch(next[u])) });
-      }
-      ranked.sort((a, b) => b.score - a.score || pool[a.si].from - pool[b.si].from);
+        const ranked = [];
+        for (let si = 0; si < pool.length; si++) {
+          if (!fitsAvailAndMode(u, si)) continue;
+          ranked.push({ si, score: scoreOf(pool[si], next[u], isPendingMatch(next[u])) });
+        }
+        ranked.sort((a, b) => b.score - a.score || pool[a.si].from - pool[b.si].from);
 
-      for (const { si } of ranked) {
-        const occupant = findOccupantBlocking(si);
-        if (occupant == null) {
-          if (!slotFreeFor(si, u)) continue;
+        for (const { si } of ranked) {
+          const occupant = findOccupantBlocking(si);
+          if (occupant == null) {
+            if (!slotFreeFor(si, u)) continue;
+            applyOwner(u, si);
+            improved = true;
+            break;
+          }
+          const occSlot = owner.get(occupant);
+          clearOwner(occupant);
+          const alt = optionsFor(occupant).find((o) => o.si !== si);
+          if (!alt) {
+            applyOwner(occupant, occSlot);
+            continue;
+          }
+          applyOwner(occupant, alt.si);
+          // Revalidar cupo/solape DESPUÉS de mudar al ocupante (si no, se puede pasar el tope del complejo).
+          if (!slotFreeFor(si, u) || !fitsAvailAndMode(u, si)) {
+            clearOwner(occupant);
+            applyOwner(occupant, occSlot);
+            continue;
+          }
           applyOwner(u, si);
           improved = true;
           break;
         }
-        const occSlot = owner.get(occupant);
-        clearOwner(occupant);
-        const alt = optionsFor(occupant).find((o) => o.si !== si);
-        if (!alt) {
-          applyOwner(occupant, occSlot);
-          continue;
-        }
-        applyOwner(occupant, alt.si);
-        // Revalidar cupo/solape DESPUÉS de mudar al ocupante (si no, se puede pasar el tope del complejo).
-        if (!slotFreeFor(si, u) || !fitsAvailAndMode(u, si)) {
-          clearOwner(occupant);
-          applyOwner(occupant, occSlot);
-          continue;
-        }
-        applyOwner(u, si);
-        improved = true;
-        break;
       }
     }
   }
@@ -1368,19 +1384,22 @@ export function pairPendingsWithExactCourts(matches = [], courtPool = [], opts =
   let current = (matches || []).map((m) => ({ ...m }));
   if (!courtPool?.length) return { matches: current, paired: 0 };
 
+  // Tope de assignCourtSlots: sin esto, O(pendientes²) traba el Armar en fechas grandes.
+  const maxTrials = Math.max(8, Number(opts.maxTrials) || 48);
+  let trials = 0;
   let paired = 0;
   let guard = 0;
   // Pares ya intentados que no entraron en cancha libre: no reintentar en bucle.
   const skipKeys = new Set();
-  while (guard++ < Math.max(8, current.length * 2)) {
+  while (guard++ < Math.max(8, current.length * 2) && trials < maxTrials) {
     const pendingIdx = current
       .map((m, i) => i)
       .filter((i) => isPendingMatch(current[i]) && String(current[i].home || "").trim());
     if (pendingIdx.length < 2) break;
 
     let progressed = false;
-    for (let a = 0; a < pendingIdx.length && !progressed; a++) {
-      for (let b = a + 1; b < pendingIdx.length; b++) {
+    for (let a = 0; a < pendingIdx.length && !progressed && trials < maxTrials; a++) {
+      for (let b = a + 1; b < pendingIdx.length && trials < maxTrials; b++) {
         const ia = pendingIdx[a];
         const ib = pendingIdx[b];
         const pa = current[ia];
@@ -1419,7 +1438,14 @@ export function pairPendingsWithExactCourts(matches = [], courtPool = [], opts =
         };
         // Saca el otro pendiente de la lista (índice mayor primero si hiciera falta).
         trial.splice(ib, 1);
-        const assigned = assignCourtSlots(trial, courtPool, { ...opts, onlyEmpty: true, preferPlan: true });
+        trials += 1;
+        const assigned = assignCourtSlots(trial, courtPool, {
+          ...opts,
+          onlyEmpty: true,
+          preferPlan: true,
+          skipPendingAssign: true,
+          freezeFilled: true,
+        });
         const linked = assigned.matches.find(
           (m) =>
             isRealPairMatch(m) &&
@@ -1455,8 +1481,14 @@ export function rematchForCourts(matches = [], slots = [], opts = {}) {
   current = assigned.matches;
   let swaps = 0;
   let guard = 0;
+  // Sin tope, en fechas grandes (canchas justas) cada semilla tarda decenas de segundos
+  // y el Armar parece trabado en «Probando armado 1/12».
+  const maxTrials = Math.max(12, Number(opts.maxTrials) || 96);
+  const maxPasses = Math.max(4, Number(opts.maxPasses) || 16);
+  const maxRealPartners = Math.max(4, Number(opts.maxRealPartners) || 10);
+  let trials = 0;
 
-  while (guard++ < Math.max(8, current.length * 2)) {
+  while (guard++ < maxPasses && trials < maxTrials) {
     const bareIdx = current
       .map((m, i) => i)
       .filter((i) => isRealPairMatch(current[i]) && !String(current[i].venue || "").trim());
@@ -1464,37 +1496,20 @@ export function rematchForCourts(matches = [], slots = [], opts = {}) {
 
     let improved = false;
     for (const bi of bareIdx) {
+      if (trials >= maxTrials) break;
       const bare = current[bi];
       const cat = bare.cat || "";
 
       const realOthers = current
         .map((m, i) => i)
-        .filter((i) => i !== bi && isRealPairMatch(current[i]) && (current[i].cat || "") === cat);
+        .filter((i) => i !== bi && isRealPairMatch(current[i]) && (current[i].cat || "") === cat)
+        .slice(0, maxRealPartners);
 
+      // Pendientes primero (menos variantes y suelen destrabar cancha).
       const variants = [];
-      for (const oi of realOthers) {
-        const other = current[oi];
-        const sides = [
-          [bare.home, bare.homeDays, bare.away, bare.awayDays],
-          [other.home, other.homeDays, other.away, other.awayDays],
-        ];
-        const [ah, ad, bh, bd] = [sides[0][0], sides[0][1], sides[0][2], sides[0][3]];
-        const [ch, cd, dh, dd] = [sides[1][0], sides[1][1], sides[1][2], sides[1][3]];
-        // A vs D y C vs B
-        variants.push({
-          oi,
-          left: withPairDays(bare, ah, dh, ad, dd),
-          right: withPairDays(other, ch, bh, cd, bd),
-        });
-        // A vs C y D vs B
-        variants.push({
-          oi,
-          left: withPairDays(bare, ah, ch, ad, cd),
-          right: withPairDays(other, dh, bh, dd, bd),
-        });
-      }
-
-      for (const pi of current.map((m, i) => i).filter((i) => i !== bi && isPendingMatch(current[i]) && (current[i].cat || "") === cat)) {
+      for (const pi of current
+        .map((m, i) => i)
+        .filter((i) => i !== bi && isPendingMatch(current[i]) && (current[i].cat || "") === cat)) {
         const pending = current[pi];
         const cover = pending.home;
         const coverDays = pending.days || pending.homeDays;
@@ -1536,7 +1551,30 @@ export function rematchForCourts(matches = [], slots = [], opts = {}) {
         });
       }
 
+      for (const oi of realOthers) {
+        const other = current[oi];
+        const sides = [
+          [bare.home, bare.homeDays, bare.away, bare.awayDays],
+          [other.home, other.homeDays, other.away, other.awayDays],
+        ];
+        const [ah, ad, bh, bd] = [sides[0][0], sides[0][1], sides[0][2], sides[0][3]];
+        const [ch, cd, dh, dd] = [sides[1][0], sides[1][1], sides[1][2], sides[1][3]];
+        // A vs D y C vs B
+        variants.push({
+          oi,
+          left: withPairDays(bare, ah, dh, ad, dd),
+          right: withPairDays(other, ch, bh, cd, bd),
+        });
+        // A vs C y D vs B
+        variants.push({
+          oi,
+          left: withPairDays(bare, ah, ch, ad, cd),
+          right: withPairDays(other, dh, bh, dd, bd),
+        });
+      }
+
       for (const variant of variants) {
+        if (trials >= maxTrials) break;
         if (pairsMatch(variant.left.home, variant.left.away)) continue;
         if (isRealPairMatch(variant.right) && pairsMatch(variant.right.home, variant.right.away)) continue;
 
@@ -1558,7 +1596,13 @@ export function rematchForCourts(matches = [], slots = [], opts = {}) {
           }
         }
 
-        const again = assignCourtSlots(trial, slots, { ...opts, onlyEmpty: true, preferPlan: true });
+        trials += 1;
+        const again = assignCourtSlots(trial, slots, {
+          ...opts,
+          onlyEmpty: true,
+          preferPlan: true,
+          skipPendingAssign: true,
+        });
         const before = courtAssignedCount(current);
         const after = courtAssignedCount(again.matches);
         const bareFixed = again.matches.some(
