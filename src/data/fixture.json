@@ -953,21 +953,6 @@
   },
   {
     "week": "Fecha 2",
-    "day": "Martes",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Femenino",
-    "time": "22:00 - 23:30",
-    "venue": "Americas Padel",
-    "court": "Cancha 4",
-    "home": "Florencia Cavallaro / Luisina Yancovich",
-    "away": "Valentina Gabirondo / Delfina Balla",
-    "result": "",
-    "appliedResult": "",
-    "flexAvail": true
-  },
-  {
-    "week": "Fecha 2",
     "day": "Jueves",
     "date": "",
     "temp": "T5",
@@ -1161,6 +1146,21 @@
     "court": "Cancha 4",
     "home": "Jorgelina Garbarino / Laura Ramírez Kunzi",
     "away": "Stefania Benedetich / Florencia Benedetich",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
+  },
+  {
+    "week": "Fecha 2",
+    "day": "Jueves",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "19:00 - 20:30",
+    "venue": "Open Padel",
+    "court": "Cancha 1",
+    "home": "Florencia Gabriela Esquivel / Natalia Ivana Frickel",
+    "away": "Lucia Rausch / Luciana Marconi",
     "result": "",
     "appliedResult": "",
     "flexAvail": true
