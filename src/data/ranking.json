@@ -8825,7 +8825,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 1,
-    "pos": 7,
+    "pos": 8,
     "temp": "T5"
   },
   {
@@ -8843,7 +8843,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 23,
+    "pos": 22,
     "temp": "T5"
   },
   {
@@ -8915,7 +8915,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 26,
+    "pos": 25,
     "temp": "T5"
   },
   {
@@ -8960,7 +8960,7 @@
     "pts": 1,
     "pj": 1,
     "dif": -1,
-    "pos": 6,
+    "pos": 7,
     "temp": "T5"
   },
   {
@@ -9029,10 +9029,10 @@
   {
     "name": "Rocio Feltes / Sofia Kamlopky",
     "cat": "C Femenino",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 18,
+    "pts": 3,
+    "pj": 1,
+    "dif": 2,
+    "pos": 7,
     "temp": "T5"
   },
   {
@@ -9095,7 +9095,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 1,
-    "pos": 8,
+    "pos": 9,
     "temp": "T5"
   },
   {
@@ -9149,7 +9149,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 24,
+    "pos": 23,
     "temp": "T5"
   },
   {
@@ -9203,7 +9203,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 12,
+    "pos": 13,
     "temp": "T5"
   },
   {
@@ -9248,7 +9248,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 11,
+    "pos": 12,
     "temp": "T5"
   },
   {
@@ -9266,7 +9266,7 @@
     "pts": 1,
     "pj": 1,
     "dif": -1,
-    "pos": 7,
+    "pos": 9,
     "temp": "T5"
   },
   {
@@ -9293,7 +9293,7 @@
     "pts": 1,
     "pj": 1,
     "dif": -1,
-    "pos": 10,
+    "pos": 11,
     "temp": "T5"
   },
   {
@@ -9302,7 +9302,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 22,
+    "pos": 21,
     "temp": "T5"
   },
   {
@@ -9365,7 +9365,7 @@
     "pts": 1,
     "pj": 1,
     "dif": -1,
-    "pos": 9,
+    "pos": 10,
     "temp": "T5"
   },
   {
@@ -9383,7 +9383,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 25,
+    "pos": 24,
     "temp": "T5"
   },
   {
@@ -9401,7 +9401,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 19,
+    "pos": 18,
     "temp": "T5"
   },
   {
@@ -9419,7 +9419,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 21,
+    "pos": 20,
     "temp": "T5"
   },
   {
@@ -9488,9 +9488,9 @@
   {
     "name": "Ariel Enrique / Marcelo Enrique",
     "cat": "A Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
+    "pts": 1,
+    "pj": 1,
+    "dif": -1,
     "pos": 8,
     "temp": "T5"
   },
@@ -9515,10 +9515,10 @@
   {
     "name": "Pamela Velazques / Santino Sayes",
     "cat": "A Masculina",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 9,
+    "pts": 3,
+    "pj": 1,
+    "dif": 1,
+    "pos": 6,
     "temp": "T5"
   },
   {
@@ -9561,9 +9561,9 @@
     "name": "Melina Drabble / Cecilia García Formenti",
     "cat": "C Femenino",
     "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 13,
+    "pj": 1,
+    "dif": -2,
+    "pos": 26,
     "temp": "T5"
   },
   {
@@ -9572,7 +9572,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 20,
+    "pos": 19,
     "temp": "T5"
   },
   {
