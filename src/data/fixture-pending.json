@@ -9,6 +9,8 @@
       "Viernes": "18:00 - 00:00",
       "Sábado": "10:00 - 18:00"
     },
+    "recoverFrom": "Fecha 1",
+    "recoveredIn": "Fecha 2",
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -32,6 +34,8 @@
       "Miércoles": "13:00 - 15:30",
       "Jueves": "17:30 - 22:00"
     },
+    "recoverFrom": "Fecha 1",
+    "recoveredIn": "Fecha 2",
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -57,6 +61,8 @@
       "Viernes": "18:00 - 00:00",
       "Sábado": "18:00 - 00:00"
     },
+    "recoverFrom": "Fecha 1",
+    "recoveredIn": "Fecha 2",
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -78,6 +84,8 @@
       "Lunes": "19:00 - 21:00",
       "Viernes": "19:00 - 21:00"
     },
+    "recoverFrom": "Fecha 1",
+    "recoveredIn": "Fecha 2",
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -101,6 +109,8 @@
       "Miércoles": "19:00 - 20:30",
       "Sábado": "14:00 - 18:00"
     },
+    "recoverFrom": "Fecha 1",
+    "recoveredIn": "Fecha 2",
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -125,6 +135,8 @@
       "Viernes": "15:00 - 19:00",
       "Sábado": "09:00 - 12:00"
     },
+    "recoverFrom": "Fecha 1",
+    "recoveredIn": "Fecha 2",
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -149,6 +161,8 @@
       "Viernes": "18:00 - 20:00",
       "Sábado": "16:00 - 18:00"
     },
+    "recoverFrom": "Fecha 1",
+    "recoveredIn": "Fecha 2",
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -171,6 +185,8 @@
       "Miércoles": "19:00 - 22:00",
       "Viernes": "19:30 - 22:00"
     },
+    "recoverFrom": "Fecha 1",
+    "recoveredIn": "Fecha 2",
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -192,6 +208,8 @@
       "Miércoles": "17:00 - 20:00",
       "Viernes": "17:00 - 20:00"
     },
+    "recoverFrom": "Fecha 1",
+    "recoveredIn": "Fecha 2",
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -216,6 +234,8 @@
       "Jueves": "20:00 - 22:30",
       "Viernes": "20:00 - 22:30"
     },
+    "recoverFrom": "Fecha 1",
+    "recoveredIn": "Fecha 2",
     "week": "Fecha 1",
     "day": "",
     "date": "",
@@ -225,6 +245,55 @@
     "venue": "",
     "court": "",
     "home": "Stefania Werner / Carla Sangoy",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Tiene 0 partidos en Fecha 1. Recupera esa fecha.",
+    "days": {
+      "Miércoles": "15:00 - 23:00",
+      "Viernes": "15:00 - 23:00"
+    },
+    "recoverFrom": "Fecha 1",
+    "recoveredIn": "Fecha 2",
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Raquel Habitzreuter / Valeria Basa",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "No quedó cancha libre en el Drive donde puedan jugar.",
+    "avail": "Lunes 16:30 - 20:30 · Viernes 16:00 - 21:00 · Sábado 15:00 - 20:00",
+    "days": {
+      "Lunes": "16:30 - 20:30",
+      "Viernes": "16:00 - 21:00",
+      "Sábado": "15:00 - 20:00"
+    },
+    "homeDays": {
+      "Lunes": "16:30 - 20:30",
+      "Viernes": "16:00 - 21:00",
+      "Sábado": "15:00 - 20:00"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Jeronimo Acuña / Lucio Acuña",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
