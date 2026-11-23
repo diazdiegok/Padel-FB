@@ -2,10 +2,12 @@
 import Layout from "../../layouts/Layout.astro";
 import BackNav from "../../components/BackNav.astro";
 import ranking from "../../data/ranking.json";
+import pairs from "../../data/parejas.json";
 import { site } from "../../data/site";
 import { listSeasons, seasonLabel, seasonSlug } from "../../lib/liga.js";
 import { CATS, sortCats } from "../../lib/disponibilidad.js";
 import { page } from "../../lib/paths";
+import { pairsMatch } from "../../lib/scoring.js";
 
 export function getStaticPaths() {
   const hidden = new Set(["S Masculina"]);
@@ -19,6 +21,18 @@ export function getStaticPaths() {
 
 const { tempCode } = Astro.props;
 const rows = ranking.filter((p) => p.cat !== "S Masculina" && p.temp === tempCode);
+const seasonPairs = (Array.isArray(pairs) ? pairs : []).filter(
+  (p) => p.temp === tempCode && p.p1 && p.p2 && p.cat
+);
+/** Solo si hay inscripción de esa temporada: ranking con PJ≥1 y sin pareja anotada. */
+const hasInscription = seasonPairs.length > 0;
+const players = rows.map((p) => {
+  const abandoned =
+    hasInscription &&
+    Number(p.pj) > 0 &&
+    !seasonPairs.some((sp) => sp.cat === p.cat && pairsMatch(p.name, `${sp.p1} / ${sp.p2}`));
+  return { ...p, abandoned };
+});
 const cats = sortCats(rows.map((p) => p.cat));
 const title = seasonLabel(tempCode);
 const live = tempCode === site.currentSeason;
@@ -77,7 +91,7 @@ const live = tempCode === site.currentSeason;
     )}
   </div>
 
-  <script define:vars={{ players: rows, catOrder: CATS }}>
+  <script define:vars={{ players, catOrder: CATS }}>
     const q = document.querySelector("#q");
     const tbody = document.querySelector("#rows");
     const empty = document.querySelector("#empty");
@@ -114,11 +128,14 @@ const live = tempCode === site.currentSeason;
       tbody.innerHTML = list
         .map((p) => {
           const dif = `${Number(p.dif) > 0 ? "+" : ""}${esc(p.dif)}`;
-          return `<tr class="${Number(p.pos) === 1 ? "top1" : ""}">
+          const badge = p.abandoned
+            ? ` <span class="rank-abandoned" title="Se quitaron de la inscripción">Abandonaron</span>`
+            : "";
+          return `<tr class="${Number(p.pos) === 1 ? "top1" : ""}${p.abandoned ? " is-abandoned" : ""}">
           <td class="pos">${esc(p.pos)}</td>
           <td class="name">
-            <span class="rank-name">${esc(p.name)}</span>
-            <span class="rank-meta">${esc(p.cat)} · PJ ${esc(p.pj)} · Dif ${dif}</span>
+            <span class="rank-name">${esc(p.name)}${badge}</span>
+            <span class="rank-meta">${esc(p.cat)} · PJ ${esc(p.pj)} · Dif ${dif}${p.abandoned ? " · Abandonaron" : ""}</span>
           </td>
           <td class="cat-cell">${esc(p.cat)}</td>
           <td class="pj">${esc(p.pj)}</td>

@@ -802,6 +802,18 @@ footer a:hover { color: var(--lime); }
 .board .pos { font-size: 20px; }
 .board .name { font-weight: 700; }
 .board .rank-name { display: block; }
+.board .rank-abandoned {
+  display: inline-block;
+  margin-left: 0.5em;
+  color: var(--danger);
+  font-family: var(--display);
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 0.08em;
+  white-space: nowrap;
+}
 .board .rank-meta {
   display: none;
   margin-top: 4px;
