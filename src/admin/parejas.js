@@ -282,44 +282,40 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
     const btn = $("pairs-align-rank");
     if (!box || !tag || !btn) return;
     const { missing, extra } = rankingDiff();
-    // En ranking sin inscripción = baja (puede seguir si ya jugó).
-    const quitados = extra
+    // Sin inscripción: con PJ = abandonaron (siguen en ranking); con 0 = se pueden limpiar.
+    const abandonaron = extra
+      .filter((r) => Number(r.pj) > 0 || Number(r.pts) > 0)
       .slice()
       .sort(
         (a, b) =>
           String(a.cat || "").localeCompare(String(b.cat || ""), "es") ||
           String(a.name || "").localeCompare(String(b.name || ""), "es")
       );
-    const canDrop = quitados.some((r) => !(Number(r.pj) > 0 || Number(r.pts) > 0));
+    const canDrop = extra.some((r) => !(Number(r.pj) > 0 || Number(r.pts) > 0));
     btn.hidden = !missing.length && !canDrop;
 
     if (missing.length) {
       tag.hidden = false;
       tag.textContent = `${missing.length} sin match en ranking`;
       tag.className = "tag warn";
-    } else if (!quitados.length) {
+    } else if (!abandonaron.length) {
       tag.hidden = false;
       tag.textContent = "Ranking al día";
       tag.className = "tag ok";
     } else {
-      // Ya no mostramos «N de más»: el detalle va en Quitados de inscripción.
       tag.hidden = true;
       tag.textContent = "";
     }
 
-    if (!quitados.length) {
+    if (!abandonaron.length) {
       box.hidden = true;
       box.innerHTML = "";
       return;
     }
     box.hidden = false;
-    box.innerHTML = `<span><b>Quitados de inscripción</b> · ${quitados.length} pareja${quitados.length === 1 ? "" : "s"} que ya no están en la lista y siguen en el ranking.</span>
-      <ul>${quitados
-        .map((r) => {
-          const pj = Number(r.pj) || 0;
-          const played = pj > 0 ? `jugó · ${pjLabel(r)}` : "0 PJ · no jugó";
-          return `<li>${esc(r.name)} · ${esc(r.cat || "—")} · ${esc(played)}</li>`;
-        })
+    box.innerHTML = `<span><b>Abandonaron</b> · ${abandonaron.length} pareja${abandonaron.length === 1 ? "" : "s"} que se quitaron de la inscripción y ya habían jugado.</span>
+      <ul>${abandonaron
+        .map((r) => `<li>${esc(r.name)} · ${esc(r.cat || "—")} · ${esc(pjLabel(r))}</li>`)
         .join("")}</ul>`;
   }
 
