@@ -29,7 +29,7 @@ import {
   releaseRecoveryDebt,
   rematchWeeks,
 } from "../lib/fixturer.js";
-import { latestWeek, listSeasons, mergeArchivedMatches, seasonLabel, weekKey, weekNumber } from "../lib/liga.js";
+import { isOpenWeek, latestWeek, listSeasons, mergeArchivedMatches, seasonLabel, weekKey, weekNumber } from "../lib/liga.js";
 import {
   rivalOptionsFromPairs,
   scheduleOptionsFromSlots,
@@ -194,7 +194,9 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       // Recupero cubierto desde esta fecha (week = fecha adeudada).
       return !!(m.recoverFrom && (m.recoveredIn || "") === week);
     }).length;
-    return { games, pending, recovering, duplicates, live: live.length > 0, n: games.length };
+    // Solo la última fecha del fixture vivo es «En juego» (al crear otra, la anterior deja de serlo).
+    const open = isOpenWeek(week, seasonRows, temp);
+    return { games, pending, recovering, duplicates, live: open, n: games.length };
   }
 
   function updateSummary() {

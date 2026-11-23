@@ -6,7 +6,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "test": "node src/lib/fixturer.test.mjs && node src/lib/slots.test.mjs && node src/lib/scoring.test.mjs && node src/lib/drive-sheet.test.mjs"
+    "test": "node src/lib/liga.test.mjs && node src/lib/fixturer.test.mjs && node src/lib/slots.test.mjs && node src/lib/scoring.test.mjs && node src/lib/drive-sheet.test.mjs"
   },
   "dependencies": {
     "astro": "^7.3.2",

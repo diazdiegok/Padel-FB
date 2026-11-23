@@ -11,7 +11,7 @@ import {
 import { isPendingMatch, isRealPairMatch } from "../lib/fixturer.js";
 import { applyFixtureResults, describeResult, fold, formatResult, pairsMatch, parseResult, queryMatchesText } from "../lib/scoring.js";
 import { compareCats } from "../lib/disponibilidad.js";
-import { combineResults, seasonLabel, seasonNumber, weekKey, weekNumber } from "../lib/liga.js";
+import { combineResults, isOpenWeek, seasonLabel, seasonNumber, weekKey, weekNumber } from "../lib/liga.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
 const NO_WEEK = "Sin fecha";
@@ -197,7 +197,11 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
     return `<article class="admin-result-card${parsed ? " has-score" : ""}">
       <div class="admin-result-meta">
         <span>${escAttr(when)}</span>
-        ${m._source === "fixture" ? `<span class="admin-chip-live">Fecha en juego</span>` : `<span class="admin-chip-arch">Archivo</span>`}
+        ${
+          m._source === "fixture" && isOpenWeek(weekOf(m), ctx.fixture || [], tempOf(m))
+            ? `<span class="admin-chip-live">Fecha en juego</span>`
+            : `<span class="admin-chip-arch">Archivo</span>`
+        }
       </div>
       <strong class="res-vs">${sideHtml(m.home, !!parsed?.homeWin)} <span class="muted">vs</span> ${sideHtml(m.away, !!(parsed && !parsed.homeWin))}</strong>
       <p class="admin-help">${escAttr([m.venue, m.court].filter(Boolean).join(" · "))}</p>
@@ -410,7 +414,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
           ${weeks
             .map((week) => {
               const weekGames = games.filter((m) => weekOf(m) === week);
-              const weekLive = weekGames.some((m) => m._source === "fixture");
+              const weekLive = isOpenWeek(week, ctx.fixture || [], selTemp);
               return `<button class="res-box${selWeek === week ? " done" : ""}" type="button" data-res-week="${escAttr(week)}" style="min-height:96px">
                 <span class="kicker">Fecha</span>
                 <strong>${escAttr(week)}</strong>

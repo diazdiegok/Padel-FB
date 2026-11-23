@@ -75,6 +75,24 @@ export function liveFixture(matches) {
   return list.filter((m) => (m.week || "Sin fecha") === week);
 }
 
+/**
+ * Última fecha que sigue en el fixture vivo de una temporada.
+ * Solo esa debe mostrarse como «En juego»; al crear Fecha N+1, la anterior deja de serlo.
+ */
+export function openWeek(matches = [], temp = "") {
+  const season = String(temp || "").trim().toUpperCase();
+  const list = (matches || []).filter((m) => {
+    if (!season) return true;
+    return String(m?.temp || "").trim().toUpperCase() === season;
+  });
+  return latestWeek(list);
+}
+
+export function isOpenWeek(week, matches = [], temp = "") {
+  const open = openWeek(matches, temp);
+  return !!open && String(week || "") === open;
+}
+
 export function mergeArchivedMatches(archive, incoming) {
   const next = Array.isArray(incoming) ? incoming : [];
   if (!next.length) return Array.isArray(archive) ? [...archive] : [];

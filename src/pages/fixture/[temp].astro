@@ -5,7 +5,7 @@ import fixture from "../../data/fixture.json";
 import results from "../../data/results.json";
 import { site } from "../../data/site";
 import { isPendingMatch, isRealPairMatch } from "../../lib/fixturer.js";
-import { combineResults, seasonLabel, seasonSlug, weekNumber, weekSlug } from "../../lib/liga.js";
+import { combineResults, isOpenWeek, seasonLabel, seasonSlug, weekNumber, weekSlug } from "../../lib/liga.js";
 import { page } from "../../lib/paths";
 
 const fxList = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) && !isPendingMatch(m));
@@ -22,14 +22,14 @@ export function getStaticPaths() {
 
 const { tempCode } = Astro.props;
 const all = combineResults(results, fxList);
-const liveKeys = new Set(fxList.map((m) => `${m.temp || ""}|${m.week || ""}`));
 const list = all.filter((m) => (m.temp || site.currentSeason || "T4") === tempCode);
 const weeks = [...new Set(list.map((m) => m.week || "Sin fecha"))].sort(
   (a, b) => weekNumber(b) - weekNumber(a) || String(a).localeCompare(String(b), "es")
 );
 const cards = weeks.map((week) => {
   const weekList = list.filter((m) => (m.week || "Sin fecha") === week);
-  const live = liveKeys.has(`${tempCode}|${week}`);
+  // Solo la última fecha del fixture vivo es «En juego».
+  const live = isOpenWeek(week, fxList, tempCode);
   return {
     week,
     total: weekList.length,
