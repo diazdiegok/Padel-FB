@@ -3540,6 +3540,7 @@ body.is-admin .chk input[type="checkbox"] {
   margin: 0;
   height: fit-content;
   max-height: calc(100dvh - 32px);
+  overflow: auto;
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 0;
@@ -3547,6 +3548,7 @@ body.is-admin .chk input[type="checkbox"] {
   color: var(--cream);
   width: min(440px, calc(100% - 32px));
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  z-index: 200;
 }
 
 .admin-modal::backdrop {
@@ -3557,6 +3559,7 @@ body.is-admin .chk input[type="checkbox"] {
   padding: 24px;
   display: grid;
   gap: 14px;
+  min-width: 0;
 }
 
 .admin-modal h2 {
@@ -3572,13 +3575,21 @@ body.is-admin .chk input[type="checkbox"] {
   font-size: 14px;
   line-height: 1.5;
   white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
 .admin-modal-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
-  justify-content: flex-end;
+  justify-content: stretch;
   margin-top: 8px;
+}
+
+.admin-modal-actions .btn {
+  flex: 1 1 140px;
+  justify-content: center;
+  min-width: 0;
 }
 
 .btn-danger-solid {

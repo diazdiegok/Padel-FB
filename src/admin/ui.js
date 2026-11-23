@@ -45,6 +45,10 @@ export function confirmModal({ title, body, confirmLabel = "Confirmar", danger =
     }
     titleEl.textContent = title;
     bodyEl.textContent = body;
+    okBtn.hidden = false;
+    okBtn.disabled = false;
+    cancelBtn.hidden = false;
+    cancelBtn.disabled = false;
     okBtn.textContent = confirmLabel;
     okBtn.className = "btn " + (danger ? "btn-danger-solid" : "btn-lime");
     let settled = false;
@@ -54,6 +58,8 @@ export function confirmModal({ title, body, confirmLabel = "Confirmar", danger =
       okBtn.onclick = null;
       cancelBtn.onclick = null;
       dialog.onclose = null;
+      okBtn.hidden = false;
+      cancelBtn.hidden = false;
       if (dialog.open) dialog.close();
       resolve(value);
     };
@@ -61,6 +67,8 @@ export function confirmModal({ title, body, confirmLabel = "Confirmar", danger =
     cancelBtn.onclick = () => cleanup(false);
     dialog.onclose = () => cleanup(false);
     dialog.showModal();
+    // Confirmar a la vista (en angosto a veces quedaba cortado a la derecha).
+    requestAnimationFrame(() => okBtn.scrollIntoView({ block: "nearest", inline: "nearest" }));
   });
 }
 
@@ -78,6 +86,8 @@ export function noticeModal({ title, body, confirmLabel = "Listo" }) {
     }
     titleEl.textContent = title;
     bodyEl.textContent = body;
+    okBtn.hidden = false;
+    okBtn.disabled = false;
     okBtn.textContent = confirmLabel;
     okBtn.className = "btn btn-lime";
     cancelBtn.hidden = true;
