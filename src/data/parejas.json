@@ -914,20 +914,6 @@
     "note": ""
   },
   {
-    "id": "pmwfpb6rg9325",
-    "createdAt": "2026-11-14T01:02:29.884Z",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "p1": "Adrian Romero",
-    "p2": "Roberto Challol",
-    "days": {
-      "Lunes": "19:00 - 22:00",
-      "Miércoles": "19:00 - 22:00",
-      "Viernes": "18:00 - 22:00"
-    },
-    "note": ""
-  },
-  {
     "id": "pmwfpgck3ff90",
     "createdAt": "2026-11-14T01:06:30.675Z",
     "temp": "T5",
