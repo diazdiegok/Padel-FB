@@ -3580,16 +3580,35 @@ body.is-admin .chk input[type="checkbox"] {
 
 .admin-modal-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column-reverse;
   gap: 10px;
-  justify-content: stretch;
   margin-top: 8px;
 }
 
 .admin-modal-actions .btn {
-  flex: 1 1 140px;
+  width: 100%;
   justify-content: center;
-  min-width: 0;
+  min-height: 48px;
+  box-sizing: border-box;
+}
+
+/* Específicos del modal: sin esto el OK (texto #111) queda invisible sobre el fondo oscuro. */
+.admin-modal-actions .btn-lime {
+  background: var(--lime);
+  border-color: var(--lime);
+  color: #111;
+}
+
+.admin-modal-actions .btn-danger-solid {
+  background: #ff5a3c;
+  border-color: #ff5a3c;
+  color: #111;
+}
+
+.admin-modal-actions .btn-ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--cream);
 }
 
 .btn-danger-solid {

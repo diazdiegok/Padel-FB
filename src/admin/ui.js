@@ -49,8 +49,15 @@ export function confirmModal({ title, body, confirmLabel = "Confirmar", danger =
     okBtn.disabled = false;
     cancelBtn.hidden = false;
     cancelBtn.disabled = false;
-    okBtn.textContent = confirmLabel;
+    okBtn.textContent = confirmLabel || "Confirmar";
     okBtn.className = "btn " + (danger ? "btn-danger-solid" : "btn-lime");
+    // Fondo/color inline: evita OK invisible si el CSS cacheado no trae btn-danger-solid.
+    okBtn.style.background = danger ? "#ff5a3c" : "var(--lime)";
+    okBtn.style.borderColor = danger ? "#ff5a3c" : "var(--lime)";
+    okBtn.style.color = "#111";
+    cancelBtn.style.background = "";
+    cancelBtn.style.borderColor = "";
+    cancelBtn.style.color = "";
     let settled = false;
     const cleanup = (value) => {
       if (settled) return;
@@ -60,6 +67,9 @@ export function confirmModal({ title, body, confirmLabel = "Confirmar", danger =
       dialog.onclose = null;
       okBtn.hidden = false;
       cancelBtn.hidden = false;
+      okBtn.style.background = "";
+      okBtn.style.borderColor = "";
+      okBtn.style.color = "";
       if (dialog.open) dialog.close();
       resolve(value);
     };
