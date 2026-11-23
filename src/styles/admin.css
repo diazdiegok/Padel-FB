@@ -2354,6 +2354,22 @@ body.is-admin .chk input[type="checkbox"] {
   color: #ff7a59;
 }
 
+.pairs-card.is-abandoned {
+  opacity: 0.92;
+  border-style: dashed;
+}
+
+.pairs-card.is-abandoned .pairs-origin {
+  color: var(--muted, #6b7280);
+  white-space: nowrap;
+}
+
+.pairs-abandoned-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: var(--muted, #6b7280);
+}
+
 .pairs-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 128px minmax(0, 1fr) 128px 150px 84px 36px;

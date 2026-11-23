@@ -127,6 +127,8 @@ const ORIGINS = [
   { id: "ranking", label: "Del ranking", hint: "Vinieron del ranking" },
   { id: "dup", label: "Repetida", hint: "Misma pareja cargada más de una vez" },
 ];
+/** Filtro especial: ranking sin inscripción vigente (con o sin PJ). */
+const ABANDONED = "abandonaron";
 
 function pairOrigin(p, dupKeys) {
   if (dupKeys.get(pairKey(p)) > 1) return "dup";
@@ -136,6 +138,7 @@ function pairOrigin(p, dupKeys) {
 }
 
 function originLabel(id) {
+  if (id === ABANDONED) return "Abandonaron";
   return ORIGINS.find((o) => o.id === id)?.label || id;
 }
 
@@ -177,6 +180,19 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
   function renderCats(list, dupKeys) {
     const box = $("pairs-cats");
     if (!box) return;
+    if (filterOrigin === ABANDONED) {
+      const abandoned = abandonedRankRows();
+      const used = [...new Set([...CATS, ...abandoned.map((r) => r.cat)].filter(Boolean))];
+      if (filterCat && !used.includes(filterCat)) filterCat = "";
+      box.innerHTML = [
+        `<button class="pill${filterCat === "" ? " on" : ""}" type="button" data-pairs-cat="">Todas <small>${abandoned.length}</small></button>`,
+        ...used.map((c) => {
+          const n = abandoned.filter((r) => r.cat === c).length;
+          return `<button class="pill${filterCat === c ? " on" : ""}" type="button" data-pairs-cat="${esc(c)}">${esc(c)} <small>${n}</small></button>`;
+        }),
+      ].join("");
+      return;
+    }
     const base = filterOrigin ? list.filter(({ p }) => pairOrigin(p, dupKeys) === filterOrigin) : list;
     const used = [...new Set([...CATS, ...base.map(({ p }) => p.cat)].filter(Boolean))];
     if (filterCat && !used.includes(filterCat)) filterCat = "";
@@ -197,19 +213,33 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
     base.forEach(({ p }) => {
       counts[pairOrigin(p, dupKeys)] += 1;
     });
-    if (filterOrigin && !(filterOrigin in counts)) filterOrigin = "";
+    const abandonedAll = abandonedRankRows();
+    const abandonedN = filterCat
+      ? abandonedAll.filter((r) => r.cat === filterCat).length
+      : abandonedAll.length;
+    if (filterOrigin === ABANDONED) {
+      if (!abandonedAll.length) filterOrigin = "";
+    } else if (filterOrigin && !(filterOrigin in counts)) {
+      filterOrigin = "";
+    }
     box.innerHTML = [
       `<button class="pill${filterOrigin === "" ? " on" : ""}" type="button" data-pairs-origin="">Todos <small>${base.length}</small></button>`,
       ...ORIGINS.map(
         (o) =>
           `<button class="pill${filterOrigin === o.id ? " on" : ""}" type="button" data-pairs-origin="${o.id}" title="${esc(o.hint)}">${esc(o.label)} <small>${counts[o.id] || 0}</small></button>`
       ),
+      `<button class="pill${filterOrigin === ABANDONED ? " on" : ""}" type="button" data-pairs-origin="${ABANDONED}" title="Se quitaron de la inscripción (con o sin PJ)">Abandonaron <small>${abandonedN}</small></button>`,
     ].join("");
   }
 
   function renderPayFilters(list, dupKeys) {
     const box = $("pairs-pays");
     if (!box) return;
+    if (filterOrigin === ABANDONED) {
+      filterPay = "";
+      box.innerHTML = "";
+      return;
+    }
     const base = list.filter(({ p }) => {
       if (filterCat && p.cat !== filterCat) return false;
       if (filterOrigin && pairOrigin(p, dupKeys) !== filterOrigin) return false;
@@ -276,47 +306,38 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
     return `${pj} PJ`;
   }
 
+  /** Ranking sin inscripción vigente (todas las bajas, con o sin PJ). */
+  function abandonedRankRows() {
+    return rankingDiff()
+      .extra.slice()
+      .sort(
+        (a, b) =>
+          Number(b.pj || 0) - Number(a.pj || 0) ||
+          String(a.cat || "").localeCompare(String(b.cat || ""), "es") ||
+          String(a.name || "").localeCompare(String(b.name || ""), "es")
+      );
+  }
+
   function renderRankSync() {
     const box = $("pairs-rank-box");
     const tag = $("pairs-rank-tag");
     const btn = $("pairs-align-rank");
     if (!box || !tag || !btn) return;
     const { missing, extra } = rankingDiff();
-    // Sin inscripción: con PJ = abandonaron (siguen en ranking); con 0 = se pueden limpiar.
-    const abandonaron = extra
-      .filter((r) => Number(r.pj) > 0 || Number(r.pts) > 0)
-      .slice()
-      .sort(
-        (a, b) =>
-          String(a.cat || "").localeCompare(String(b.cat || ""), "es") ||
-          String(a.name || "").localeCompare(String(b.name || ""), "es")
-      );
     const canDrop = extra.some((r) => !(Number(r.pj) > 0 || Number(r.pts) > 0));
     btn.hidden = !missing.length && !canDrop;
-
+    // El listado de bajas va en el filtro «Abandonaron»; acá solo el estado del ranking.
+    box.hidden = true;
+    box.innerHTML = "";
     if (missing.length) {
       tag.hidden = false;
       tag.textContent = `${missing.length} sin match en ranking`;
       tag.className = "tag warn";
-    } else if (!abandonaron.length) {
+    } else {
       tag.hidden = false;
       tag.textContent = "Ranking al día";
       tag.className = "tag ok";
-    } else {
-      tag.hidden = true;
-      tag.textContent = "";
     }
-
-    if (!abandonaron.length) {
-      box.hidden = true;
-      box.innerHTML = "";
-      return;
-    }
-    box.hidden = false;
-    box.innerHTML = `<span><b>Abandonaron</b> · ${abandonaron.length} pareja${abandonaron.length === 1 ? "" : "s"} que se quitaron de la inscripción y ya habían jugado.</span>
-      <ul>${abandonaron
-        .map((r) => `<li>${esc(r.name)} · ${esc(r.cat || "—")} · ${esc(pjLabel(r))}</li>`)
-        .join("")}</ul>`;
   }
 
   function renderStatus({ keepOpen = false } = {}) {
@@ -341,6 +362,50 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
     badge.title = `Temporada del sistema (${temp}). Se cambia en Temporadas → Usar esta → Publicar.`;
   }
 
+  function renderAbandonedList(q) {
+    let rows = abandonedRankRows();
+    const allN = rows.length;
+    if (filterCat) rows = rows.filter((r) => r.cat === filterCat);
+    const filterTotal = rows.length;
+    if (q) rows = rows.filter((r) => fold(`${r.name || ""} ${r.cat || ""}`).includes(q));
+    const parts = [filterCat, "Abandonaron"].filter(Boolean);
+    const totalLabel = parts.join(" · ");
+    $("pairs-count").textContent =
+      q && rows.length !== filterTotal
+        ? `${rows.length} de ${filterTotal} pareja${filterTotal === 1 ? "" : "s"} en ${totalLabel}`
+        : `${filterTotal} pareja${filterTotal === 1 ? "" : "s"} en ${totalLabel}`;
+    $("pairs-list").innerHTML = rows.length
+      ? `<div class="pairs-rows">${rows
+          .map((r) => {
+            const names = String(r.name || "").split(/\s*\/\s*/);
+            const p1 = (names[0] || "").trim() || "—";
+            const p2 = (names[1] || "").trim() || "—";
+            const pj = pjLabel(r);
+            const pts = Number(r.pts) || 0;
+            return `<article class="pairs-card is-abandoned" data-abandoned="1">
+              <div class="pairs-row">
+                <input value="${esc(p1)}" readonly tabindex="-1" aria-label="Integrante 1" />
+                <input value="" readonly tabindex="-1" placeholder="—" aria-label="WhatsApp integrante 1" />
+                <input value="${esc(p2)}" readonly tabindex="-1" aria-label="Integrante 2" />
+                <input value="" readonly tabindex="-1" placeholder="—" aria-label="WhatsApp integrante 2" />
+                <select disabled aria-label="Categoría">
+                  <option selected>${esc(r.cat || "—")}</option>
+                </select>
+                <span class="pairs-origin" title="Quitada de la inscripción; sigue en ranking">${esc(pj)}${pts ? ` · ${pts} pts` : ""}</span>
+              </div>
+              <p class="pairs-abandoned-note">Quitada de la inscripción · ${esc(pj)}${pts ? ` · ${pts} pts` : ""} · solo lectura</p>
+            </article>`;
+          })
+          .join("")}</div>`
+      : `<div class="admin-empty"><p>${
+          allN
+            ? filterCat || q
+              ? "Nadie coincide con el filtro o la búsqueda."
+              : "Nadie coincide con la búsqueda."
+            : "No hay parejas quitadas de la inscripción (todas las del ranking están anotadas)."
+        }</p></div>`;
+  }
+
   function render() {
     const temp = season();
     renderSeasonBadge();
@@ -351,6 +416,10 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
     renderOrigins(list, dupKeys);
     renderPayFilters(list, dupKeys);
     const q = fold(term);
+    if (filterOrigin === ABANDONED) {
+      renderAbandonedList(q);
+      return;
+    }
     let shown = list.filter(({ p }) => matchesFilters(p, dupKeys));
     if (q) {
       shown = shown.filter(({ p }) => {
