@@ -270,36 +270,57 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
     return { missing, extra, temp };
   }
 
+  function pjLabel(row) {
+    const pj = Number(row?.pj) || 0;
+    if (pj <= 0) return "0 PJ";
+    return `${pj} PJ`;
+  }
+
   function renderRankSync() {
     const box = $("pairs-rank-box");
     const tag = $("pairs-rank-tag");
     const btn = $("pairs-align-rank");
     if (!box || !tag || !btn) return;
     const { missing, extra } = rankingDiff();
-    const ok = !missing.length && !extra.length;
-    btn.hidden = ok;
-    tag.hidden = false;
-    if (ok) {
+    // En ranking sin inscripción = baja (puede seguir si ya jugó).
+    const quitados = extra
+      .slice()
+      .sort(
+        (a, b) =>
+          String(a.cat || "").localeCompare(String(b.cat || ""), "es") ||
+          String(a.name || "").localeCompare(String(b.name || ""), "es")
+      );
+    const canDrop = quitados.some((r) => !(Number(r.pj) > 0 || Number(r.pts) > 0));
+    btn.hidden = !missing.length && !canDrop;
+
+    if (missing.length) {
+      tag.hidden = false;
+      tag.textContent = `${missing.length} sin match en ranking`;
+      tag.className = "tag warn";
+    } else if (!quitados.length) {
+      tag.hidden = false;
       tag.textContent = "Ranking al día";
       tag.className = "tag ok";
+    } else {
+      // Ya no mostramos «N de más»: el detalle va en Quitados de inscripción.
+      tag.hidden = true;
+      tag.textContent = "";
+    }
+
+    if (!quitados.length) {
       box.hidden = true;
       box.innerHTML = "";
       return;
     }
-    tag.textContent = `${missing.length ? `${missing.length} sin match en ranking` : ""}${missing.length && extra.length ? " · " : ""}${extra.length ? `${extra.length} de más` : ""}`;
-    tag.className = "tag warn";
-    const missList = missing.length
-      ? `<p><b>Inscriptas cuyo nombre no matchea una fila del ranking</b> (el ranking puede tener ${ (ctx.rows || []).filter((r) => String(r.temp || "").toUpperCase() === season()).length } filas; acá falló la comparación de nombres/categoría)</p><ul>${missing
-          .map((p) => `<li>${esc(`${p.p1} / ${p.p2}`)} · ${esc(p.cat)}</li>`)
-          .join("")}</ul>`
-      : "";
-    const extraList = extra.length
-      ? `<p><b>En ranking sin inscripción vigente</b></p><ul>${extra
-          .map((r) => `<li>${esc(r.name)} · ${esc(r.cat)}</li>`)
-          .join("")}</ul>`
-      : "";
     box.hidden = false;
-    box.innerHTML = `<span><b>Desfase por nombre</b> · Inscriptas que no coinciden 1 a 1 con una fila del ranking (o al revés). “Alinear ranking” agrega, quita y renombra en local; después Publicar parejas lo sube.</span>${missList}${extraList}`;
+    box.innerHTML = `<span><b>Quitados de inscripción</b> · ${quitados.length} pareja${quitados.length === 1 ? "" : "s"} que ya no están en la lista y siguen en el ranking.</span>
+      <ul>${quitados
+        .map((r) => {
+          const pj = Number(r.pj) || 0;
+          const played = pj > 0 ? `jugó · ${pjLabel(r)}` : "0 PJ · no jugó";
+          return `<li>${esc(r.name)} · ${esc(r.cat || "—")} · ${esc(played)}</li>`;
+        })
+        .join("")}</ul>`;
   }
 
   function renderStatus({ keepOpen = false } = {}) {
