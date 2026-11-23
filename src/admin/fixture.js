@@ -10,7 +10,7 @@ import {
   parseCourtSlotObjects,
   sortMatchesForExport,
 } from "./csv.js";
-import { DAYS, pairLabel, validateDays } from "../lib/disponibilidad.js";
+import { DAYS, compareCats, pairLabel, validateDays } from "../lib/disponibilidad.js";
 import {
   MAX_PAIR_MATCHES,
   PENDING_AWAY,
@@ -37,7 +37,7 @@ import {
   syncFixtureWithPairs,
 } from "../lib/pair-fixture-sync.js";
 import { mergeDriveFixtureRows, parseDriveSheetValues, pendingDriveRows } from "../lib/drive-sheet.js";
-import { fold, pairsMatch, preserveRemoteMatchScores } from "../lib/scoring.js";
+import { fold, pairsMatch, preserveRemoteMatchScores, queryMatchesText } from "../lib/scoring.js";
 import {
   courtsSheetIdForSeason,
   DEFAULT_FIXTURE_DRIVE_SHEET_ID,
@@ -100,6 +100,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   let focusEdit = false;
   let filterTemp = "";
   let filterWeek = "";
+  /** Filtros de la grilla (igual que la vista pública / Resultados). */
+  let gridDay = "";
+  let gridCat = "";
+  let gridVenue = "";
+  let gridTerm = "";
   /** @type {any[]} */
   let loadedSlots = [];
   let slotsFileName = "";
@@ -116,11 +121,19 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     return filterWeek || $("fx-week")?.value.trim() || latestWeek(ctx.fixture) || "Fecha 1";
   }
 
+  function clearGridFilters() {
+    gridDay = "";
+    gridCat = "";
+    gridVenue = "";
+    gridTerm = "";
+  }
+
   /** Vista raíz del nav Fixture: cajas de temporadas (después fechas). */
   function showSeasonsHome() {
     filterTemp = "";
     filterWeek = "";
     editing = -1;
+    clearGridFilters();
     if ($("fx-week")) $("fx-week").value = "";
   }
 
@@ -206,7 +219,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     updateGridCount(st);
   }
 
-  function updateGridCount(st) {
+  function updateGridCount(st, shown = null) {
     const note = $("fx-grid-count");
     if (!note) return;
     if (!st || !filterWeek) {
@@ -215,8 +228,85 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       return;
     }
     const n = st.n;
+    const filtered = shown != null && shown !== n;
     note.hidden = false;
-    note.innerHTML = `<strong>${escAttr(String(n))}</strong> partido${n === 1 ? "" : "s"} fixtureado${n === 1 ? "" : "s"} en ${escAttr(filterWeek)}`;
+    note.innerHTML = filtered
+      ? `<strong>${escAttr(String(shown))}</strong> de ${escAttr(String(n))} partido${n === 1 ? "" : "s"} en ${escAttr(filterWeek)}`
+      : `<strong>${escAttr(String(n))}</strong> partido${n === 1 ? "" : "s"} fixtureado${n === 1 ? "" : "s"} en ${escAttr(filterWeek)}`;
+  }
+
+  function gridPillSet(label, items, current, attr, total) {
+    const allLabel = attr === "cat" ? "Todas" : "Todos";
+    return `<div class="res-filter">
+      <span>${label}</span>
+      <div class="pills">
+        <button class="pill${current === "" ? " on" : ""}" type="button" data-fx-grid-${attr}="">${allLabel} <small>${total}</small></button>
+        ${items
+          .map(
+            (item) =>
+              `<button class="pill${current === item.value ? " on" : ""}" type="button" data-fx-grid-${attr}="${escAttr(item.value)}">${escAttr(item.label || item.value)} <small>${item.n}</small></button>`
+          )
+          .join("")}
+      </div>
+    </div>`;
+  }
+
+  function filterGridMatches(list) {
+    const days = [...new Set(list.map((m) => m.day).filter(Boolean))].sort(
+      (a, b) => DAYS.indexOf(a) - DAYS.indexOf(b) || String(a).localeCompare(String(b), "es")
+    );
+    const cats = [...new Set(list.map((m) => m.cat || "Sin categoría"))].sort(compareCats);
+    const venues = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
+    if (gridDay && !days.includes(gridDay)) gridDay = "";
+    if (gridCat && !cats.includes(gridCat)) gridCat = "";
+    if (gridVenue && !venues.includes(gridVenue)) gridVenue = "";
+    const q = fold(gridTerm);
+    let shown = list.slice();
+    if (gridDay) shown = shown.filter((m) => m.day === gridDay);
+    if (gridCat) shown = shown.filter((m) => (m.cat || "Sin categoría") === gridCat);
+    if (gridVenue) shown = shown.filter((m) => m.venue === gridVenue);
+    if (q) {
+      shown = shown.filter((m) =>
+        queryMatchesText(
+          `${m.home || ""} ${m.away || ""} ${m.venue || ""} ${m.court || ""} ${m.cat || ""} ${m.day || ""} ${m.time || ""}`,
+          q
+        )
+      );
+    }
+    return { days, cats, venues, shown };
+  }
+
+  function renderGridFilters(list, { days, cats, venues }) {
+    const box = $("fx-filters");
+    if (!box) return;
+    if (!list.length) {
+      box.hidden = true;
+      box.innerHTML = "";
+      return;
+    }
+    box.hidden = false;
+    box.innerHTML = `${gridPillSet(
+      "Día",
+      days.map((value) => ({ value, n: list.filter((m) => m.day === value).length })),
+      gridDay,
+      "day",
+      list.length
+    )}
+    ${gridPillSet(
+      "Categoría",
+      cats.map((value) => ({ value, n: list.filter((m) => (m.cat || "Sin categoría") === value).length })),
+      gridCat,
+      "cat",
+      list.length
+    )}
+    ${gridPillSet(
+      "Cancha",
+      venues.map((value) => ({ value, n: list.filter((m) => m.venue === value).length })),
+      gridVenue,
+      "venue",
+      list.length
+    )}
+    <input class="admin-search" data-fx-grid-search type="search" placeholder="Buscar pareja, jugador o complejo…" autocomplete="off" value="${escAttr(gridTerm)}" />`;
   }
 
   function needsCourt(m) {
@@ -1263,20 +1353,25 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       $("fx-pending").hidden = true;
       if ($("fx-recover-box")) $("fx-recover-box").hidden = true;
       if ($("fx-dup-box")) $("fx-dup-box").hidden = true;
-      $("fx-body").innerHTML = arch
-        .map(
-          (m) => `<tr>
+      const filtered = filterGridMatches(arch);
+      renderGridFilters(arch, filtered);
+      updateGridCount(weekStats(filterTemp, filterWeek), filtered.shown.length);
+      $("fx-body").innerHTML = filtered.shown.length
+        ? filtered.shown
+            .map(
+              (m) => `<tr>
+          <td>${escAttr(m.cat || "—")}</td>
           <td>${escAttr(m.day || "—")}</td>
           <td>${escAttr(m.time || "—")}</td>
-          <td>${escAttr(m.cat || "—")}</td>
           <td>${escAttr(m.venue || "—")}</td>
           <td>${escAttr(m.court || "—")}</td>
           <td>${escAttr(m.home)}</td>
           <td>${escAttr(m.away)}</td>
           <td class="col-actions"></td>
         </tr>`
-        )
-        .join("");
+            )
+            .join("")
+        : `<tr><td colspan="8" class="admin-help">Nadie coincide con el filtro o la búsqueda.</td></tr>`;
       return;
     }
 
@@ -1288,6 +1383,13 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       .map((m, i) => ({ m, i }))
       .filter(({ m }) => !isPending(m) && !m.dupHold && seasonOf(m) === filterTemp && (m.week || "") === filterWeek)
       .sort((a, b) => compareByDayTime(a.m, b.m));
+    const filtered = filterGridMatches(games.map(({ m }) => m));
+    renderGridFilters(
+      games.map(({ m }) => m),
+      filtered
+    );
+    const shownGames = games.filter(({ m, i }) => filtered.shown.includes(m) || editing === i);
+    updateGridCount(weekStats(filterTemp, filterWeek), filtered.shown.length);
     const warnings = renderWarnings(games) || { rematch: new Set(), conflict: new Set() };
     const repeated = warnings.rematch || new Set();
     const conflicted = warnings.conflict || new Set();
@@ -1302,7 +1404,8 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         ? "Paso 1: tocá Leer Drive (pestaña con el mismo nombre que esta fecha)."
         : "Paso 2: abajo elegí partidos y días por complejo, y tocá Armar fixture.";
     }
-    $("fx-body").innerHTML = games
+    $("fx-body").innerHTML = shownGames.length
+      ? shownGames
       .map(({ m, i }) => {
         const on = editing === i;
         const bare = !on && needsCourt(m);
@@ -1372,7 +1475,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           </td>
         </tr>`;
       })
-      .join("");
+      .join("")
+      : games.length
+        ? `<tr><td colspan="8" class="admin-help">Nadie coincide con el filtro o la búsqueda.</td></tr>`
+        : "";
     if (focusEdit && editing >= 0) {
       focusEdit = false;
       $("fx-body")?.querySelector(`tr[data-i="${editing}"] select, tr[data-i="${editing}"] input`)?.focus();
@@ -1436,6 +1542,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
 
     if (!filterTemp) {
       if (detail) detail.hidden = true;
+      if ($("fx-filters")) {
+        $("fx-filters").hidden = true;
+        $("fx-filters").innerHTML = "";
+      }
       root.className = "res-boxes hub-like";
       root.innerHTML = tlist
         .map((temp) => {
@@ -1453,6 +1563,10 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
 
     if (!filterWeek) {
       if (detail) detail.hidden = true;
+      if ($("fx-filters")) {
+        $("fx-filters").hidden = true;
+        $("fx-filters").innerHTML = "";
+      }
       root.className = "res-boxes stack";
       const weeks = weeksOf(filterTemp);
       const live = filterTemp === current;
@@ -1917,6 +2031,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       ctx.fixture = [...keepOtherWeeks, ...built];
       filterTemp = season;
       filterWeek = week;
+      clearGridFilters();
       if ($("fx-week")) $("fx-week").value = week;
       shell.markDirty("fixture");
       await tickBuildProgress(92, "Actualizando grilla…");
@@ -1992,12 +2107,14 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         filterTemp = "";
         filterWeek = "";
         editing = -1;
+        clearGridFilters();
         render();
         return;
       }
       if (e.target.closest("[data-fx-back-week]")) {
         filterWeek = "";
         editing = -1;
+        clearGridFilters();
         render();
         return;
       }
@@ -2006,6 +2123,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         filterTemp = openTemp.dataset.fxOpenTemp;
         filterWeek = "";
         editing = -1;
+        clearGridFilters();
         render();
         return;
       }
@@ -2013,6 +2131,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       if (openWeek) {
         filterWeek = openWeek.dataset.fxOpenWeek;
         editing = -1;
+        clearGridFilters();
         render();
         return;
       }
@@ -2021,6 +2140,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         filterWeek = nextBuildWeek(season);
         if ($("fx-week")) $("fx-week").value = filterWeek;
         editing = -1;
+        clearGridFilters();
         loadedSlots = [];
         slotsFileName = "";
         advancedMode = false;
@@ -2359,6 +2479,38 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     });
 
     $("fx-dupes")?.addEventListener("click", () => reviewCourtDuplicates());
+
+    $("fx-filters")?.addEventListener("click", (e) => {
+      const dayBtn = e.target.closest("[data-fx-grid-day]");
+      if (dayBtn) {
+        gridDay = dayBtn.dataset.fxGridDay || "";
+        render();
+        return;
+      }
+      const catBtn = e.target.closest("[data-fx-grid-cat]");
+      if (catBtn) {
+        gridCat = catBtn.dataset.fxGridCat || "";
+        render();
+        return;
+      }
+      const venueBtn = e.target.closest("[data-fx-grid-venue]");
+      if (venueBtn) {
+        gridVenue = venueBtn.dataset.fxGridVenue || "";
+        render();
+      }
+    });
+    $("fx-filters")?.addEventListener("input", (e) => {
+      const search = e.target.closest("[data-fx-grid-search]");
+      if (!search) return;
+      gridTerm = search.value;
+      render();
+      const again = $("fx-filters")?.querySelector("[data-fx-grid-search]");
+      if (again) {
+        again.focus();
+        const len = again.value.length;
+        again.setSelectionRange(len, len);
+      }
+    });
 
     $("fx-add")?.addEventListener("click", () => {
       if (!filterTemp || !filterWeek) return;
