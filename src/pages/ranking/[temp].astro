@@ -7,6 +7,7 @@ import { site } from "../../data/site";
 import { listSeasons, seasonLabel, seasonSlug } from "../../lib/liga.js";
 import { CATS, sortCats } from "../../lib/disponibilidad.js";
 import { page } from "../../lib/paths";
+import { isAbandonedPair } from "../../lib/disponibilidad.js";
 import { pairsMatch } from "../../lib/scoring.js";
 
 export function getStaticPaths() {
@@ -22,7 +23,7 @@ export function getStaticPaths() {
 const { tempCode } = Astro.props;
 const rows = ranking.filter((p) => p.cat !== "S Masculina" && p.temp === tempCode);
 const seasonPairs = (Array.isArray(pairs) ? pairs : []).filter(
-  (p) => p.temp === tempCode && p.p1 && p.p2 && p.cat
+  (p) => p.temp === tempCode && p.p1 && p.p2 && p.cat && !isAbandonedPair(p)
 );
 /** Solo si hay inscripción de esa temporada: ranking con PJ≥1 y sin pareja anotada. */
 const hasInscription = seasonPairs.length > 0;

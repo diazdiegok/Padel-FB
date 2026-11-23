@@ -1,5 +1,7 @@
 /** Ganador siempre 3 pts. 2-0 = 3-0. 2-1 = 3-1. */
 
+import { isAbandonedPair } from "./disponibilidad.js";
+
 export function fold(s) {
   return String(s || "")
     .toLowerCase()
@@ -142,6 +144,7 @@ export function findPairIndex(rows, name, cat, temp) {
 export function addPairsToRanking(rows, pairs) {
   const added = [];
   for (const pair of pairs) {
+    if (isAbandonedPair(pair)) continue;
     const temp = String(pair.temp || "").toUpperCase();
     if (!pair.p1 || !pair.p2 || !pair.cat || !temp) continue;
     const name = `${pair.p1} / ${pair.p2}`;
@@ -213,7 +216,7 @@ export function syncRankingToSeasonPairs(rows, pairs, temp, matches = []) {
   const season = String(temp || "").toUpperCase();
   if (!season || !Array.isArray(rows)) return empty;
   const seasonPairs = (pairs || []).filter(
-    (p) => String(p.temp || "").toUpperCase() === season && p.p1 && p.p2 && p.cat
+    (p) => String(p.temp || "").toUpperCase() === season && p.p1 && p.p2 && p.cat && !isAbandonedPair(p)
   );
   const removed = [];
   const renamed = [];

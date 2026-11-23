@@ -1,4 +1,4 @@
-import { DAYS, pairLabel } from "./disponibilidad.js";
+import { DAYS, isAbandonedPair, pairLabel } from "./disponibilidad.js";
 import { weekKey, weekNumber } from "./liga.js";
 import { findPairIndex, fold, pairsMatch } from "./scoring.js";
 
@@ -366,7 +366,7 @@ export function coverCandidates({ match, pairs = [], pools = [], temp = "" } = {
   const out = [];
   const seen = new Set();
   for (const p of pairs) {
-    if (!p?.p1 || !p?.p2 || !p?.cat) continue;
+    if (!p?.p1 || !p?.p2 || !p?.cat || isAbandonedPair(p)) continue;
     if (cat && p.cat !== cat) continue;
     if (String(p.temp || "").toUpperCase() !== season) continue;
     const label = pairLabel(p);

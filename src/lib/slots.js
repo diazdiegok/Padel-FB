@@ -1,4 +1,4 @@
-import { DAYS } from "./disponibilidad.js";
+import { DAYS, isAbandonedPair } from "./disponibilidad.js";
 import { isPendingMatch, isRealPairMatch, MATCH_MINUTES, PENDING_AWAY, slotLabel } from "./fixturer.js";
 import { pairsMatch } from "./scoring.js";
 
@@ -420,12 +420,16 @@ export function attachPairDaysFromPairs(matches = [], pairs = []) {
     const hit =
       list.find(
         (p) =>
+          !isAbandonedPair(p) &&
           String(p.temp || "").toUpperCase() === season &&
           (!cat || !p.cat || p.cat === cat) &&
           pairsMatch(`${p.p1 || ""} / ${p.p2 || ""}`, label)
       ) ||
       list.find(
-        (p) => String(p.temp || "").toUpperCase() === season && pairsMatch(`${p.p1 || ""} / ${p.p2 || ""}`, label)
+        (p) =>
+          !isAbandonedPair(p) &&
+          String(p.temp || "").toUpperCase() === season &&
+          pairsMatch(`${p.p1 || ""} / ${p.p2 || ""}`, label)
       );
     const days = hit?.days;
     if (!days || typeof days !== "object" || !Object.keys(days).length) return undefined;

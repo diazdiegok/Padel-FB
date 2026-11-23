@@ -10,7 +10,7 @@ import {
   parseCourtSlotObjects,
   sortMatchesForExport,
 } from "./csv.js";
-import { DAYS, compareCats, pairLabel, validateDays } from "../lib/disponibilidad.js";
+import { DAYS, compareCats, isAbandonedPair, pairLabel, validateDays } from "../lib/disponibilidad.js";
 import {
   MAX_PAIR_MATCHES,
   PENDING_AWAY,
@@ -318,6 +318,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   function daysOfPair(label, cat) {
     const season = String(filterTemp || "").toUpperCase();
     const found = (ctx.pairs || []).find((p) => {
+      if (isAbandonedPair(p)) return false;
       if (String(p.temp || "").toUpperCase() !== season) return false;
       if (cat && p.cat && p.cat !== cat) return false;
       return pairsMatch(pairLabel(p), label);
@@ -1636,7 +1637,14 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   function pairEntries(season) {
     const pools = matchPools();
     return (ctx.pairs || [])
-      .filter((p) => String(p.temp || "").toUpperCase() === String(season).toUpperCase() && p.p1 && p.p2 && p.cat)
+      .filter(
+        (p) =>
+          String(p.temp || "").toUpperCase() === String(season).toUpperCase() &&
+          p.p1 &&
+          p.p2 &&
+          p.cat &&
+          !isAbandonedPair(p)
+      )
       .map((p) => {
         const days = p.days && typeof p.days === "object" ? p.days : {};
         const valid = !validateDays(days);

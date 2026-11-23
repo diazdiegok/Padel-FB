@@ -1,4 +1,4 @@
-import { DAYS, pairLabel } from "./disponibilidad.js";
+import { DAYS, isAbandonedPair, pairLabel } from "./disponibilidad.js";
 import { PENDING_AWAY, isPendingMatch, isPlaceholderPair, isRealPairMatch } from "./fixturer.js";
 import { weekNumber } from "./liga.js";
 import { fold, pairsMatch } from "./scoring.js";
@@ -12,12 +12,16 @@ function availText(days) {
 
 function seasonPairs(pairs = [], temp = "") {
   const season = String(temp || "").toUpperCase();
-  return (pairs || []).filter((p) => p?.p1 && p?.p2 && p?.cat && String(p.temp || "").toUpperCase() === season);
+  return (pairs || []).filter(
+    (p) => p?.p1 && p?.p2 && p?.cat && !isAbandonedPair(p) && String(p.temp || "").toUpperCase() === season
+  );
 }
 
 function pairEntry(pairs, name, temp, catHint = "") {
   const season = String(temp || "").toUpperCase();
-  const list = (pairs || []).filter((p) => String(p.temp || "").toUpperCase() === season && p?.p1 && p?.p2);
+  const list = (pairs || []).filter(
+    (p) => !isAbandonedPair(p) && String(p.temp || "").toUpperCase() === season && p?.p1 && p?.p2
+  );
   const hit =
     list.find((p) => (!catHint || p.cat === catHint) && pairsMatch(pairLabel(p), name)) ||
     list.find((p) => pairsMatch(pairLabel(p), name));

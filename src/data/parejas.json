@@ -1311,5 +1311,70 @@
       "Martes": "21:00 - 23:30"
     },
     "note": "Por favor respetar nuestro horario ( tema laboral)"
+  },
+  {
+    "id": "pmwfpb6rg9325",
+    "createdAt": "2026-11-14T01:02:29.884Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Adrian Romero",
+    "p2": "Roberto Challol",
+    "days": {
+      "Lunes": "19:00 - 22:00",
+      "Miércoles": "19:00 - 22:00",
+      "Viernes": "18:00 - 22:00"
+    },
+    "note": "",
+    "abandoned": true,
+    "abandonedAt": "2026-11-23T17:30:00.000Z"
+  },
+  {
+    "id": "pmwhmin8ya2c6",
+    "createdAt": "2026-11-15T09:19:51.346Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "Lucas Gobatto",
+    "p2": "Matias Roldan",
+    "days": {
+      "Lunes": "18:00 - 21:00",
+      "Martes": "18:00 - 21:00",
+      "Miércoles": "18:00 - 21:00",
+      "Jueves": "18:00 - 21:00"
+    },
+    "note": "",
+    "abandoned": true,
+    "abandonedAt": "2026-11-23T17:30:00.000Z"
+  },
+  {
+    "id": "pmwcecdgc9a96",
+    "createdAt": "2026-11-11T17:32:10.908Z",
+    "temp": "T5",
+    "cat": "B Femenino",
+    "p1": "Antonella Croce",
+    "p2": "Jessie Morley",
+    "days": {
+      "Jueves": "18:00 - 21:00",
+      "Viernes": "18:00 - 21:00"
+    },
+    "note": "",
+    "abandoned": true,
+    "abandonedAt": "2026-11-23T17:30:00.000Z"
+  },
+  {
+    "id": "pmw9ix5ou54ee",
+    "createdAt": "2026-11-09T17:17:00.558Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Gobatto Lucas",
+    "p2": "Rodriguez Larrosa Mateo",
+    "days": {
+      "Miércoles": "20:00 - 21:30",
+      "Jueves": "19:00 - 21:00",
+      "Viernes": "18:00 - 20:00",
+      "Sábado": "14:00 - 17:00"
+    },
+    "note": "",
+    "abandoned": true,
+    "abandonedAt": "2026-11-23T17:30:00.000Z"
   }
 ]

@@ -49,6 +49,15 @@ export function pairLabel(entry) {
   return [entry.p1, entry.p2].filter(Boolean).join(" / ");
 }
 
+/** Baja de inscripción: sigue en el archivo para el filtro Abandonaron. */
+export function isAbandonedPair(entry) {
+  return Boolean(entry && (entry.abandoned === true || entry.abandonedAt));
+}
+
+export function activePairs(list = []) {
+  return (list || []).filter((p) => !isAbandonedPair(p));
+}
+
 export function samePair(a, b) {
   const left = [fold(a.p1), fold(a.p2)].sort().join("|");
   const right = [fold(b.p1), fold(b.p2)].sort().join("|");

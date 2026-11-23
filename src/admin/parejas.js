@@ -14,6 +14,7 @@ import {
   buildMail,
   cleanDays,
   fold,
+  isAbandonedPair,
   splitMail,
   validateDays,
 } from "../lib/disponibilidad.js";
@@ -160,7 +161,9 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
 
   function seasonPairs() {
     const temp = season();
-    return ctx.pairs.map((p, i) => ({ p, i })).filter(({ p }) => p.temp === temp);
+    return ctx.pairs
+      .map((p, i) => ({ p, i }))
+      .filter(({ p }) => p.temp === temp && !isAbandonedPair(p));
   }
 
   function dupMap(list) {
@@ -306,16 +309,51 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
     return `${pj} PJ`;
   }
 
-  /** Ranking sin inscripción vigente (todas las bajas, con o sin PJ). */
+  /**
+   * Bajas: ranking sin inscripción (con PJ) + parejas marcadas abandoned (con o sin PJ).
+   * Deduplica por cat+nombre.
+   */
   function abandonedRankRows() {
-    return rankingDiff()
-      .extra.slice()
-      .sort(
-        (a, b) =>
-          Number(b.pj || 0) - Number(a.pj || 0) ||
-          String(a.cat || "").localeCompare(String(b.cat || ""), "es") ||
-          String(a.name || "").localeCompare(String(b.name || ""), "es")
-      );
+    const temp = season();
+    const out = [];
+    const seen = new Set();
+    const push = (row) => {
+      const name = String(row?.name || "").trim();
+      const cat = String(row?.cat || "").trim();
+      if (!name || !cat) return;
+      const key = `${cat}|${fold(name)}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push({
+        name,
+        cat,
+        temp: row.temp || temp,
+        pj: Number(row.pj) || 0,
+        pts: Number(row.pts) || 0,
+        abandonedAt: row.abandonedAt || "",
+      });
+    };
+    rankingDiff().extra.forEach(push);
+    ctx.pairs.forEach((p) => {
+      if (p.temp !== temp || !isAbandonedPair(p) || !p.p1 || !p.p2 || !p.cat) return;
+      const name = `${p.p1} / ${p.p2}`;
+      const idx = findPairIndex(ctx.rows || [], name, p.cat, temp);
+      const rank = idx >= 0 ? ctx.rows[idx] : null;
+      push({
+        name,
+        cat: p.cat,
+        temp,
+        pj: rank?.pj,
+        pts: rank?.pts,
+        abandonedAt: p.abandonedAt || "",
+      });
+    });
+    return out.sort(
+      (a, b) =>
+        Number(b.pj || 0) - Number(a.pj || 0) ||
+        String(a.cat || "").localeCompare(String(b.cat || ""), "es") ||
+        String(a.name || "").localeCompare(String(b.name || ""), "es")
+    );
   }
 
   function renderRankSync() {
@@ -607,7 +645,7 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
 
   function exportCsv() {
     const temp = season();
-    const list = ctx.pairs.filter((p) => p.temp === temp);
+    const list = ctx.pairs.filter((p) => p.temp === temp && !isAbandonedPair(p));
     if (!list.length) {
       toast("No hay parejas para exportar", "err");
       return;
@@ -851,18 +889,17 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
       const ok = await confirmModal({
         title: "Quitar pareja",
         body: hasHistory
-          ? `${label} se quita de las inscripciones. En esta fecha el partido se desarma y el rival queda pendiente. Ellos no salen más en esta fecha ni en las próximas. Ranking, fechas ya jugadas y resultados quedan. Publicá parejas para confirmarlo.`
-          : `${label} se quita de las inscripciones, del fixture y del ranking. Si tenía partido, el rival queda pendiente. Si estaba en pendientes, sale de ahí. Publicá para confirmarlo.`,
+          ? `${label} se quita de las inscripciones y queda en Abandonaron. En esta fecha el partido se desarma y el rival queda pendiente. Ellos no salen más en esta fecha ni en las próximas. Ranking, fechas ya jugadas y resultados quedan. Publicá parejas para confirmarlo.`
+          : `${label} se quita de las inscripciones y del ranking, y queda en Abandonaron (aunque no haya jugado). Si tenía partido, el rival queda pendiente. Si estaba en pendientes, sale de ahí. Publicá para confirmarlo.`,
         confirmLabel: "Quitar",
         danger: true,
       });
       if (!ok) return;
-      deleted.add(pair.id);
-      delete ctx.contacts[pair.id];
+      // Soft-delete: queda en el archivo para el filtro Abandonaron (con o sin PJ).
+      pair.abandoned = true;
+      pair.abandonedAt = new Date().toISOString();
       delete ctx.payments[pair.id];
-      contactsDirty.add(pair.id);
       api.worker("/pairs/payment/delete", { id: pair.id }).catch(() => {});
-      ctx.pairs.splice(Number(btn.dataset.pairDel), 1);
       if (!hasHistory && removePairsFromRanking(ctx.rows || [], [pair]).length) {
         shell.markDirty("ranking");
         onRankingChanged?.();
@@ -878,12 +915,12 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
         toast(gate.message, "err");
         return;
       }
-      const incomplete = ctx.pairs.find((p) => !p.p1 || !p.p2);
+      const incomplete = ctx.pairs.find((p) => !isAbandonedPair(p) && (!p.p1 || !p.p2));
       if (incomplete) {
         setMsg($("pairs-msg"), "Hay una pareja sin los dos integrantes. Completala o quitala.", "err");
         return;
       }
-      for (const p of ctx.pairs.filter((row) => row.temp === season())) {
+      for (const p of ctx.pairs.filter((row) => row.temp === season() && !isAbandonedPair(row))) {
         const days = cleanDays(p.days || {});
         p.days = days;
         if (Object.keys(days).length) {
@@ -904,12 +941,12 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
           days: cleanDays(p.days || {}),
           note: String(p.note || "").trim().slice(0, 500),
         }));
-        const seasonPairs = next.filter((p) => p.temp === season());
+        const seasonActive = next.filter((p) => p.temp === season() && !isAbandonedPair(p));
         const ranking = await api.readRemoteJson(RANK_PATH, []);
         const rankRows = Array.isArray(ranking) ? ranking : [];
         const history = [...(ctx.results || []), ...(ctx.fixture || [])];
-        const { removed: dropped, renamed } = syncRankingToSeasonPairs(rankRows, seasonPairs, season(), history);
-        const toRanking = addPairsToRanking(rankRows, seasonPairs);
+        const { removed: dropped, renamed } = syncRankingToSeasonPairs(rankRows, seasonActive, season(), history);
+        const toRanking = addPairsToRanking(rankRows, seasonActive);
         const rankingChanged = dropped.length > 0 || toRanking.length > 0 || renamed.length > 0;
         const closing = config.open === false;
         const goLive = closing && String(ctx.siteData.seasonPhase || "").toLowerCase() !== "live";
