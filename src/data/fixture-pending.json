@@ -500,5 +500,25 @@
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Martes 21:00 - 23:30",
+    "days": {
+      "Martes": "21:00 - 23:30"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Alejandro Abrego / Valentin Vukonich",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
   }
 ]
