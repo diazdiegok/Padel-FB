@@ -1299,5 +1299,17 @@
       "Viernes": "15:00 - 23:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwtftupp62d3",
+    "createdAt": "2026-11-23T15:45:51.037Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Abrego Alejandro",
+    "p2": "Vukonich Valentin",
+    "days": {
+      "Martes": "21:00 - 23:30"
+    },
+    "note": "Por favor respetar nuestro horario ( tema laboral)"
   }
 ]
