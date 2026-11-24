@@ -1,6 +1,25 @@
 import { SECTIONS } from "./constants.js";
 import { $, confirmModal, updateDirtyBadge } from "./ui.js";
 
+const SECTION_KEY = "padel-fb-admin-section";
+
+function readStoredSection() {
+  try {
+    const id = sessionStorage.getItem(SECTION_KEY) || "";
+    return SECTIONS[id] ? id : "";
+  } catch {
+    return "";
+  }
+}
+
+function writeStoredSection(id) {
+  try {
+    if (SECTIONS[id]) sessionStorage.setItem(SECTION_KEY, id);
+  } catch {
+    /* modo privado / sin storage */
+  }
+}
+
 export function createShell(ctx, { onEnterSection, onDiscardSection, onDirtyChange }) {
   function markDirty(section) {
     ctx.dirty.add(section);
@@ -37,7 +56,9 @@ export function createShell(ctx, { onEnterSection, onDiscardSection, onDirtyChan
     return Promise.resolve(true);
   }
 
-  function applySection(id) {
+  /** Solo UI (nav/título/hash), sin onEnter: evita flash de Inicio mientras cargan datos. */
+  function paintSection(id) {
+    if (!SECTIONS[id]) id = "sitio";
     ctx.currentSection = id;
     const meta = SECTIONS[id];
     document.querySelectorAll("[data-nav]").forEach((btn) => {
@@ -53,6 +74,11 @@ export function createShell(ctx, { onEnterSection, onDiscardSection, onDirtyChan
     const hash = "#" + id;
     if (location.hash !== hash) history.replaceState(null, "", hash);
     document.body.dataset.adminSection = id;
+    writeStoredSection(id);
+  }
+
+  function applySection(id) {
+    paintSection(id);
     $("admin-sidebar")?.classList.remove("open");
     $("admin-nav-backdrop")?.classList.remove("open");
     onEnterSection?.(id);
@@ -109,9 +135,11 @@ export function createShell(ctx, { onEnterSection, onDiscardSection, onDirtyChan
   function initialSection(fallback = "") {
     const fromHash = location.hash.replace(/^#/, "");
     if (SECTIONS[fromHash]) return fromHash;
+    const stored = readStoredSection();
+    if (stored) return stored;
     if (fallback && SECTIONS[fallback]) return fallback;
     return "sitio";
   }
 
-  return { bind, setSection, markDirty, clearDirty, discardDirty, initialSection };
+  return { bind, setSection, paintSection, markDirty, clearDirty, discardDirty, initialSection };
 }

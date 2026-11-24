@@ -184,13 +184,17 @@ export function bootAdmin({
     document.body.classList.add("admin-ready");
     sessionStorage.removeItem("padel-fb-gh-token");
     ctx.token = api.getPublishToken();
+    // Pintar la sección del hash / última visita YA (antes del await) para que F5/Ctrl+F5
+    // no pase por Inicio y después salte a Fixture/Resultados.
+    const start = shell.initialSection(drafts.preferredSection());
+    shell.paintSection(start);
     try {
       await seasons.load();
     } catch {
       /* si GitHub no responde, se usan los datos de la última publicación */
     }
     // Publicado desde el build / GitHub primero; después se reaplica el borrador local (F5).
-    const restored = drafts.restore();
+    drafts.restore();
     updateDirtyBadge(ctx.dirty);
     ranking.refresh();
     seasons.render();
@@ -201,9 +205,7 @@ export function bootAdmin({
     ascensos.render();
     parejas.render();
     cms.refreshAll();
-    const start =
-      shell.initialSection(drafts.preferredSection()) ||
-      (restored.includes("fixture") ? "fixture" : "sitio");
+    // Re-entrar la misma sección (force) para reload de datos remotos si aplica.
     shell.setSection(start, { force: true });
     // Punto rojo en Consumos si hay alerta (sin abrir la sección).
     consumos?.reload({ quiet: true }).catch(() => {});

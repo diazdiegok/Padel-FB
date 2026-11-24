@@ -110,8 +110,8 @@ import "../styles/admin.css";
         <div class="admin-topbar-left">
           <button class="admin-menu-btn" type="button" id="admin-menu-btn" aria-label="Menú">☰</button>
           <div>
-            <h1 id="admin-page-title">Inicio</h1>
-            <p class="admin-page-help" id="admin-page-help">Contacto, ciudad, texto de inicio y si se muestra el botón Ver playoff.</p>
+            <h1 id="admin-page-title"></h1>
+            <p class="admin-page-help" id="admin-page-help"></p>
           </div>
         </div>
         <div class="admin-topbar-right">
@@ -123,8 +123,8 @@ import "../styles/admin.css";
       </header>
 
       <div class="admin-content">
-        <!-- Inicio -->
-        <section data-section="sitio">
+        <!-- Inicio: hidden hasta que el JS elija sección (evita flash en F5). -->
+        <section data-section="sitio" hidden>
           <form class="form" id="site-form">
             <div class="admin-site-grid">
               <div class="admin-site-block">
@@ -727,6 +727,46 @@ import "../styles/admin.css";
     </dialog>
   </div>
 
+  <!-- Antes del bundle: deja visible la sección del hash / última visita (F5 / Ctrl+F5). -->
+  <script is:inline>
+    (() => {
+      const known = {
+        sitio: "Inicio",
+        temporadas: "Temporadas",
+        ranking: "Ranking",
+        fixture: "Fixture",
+        resultados: "Resultados",
+        playoff: "Playoff",
+        ascensos: "Ascensos",
+        parejas: "Inscripciones de parejas",
+        acadinsc: "Inscripciones",
+        academia: "Adultos",
+        infantiles: "Infantiles",
+        sedes: "Sedes",
+        torneos: "Torneos",
+        visitas: "Visitas",
+        consumos: "Consumos",
+      };
+      let id = (location.hash || "").replace(/^#/, "");
+      if (!known[id]) {
+        try {
+          id = sessionStorage.getItem("padel-fb-admin-section") || "";
+        } catch (_) {
+          id = "";
+        }
+      }
+      if (!known[id]) return;
+      document.querySelectorAll("section[data-section]").forEach((sec) => {
+        sec.hidden = sec.dataset.section !== id;
+      });
+      document.querySelectorAll("[data-nav]").forEach((btn) => {
+        btn.classList.toggle("on", btn.dataset.nav === id);
+      });
+      const title = document.getElementById("admin-page-title");
+      if (title) title.textContent = known[id];
+      document.body.dataset.adminSection = id;
+    })();
+  </script>
   <script>
     import rankingJson from "../data/ranking.json";
     import fixtureJson from "../data/fixture.json";
