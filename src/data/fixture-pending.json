@@ -548,5 +548,56 @@
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Lunes 18:00 - 00:00 · Martes 18:00 - 00:00 · Miércoles 18:00 - 00:00 · Jueves 18:00 - 00:00 · Viernes 18:00 - 00:00 · Sábado 18:00 - 00:00",
+    "days": {
+      "Lunes": "18:00 - 00:00",
+      "Martes": "18:00 - 00:00",
+      "Miércoles": "18:00 - 00:00",
+      "Jueves": "18:00 - 00:00",
+      "Viernes": "18:00 - 00:00",
+      "Sábado": "18:00 - 00:00"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Milagros Luna / Lula Thomi",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "recoverFrom": "Fecha 1",
+    "recoveredIn": "Fecha 2",
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Milagros Luna / Lula Thomi",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": "",
+    "reason": "Tiene 0 partidos en Fecha 1. Recupera esa fecha.",
+    "days": {
+      "Lunes": "18:00 - 00:00",
+      "Martes": "18:00 - 00:00",
+      "Miércoles": "18:00 - 00:00",
+      "Jueves": "18:00 - 00:00",
+      "Viernes": "18:00 - 00:00",
+      "Sábado": "18:00 - 00:00"
+    }
   }
 ]

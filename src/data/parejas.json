@@ -1381,5 +1381,23 @@
     "note": "",
     "abandoned": true,
     "abandonedAt": "2026-11-23T17:30:00.000Z"
+  },
+  {
+    "id": "pmwux8jaufc26",
+    "createdAt": "2026-11-24T16:40:55.734Z",
+    "temp": "T5",
+    "cat": "B Femenino",
+    "p1": "Milagros Luna",
+    "p2": "Lula Thomi",
+    "days": {
+      "Lunes": "18:00 - 00:00",
+      "Martes": "18:00 - 00:00",
+      "Miércoles": "18:00 - 00:00",
+      "Jueves": "18:00 - 00:00",
+      "Viernes": "18:00 - 00:00",
+      "Sábado": "18:00 - 00:00"
+    },
+    "note": "",
+    "source": "admin"
   }
 ]
