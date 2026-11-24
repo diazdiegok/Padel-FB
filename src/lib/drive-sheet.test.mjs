@@ -104,6 +104,15 @@ const pending = pendingDriveRows(
       away: "Alguien / Otro",
       result: "6/4 6/3",
     },
+    {
+      week: "Fecha 2",
+      cat: "C Masculina",
+      home: "Ausente / W.O.",
+      away: "Pendiente / Pendiente",
+      pending: true,
+      recoverFrom: "Fecha 2",
+      reason: "No se presentó (W.O.).",
+    },
   ],
   (m) => Object.entries(m.days || {}).map(([d, h]) => `${d} ${h}`).join(" · "),
   (m) =>
@@ -111,7 +120,7 @@ const pending = pendingDriveRows(
       ? { tel1: "5493411111111", tel2: "5493412222222" }
       : {}
 );
-assert.equal(pending.length, 1, "el partido con resultado no va a pendientes");
+assert.equal(pending.length, 1, "el partido con resultado y el W.O./recupero no van a pendientes");
 assert.equal(pending[0].puede, "Lunes 19:00 - 21:00");
 assert.equal(pending[0].nota, "Su rival ya no está inscripto.");
 assert.equal(pending[0].pareja, "Marien Robledo / Valeria Joubert");

@@ -103,14 +103,12 @@ export function mergeDriveFixtureRows(existingRows = [], incomingRows = []) {
   return { rows: out, kept: locked.length, keptExtra };
 }
 
-/** Una fila por pareja pendiente, con el horario en que puede y sus WhatsApp. */
+/** Una fila por pareja pendiente de la fecha (sin rival). No incluye recuperos / W.O. (van a Recuperan). */
 export function pendingDriveRows(matches = [], puedeOf = () => "", phonesOf = () => ({})) {
   return (matches || [])
-    .filter((m) => isPendingMatch(m))
+    .filter((m) => isPendingMatch(m) && !String(m?.recoverFrom || "").trim())
     .map((m) => {
       const bits = [];
-      const owed = String(m?.recoverFrom || "").trim();
-      if (owed) bits.push(`Le falta 1 partido en ${owed}.`);
       const reason = String(m?.reason || "").trim();
       if (reason) bits.push(reason);
       const phones = phonesOf(m) || {};

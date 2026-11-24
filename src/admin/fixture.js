@@ -2379,8 +2379,14 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
 
     async function pendingRowsForWeek() {
       await ensureContactsLoaded();
+      // Solo pendientes "de la fecha" (sin rival). Los W.O. / recuperos van a Recuperan fecha, no a esta hoja.
       const list = (ctx.fixture || []).filter(
-        (m) => seasonOf(m) === filterTemp && (m.week || "") === filterWeek && isPending(m) && !m.dupHold
+        (m) =>
+          seasonOf(m) === filterTemp &&
+          (m.week || "") === filterWeek &&
+          isPending(m) &&
+          !isMakeupPending(m) &&
+          !m.dupHold
       );
       return pendingDriveRows(
         list,
