@@ -189,14 +189,29 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     return draftAwarePools(ctx.results || [], ctx.fixturePublished || [], ctx.fixture || [], ctx.siteData.currentSeason || "");
   }
 
+  /** Una tarjeta por pareja en Recuperan (si hay W.O. y otra deuda, prioriza el W.O.). */
+  function dedupeRecoverList(rows) {
+    const map = new Map();
+    const score = (m) => (m?.woKey || /W\.?\s*O/i.test(m?.reason || "") ? 2 : 1);
+    for (const row of rows) {
+      const m = row?.m || row;
+      const key = `${seasonOf(m)}|${fold(m.home)}`;
+      const prev = map.get(key);
+      if (!prev || score(m) > score(prev.m || prev)) map.set(key, row);
+    }
+    return [...map.values()];
+  }
+
   function weekStats(temp, week) {
     const seasonRows = (ctx.fixture || []).filter((m) => seasonOf(m) === temp);
     const live = seasonRows.filter((m) => (m.week || "") === week);
     const arch = (ctx.results || []).filter((m) => seasonOf(m) === temp && (m.week || "") === week);
     const games = (live.length ? live : arch).filter((m) => !isPending(m) && !m.dupHold && isRealPairMatch(m));
     const pending = live.filter((m) => isPending(m) && !isMakeupPending(m)).length;
-    const recovering = seasonRows.filter(
-      (m) => isMakeupPending(m) && ((m.recoveredIn || "") === week || (!m.recoveredIn && (m.week || "") === week))
+    const recovering = dedupeRecoverList(
+      seasonRows.filter(
+        (m) => isMakeupPending(m) && ((m.recoveredIn || "") === week || (!m.recoveredIn && (m.week || "") === week))
+      )
     ).length;
     const duplicates = seasonRows.filter((m) => {
       if (!m.dupHold || !isRealPairMatch(m)) return false;
@@ -793,13 +808,14 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   }
 
   function recoverRows() {
-    return ctx.fixture
+    const rows = ctx.fixture
       .map((m, i) => ({ m, i }))
       .filter(({ m }) => {
         if (seasonOf(m) !== filterTemp || !isMakeupPending(m)) return false;
         if ((m.recoveredIn || "") === filterWeek) return true;
         return !m.recoveredIn && (m.week || "") === filterWeek;
       });
+    return dedupeRecoverList(rows);
   }
 
   function renderRecover() {

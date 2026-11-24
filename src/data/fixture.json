@@ -1085,7 +1085,7 @@
     "appliedResult": ""
   },
   {
-    "week": "Fecha 1",
+    "week": "Fecha 2",
     "day": "Martes",
     "date": "",
     "temp": "T5",
@@ -1097,9 +1097,7 @@
     "away": "Soraya Campostrini Labour / Catalina Otamendi",
     "result": "",
     "appliedResult": "",
-    "flexAvail": true,
-    "recoverFrom": "Fecha 1",
-    "recoveredIn": "Fecha 2"
+    "flexAvail": true
   },
   {
     "week": "Fecha 2",

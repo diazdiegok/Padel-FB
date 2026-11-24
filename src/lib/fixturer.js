@@ -228,60 +228,6 @@ export function fileOwedRecoveries({ published = [], results = [], owed = [] } =
 }
 
 /**
- * Si una pareja ya tiene partido real en la fecha donde recupera (recoveredIn)
- * y el pendiente de recupero quedó colgado, cuelga la deuda en ese partido y
- * saca el pendiente. Así no figura dos veces en Recuperan.
- * No toca deudas de W.O. (woKey): esas siguen en Recuperan hasta cubrirlas.
- */
-export function attachOrphanMakeups(matches = []) {
-  const list = Array.isArray(matches) ? matches.slice() : [];
-  const remove = new Set();
-  for (let i = 0; i < list.length; i++) {
-    const m = list[i];
-    if (!isMakeupPending(m) || m.woKey) continue;
-    const from = String(m.recoverFrom || "").trim();
-    const inWeek = String(m.recoveredIn || "").trim();
-    const season = String(m.temp || "").toUpperCase();
-    if (!from || !inWeek) continue;
-
-    if (
-      list.some(
-        (x, j) =>
-          j !== i &&
-          sameSeason(x, season) &&
-          String(x.recoverFrom || "") === from &&
-          involvesPair(x, m.home) &&
-          isRealPairMatch(x)
-      )
-    ) {
-      remove.add(i);
-      continue;
-    }
-
-    let host = null;
-    for (const x of list) {
-      if (!isRealPairMatch(x) || isPendingMatch(x)) continue;
-      if (!sameSeason(x, season) || (x.week || "") !== inWeek) continue;
-      if (x.recoverFrom || !involvesPair(x, m.home)) continue;
-      const wo = parseWalkover(x.result);
-      if (wo) {
-        const loser = wo.homeWin ? x.away : x.home;
-        if (pairsMatch(loser, m.home)) continue;
-      }
-      host = x;
-      if (!String(x.result || "").trim()) break;
-    }
-    if (!host) continue;
-    host.recoverFrom = from;
-    host.recoveredIn = inWeek;
-    host.week = from;
-    remove.add(i);
-  }
-  if (!remove.size) return { matches: list, changed: 0 };
-  return { matches: list.filter((_, i) => !remove.has(i)), changed: remove.size };
-}
-
-/**
  * Marca en la fecha que se arma a quien tiene menos partidos que el resto de su categoría.
  * En Fecha 2, quien tiene 0 partidos jugados recupera Fecha 1.
  * El partido queda en la fecha que falta: no se copia como un segundo partido de esta fecha.
@@ -290,12 +236,9 @@ export function importRecoveryDebts(matches = [], { temp = "", week = "", histor
   const season = String(temp || "").toUpperCase();
   const here = weekNumber(week);
   const normalized = normalizeRecoveryWeeks(matches);
-  const attached = attachOrphanMakeups(normalized.matches);
-  let list = attached.matches;
+  let list = normalized.matches;
   const pool = Array.isArray(history) ? history : list;
-  if (!season || !week || !here) {
-    return { matches: list, added: normalized.changed + attached.changed, waiting: 0 };
-  }
+  if (!season || !week || !here) return { matches: list, added: normalized.changed, waiting: 0 };
 
   const abandonedLabels = (pairs || [])
     .filter((p) => isAbandonedPair(p) && String(p?.temp || "").toUpperCase() === season && p.p1 && p.p2)
@@ -308,7 +251,7 @@ export function importRecoveryDebts(matches = [], { temp = "", week = "", histor
     if (!sameSeason(m, season) || !isPendingMatch(m)) return true;
     return !isAbandonedName(m.home);
   });
-  let added = normalized.changed + attached.changed + (beforePrune - list.length);
+  let added = normalized.changed + (beforePrune - list.length);
 
   const seasonRows = pool.filter((m) => sameSeason(m, season));
   const cats = [

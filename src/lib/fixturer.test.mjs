@@ -11,7 +11,6 @@ import {
   coverCandidates,
   draftAwarePools,
   fileOwedRecoveries,
-  attachOrphanMakeups,
   importRecoveryDebts,
   isPendingMatch,
   isRealPairMatch,
@@ -505,58 +504,6 @@ console.log("--- cover", covers.map((c) => `${c.label} (${c.pj})`).join(" · "))
     0,
     "abandonadas no recuperan ni quedan en pendientes"
   );
-}
-
-// Recupero huérfano: si ya tiene partido en la fecha recoveredIn, cuelga la deuda ahí
-// y saca el pendiente (no figura 2 veces en Recuperan). El W.O. sigue aparte.
-{
-  const makeup = {
-    week: "Fecha 1",
-    temp: "T5",
-    cat: "C Femenino",
-    home: "Soraya Campostrini Labour / Catalina Otamendi",
-    away: PENDING_AWAY,
-    pending: true,
-    recoverFrom: "Fecha 1",
-    recoveredIn: "Fecha 2",
-  };
-  const woPending = {
-    week: "Fecha 2",
-    temp: "T5",
-    cat: "C Femenino",
-    home: "Soraya Campostrini Labour / Catalina Otamendi",
-    away: PENDING_AWAY,
-    pending: true,
-    recoverFrom: "Fecha 2",
-    woKey: "T5|soraya|Fecha 2|wo",
-    reason: "No se presentó (W.O.).",
-  };
-  const woMatch = {
-    week: "Fecha 2",
-    temp: "T5",
-    cat: "C Femenino",
-    home: "Soraya Campostrini Labour / Catalina Otamendi",
-    away: "Milagros Solaro / Ana Paula Croce",
-    result: "W.O. 2",
-  };
-  const live = {
-    week: "Fecha 2",
-    temp: "T5",
-    cat: "C Femenino",
-    home: "Jorgelina Garbarino / Laura Ramírez Kunzi",
-    away: "Soraya Campostrini Labour / Catalina Otamendi",
-    result: "",
-  };
-  const attached = attachOrphanMakeups([makeup, woPending, woMatch, live]);
-  assert.equal(attached.changed, 1);
-  assert.ok(!attached.matches.includes(makeup), "sale el recupero de Fecha 1");
-  assert.ok(attached.matches.includes(woPending), "el W.O. sigue en Recuperan");
-  assert.equal(live.recoverFrom, "Fecha 1");
-  assert.equal(live.recoveredIn, "Fecha 2");
-  assert.equal(live.week, "Fecha 1", "el partido queda en la fecha que debía");
-  const makeupsLeft = attached.matches.filter((m) => m.pending && m.recoverFrom);
-  assert.equal(makeupsLeft.length, 1, "una sola vez en Recuperan");
-  assert.equal(makeupsLeft[0].woKey, woPending.woKey);
 }
 
 console.log("ok");
