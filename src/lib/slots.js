@@ -1242,6 +1242,35 @@ export function packNonOverlappingTurns(list = []) {
 }
 
 /**
+ * Turnos de 1:30 del Sheet que todavía no están ocupados por el fixture de la fecha.
+ * Una fila por turno libre (sin solaparse en la misma cancha).
+ */
+export function freeCourtDriveRows(slots = [], taken = [], week = "") {
+  const free = expandCourtCandidates(slots).filter((c) => !isCourtTaken(c, taken));
+  const packed = packNonOverlappingTurns(free);
+  const dayRank = (d) => {
+    const n = normalizeDay(d);
+    const i = DAYS.indexOf(n);
+    return i < 0 ? 99 : i;
+  };
+  packed.sort(
+    (a, b) =>
+      dayRank(a.day) - dayRank(b.day) ||
+      (parseCourtWindow(a.time)?.from ?? 0) - (parseCourtWindow(b.time)?.from ?? 0) ||
+      fold(a.venue).localeCompare(fold(b.venue), "es") ||
+      courtKey(a.court).localeCompare(courtKey(b.court), "es")
+  );
+  const fecha = String(week || "").trim();
+  return packed.map((c) => ({
+    fecha,
+    dia: normalizeDay(c.day) || String(c.day || "").trim(),
+    horario: String(c.time || "").trim(),
+    complejo: String(c.venue || "").trim(),
+    cancha: String(c.court || "").trim(),
+  }));
+}
+
+/**
  * Canchas del Sheet para partidos que quedaron sin complejo/cancha.
  * Ignora el tope de «Partidos a usar».
  * Con disponibilidad de las parejas: ofrece cualquier día/horario del Drive donde

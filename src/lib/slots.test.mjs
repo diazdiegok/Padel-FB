@@ -27,6 +27,7 @@ import {
   slotFitsPairAvailability,
   summarizeCourtSlots,
   freeWindowCapacity,
+  freeCourtDriveRows,
   weekFromName,
   windowCapacity,
   courtDayIsOpen,
@@ -1296,6 +1297,39 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   assert.equal(coverSlotTier(unaHora), "estimate", "+1 h sigue estimable");
   assert.equal(coverSlotTier(tarde), "estimate", "+5 h en cancha ocupada no es cancha vacía");
   assert.equal(coverSlotTier({ ...tarde, openDay: true }), "free", "cancha vacía y lejos queda última");
+}
+
+// Complejos libres: turnos del Sheet que el fixture aún no usó (1:30 sin solape).
+{
+  const libreSlots = [
+    parseCourtSlot({ Complejo: "Terrazas", Cancha: "1", Dia: "Lunes", Horario: "19:00 - 22:00" }),
+    parseCourtSlot({ Complejo: "Open", Cancha: "2", Dia: "Martes", Horario: "18:00 - 19:30" }),
+  ];
+  const takenOne = [
+    { day: "Lunes", time: "19:00 - 20:30", venue: "Terrazas Padel", court: "1" },
+  ];
+  const freeAll = freeCourtDriveRows(libreSlots, [], "Fecha 2");
+  assert.ok(freeAll.length >= 2, "sin partidos: quedan turnos libres");
+  assert.equal(freeAll[0].fecha, "Fecha 2");
+  assert.ok(freeAll.every((r) => r.dia && r.horario && r.complejo && r.cancha));
+
+  const freePartial = freeCourtDriveRows(libreSlots, takenOne, "Fecha 2");
+  assert.ok(
+    freePartial.every(
+      (r) => !(r.dia === "Lunes" && r.complejo.includes("Terrazas") && r.cancha === "1" && r.horario.startsWith("19:00"))
+    ),
+    "el turno ya usado no figura en libres"
+  );
+  assert.ok(
+    freePartial.some((r) => r.dia === "Martes" && r.horario.startsWith("18:00")),
+    "la otra cancha sigue libre"
+  );
+  const takenMartes = [{ day: "Martes", time: "18:00 - 19:30", venue: "Open Padel", court: "2" }, ...takenOne];
+  assert.equal(
+    freeCourtDriveRows(libreSlots, takenMartes, "Fecha 2").filter((r) => r.dia === "Martes").length,
+    0,
+    "Martes ocupado no aparece"
+  );
 }
 
 console.log("slots ok");

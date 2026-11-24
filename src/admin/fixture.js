@@ -51,12 +51,15 @@ import {
   DEFAULT_PENDING_DRIVE_SHEET_URL,
   DEFAULT_RECOVER_DRIVE_SHEET_ID,
   DEFAULT_RECOVER_DRIVE_SHEET_URL,
+  DEFAULT_FREE_COURTS_DRIVE_SHEET_ID,
+  DEFAULT_FREE_COURTS_DRIVE_SHEET_URL,
 } from "../lib/sheets.js";
 import {
   applyVenuePlan,
   attachPairDaysFromPairs,
   driveCourtOptions,
   findCourtConflicts,
+  freeCourtDriveRows,
   isCourtTaken,
   matchViolatesAvailability,
   missingCourtHorarios,
@@ -2412,20 +2415,59 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       );
     }
 
+    /** Lee canchas del Drive si todavía no están en memoria (para complejos libres). */
+    async function ensureSlotsForFreeCourts() {
+      if (loadedSlots.length) return true;
+      const week = String(filterWeek || "").trim();
+      const temp = String(filterTemp || "").trim();
+      if (!temp || !week) return false;
+      const sheetId = courtsSheetIdForSeason(ctx.siteData, temp);
+      const gate = api.usePublishToken();
+      if (!gate.ok) {
+        toast(gate.message, "err");
+        return false;
+      }
+      const data = await api.worker(
+        `/fixture/courts?week=${encodeURIComponent(week)}&sheetId=${encodeURIComponent(sheetId)}`
+      );
+      const objects = courtSlotObjectsFromText(data.csv || "");
+      loadedSlots = parseCourtSlotObjects(objects);
+      return loadedSlots.length > 0;
+    }
+
     $("fx-drive-paste")?.addEventListener("click", async () => {
       const unique = exportableMatches({ includePending: false });
       const pendingRows = await pendingRowsForWeek();
       const recoverRowsPayload = await recoverRowsForWeek();
-      if (!unique.length && !pendingRows.length && !recoverRowsPayload.length) {
-        toast("No hay partidos, pendientes ni recuperan para pegar en esta fecha.", "err");
-        return;
-      }
+      const mode = $("fx-dl-sort")?.value || "complejo";
+      const btn = $("fx-drive-paste");
       if (!filterWeek) {
         toast("Entrá a una fecha del fixture antes de pegar en Drive.", "err");
         return;
       }
-      const mode = $("fx-dl-sort")?.value || "complejo";
-      const btn = $("fx-drive-paste");
+
+      setBusy(btn, true, "Leyendo canchas…");
+      let slotsOk = true;
+      try {
+        slotsOk = await ensureSlotsForFreeCourts();
+      } catch (err) {
+        setBusy(btn, false);
+        setMsg($("fx-msg"), err.message || "No pude leer las canchas del Drive.", "err");
+        toast(err.message || "No pude leer canchas", "err");
+        return;
+      }
+      setBusy(btn, false);
+
+      // Solo actualiza Complejos libres si hay canchas leídas; si no, no borra el sheet.
+      const freeCourtsRows = slotsOk
+        ? freeCourtDriveRows(loadedSlots, weekTakenCourts(), filterWeek)
+        : null;
+      const freeN = freeCourtsRows ? freeCourtsRows.length : 0;
+      if (!unique.length && !pendingRows.length && !recoverRowsPayload.length && freeCourtsRows == null) {
+        toast("No hay partidos, pendientes, recuperan ni horarios libres para pegar en esta fecha.", "err");
+        return;
+      }
+
       let merged = null;
       if (unique.length) {
         const sorted = sortMatchesForExport(unique, mode);
@@ -2460,14 +2502,19 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
             ? `En Pendientes se pegan ${pendingN} pareja${pendingN === 1 ? "" : "s"}. `
             : `Pendientes «${filterWeek}» queda sin parejas. `) +
           (recoverN
-            ? `En Recuperan fecha se pegan ${recoverN} pareja${recoverN === 1 ? "" : "s"} (partido de otra fecha).`
-            : `Recuperan fecha «${filterWeek}» queda sin parejas.`),
+            ? `En Recuperan fecha se pegan ${recoverN} pareja${recoverN === 1 ? "" : "s"} (partido de otra fecha). `
+            : `Recuperan fecha «${filterWeek}» queda sin parejas. `) +
+          (freeCourtsRows == null
+            ? "Complejos libres no se actualiza (sin canchas del Drive)."
+            : freeN
+              ? `En Complejos libres se pegan ${freeN} turno${freeN === 1 ? "" : "s"} libre${freeN === 1 ? "" : "s"}.`
+              : `Complejos libres «${filterWeek}» queda sin turnos.`),
         confirmLabel: "Pegar en Drive",
       });
       if (!ok) return;
       setBusy(btn, true, "Pegando…");
       try {
-        const res = await api.worker("/fixture/drive", {
+        const payload = {
           sheetId: DEFAULT_FIXTURE_DRIVE_SHEET_ID,
           pendingSheetId: DEFAULT_PENDING_DRIVE_SHEET_ID,
           recoverSheetId: DEFAULT_RECOVER_DRIVE_SHEET_ID,
@@ -2476,7 +2523,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           rows: merged ? merged.rows : [],
           pendingRows,
           recoverRows: recoverRowsPayload,
-        });
+        };
+        if (freeCourtsRows != null) {
+          payload.freeCourtsSheetId = DEFAULT_FREE_COURTS_DRIVE_SHEET_ID;
+          payload.freeCourtsRows = freeCourtsRows;
+        }
+        const res = await api.worker("/fixture/drive", payload);
         const n = merged ? Number(res?.rows) || merged.rows.length : 0;
         const keptNow = merged ? Number(res?.kept) || kept : 0;
         const sheetName = res?.sheet || filterWeek;
@@ -2484,6 +2536,8 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         const pendingWrote = Number(res?.pending?.rows);
         const recoverOk = !!res?.recover?.ok;
         const recoverWrote = Number(res?.recover?.rows);
+        const freeOk = !!res?.freeCourts?.ok;
+        const freeWrote = Number(res?.freeCourts?.rows);
         const bits = [];
         if (merged) {
           bits.push(
@@ -2513,26 +2567,47 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         } else if (recoverN) {
           bits.push("Recuperan no se actualizó.");
         }
+        if (freeCourtsRows != null) {
+          if (freeOk) {
+            bits.push(
+              freeWrote
+                ? `Complejos libres: ${freeWrote} turno${freeWrote === 1 ? "" : "s"}`
+                : `Complejos libres «${filterWeek}» quedó sin turnos`
+            );
+          } else if (res?.freeCourtsError) {
+            bits.push(`Complejos libres no se pudo pegar: ${res.freeCourtsError}`);
+          } else {
+            bits.push("Complejos libres no se actualizó.");
+          }
+        }
         const okPaste = !merged || res?.ok !== false;
-        const sideOk = (pendingOk || !pendingN) && (recoverOk || !recoverN);
+        const sideOk =
+          (pendingOk || !pendingN) &&
+          (recoverOk || !recoverN) &&
+          (freeCourtsRows == null || freeOk);
         const level = sideOk ? (okPaste ? "ok" : "err") : "err";
         setMsg($("fx-msg"), bits.join(". ") + ".", level === "ok" ? "ok" : "err");
         const toastTxt = sideOk
           ? keptNow
             ? `Pegado · ${keptNow} con score intactos`
             : bits[0] || "Pegado"
-          : "Pegado parcial: revisá Pendientes / Recuperan.";
+          : "Pegado parcial: revisá Pendientes / Recuperan / Libres.";
         toast(toastTxt, level === "ok" ? "ok" : "err");
         const recoverUrl = recoverOk
           ? res?.recover?.url || DEFAULT_RECOVER_DRIVE_SHEET_URL
           : "";
+        const freeUrl = freeOk
+          ? res?.freeCourts?.url || DEFAULT_FREE_COURTS_DRIVE_SHEET_URL
+          : "";
         const openUrl = merged
           ? res?.url || `${DEFAULT_FIXTURE_DRIVE_SHEET_URL}${res?.gid != null ? `#gid=${res.gid}` : ""}`
-          : recoverUrl || res?.pending?.url || DEFAULT_PENDING_DRIVE_SHEET_URL;
+          : recoverUrl || freeUrl || res?.pending?.url || DEFAULT_PENDING_DRIVE_SHEET_URL;
         if (openUrl) window.open(openUrl, "_blank", "noopener,noreferrer");
-        // Si también se pegó Recuperan y abrimos resultados, abrir Recuperan en otra pestaña.
         if (merged && recoverUrl && recoverWrote > 0) {
           window.open(recoverUrl, "_blank", "noopener,noreferrer");
+        }
+        if ((merged || recoverWrote > 0) && freeUrl && freeWrote > 0) {
+          window.open(freeUrl, "_blank", "noopener,noreferrer");
         }
       } catch (err) {
         setMsg($("fx-msg"), err.message || "No se pudo pegar en Drive.", "err");

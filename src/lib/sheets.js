@@ -13,10 +13,15 @@ export const DEFAULT_PENDING_DRIVE_SHEET_ID = "1-iy8HSNkDDUJg4do08aydAK1MMtfhqrW
 export const DEFAULT_PENDING_DRIVE_SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1-iy8HSNkDDUJg4do08aydAK1MMtfhqrWmO4PGebkxe4/edit";
 
-/** Sheet donde se pegan las parejas que recuperan fecha (W.O. / partido faltante). */
+/** Sheet donde se pegan las parejas que recuperan fecha (partido de otra fecha). */
 export const DEFAULT_RECOVER_DRIVE_SHEET_ID = "1M4OMDttW86SdOixs-uCbXyZLoPSbf-YLylZO7qwkYrQ";
 export const DEFAULT_RECOVER_DRIVE_SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1M4OMDttW86SdOixs-uCbXyZLoPSbf-YLylZO7qwkYrQ/edit";
+
+/** Sheet de complejos/canchas libres (turnos del Drive no usados por el fixture). */
+export const DEFAULT_FREE_COURTS_DRIVE_SHEET_ID = "1yLTWLdIfrZXuho8dwXdYVuJKcDMLEHxymHXMdIv1hAs";
+export const DEFAULT_FREE_COURTS_DRIVE_SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/1yLTWLdIfrZXuho8dwXdYVuJKcDMLEHxymHXMdIv1hAs/edit";
 
 /** Extrae el ID de un Google Sheet desde URL o ID suelto. */
 export function parseGoogleSheetId(value) {

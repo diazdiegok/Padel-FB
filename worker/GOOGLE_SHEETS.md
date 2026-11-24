@@ -48,3 +48,15 @@ https://docs.google.com/spreadsheets/d/1M4OMDttW86SdOixs-uCbXyZLoPSbf-YLylZO7qwk
 - En `Nota` va el texto tipo `Le falta 1 partido en Fecha 1.`
 - Los W.O. de la fecha actual van a Pendientes, no acá
 - Compartido con el `client_email` de la cuenta de servicio como **Editor**
+
+## Complejos libres
+
+Sheet fijo con los turnos del Drive de canchas que el fixture todavía no usó:  
+https://docs.google.com/spreadsheets/d/1yLTWLdIfrZXuho8dwXdYVuJKcDMLEHxymHXMdIv1hAs/edit
+
+- El mismo botón **Pegar en Drive** lo actualiza junto con Resultados, Pendientes y Recuperan
+- **Una pestaña por fecha** (`Fecha 1`, `Fecha 2`, …): se crea si no existe
+- Columnas: Fecha, Dia, Horario, Complejo, Cancha
+- Un turno = 1:30 libre (sin solaparse con partidos ya armados en esa cancha)
+- Si no hay canchas leídas del Drive, este sheet no se toca
+- Compartido con el `client_email` de la cuenta de servicio como **Editor**

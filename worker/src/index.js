@@ -2874,16 +2874,39 @@ const PENDING_DRIVE_HEADER_KEY = {
   Puede: "puede",
   Nota: "nota",
 };
+const PENDING_DRIVE_MIN_WIDTHS = [110, 140, 280, 140, 140, 260, 320];
+const FREE_COURTS_DRIVE_HEADERS = ["Fecha", "Dia", "Horario", "Complejo", "Cancha"];
+const FREE_COURTS_DRIVE_HEADER_KEY = {
+  Fecha: "fecha",
+  Dia: "dia",
+  Horario: "horario",
+  Complejo: "complejo",
+  Cancha: "cancha",
+};
+const FREE_COURTS_DRIVE_MIN_WIDTHS = [110, 110, 140, 180, 120];
 const FIXED_PENDING_DRIVE_SHEET = "1-iy8HSNkDDUJg4do08aydAK1MMtfhqrWmO4PGebkxe4";
 const FIXED_RECOVER_DRIVE_SHEET = "1M4OMDttW86SdOixs-uCbXyZLoPSbf-YLylZO7qwkYrQ";
+const FIXED_FREE_COURTS_DRIVE_SHEET = "1yLTWLdIfrZXuho8dwXdYVuJKcDMLEHxymHXMdIv1hAs";
 
 /**
- * Pega parejas (pendientes o recuperan) en un sheet de contactos, una pestaña por fecha.
- * Reemplaza esa pestaña: quien ya no figura deja de aparecer.
+ * Pega filas en un sheet auxiliar (pendientes, recuperan, complejos libres), una pestaña por fecha.
+ * Reemplaza esa pestaña: lo que ya no figura deja de aparecer.
  * No escribe el sheet de resultados.
  */
-async function writePendingDriveSheet(env, { sheetId, week = "", rows = [], label = "Pendientes" } = {}) {
-  const id = String(sheetId || env.PENDING_DRIVE_SHEET_ID || FIXED_PENDING_DRIVE_SHEET)
+async function writeTabDriveSheet(
+  env,
+  {
+    sheetId,
+    week = "",
+    rows = [],
+    label = "Sheet",
+    fallbackId = "",
+    headers = PENDING_DRIVE_HEADERS,
+    headerKey = PENDING_DRIVE_HEADER_KEY,
+    minWidths = PENDING_DRIVE_MIN_WIDTHS,
+  } = {}
+) {
+  const id = String(sheetId || fallbackId || "")
     .trim()
     .replace(/^.*\/spreadsheets\/d\//i, "")
     .replace(/\/.*$/, "");
@@ -2892,6 +2915,8 @@ async function writePendingDriveSheet(env, { sheetId, week = "", rows = [], labe
     err.status = 400;
     throw err;
   }
+  const colsHeaders = Array.isArray(headers) && headers.length ? headers : PENDING_DRIVE_HEADERS;
+  const keyMap = headerKey && typeof headerKey === "object" ? headerKey : PENDING_DRIVE_HEADER_KEY;
   const sa = await googleServiceAccount(env);
   if (!sa?.client_email || !sa?.private_key) {
     const err = new Error("Falta el secret GOOGLE_SERVICE_ACCOUNT en el Worker para escribir el Sheet.");
@@ -2901,7 +2926,7 @@ async function writePendingDriveSheet(env, { sheetId, week = "", rows = [], labe
   const accessToken = await googleAccessToken(sa, "https://www.googleapis.com/auth/spreadsheets");
   const title = fixtureSheetTitle(week);
   const quoted = `'${title.replace(/'/g, "''")}'`;
-  const cols = PENDING_DRIVE_HEADERS.length;
+  const cols = colsHeaders.length;
   const lastCol = String.fromCharCode("A".charCodeAt(0) + cols - 1);
 
   const meta = await sheetsFetch(
@@ -3018,8 +3043,8 @@ async function writePendingDriveSheet(env, { sheetId, week = "", rows = [], labe
   if (read.res.ok) previousDataRows = Math.max(0, (read.json.values || []).length - 1);
 
   const values = [
-    PENDING_DRIVE_HEADERS,
-    ...(rows || []).map((r) => PENDING_DRIVE_HEADERS.map((h) => String(r?.[PENDING_DRIVE_HEADER_KEY[h]] ?? ""))),
+    colsHeaders,
+    ...(rows || []).map((r) => colsHeaders.map((h) => String(r?.[keyMap[h]] ?? ""))),
   ];
   const pad = Math.max(0, previousDataRows - Math.max(0, values.length - 1));
   const writeValues = values.concat(Array.from({ length: pad }, () => Array(cols).fill("")));
@@ -3045,8 +3070,7 @@ async function writePendingDriveSheet(env, { sheetId, week = "", rows = [], labe
           tabId,
           cols,
           endRow,
-          // Fecha, Categoria, Pareja, WA1, WA2, Puede, Nota
-          minWidths: [110, 140, 280, 140, 140, 260, 320],
+          minWidths: Array.isArray(minWidths) && minWidths.length ? minWidths : PENDING_DRIVE_MIN_WIDTHS,
         }),
       },
     }
@@ -3061,6 +3085,28 @@ async function writePendingDriveSheet(env, { sheetId, week = "", rows = [], labe
     rows: Math.max(0, values.length - 1),
     url: `https://docs.google.com/spreadsheets/d/${id}/edit#gid=${tabId}`,
   };
+}
+
+async function writePendingDriveSheet(env, opts = {}) {
+  return writeTabDriveSheet(env, {
+    ...opts,
+    label: opts.label || "Pendientes",
+    fallbackId: env.PENDING_DRIVE_SHEET_ID || FIXED_PENDING_DRIVE_SHEET,
+    headers: PENDING_DRIVE_HEADERS,
+    headerKey: PENDING_DRIVE_HEADER_KEY,
+    minWidths: PENDING_DRIVE_MIN_WIDTHS,
+  });
+}
+
+async function writeFreeCourtsDriveSheet(env, opts = {}) {
+  return writeTabDriveSheet(env, {
+    ...opts,
+    label: opts.label || "Complejos libres",
+    fallbackId: env.FREE_COURTS_DRIVE_SHEET_ID || FIXED_FREE_COURTS_DRIVE_SHEET,
+    headers: FREE_COURTS_DRIVE_HEADERS,
+    headerKey: FREE_COURTS_DRIVE_HEADER_KEY,
+    minWidths: FREE_COURTS_DRIVE_MIN_WIDTHS,
+  });
 }
 
 export default {
@@ -3154,7 +3200,7 @@ export default {
         }
       }
 
-      // Pega resultados + Pendientes + Recuperan fecha. Un score ya cargado en resultados no se pisa.
+      // Pega resultados + Pendientes + Recuperan + Complejos libres. Un score ya cargado no se pisa.
       if (url.pathname === "/fixture/drive" && request.method === "POST") {
         if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
         const body = await request.json().catch(() => ({}));
@@ -3163,7 +3209,9 @@ export default {
         const pendingRows = hasPending ? body.pendingRows : [];
         const hasRecover = Array.isArray(body?.recoverRows);
         const recoverRows = hasRecover ? body.recoverRows : [];
-        if (!rows.length && !hasPending && !hasRecover) {
+        const hasFreeCourts = Array.isArray(body?.freeCourtsRows);
+        const freeCourtsRows = hasFreeCourts ? body.freeCourtsRows : [];
+        if (!rows.length && !hasPending && !hasRecover && !hasFreeCourts) {
           return response(request, env, { message: "No hay partidos para pegar (solo se envían los que tienen rival)." }, 400);
         }
         try {
@@ -3207,7 +3255,29 @@ export default {
               recoverError = err.message || "No se pudo pegar en Recuperan fecha.";
             }
           }
-          return response(request, env, { ...result, pending, pendingError, recover, recoverError });
+          let freeCourts = null;
+          let freeCourtsError = "";
+          if (hasFreeCourts) {
+            try {
+              freeCourts = await writeFreeCourtsDriveSheet(env, {
+                sheetId: body.freeCourtsSheetId || env.FREE_COURTS_DRIVE_SHEET_ID || FIXED_FREE_COURTS_DRIVE_SHEET,
+                week,
+                rows: freeCourtsRows,
+                label: "Complejos libres",
+              });
+            } catch (err) {
+              freeCourtsError = err.message || "No se pudo pegar en Complejos libres.";
+            }
+          }
+          return response(request, env, {
+            ...result,
+            pending,
+            pendingError,
+            recover,
+            recoverError,
+            freeCourts,
+            freeCourtsError,
+          });
         } catch (err) {
           return response(request, env, { message: err.message || "No se pudo pegar en Drive." }, err.status || 502);
         }
