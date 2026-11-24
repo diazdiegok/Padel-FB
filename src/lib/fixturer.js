@@ -1,6 +1,6 @@
 import { DAYS, isAbandonedPair, pairLabel } from "./disponibilidad.js";
 import { weekKey, weekNumber } from "./liga.js";
-import { findPairIndex, fold, pairsMatch } from "./scoring.js";
+import { findPairIndex, fold, pairsMatch, parseWalkover } from "./scoring.js";
 
 export const MATCH_MINUTES = 90;
 export const PENDING_AWAY = "Pendiente / Pendiente";
@@ -80,8 +80,15 @@ export function countPairMatches(name, cat, temp, pools = []) {
       if (!isRealPairMatch(m)) continue;
       if (String(m.temp || "").toUpperCase() !== season) continue;
       if (cat && m.cat && m.cat !== cat) continue;
-      const plays = pairsMatch(m.home, name) || pairsMatch(m.away, name);
-      if (!plays) continue;
+      const isHome = pairsMatch(m.home, name);
+      const isAway = pairsMatch(m.away, name);
+      if (!isHome && !isAway) continue;
+      // W.O.: solo suma PJ al ganador (el ausente queda en 0, como en el ranking).
+      const wo = parseWalkover(m.appliedResult || m.result);
+      if (wo) {
+        const won = wo.homeWin ? isHome : isAway;
+        if (!won) continue;
+      }
       const key = `${m.week || ""}|${m.day || ""}|${m.time || ""}|${fold(m.home)}|${fold(m.away)}`;
       if (seen.has(key)) continue;
       seen.add(key);

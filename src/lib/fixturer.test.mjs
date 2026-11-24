@@ -98,6 +98,28 @@ assert.equal(
 );
 
 {
+  const woMatch = {
+    temp: "T5",
+    cat: "C Femenino",
+    week: "Fecha 2",
+    home: "Soraya Campostrini Labour / Catalina Otamendi",
+    away: "Milagros Solaro / Ana Paula Croce",
+    result: "W.O. 2",
+    appliedResult: "W.O. 2",
+  };
+  assert.equal(
+    countPairMatches("Soraya Campostrini Labour / Catalina Otamendi", "C Femenino", "T5", [[woMatch]]),
+    0,
+    "W.O. ausente no suma PJ en Cubrir con"
+  );
+  assert.equal(
+    countPairMatches("Milagros Solaro / Ana Paula Croce", "C Femenino", "T5", [[woMatch]]),
+    1,
+    "W.O. ganador sí suma 1 PJ"
+  );
+}
+
+{
   const published = [
     {
       temp: "T5",
