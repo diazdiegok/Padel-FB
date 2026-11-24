@@ -102,14 +102,50 @@ export function pointsFor(homeSets, awaySets) {
   return null;
 }
 
-/** Score canónico: 6/4 6/2. Acepta también el guión viejo. */
+/**
+ * Walkover / no se presentó.
+ * Canónico: "W.O. 1" (gana pareja 1 / home) o "W.O. 2" (gana pareja 2 / away).
+ */
+export function parseWalkover(raw) {
+  const s = String(raw || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .replace(/WO\b/g, "W.O.");
+  if (s === "W.O. 1" || s === "W.O.1") return { homeWin: true };
+  if (s === "W.O. 2" || s === "W.O.2") return { homeWin: false };
+  return null;
+}
+
+/** Score canónico: 6/4 6/2 o W.O. 1 / W.O. 2. Acepta también el guión viejo. */
 export function formatResult(raw) {
+  const wo = parseWalkover(raw);
+  if (wo) return wo.homeWin ? "W.O. 1" : "W.O. 2";
   const parsed = parseResult(raw);
   if (!parsed?.sets?.length) return "";
   return parsed.sets.map(([a, b]) => `${a}/${b}`).join(" ");
 }
 
 export function describeResult(raw) {
+  const wo = parseWalkover(raw);
+  if (wo) {
+    return {
+      homeSets: wo.homeWin ? 2 : 0,
+      awaySets: wo.homeWin ? 0 : 2,
+      sets: [],
+      homePts: wo.homeWin ? 3 : 0,
+      awayPts: wo.homeWin ? 0 : 3,
+      // Dif solo al que jugó; el ausente no suma ni resta sets.
+      homeDif: wo.homeWin ? 2 : 0,
+      awayDif: wo.homeWin ? 0 : 2,
+      homePj: wo.homeWin ? 1 : 0,
+      awayPj: wo.homeWin ? 0 : 1,
+      homeWin: wo.homeWin,
+      label: "W.O.",
+      score: wo.homeWin ? "W.O. 1" : "W.O. 2",
+      walkover: true,
+    };
+  }
   const parsed = parseResult(raw);
   if (!parsed) return null;
   const pts = pointsFor(parsed.homeSets, parsed.awaySets);
@@ -118,9 +154,12 @@ export function describeResult(raw) {
   return {
     ...parsed,
     ...pts,
+    homePj: 1,
+    awayPj: 1,
     homeWin: parsed.homeSets > parsed.awaySets,
     label: `(${parsed.homeSets}-${parsed.awaySets})`,
     score,
+    walkover: false,
   };
 }
 
@@ -273,9 +312,9 @@ function ensurePair(rows, name, cat, temp) {
   return rows.length - 1;
 }
 
-function applySide(row, pts, dif, sign) {
+function applySide(row, pts, dif, sign, pj = 1) {
   row.pts = Number(row.pts || 0) + sign * pts;
-  row.pj = Number(row.pj || 0) + sign;
+  row.pj = Number(row.pj || 0) + sign * (Number(pj) || 0);
   row.dif = Number(row.dif || 0) + sign * dif;
 }
 
@@ -362,7 +401,9 @@ export function applyFixtureResults(ranking, matches) {
     const prevScore = prev ? describeResult(prev) : null;
 
     if (next && !nextScore) {
-      unmatched.push(`Resultado inválido (${match.home} vs ${match.away}): "${nextRaw}". Usá 6/4 6/2 o 2/1.`);
+      unmatched.push(
+        `Resultado inválido (${match.home} vs ${match.away}): "${nextRaw}". Usá 6/4 6/2, 2/1 o W.O. 1 / W.O. 2.`
+      );
       continue;
     }
 
@@ -376,13 +417,13 @@ export function applyFixtureResults(ranking, matches) {
     if (awayBefore < 0) created.push(match.away);
 
     if (prevScore) {
-      applySide(ranking[homeIdx], prevScore.homePts, prevScore.homeDif, -1);
-      applySide(ranking[awayIdx], prevScore.awayPts, prevScore.awayDif, -1);
+      applySide(ranking[homeIdx], prevScore.homePts, prevScore.homeDif, -1, prevScore.homePj ?? 1);
+      applySide(ranking[awayIdx], prevScore.awayPts, prevScore.awayDif, -1, prevScore.awayPj ?? 1);
       reverted += 1;
     }
     if (nextScore) {
-      applySide(ranking[homeIdx], nextScore.homePts, nextScore.homeDif, 1);
-      applySide(ranking[awayIdx], nextScore.awayPts, nextScore.awayDif, 1);
+      applySide(ranking[homeIdx], nextScore.homePts, nextScore.homeDif, 1, nextScore.homePj ?? 1);
+      applySide(ranking[awayIdx], nextScore.awayPts, nextScore.awayDif, 1, nextScore.awayPj ?? 1);
       applied += 1;
     }
     match.appliedResult = next;

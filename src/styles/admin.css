@@ -1546,6 +1546,29 @@ body.is-admin .chk input[type="checkbox"] {
   color: #141814;
 }
 
+.admin-result-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  align-items: end;
+}
+
+@media (min-width: 720px) {
+  .admin-result-actions {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+.admin-result-actions .res-wo-btn {
+  justify-self: start;
+  white-space: nowrap;
+}
+
+.admin-result-card.is-wo .res-wo-btn {
+  border-color: var(--lime);
+  color: var(--lime);
+}
+
 .admin-result-score {
   display: grid;
   gap: 6px;
@@ -3585,13 +3608,33 @@ body.is-admin .chk input[type="checkbox"] {
   font-size: 24px;
 }
 
-.admin-modal p {
+.admin-modal p,
+.admin-modal-body {
   margin: 0;
   color: var(--muted);
   font-size: 14px;
   line-height: 1.5;
   white-space: pre-line;
   overflow-wrap: anywhere;
+}
+
+.admin-modal-lead {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.admin-modal-choices {
+  display: grid;
+  gap: 8px;
+  white-space: normal;
+}
+
+.admin-modal-choices .admin-modal-choice {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  min-height: 48px;
+  white-space: normal;
 }
 
 .admin-modal-actions {

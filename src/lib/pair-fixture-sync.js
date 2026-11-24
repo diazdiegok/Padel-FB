@@ -1,7 +1,58 @@
 import { DAYS, isAbandonedPair, pairLabel } from "./disponibilidad.js";
 import { PENDING_AWAY, isPendingMatch, isPlaceholderPair, isRealPairMatch } from "./fixturer.js";
 import { weekNumber } from "./liga.js";
-import { fold, pairsMatch } from "./scoring.js";
+import { describeResult, fold, pairsMatch } from "./scoring.js";
+
+export const WALKOVER_PENDING_REASON = "No se presentó (W.O.).";
+
+export function walkoverPendingKey(temp, loser, week) {
+  return `${String(temp || "").toUpperCase()}|${fold(loser)}|${week || ""}|wo`;
+}
+
+/**
+ * Deja un pendiente de recupero por cada W.O. (solo el que no se presentó).
+ * Si se saca el W.O., borra ese pendiente generado.
+ */
+export function syncWalkoverPendings(matches = [], pendingList = [], pairs = []) {
+  const wanted = new Map();
+  for (const m of matches || []) {
+    const info = describeResult(m?.result);
+    if (!info?.walkover) continue;
+    const loser = String(info.homeWin ? m.away : m.home || "").trim();
+    const winner = String(info.homeWin ? m.home : m.away || "").trim();
+    if (!loser || isPlaceholderPair(loser)) continue;
+    const temp = m.temp || "";
+    const week = m.week || "";
+    const cat = m.cat || "";
+    const key = walkoverPendingKey(temp, loser, week);
+    const entry = pairEntry(pairs, loser, temp, cat);
+    const row = asPending({
+      week,
+      temp,
+      cat: entry?.cat || cat,
+      home: entry ? pairLabel(entry) : loser,
+      reason: WALKOVER_PENDING_REASON,
+      days: entry?.days,
+    });
+    row.recoverFrom = week;
+    row.woKey = key;
+    if (winner) row.woWinner = winner;
+    wanted.set(key, row);
+  }
+
+  const kept = [];
+  for (const p of pendingList || []) {
+    const isWo = Boolean(p?.woKey) || p?.reason === WALKOVER_PENDING_REASON;
+    if (!isWo) {
+      kept.push(p);
+      continue;
+    }
+    const key = p.woKey || walkoverPendingKey(p.temp, p.home, p.recoverFrom || p.week);
+    if (!wanted.has(key)) continue;
+  }
+  for (const row of wanted.values()) kept.push(row);
+  return kept;
+}
 
 function availText(days) {
   if (!days || typeof days !== "object") return "";
