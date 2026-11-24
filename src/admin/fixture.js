@@ -2389,7 +2389,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
 
     async function pendingRowsForWeek() {
       await ensureContactsLoaded();
-      // Pendientes de la fecha (sin rival), incluye W.O. ausentes. Recuperan (recoverFrom) van a otra hoja.
+      // Pendientes de la fecha (sin rival). W.O. / Recuperan (recoverFrom) van a otra hoja.
       const list = (ctx.fixture || []).filter(
         (m) =>
           seasonOf(m) === filterTemp &&
