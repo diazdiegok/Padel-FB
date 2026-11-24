@@ -115,7 +115,6 @@ const pending = pendingDriveRows(
       home: "Ausente / W.O.",
       away: "Pendiente / Pendiente",
       pending: true,
-      recoverFrom: "Fecha 2",
       reason: "No se presentó (W.O.).",
     },
   ],
@@ -125,12 +124,14 @@ const pending = pendingDriveRows(
       ? { tel1: "5493411111111", tel2: "5493412222222" }
       : {}
 );
-assert.equal(pending.length, 1, "el partido con resultado y el W.O./recupero no van a pendientes");
+assert.equal(pending.length, 2, "pendientes normales y W.O. ausente van a Pendientes; el partido con resultado no");
 assert.equal(pending[0].puede, "Lunes 19:00 - 21:00");
 assert.equal(pending[0].nota, "Su rival ya no está inscripto.");
 assert.equal(pending[0].pareja, "Marien Robledo / Valeria Joubert");
 assert.equal(pending[0].whatsapp1, "5493411111111");
 assert.equal(pending[0].whatsapp2, "5493412222222");
+assert.equal(pending[1].pareja, "Ausente / W.O.");
+assert.equal(pending[1].nota, "No se presentó (W.O.).");
 
 const recover = recoverDriveRows([
   {
@@ -139,24 +140,8 @@ const recover = recoverDriveRows([
     home: "Ausente / W.O.",
     away: "Pendiente / Pendiente",
     pending: true,
-    recoverFrom: "Fecha 2",
     reason: "No se presentó (W.O.).",
   },
-  {
-    week: "Fecha 2",
-    cat: "C Femenino",
-    home: "Sin rival / Solo",
-    away: "Pendiente / Pendiente",
-    pending: true,
-    reason: "Su rival ya no está inscripto.",
-  },
-]);
-assert.equal(recover.length, 1, "solo recuperos / W.O. van a Recuperan");
-assert.equal(recover[0].pareja, "Ausente / W.O.");
-assert.equal(recover[0].fecha, "Fecha 2");
-assert.equal(recover[0].nota, "Le falta 1 partido en Fecha 2. No se presentó (W.O.).");
-
-const recoverMoved = recoverDriveRows([
   {
     week: "Fecha 1",
     recoveredIn: "Fecha 2",
@@ -167,8 +152,18 @@ const recoverMoved = recoverDriveRows([
     recoverFrom: "Fecha 1",
     reason: "Tiene 0 partidos en Fecha 1. Recupera esa fecha.",
   },
+  {
+    week: "Fecha 2",
+    cat: "C Femenino",
+    home: "Sin rival / Solo",
+    away: "Pendiente / Pendiente",
+    pending: true,
+    reason: "Su rival ya no está inscripto.",
+  },
 ]);
-assert.equal(recoverMoved[0].fecha, "Fecha 2", "fecha = recoveredIn cuando recupera en otra fecha");
-assert.match(recoverMoved[0].nota, /Le falta 1 partido en Fecha 1/);
+assert.equal(recover.length, 1, "solo recuperan (recoverFrom) van a Recuperan; el W.O. no");
+assert.equal(recover[0].pareja, "Ana / Bea");
+assert.equal(recover[0].fecha, "Fecha 2", "fecha = recoveredIn cuando recupera en otra fecha");
+assert.match(recover[0].nota, /Le falta 1 partido en Fecha 1/);
 
 console.log("drive-sheet.test.mjs passed");

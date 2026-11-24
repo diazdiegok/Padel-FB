@@ -2386,7 +2386,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
 
     async function pendingRowsForWeek() {
       await ensureContactsLoaded();
-      // Solo pendientes "de la fecha" (sin rival). Los W.O. / recuperos van a Recuperan fecha, no a esta hoja.
+      // Pendientes de la fecha (sin rival), incluye W.O. ausentes. Recuperan (recoverFrom) van a otra hoja.
       const list = (ctx.fixture || []).filter(
         (m) =>
           seasonOf(m) === filterTemp &&
@@ -2460,7 +2460,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
             ? `En Pendientes se pegan ${pendingN} pareja${pendingN === 1 ? "" : "s"}. `
             : `Pendientes «${filterWeek}» queda sin parejas. `) +
           (recoverN
-            ? `En Recuperan fecha se pegan ${recoverN} pareja${recoverN === 1 ? "" : "s"} (W.O. / partido faltante).`
+            ? `En Recuperan fecha se pegan ${recoverN} pareja${recoverN === 1 ? "" : "s"} (partido de otra fecha).`
             : `Recuperan fecha «${filterWeek}» queda sin parejas.`),
         confirmLabel: "Pegar en Drive",
       });

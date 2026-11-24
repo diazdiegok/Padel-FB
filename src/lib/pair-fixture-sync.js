@@ -10,7 +10,8 @@ export function walkoverPendingKey(temp, loser, week) {
 }
 
 /**
- * Deja un pendiente de recupero por cada W.O. (solo el que no se presentó).
+ * Deja un pendiente normal de esa fecha por cada W.O. (solo el que no se presentó).
+ * Va a Pendientes (sin rival), no a Recuperan fecha.
  * Si se saca el W.O., borra ese pendiente generado.
  */
 export function syncWalkoverPendings(matches = [], pendingList = [], pairs = []) {
@@ -34,7 +35,10 @@ export function syncWalkoverPendings(matches = [], pendingList = [], pairs = [])
       reason: WALKOVER_PENDING_REASON,
       days: entry?.days,
     });
-    row.recoverFrom = week;
+    // Sin recoverFrom: queda en Pendientes de la fecha, no en Recuperan.
+    delete row.recoverFrom;
+    delete row.recoveredIn;
+    delete row.recoverLater;
     row.woKey = key;
     if (winner) row.woWinner = winner;
     wanted.set(key, row);

@@ -16,6 +16,7 @@ import { createShell } from "./shell.js";
 import { createConsumos } from "./consumos.js";
 import { createDrafts } from "./drafts.js";
 import { createVisitas } from "./visitas.js";
+import { WALKOVER_PENDING_REASON } from "../lib/pair-fixture-sync.js";
 import { $, updateDirtyBadge } from "./ui.js";
 
 export function bootAdmin({
@@ -195,6 +196,13 @@ export function bootAdmin({
     }
     // Publicado desde el build / GitHub primero; después se reaplica el borrador local (F5).
     drafts.restore();
+    // W.O. ausentes van a Pendientes (no Recuperan): limpiar recoverFrom viejo en borradores.
+    for (const m of ctx.fixture || []) {
+      if (!m?.woKey && m?.reason !== WALKOVER_PENDING_REASON) continue;
+      delete m.recoverFrom;
+      delete m.recoveredIn;
+      delete m.recoverLater;
+    }
     updateDirtyBadge(ctx.dirty);
     ranking.refresh();
     seasons.render();

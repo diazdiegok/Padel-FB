@@ -201,8 +201,10 @@ import { addPairsToRanking, syncRankingToSeasonPairs } from "./scoring.js";
   const pending = syncWalkoverPendings([match], [], []);
   assert.equal(pending.length, 1);
   assert.equal(pending[0].home, "Jeronimo Acuña / Lucio Acuña");
-  assert.equal(pending[0].recoverFrom, "Fecha 1");
-  console.log("ok: W.O. suma 3 pts y PJ solo al ganador; ausente a pendiente");
+  assert.equal(pending[0].week, "Fecha 1");
+  assert.ok(!pending[0].recoverFrom, "W.O. va a Pendientes, no a Recuperan");
+  assert.equal(pending[0].reason, "No se presentó (W.O.).");
+  console.log("ok: W.O. suma 3 pts y PJ solo al ganador; ausente a pendientes");
 }
 
 console.log("scoring.test.mjs passed");

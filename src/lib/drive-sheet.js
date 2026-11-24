@@ -136,12 +136,12 @@ function driveContactRows(matches, { includeRecover = false } = {}, puedeOf = ()
     );
 }
 
-/** Una fila por pareja pendiente de la fecha (sin rival). No incluye recuperos / W.O. (van a Recuperan). */
+/** Pendientes de la fecha (sin rival), incl. W.O. ausentes. No incluye Recuperan (recoverFrom). */
 export function pendingDriveRows(matches = [], puedeOf = () => "", phonesOf = () => ({})) {
   return driveContactRows(matches, { includeRecover: false }, puedeOf, phonesOf);
 }
 
-/** Una fila por pareja que recupera fecha (W.O. / partido faltante). */
+/** Parejas que recuperan otra fecha (recoverFrom). No son los W.O. de esta fecha. */
 export function recoverDriveRows(matches = [], puedeOf = () => "", phonesOf = () => ({})) {
   return driveContactRows(matches, { includeRecover: true }, puedeOf, phonesOf);
 }
