@@ -118,7 +118,10 @@ function driveContactRows(matches, { includeRecover = false } = {}, puedeOf = ()
       if (reason) bits.push(reason);
       const phones = phonesOf(m) || {};
       return {
-        fecha: String(m?.week || m?.recoveredIn || "").trim(),
+        // En Recuperan: la fecha en que aparecen (recoveredIn). En Pendientes: su week.
+        fecha: String(
+          includeRecover ? m?.recoveredIn || m?.week || "" : m?.week || ""
+        ).trim(),
         categoria: String(m?.cat || "").trim(),
         pareja: String(m?.home || "").trim(),
         whatsapp1: String(phones.tel1 || phones.whatsapp1 || "").trim(),

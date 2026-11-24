@@ -2523,12 +2523,17 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
             : bits[0] || "Pegado"
           : "Pegado parcial: revisá Pendientes / Recuperan.";
         toast(toastTxt, level === "ok" ? "ok" : "err");
+        const recoverUrl = recoverOk
+          ? res?.recover?.url || DEFAULT_RECOVER_DRIVE_SHEET_URL
+          : "";
         const openUrl = merged
           ? res?.url || `${DEFAULT_FIXTURE_DRIVE_SHEET_URL}${res?.gid != null ? `#gid=${res.gid}` : ""}`
-          : recoverOk && recoverN
-            ? res?.recover?.url || DEFAULT_RECOVER_DRIVE_SHEET_URL
-            : res?.pending?.url || DEFAULT_PENDING_DRIVE_SHEET_URL;
+          : recoverUrl || res?.pending?.url || DEFAULT_PENDING_DRIVE_SHEET_URL;
         if (openUrl) window.open(openUrl, "_blank", "noopener,noreferrer");
+        // Si también se pegó Recuperan y abrimos resultados, abrir Recuperan en otra pestaña.
+        if (merged && recoverUrl && recoverWrote > 0) {
+          window.open(recoverUrl, "_blank", "noopener,noreferrer");
+        }
       } catch (err) {
         setMsg($("fx-msg"), err.message || "No se pudo pegar en Drive.", "err");
         toast(err.message || "No se pudo pegar en Drive", "err");

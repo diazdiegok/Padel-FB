@@ -2592,6 +2592,87 @@ function fixtureSheetTitle(week) {
   return raw || "Fixture";
 }
 
+function isDefaultSheetTitle(title) {
+  const t = String(title || "").trim().toLowerCase();
+  return !t || t === "hoja 1" || t === "sheet1" || t === "sheet 1";
+}
+
+/** Encabezado + datos centrados, filtro, y columnas autoajustadas (con anchos mínimos). */
+function driveSheetFormatRequests({ tabId, cols, endRow, minWidths = [] }) {
+  const dataEnd = Math.max(endRow, 2);
+  const requests = [
+    {
+      repeatCell: {
+        range: { sheetId: tabId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: cols },
+        cell: {
+          userEnteredFormat: {
+            textFormat: { bold: true, fontSize: 11 },
+            backgroundColor: { red: 0.93, green: 0.95, blue: 0.9 },
+            horizontalAlignment: "CENTER",
+            verticalAlignment: "MIDDLE",
+          },
+        },
+        fields: "userEnteredFormat(textFormat,backgroundColor,horizontalAlignment,verticalAlignment)",
+      },
+    },
+    {
+      updateSheetProperties: {
+        properties: { sheetId: tabId, gridProperties: { frozenRowCount: 1 } },
+        fields: "gridProperties.frozenRowCount",
+      },
+    },
+    {
+      setBasicFilter: {
+        filter: {
+          range: {
+            sheetId: tabId,
+            startRowIndex: 0,
+            endRowIndex: dataEnd,
+            startColumnIndex: 0,
+            endColumnIndex: cols,
+          },
+        },
+      },
+    },
+    {
+      repeatCell: {
+        range: {
+          sheetId: tabId,
+          startRowIndex: 1,
+          endRowIndex: dataEnd,
+          startColumnIndex: 0,
+          endColumnIndex: cols,
+        },
+        cell: {
+          userEnteredFormat: {
+            textFormat: { bold: false, fontSize: 10 },
+            horizontalAlignment: "CENTER",
+            verticalAlignment: "MIDDLE",
+            wrapStrategy: "WRAP",
+          },
+        },
+        fields: "userEnteredFormat(textFormat,horizontalAlignment,verticalAlignment,wrapStrategy)",
+      },
+    },
+    {
+      autoResizeDimensions: {
+        dimensions: { sheetId: tabId, dimension: "COLUMNS", startIndex: 0, endIndex: cols },
+      },
+    },
+  ];
+  for (let i = 0; i < cols; i++) {
+    const px = Number(minWidths[i]) || 120;
+    requests.push({
+      updateDimensionProperties: {
+        range: { sheetId: tabId, dimension: "COLUMNS", startIndex: i, endIndex: i + 1 },
+        properties: { pixelSize: px },
+        fields: "pixelSize",
+      },
+    });
+  }
+  return requests;
+}
+
 /**
  * Escribe el fixture (sin pendientes) en una pestaña = nombre de la fecha.
  * Crea la hoja si no existe y la deja primera (izq); las fechas viejas quedan a la derecha.
@@ -2750,81 +2831,20 @@ async function writeFixtureDriveSheet(env, { sheetId, week = "", rows = [] } = {
     throw sheetsAuthError(update.json.error?.message || `No se pudo escribir «${title}».`, sa, update.res.status);
   }
 
-  // Formato: encabezado negrita + fondo, fila congelada, filtro, columnas autoajustadas, alinear.
+  // Formato: todo centrado, columnas expandidas.
   const format = await sheetsFetch(
     accessToken,
     `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
     {
       method: "POST",
       body: {
-        requests: [
-          {
-            repeatCell: {
-              range: { sheetId: tabId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: cols },
-              cell: {
-                userEnteredFormat: {
-                  textFormat: { bold: true, fontSize: 11 },
-                  backgroundColor: { red: 0.93, green: 0.95, blue: 0.9 },
-                  horizontalAlignment: "CENTER",
-                  verticalAlignment: "MIDDLE",
-                },
-              },
-              fields: "userEnteredFormat(textFormat,backgroundColor,horizontalAlignment,verticalAlignment)",
-            },
-          },
-          {
-            updateSheetProperties: {
-              properties: { sheetId: tabId, gridProperties: { frozenRowCount: 1 } },
-              fields: "gridProperties.frozenRowCount",
-            },
-          },
-          {
-            setBasicFilter: {
-              filter: {
-                range: {
-                  sheetId: tabId,
-                  startRowIndex: 0,
-                  endRowIndex: endRow,
-                  startColumnIndex: 0,
-                  endColumnIndex: cols,
-                },
-              },
-            },
-          },
-          // Datos: sin negrita (limpia formato viejo de la columna Día, etc.).
-          {
-            repeatCell: {
-              range: {
-                sheetId: tabId,
-                startRowIndex: 1,
-                endRowIndex: Math.max(endRow, 2),
-                startColumnIndex: 0,
-                endColumnIndex: cols,
-              },
-              cell: {
-                userEnteredFormat: {
-                  textFormat: { bold: false, fontSize: 10 },
-                  verticalAlignment: "MIDDLE",
-                  wrapStrategy: "CLIP",
-                },
-              },
-              fields: "userEnteredFormat(textFormat,verticalAlignment,wrapStrategy)",
-            },
-          },
-          {
-            autoResizeDimensions: {
-              dimensions: { sheetId: tabId, dimension: "COLUMNS", startIndex: 0, endIndex: cols },
-            },
-          },
-          // Un poco más de aire en columnas de nombres (Pareja 1 / Pareja 2 = índices 6 y 7).
-          {
-            updateDimensionProperties: {
-              range: { sheetId: tabId, dimension: "COLUMNS", startIndex: 6, endIndex: 8 },
-              properties: { pixelSize: 280 },
-              fields: "pixelSize",
-            },
-          },
-        ],
+        requests: driveSheetFormatRequests({
+          tabId,
+          cols,
+          endRow,
+          // Fecha, Día, Horario, Cat, Complejo, Cancha, Pareja1, Pareja2, Resultado
+          minWidths: [110, 110, 130, 130, 160, 100, 280, 280, 120],
+        }),
       },
     }
   );
@@ -2894,6 +2914,7 @@ async function writePendingDriveSheet(env, { sheetId, week = "", rows = [], labe
 
   let tabId = null;
   let tabIndex = null;
+  let defaultTab = null;
   const want = title.toLowerCase();
   for (const s of meta.json.sheets || []) {
     const t = String(s?.properties?.title || "");
@@ -2902,9 +2923,41 @@ async function writePendingDriveSheet(env, { sheetId, week = "", rows = [], labe
       tabIndex = s.properties.index;
       break;
     }
+    if (!defaultTab && isDefaultSheetTitle(t)) {
+      defaultTab = { id: s.properties.sheetId, index: s.properties.index, title: t };
+    }
   }
 
-  if (tabId == null) {
+  if (tabId == null && defaultTab && (meta.json.sheets || []).length === 1) {
+    // Sheet nuevo: renombrar «Hoja 1» a la fecha (evita pegar en una pestaña y mirar otra vacía).
+    const renamed = await sheetsFetch(
+      accessToken,
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
+      {
+        method: "POST",
+        body: {
+          requests: [
+            {
+              updateSheetProperties: {
+                properties: {
+                  sheetId: defaultTab.id,
+                  title,
+                  index: 0,
+                  gridProperties: { frozenRowCount: 1, columnCount: cols, rowCount: Math.max(50, (rows?.length || 0) + 20) },
+                },
+                fields: "title,index,gridProperties.frozenRowCount,gridProperties.columnCount,gridProperties.rowCount",
+              },
+            },
+          ],
+        },
+      }
+    );
+    if (!renamed.res.ok) {
+      throw sheetsAuthError(renamed.json.error?.message || `No se pudo preparar la hoja «${title}».`, sa, renamed.res.status);
+    }
+    tabId = defaultTab.id;
+    tabIndex = 0;
+  } else if (tabId == null) {
     const created = await sheetsFetch(
       accessToken,
       `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
@@ -2988,86 +3041,13 @@ async function writePendingDriveSheet(env, { sheetId, week = "", rows = [], labe
     {
       method: "POST",
       body: {
-        requests: [
-          {
-            repeatCell: {
-              range: { sheetId: tabId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: cols },
-              cell: {
-                userEnteredFormat: {
-                  textFormat: { bold: true, fontSize: 11 },
-                  backgroundColor: { red: 0.93, green: 0.95, blue: 0.9 },
-                  horizontalAlignment: "CENTER",
-                  verticalAlignment: "MIDDLE",
-                },
-              },
-              fields: "userEnteredFormat(textFormat,backgroundColor,horizontalAlignment,verticalAlignment)",
-            },
-          },
-          {
-            updateSheetProperties: {
-              properties: { sheetId: tabId, gridProperties: { frozenRowCount: 1 } },
-              fields: "gridProperties.frozenRowCount",
-            },
-          },
-          {
-            setBasicFilter: {
-              filter: {
-                range: {
-                  sheetId: tabId,
-                  startRowIndex: 0,
-                  endRowIndex: Math.max(endRow, 2),
-                  startColumnIndex: 0,
-                  endColumnIndex: cols,
-                },
-              },
-            },
-          },
-          {
-            repeatCell: {
-              range: {
-                sheetId: tabId,
-                startRowIndex: 1,
-                endRowIndex: Math.max(endRow, 2),
-                startColumnIndex: 0,
-                endColumnIndex: cols,
-              },
-              cell: {
-                userEnteredFormat: {
-                  textFormat: { bold: false, fontSize: 10 },
-                  verticalAlignment: "MIDDLE",
-                  wrapStrategy: "WRAP",
-                },
-              },
-              fields: "userEnteredFormat(textFormat,verticalAlignment,wrapStrategy)",
-            },
-          },
-          {
-            autoResizeDimensions: {
-              dimensions: { sheetId: tabId, dimension: "COLUMNS", startIndex: 0, endIndex: cols },
-            },
-          },
-          {
-            updateDimensionProperties: {
-              range: { sheetId: tabId, dimension: "COLUMNS", startIndex: 2, endIndex: 3 },
-              properties: { pixelSize: 280 },
-              fields: "pixelSize",
-            },
-          },
-          {
-            updateDimensionProperties: {
-              range: { sheetId: tabId, dimension: "COLUMNS", startIndex: 3, endIndex: 5 },
-              properties: { pixelSize: 140 },
-              fields: "pixelSize",
-            },
-          },
-          {
-            updateDimensionProperties: {
-              range: { sheetId: tabId, dimension: "COLUMNS", startIndex: 5, endIndex: 7 },
-              properties: { pixelSize: 280 },
-              fields: "pixelSize",
-            },
-          },
-        ],
+        requests: driveSheetFormatRequests({
+          tabId,
+          cols,
+          endRow,
+          // Fecha, Categoria, Pareja, WA1, WA2, Puede, Nota
+          minWidths: [110, 140, 280, 140, 140, 260, 320],
+        }),
       },
     }
   );

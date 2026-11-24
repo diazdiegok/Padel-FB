@@ -153,6 +153,22 @@ const recover = recoverDriveRows([
 ]);
 assert.equal(recover.length, 1, "solo recuperos / W.O. van a Recuperan");
 assert.equal(recover[0].pareja, "Ausente / W.O.");
+assert.equal(recover[0].fecha, "Fecha 2");
 assert.equal(recover[0].nota, "Le falta 1 partido en Fecha 2. No se presentó (W.O.).");
+
+const recoverMoved = recoverDriveRows([
+  {
+    week: "Fecha 1",
+    recoveredIn: "Fecha 2",
+    cat: "C Femenino",
+    home: "Ana / Bea",
+    away: "Pendiente / Pendiente",
+    pending: true,
+    recoverFrom: "Fecha 1",
+    reason: "Tiene 0 partidos en Fecha 1. Recupera esa fecha.",
+  },
+]);
+assert.equal(recoverMoved[0].fecha, "Fecha 2", "fecha = recoveredIn cuando recupera en otra fecha");
+assert.match(recoverMoved[0].nota, /Le falta 1 partido en Fecha 1/);
 
 console.log("drive-sheet.test.mjs passed");
