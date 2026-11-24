@@ -442,4 +442,46 @@ console.log("--- cover", covers.map((c) => `${c.label} (${c.pj})`).join(" · "))
   assert.ok(archived.results.includes(fecha1), "el historial de Fecha 1 se conserva");
 }
 
+{
+  const matches = [
+    {
+      week: "Fecha 1",
+      temp: "T5",
+      cat: "B Masculina",
+      home: "Diego Ramirez / Martin Rondan",
+      away: "Jeronimo Acuña / Lucio Acuña",
+      result: "6/4 6/2",
+      appliedResult: "6/4 6/2",
+    },
+    {
+      week: "Fecha 1",
+      temp: "T5",
+      cat: "B Masculina",
+      home: "Lucas Gobatto / Matias Roldan",
+      away: "Pendiente / Pendiente",
+      pending: true,
+      recoverFrom: "Fecha 1",
+      recoveredIn: "Fecha 2",
+    },
+  ];
+  const pairs = [
+    { temp: "T5", cat: "B Masculina", p1: "Diego Ramirez", p2: "Martin Rondan", days: { Lunes: "18:00 - 21:00" } },
+    {
+      temp: "T5",
+      cat: "B Masculina",
+      p1: "Lucas Gobatto",
+      p2: "Matias Roldan",
+      days: { Lunes: "18:00 - 21:00" },
+      abandoned: true,
+      abandonedAt: "2026-11-23T00:00:00.000Z",
+    },
+  ];
+  const out = importRecoveryDebts(matches, { temp: "T5", week: "Fecha 2", history: matches, pairs });
+  assert.equal(
+    out.matches.filter((m) => /gobatto|roldan/i.test(m.home || "")).length,
+    0,
+    "abandonadas no recuperan ni quedan en pendientes"
+  );
+}
+
 console.log("ok");

@@ -229,20 +229,34 @@ export function importRecoveryDebts(matches = [], { temp = "", week = "", histor
   const season = String(temp || "").toUpperCase();
   const here = weekNumber(week);
   const normalized = normalizeRecoveryWeeks(matches);
-  const list = normalized.matches;
+  let list = normalized.matches;
   const pool = Array.isArray(history) ? history : list;
   if (!season || !week || !here) return { matches: list, added: normalized.changed, waiting: 0 };
+
+  const abandonedLabels = (pairs || [])
+    .filter((p) => isAbandonedPair(p) && String(p?.temp || "").toUpperCase() === season && p.p1 && p.p2)
+    .map((p) => pairLabel(p));
+  const isAbandonedName = (label) => abandonedLabels.some((name) => pairsMatch(name, label));
+
+  // Sacá pendientes de recupero/normal de parejas que abandonaron.
+  const beforePrune = list.length;
+  list = list.filter((m) => {
+    if (!sameSeason(m, season) || !isPendingMatch(m)) return true;
+    return !isAbandonedName(m.home);
+  });
+  let added = normalized.changed + (beforePrune - list.length);
 
   const seasonRows = pool.filter((m) => sameSeason(m, season));
   const cats = [
     ...new Set(
       [
         ...seasonRows.map((m) => m.cat || ""),
-        ...(pairs || []).filter((p) => String(p?.temp || "").toUpperCase() === season).map((p) => p.cat || ""),
+        ...(pairs || [])
+          .filter((p) => String(p?.temp || "").toUpperCase() === season && !isAbandonedPair(p))
+          .map((p) => p.cat || ""),
       ].filter(Boolean)
     ),
   ];
-  let added = normalized.changed;
   let waiting = 0;
 
   for (const cat of cats) {
@@ -259,11 +273,12 @@ export function importRecoveryDebts(matches = [], { temp = "", week = "", histor
     const people = [];
     const pushPerson = (label, extra = {}) => {
       const name = String(label || "").trim();
-      if (!name || isPlaceholderPair(name)) return;
+      if (!name || isPlaceholderPair(name) || isAbandonedName(name)) return;
       if (people.some((p) => pairsMatch(p.name, name))) return;
       people.push({ name, days: extra.days, avail: extra.avail || "", note: extra.note || "" });
     };
     for (const p of pairs || []) {
+      if (isAbandonedPair(p)) continue;
       if (String(p?.temp || "").toUpperCase() !== season || (p.cat || "") !== cat || !p.p1 || !p.p2) continue;
       pushPerson(pairLabel(p), { days: p.days });
     }
