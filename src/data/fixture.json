@@ -1127,5 +1127,20 @@
     "result": "",
     "appliedResult": "",
     "flexAvail": true
+  },
+  {
+    "week": "Fecha 2",
+    "day": "Martes",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Femenino",
+    "time": "22:00 - 23:30",
+    "venue": "Open Padel",
+    "court": "Cancha 2",
+    "home": "Florencia Cavallaro / Luisina Yancovich",
+    "away": "Valentina Gabirondo / Delfina Balla",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
   }
 ]
