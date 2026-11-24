@@ -277,7 +277,7 @@ import "../styles/admin.css";
                     <option value="pareja">Por pareja</option>
                   </select>
                   <button class="btn btn-ghost" type="button" id="fx-dl">Bajar</button>
-                  <button class="btn btn-lime" type="button" id="fx-drive-paste" title="Pega resultados, Pendientes (sin rival / W.O.) y Recuperan fecha en sus sheets de Drive">Pegar en Drive</button>
+                  <button class="btn btn-lime" type="button" id="fx-drive-paste" title="Pega resultados, Pendientes (sin rival) y Recuperan fecha (incl. W.O.) en sus sheets de Drive">Pegar en Drive</button>
                 </div>
               </div>
               <div class="fx-build-progress" id="fx-build-progress" hidden>
@@ -346,7 +346,7 @@ import "../styles/admin.css";
         <section data-section="resultados" hidden>
           <div class="admin-callout">
             <strong>Cómo se carga</strong>
-            <span>Desde Pareja 1: <b>6/4 6/2</b> (ganador 3 pts) o <b>6/4 3/6 6/2</b> (ganador 3 pts, perdedor 1). Si el rival <b>no se presentó</b>, usá el botón del partido: el ganador suma 3 pts y 1 PJ; el ausente no suma PJ y pasa a pendiente. También podés <b>Importar Excel</b> (.csv / .xls / .xlsx) con columnas <b>fecha, categoria, pareja1, pareja2, resultado</b>.</span>
+            <span>Desde Pareja 1: <b>6/4 6/2</b> (ganador 3 pts) o <b>6/4 3/6 6/2</b> (ganador 3 pts, perdedor 1). Si el rival <b>no se presentó</b>, usá el botón del partido: el ganador suma 3 pts y 1 PJ; el ausente no suma PJ y queda en Recuperan fecha. También podés <b>Importar Excel</b> (.csv / .xls / .xlsx) con columnas <b>fecha, categoria, pareja1, pareja2, resultado</b>.</span>
           </div>
           <div class="admin-section-tools">
             <button class="btn btn-ghost" type="button" id="res-reload">Actualizar</button>

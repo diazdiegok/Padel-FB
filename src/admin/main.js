@@ -196,11 +196,10 @@ export function bootAdmin({
     }
     // Publicado desde el build / GitHub primero; después se reaplica el borrador local (F5).
     drafts.restore();
-    // W.O. ausentes van a Pendientes (no Recuperan): limpiar recoverFrom viejo en borradores.
+    // W.O. ausentes van a Recuperan: asegurar recoverFrom = la fecha del W.O. en borradores viejos.
     for (const m of ctx.fixture || []) {
       if (!m?.woKey && m?.reason !== WALKOVER_PENDING_REASON) continue;
-      delete m.recoverFrom;
-      delete m.recoveredIn;
+      if (!m.recoverFrom && m.week) m.recoverFrom = m.week;
       delete m.recoverLater;
     }
     updateDirtyBadge(ctx.dirty);

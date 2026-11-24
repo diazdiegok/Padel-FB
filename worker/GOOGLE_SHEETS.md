@@ -27,7 +27,7 @@ https://docs.google.com/spreadsheets/d/1OI6ogfmdOAQ5mz3JqP482cDPT_xp-PjWdE07k54A
 
 ## Pendientes
 
-Sheet fijo, solo parejas que todavía no tienen rival (incluye ausentes por W.O.):  
+Sheet fijo, solo parejas que todavía no tienen rival:  
 https://docs.google.com/spreadsheets/d/1-iy8HSNkDDUJg4do08aydAK1MMtfhqrWmO4PGebkxe4/edit
 
 - El mismo botón **Pegar en Drive** lo actualiza después de pegar resultados
@@ -35,18 +35,18 @@ https://docs.google.com/spreadsheets/d/1-iy8HSNkDDUJg4do08aydAK1MMtfhqrWmO4PGebk
 - Columnas: Fecha, Categoria, Pareja, WhatsApp 1, WhatsApp 2, Puede, Nota
 - `WhatsApp 1` / `WhatsApp 2` salen de los contactos de la inscripción (solo en este sheet)
 - `Puede` es la disponibilidad de la inscripción (ej. `Lunes 19:00 - 21:00`)
-- W.O.: en `Nota` va `No se presentó (W.O.).`
+- Los W.O. (no se presentaron) no van acá: van a Recuperan fecha
 - Compartido con el `client_email` de la cuenta de servicio como **Editor**
 
 ## Recuperan fecha
 
-Sheet fijo para quien debe un partido de otra fecha (lo del admin en Recuperan fecha):  
+Sheet fijo para quien debe un partido de otra fecha (lo del admin en Recuperan fecha), incl. ausentes por W.O.:  
 https://docs.google.com/spreadsheets/d/1M4OMDttW86SdOixs-uCbXyZLoPSbf-YLylZO7qwkYrQ/edit
 
 - El mismo botón **Pegar en Drive** lo actualiza junto con Pendientes
 - **Una pestaña por fecha**. Misma forma de columnas que Pendientes
-- En `Nota` va el texto tipo `Le falta 1 partido en Fecha 1.`
-- Los W.O. de la fecha actual van a Pendientes, no acá
+- En `Nota` va el texto tipo `Le falta 1 partido en Fecha 1.` o `… No se presentó (W.O.).`
+- Los W.O. de la fecha salen de Pendientes y aparecen acá
 - Compartido con el `client_email` de la cuenta de servicio como **Editor**
 
 ## Complejos libres

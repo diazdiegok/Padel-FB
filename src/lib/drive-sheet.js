@@ -136,12 +136,12 @@ function driveContactRows(matches, { includeRecover = false } = {}, puedeOf = ()
     );
 }
 
-/** Pendientes de la fecha (sin rival), incl. W.O. ausentes. No incluye Recuperan (recoverFrom). */
+/** Pendientes de la fecha (sin rival). No incluye Recuperan ni W.O. (tienen recoverFrom). */
 export function pendingDriveRows(matches = [], puedeOf = () => "", phonesOf = () => ({})) {
   return driveContactRows(matches, { includeRecover: false }, puedeOf, phonesOf);
 }
 
-/** Parejas que recuperan otra fecha (recoverFrom). No son los W.O. de esta fecha. */
+/** Parejas que recuperan fecha (recoverFrom), incluye ausentes por W.O. */
 export function recoverDriveRows(matches = [], puedeOf = () => "", phonesOf = () => ({})) {
   return driveContactRows(matches, { includeRecover: true }, puedeOf, phonesOf);
 }

@@ -193,7 +193,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
   function resultHint(parsed) {
     if (!parsed) return "Sin resultado";
     if (parsed.walkover) {
-      return `W.O. · ganador 3 pts y 1 PJ · ausente 0 PJ → pendiente`;
+      return `W.O. · ganador 3 pts y 1 PJ · ausente 0 PJ → Recuperan fecha`;
     }
     return `${parsed.label} · ${parsed.homePts}-${parsed.awayPts} pts`;
   }
@@ -223,7 +223,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
           type="button"
           data-res-wo-source="${m._source}"
           data-res-wo-i="${m._i}"
-          title="Si el rival no se presentó: 3 pts y PJ solo al ganador; el ausente pasa a pendiente"
+          title="Si el rival no se presentó: 3 pts y PJ solo al ganador; el ausente sale de la fecha y va a Recuperan"
         >No se presentó</button>
       </div>
       <p class="admin-hint" data-res-hint>${escAttr(hint)}</p>
@@ -269,7 +269,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
     }
     const pick = await choiceModal({
       title: "Rival no se presentó",
-      body: "Elegí quién ganó por W.O. Esa pareja suma 3 pts y 1 PJ. La otra no suma PJ y pasa a pendiente al publicar.",
+      body: "Elegí quién ganó por W.O. Esa pareja suma 3 pts y 1 PJ. La otra no suma PJ y queda para Recuperan fecha al publicar.",
       choices: [
         { id: "1", label: `Ganó ${home}` },
         { id: "2", label: `Ganó ${away}` },
@@ -635,7 +635,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
       }
       const ok = await confirmModal({
         title: "Publicar resultados",
-        body: "Los scores cargados actualizan el ranking. Los W.O. dejan al ausente en pendientes. El sitio se actualiza en ~1 minuto.",
+        body: "Los scores cargados actualizan el ranking. Los W.O. dejan al ausente en Recuperan fecha. El sitio se actualiza en ~1 minuto.",
         confirmLabel: "Publicar resultados",
       });
       if (!ok) return;
@@ -684,7 +684,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
             { path: RANK_PATH, content: JSON.stringify(ranking, null, 2) + "\n" },
           ],
           report.applied
-            ? `Carga ${report.applied} resultado${report.applied === 1 ? "" : "s"} y actualiza el ranking${woN ? ` (${woN} pendiente${woN === 1 ? "" : "s"} por W.O.)` : ""}.`
+            ? `Carga ${report.applied} resultado${report.applied === 1 ? "" : "s"} y actualiza el ranking${woN ? ` (${woN} a Recuperan por W.O.)` : ""}.`
             : "Actualiza resultados desde el admin."
         );
         ctx.rows = ranking;
@@ -697,7 +697,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
         onRankingChanged?.();
         render();
         const extra = report.created.length ? ` Altas: ${[...new Set(report.created)].join(" · ")}.` : "";
-        const woNote = woN ? ` ${woN} pareja${woN === 1 ? "" : "s"} ausente${woN === 1 ? "" : "s"} → pendiente${woN === 1 ? "" : "s"}.` : "";
+        const woNote = woN ? ` ${woN} pareja${woN === 1 ? "" : "s"} ausente${woN === 1 ? "" : "s"} → Recuperan fecha.` : "";
         const text = report.applied
           ? `Resultados publicados. ${report.applied} score${report.applied === 1 ? "" : "s"} sumados al ranking.${woNote}${extra}`
           : "Resultados publicados. No había scores nuevos.";
