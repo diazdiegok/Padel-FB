@@ -984,20 +984,6 @@
   },
   {
     "week": "Fecha 2",
-    "day": "Sábado",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Masculina",
-    "time": "17:30 - 19:00",
-    "venue": "Open Padel",
-    "court": "Cancha 1",
-    "home": "Nelson Fernando Montorfano / Jonatan Gaston Jerez",
-    "away": "Tomás Rodríguez / Sergio Alem",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "week": "Fecha 2",
     "day": "Jueves",
     "date": "",
     "temp": "T5",
@@ -1143,5 +1129,19 @@
     "result": "",
     "appliedResult": "",
     "flexAvail": true
+  },
+  {
+    "week": "Fecha 2",
+    "day": "Miércoles",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "time": "19:00 - 20:30",
+    "venue": "Americas Padel",
+    "court": "Cancha 3",
+    "home": "Andrés Gasparrini / Tomas Zabala",
+    "away": "Tomás Rodríguez / Sergio Alem",
+    "result": "",
+    "appliedResult": ""
   }
 ]
