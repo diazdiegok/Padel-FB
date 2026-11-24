@@ -2,6 +2,49 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 20:30 - 22:30 · Viernes 20:00 - 22:30",
+    "days": {
+      "Lunes": "20:30 - 22:30",
+      "Viernes": "20:00 - 22:30"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Valentin Beltzer / Ariel Jaureguiberry",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Martes 21:00 - 00:00 · Jueves 21:00 - 00:00 · Viernes 21:00 - 00:00",
+    "days": {
+      "Martes": "21:00 - 00:00",
+      "Jueves": "21:00 - 00:00",
+      "Viernes": "21:00 - 00:00"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Sebastian Bregant / Luis Valla",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Lunes 17:30 - 22:00 · Martes 17:30 - 22:00 · Viernes 17:30 - 22:00",
     "days": {
       "Lunes": "17:30 - 22:00",
