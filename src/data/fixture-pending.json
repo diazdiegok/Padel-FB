@@ -2,6 +2,53 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 18:30 - 23:00 · Miércoles 18:30 - 23:00 · Jueves 20:30 - 00:00 · Viernes 18:30 - 00:00 · Sábado 10:00 - 14:30",
+    "days": {
+      "Lunes": "18:30 - 23:00",
+      "Miércoles": "18:30 - 23:00",
+      "Jueves": "20:30 - 00:00",
+      "Viernes": "18:30 - 00:00",
+      "Sábado": "10:00 - 14:30"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Juan Ignacio Oldani / Lo Cascio Jose Carlos",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 21:00 - 23:00 · Jueves 21:00 - 23:00 · Viernes 21:00 - 23:00 · Sábado 09:00 - 12:00",
+    "days": {
+      "Lunes": "21:00 - 23:00",
+      "Jueves": "21:00 - 23:00",
+      "Viernes": "21:00 - 23:00",
+      "Sábado": "09:00 - 12:00"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Nestor Sione / Ulises Almarante",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Lunes 13:00 - 22:00 · Martes 13:00 - 22:00 · Miércoles 13:00 - 22:00",
     "days": {
       "Lunes": "13:00 - 22:00",
@@ -570,6 +617,27 @@
     "venue": "",
     "court": "",
     "home": "Jeronimo Acuña / Lucio Acuña",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Tiene 0 partidos en Fecha 1. Recupera esa fecha.",
+    "days": {
+      "Martes": "21:00 - 23:30"
+    },
+    "recoverFrom": "Fecha 1",
+    "recoveredIn": "Fecha 2",
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Alejandro Abrego / Valentin Vukonich",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
