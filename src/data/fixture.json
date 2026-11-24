@@ -1128,5 +1128,20 @@
     "result": "",
     "appliedResult": "",
     "flexAvail": true
+  },
+  {
+    "week": "Fecha 2",
+    "day": "Viernes",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "22:30 - 24:00",
+    "venue": "Americas Padel",
+    "court": "Cancha 3",
+    "home": "Ernesto Enz / Facundo Casals",
+    "away": "Sebastian Bregant / Luis Valla",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
   }
 ]
