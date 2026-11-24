@@ -1,5 +1,6 @@
 import { CATS, RANK_COLS, RANK_PATH } from "./constants.js";
 import { cleanRow, downloadCsv } from "./csv.js";
+import { isAbandonedPair } from "../lib/disponibilidad.js";
 import { listSeasons, seasonLabel } from "../lib/liga.js";
 import { fold } from "../lib/scoring.js";
 import { $, confirmModal, escAttr, num, setBusy, setMsg, toast } from "./ui.js";
@@ -21,7 +22,23 @@ export function createRanking(ctx, api, shell) {
     return [...new Set([...CATS, ...used])].filter(Boolean);
   }
 
+  /** Contadores del hub: solo inscriptas activas (sin Abandonaron). */
+  function activePairsIn(temp, cat = "") {
+    const season = String(temp || "").toUpperCase();
+    return (ctx.pairs || []).filter(
+      (p) =>
+        String(p.temp || "").toUpperCase() === season &&
+        !isAbandonedPair(p) &&
+        p.p1 &&
+        p.p2 &&
+        (!cat || p.cat === cat)
+    ).length;
+  }
+
   function countIn(temp, cat = "") {
+    const season = String(temp || "").toUpperCase();
+    const hasInscriptions = (ctx.pairs || []).some((p) => String(p.temp || "").toUpperCase() === season);
+    if (hasInscriptions) return activePairsIn(temp, cat);
     return ctx.rows.filter((r) => r.temp === temp && (!cat || r.cat === cat)).length;
   }
 
@@ -70,7 +87,8 @@ export function createRanking(ctx, api, shell) {
 
     // Nivel 1: solo cajas tipo resumen (Temporada 1…5). Nada de categorías a la vista.
     if (!filterTemp) {
-      $("rank-count").textContent = `${ctx.rows.length} pareja${ctx.rows.length === 1 ? "" : "s"}`;
+      const totalActive = tlist.reduce((n, temp) => n + countIn(temp), 0);
+      $("rank-count").textContent = `${totalActive} pareja${totalActive === 1 ? "" : "s"}`;
       root.className = "res-boxes hub-like";
       root.innerHTML = tlist
         .map((temp) => {
