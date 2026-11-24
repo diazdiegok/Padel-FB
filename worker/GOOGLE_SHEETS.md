@@ -36,3 +36,13 @@ https://docs.google.com/spreadsheets/d/1-iy8HSNkDDUJg4do08aydAK1MMtfhqrWmO4PGebk
 - `WhatsApp 1` / `WhatsApp 2` salen de los contactos de la inscripción (solo en este sheet)
 - `Puede` es la disponibilidad de la inscripción (ej. `Lunes 19:00 - 21:00`)
 - Compartido con el `client_email` de la cuenta de servicio como **Editor**
+
+## Recuperan fecha
+
+Sheet fijo para W.O. / partidos faltantes (lo que en el admin está en Recuperan fecha):  
+https://docs.google.com/spreadsheets/d/1M4OMDttW86SdOixs-uCbXyZLoPSbf-YLylZO7qwkYrQ/edit
+
+- El mismo botón **Pegar en Drive** lo actualiza junto con Pendientes
+- **Una pestaña por fecha**. Misma forma de columnas que Pendientes
+- En `Nota` va el texto tipo `Le falta 1 partido en Fecha 2. No se presentó (W.O.).`
+- Compartido con el `client_email` de la cuenta de servicio como **Editor**

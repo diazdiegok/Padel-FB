@@ -13,6 +13,11 @@ export const DEFAULT_PENDING_DRIVE_SHEET_ID = "1-iy8HSNkDDUJg4do08aydAK1MMtfhqrW
 export const DEFAULT_PENDING_DRIVE_SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1-iy8HSNkDDUJg4do08aydAK1MMtfhqrWmO4PGebkxe4/edit";
 
+/** Sheet donde se pegan las parejas que recuperan fecha (W.O. / partido faltante). */
+export const DEFAULT_RECOVER_DRIVE_SHEET_ID = "1M4OMDttW86SdOixs-uCbXyZLoPSbf-YLylZO7qwkYrQ";
+export const DEFAULT_RECOVER_DRIVE_SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/1M4OMDttW86SdOixs-uCbXyZLoPSbf-YLylZO7qwkYrQ/edit";
+
 /** Extrae el ID de un Google Sheet desde URL o ID suelto. */
 export function parseGoogleSheetId(value) {
   const raw = String(value || "").trim();

@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
-import { mergeDriveFixtureRows, parseDriveSheetValues, pendingDriveRows } from "./drive-sheet.js";
+import {
+  mergeDriveFixtureRows,
+  parseDriveSheetValues,
+  pendingDriveRows,
+  recoverDriveRows,
+} from "./drive-sheet.js";
 import { pairsMatch } from "./scoring.js";
 
 const header = ["Fecha", "Dia", "Horario", "Categoria", "Complejo", "Cancha", "Pareja 1", "Pareja 2", "Resultado"];
@@ -126,5 +131,28 @@ assert.equal(pending[0].nota, "Su rival ya no está inscripto.");
 assert.equal(pending[0].pareja, "Marien Robledo / Valeria Joubert");
 assert.equal(pending[0].whatsapp1, "5493411111111");
 assert.equal(pending[0].whatsapp2, "5493412222222");
+
+const recover = recoverDriveRows([
+  {
+    week: "Fecha 2",
+    cat: "C Masculina",
+    home: "Ausente / W.O.",
+    away: "Pendiente / Pendiente",
+    pending: true,
+    recoverFrom: "Fecha 2",
+    reason: "No se presentó (W.O.).",
+  },
+  {
+    week: "Fecha 2",
+    cat: "C Femenino",
+    home: "Sin rival / Solo",
+    away: "Pendiente / Pendiente",
+    pending: true,
+    reason: "Su rival ya no está inscripto.",
+  },
+]);
+assert.equal(recover.length, 1, "solo recuperos / W.O. van a Recuperan");
+assert.equal(recover[0].pareja, "Ausente / W.O.");
+assert.equal(recover[0].nota, "Le falta 1 partido en Fecha 2. No se presentó (W.O.).");
 
 console.log("drive-sheet.test.mjs passed");

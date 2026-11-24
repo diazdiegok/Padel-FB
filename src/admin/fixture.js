@@ -36,7 +36,12 @@ import {
   splitMatchToPending,
   syncFixtureWithPairs,
 } from "../lib/pair-fixture-sync.js";
-import { mergeDriveFixtureRows, parseDriveSheetValues, pendingDriveRows } from "../lib/drive-sheet.js";
+import {
+  mergeDriveFixtureRows,
+  parseDriveSheetValues,
+  pendingDriveRows,
+  recoverDriveRows,
+} from "../lib/drive-sheet.js";
 import { fold, pairsMatch, preserveRemoteMatchScores, queryMatchesText } from "../lib/scoring.js";
 import {
   courtsSheetIdForSeason,
@@ -44,6 +49,8 @@ import {
   DEFAULT_FIXTURE_DRIVE_SHEET_URL,
   DEFAULT_PENDING_DRIVE_SHEET_ID,
   DEFAULT_PENDING_DRIVE_SHEET_URL,
+  DEFAULT_RECOVER_DRIVE_SHEET_ID,
+  DEFAULT_RECOVER_DRIVE_SHEET_URL,
 } from "../lib/sheets.js";
 import {
   applyVenuePlan,
@@ -2395,11 +2402,22 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       );
     }
 
+    async function recoverRowsForWeek() {
+      await ensureContactsLoaded();
+      const list = recoverRows().map(({ m }) => m);
+      return recoverDriveRows(
+        list,
+        (m) => availHint(daysOfPair(m.home, m.cat) || m.homeDays || m.days),
+        phonesOfPending
+      );
+    }
+
     $("fx-drive-paste")?.addEventListener("click", async () => {
       const unique = exportableMatches({ includePending: false });
       const pendingRows = await pendingRowsForWeek();
-      if (!unique.length && !pendingRows.length) {
-        toast("No hay partidos ni pendientes para pegar en esta fecha.", "err");
+      const recoverRowsPayload = await recoverRowsForWeek();
+      if (!unique.length && !pendingRows.length && !recoverRowsPayload.length) {
+        toast("No hay partidos, pendientes ni recuperan para pegar en esta fecha.", "err");
         return;
       }
       if (!filterWeek) {
@@ -2427,6 +2445,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       }
       const kept = merged?.kept || 0;
       const pendingN = pendingRows.length;
+      const recoverN = recoverRowsPayload.length;
       const ok = await confirmModal({
         title: "Pegar en Drive",
         body:
@@ -2438,8 +2457,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
               "El resto de los partidos sin score se actualiza. "
             : "No hay partidos con rival. El sheet de resultados no se toca. ") +
           (pendingN
-            ? `En el sheet Pendientes se pegan ${pendingN} pareja${pendingN === 1 ? "" : "s"}, con el horario en que puede cada una.`
-            : `La hoja «${filterWeek}» del sheet Pendientes queda sin parejas.`),
+            ? `En Pendientes se pegan ${pendingN} pareja${pendingN === 1 ? "" : "s"}. `
+            : `Pendientes «${filterWeek}» queda sin parejas. `) +
+          (recoverN
+            ? `En Recuperan fecha se pegan ${recoverN} pareja${recoverN === 1 ? "" : "s"} (W.O. / partido faltante).`
+            : `Recuperan fecha «${filterWeek}» queda sin parejas.`),
         confirmLabel: "Pegar en Drive",
       });
       if (!ok) return;
@@ -2448,16 +2470,20 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         const res = await api.worker("/fixture/drive", {
           sheetId: DEFAULT_FIXTURE_DRIVE_SHEET_ID,
           pendingSheetId: DEFAULT_PENDING_DRIVE_SHEET_ID,
+          recoverSheetId: DEFAULT_RECOVER_DRIVE_SHEET_ID,
           week: filterWeek,
           mode,
           rows: merged ? merged.rows : [],
           pendingRows,
+          recoverRows: recoverRowsPayload,
         });
         const n = merged ? Number(res?.rows) || merged.rows.length : 0;
         const keptNow = merged ? Number(res?.kept) || kept : 0;
         const sheetName = res?.sheet || filterWeek;
         const pendingOk = !!res?.pending?.ok;
         const pendingWrote = Number(res?.pending?.rows);
+        const recoverOk = !!res?.recover?.ok;
+        const recoverWrote = Number(res?.recover?.rows);
         const bits = [];
         if (merged) {
           bits.push(
@@ -2476,19 +2502,32 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
         } else if (pendingN) {
           bits.push("Pendientes no se actualizó.");
         }
+        if (recoverOk) {
+          bits.push(
+            recoverWrote
+              ? `Recuperan: ${recoverWrote} pareja${recoverWrote === 1 ? "" : "s"}`
+              : `Recuperan «${filterWeek}» quedó sin parejas`
+          );
+        } else if (res?.recoverError) {
+          bits.push(`Recuperan no se pudo pegar: ${res.recoverError}`);
+        } else if (recoverN) {
+          bits.push("Recuperan no se actualizó.");
+        }
         const okPaste = !merged || res?.ok !== false;
-        const level = pendingOk || !pendingN ? (okPaste ? "ok" : "err") : "err";
+        const sideOk = (pendingOk || !pendingN) && (recoverOk || !recoverN);
+        const level = sideOk ? (okPaste ? "ok" : "err") : "err";
         setMsg($("fx-msg"), bits.join(". ") + ".", level === "ok" ? "ok" : "err");
-        const toastTxt =
-          pendingOk || !pendingN
-            ? keptNow
-              ? `Pegado · ${keptNow} con score intactos`
-              : bits[0] || "Pegado"
-            : "Resultados pegados. Pendientes no.";
+        const toastTxt = sideOk
+          ? keptNow
+            ? `Pegado · ${keptNow} con score intactos`
+            : bits[0] || "Pegado"
+          : "Pegado parcial: revisá Pendientes / Recuperan.";
         toast(toastTxt, level === "ok" ? "ok" : "err");
         const openUrl = merged
           ? res?.url || `${DEFAULT_FIXTURE_DRIVE_SHEET_URL}${res?.gid != null ? `#gid=${res.gid}` : ""}`
-          : res?.pending?.url || DEFAULT_PENDING_DRIVE_SHEET_URL;
+          : recoverOk && recoverN
+            ? res?.recover?.url || DEFAULT_RECOVER_DRIVE_SHEET_URL
+            : res?.pending?.url || DEFAULT_PENDING_DRIVE_SHEET_URL;
         if (openUrl) window.open(openUrl, "_blank", "noopener,noreferrer");
       } catch (err) {
         setMsg($("fx-msg"), err.message || "No se pudo pegar en Drive.", "err");

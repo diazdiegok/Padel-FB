@@ -2855,19 +2855,20 @@ const PENDING_DRIVE_HEADER_KEY = {
   Nota: "nota",
 };
 const FIXED_PENDING_DRIVE_SHEET = "1-iy8HSNkDDUJg4do08aydAK1MMtfhqrWmO4PGebkxe4";
+const FIXED_RECOVER_DRIVE_SHEET = "1M4OMDttW86SdOixs-uCbXyZLoPSbf-YLylZO7qwkYrQ";
 
 /**
- * Pega solo parejas pendientes en el sheet Pendientes, una pestaña por fecha.
- * Reemplaza esa pestaña: quien ya tiene partido deja de figurar.
+ * Pega parejas (pendientes o recuperan) en un sheet de contactos, una pestaña por fecha.
+ * Reemplaza esa pestaña: quien ya no figura deja de aparecer.
  * No escribe el sheet de resultados.
  */
-async function writePendingDriveSheet(env, { sheetId, week = "", rows = [] } = {}) {
+async function writePendingDriveSheet(env, { sheetId, week = "", rows = [], label = "Pendientes" } = {}) {
   const id = String(sheetId || env.PENDING_DRIVE_SHEET_ID || FIXED_PENDING_DRIVE_SHEET)
     .trim()
     .replace(/^.*\/spreadsheets\/d\//i, "")
     .replace(/\/.*$/, "");
   if (!/^[a-zA-Z0-9-_]{20,}$/.test(id)) {
-    const err = new Error("ID del Sheet Pendientes inválido.");
+    const err = new Error(`ID del Sheet ${label} inválido.`);
     err.status = 400;
     throw err;
   }
@@ -2930,7 +2931,7 @@ async function writePendingDriveSheet(env, { sheetId, week = "", rows = [] } = {
     tabId = created.json.replies?.[0]?.addSheet?.properties?.sheetId;
     tabIndex = 0;
     if (tabId == null) {
-      const err = new Error(`No se pudo crear la hoja «${title}» en Pendientes.`);
+      const err = new Error(`No se pudo crear la hoja «${title}» en ${label}.`);
       err.status = 502;
       throw err;
     }
@@ -2952,7 +2953,7 @@ async function writePendingDriveSheet(env, { sheetId, week = "", rows = [] } = {
         },
       }
     );
-    if (!moved.res.ok) console.warn("pending drive tab order", moved.json.error?.message || moved.res.status);
+    if (!moved.res.ok) console.warn(`${label} drive tab order`, moved.json.error?.message || moved.res.status);
   }
 
   let previousDataRows = 0;
@@ -2978,7 +2979,7 @@ async function writePendingDriveSheet(env, { sheetId, week = "", rows = [] } = {
     { method: "PUT", body: { values: writeValues } }
   );
   if (!update.res.ok) {
-    throw sheetsAuthError(update.json.error?.message || `No se pudo escribir «${title}» en Pendientes.`, sa, update.res.status);
+    throw sheetsAuthError(update.json.error?.message || `No se pudo escribir «${title}» en ${label}.`, sa, update.res.status);
   }
 
   const format = await sheetsFetch(
@@ -3070,7 +3071,7 @@ async function writePendingDriveSheet(env, { sheetId, week = "", rows = [] } = {
       },
     }
   );
-  if (!format.res.ok) console.warn("pending drive format", format.json.error?.message || format.res.status);
+  if (!format.res.ok) console.warn(`${label} drive format`, format.json.error?.message || format.res.status);
 
   return {
     ok: true,
@@ -3173,15 +3174,16 @@ export default {
         }
       }
 
-      // Pega los partidos con rival en el sheet de resultados y las pendientes en el sheet Pendientes.
-      // Un score ya cargado en resultados no se pisa.
+      // Pega resultados + Pendientes + Recuperan fecha. Un score ya cargado en resultados no se pisa.
       if (url.pathname === "/fixture/drive" && request.method === "POST") {
         if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
         const body = await request.json().catch(() => ({}));
         const rows = Array.isArray(body?.rows) ? body.rows : [];
         const hasPending = Array.isArray(body?.pendingRows);
         const pendingRows = hasPending ? body.pendingRows : [];
-        if (!rows.length && !hasPending) {
+        const hasRecover = Array.isArray(body?.recoverRows);
+        const recoverRows = hasRecover ? body.recoverRows : [];
+        if (!rows.length && !hasPending && !hasRecover) {
           return response(request, env, { message: "No hay partidos para pegar (solo se envían los que tienen rival)." }, 400);
         }
         try {
@@ -3205,12 +3207,27 @@ export default {
                 sheetId: body.pendingSheetId || env.PENDING_DRIVE_SHEET_ID || FIXED_PENDING_DRIVE_SHEET,
                 week,
                 rows: pendingRows,
+                label: "Pendientes",
               });
             } catch (err) {
               pendingError = err.message || "No se pudo pegar en Pendientes.";
             }
           }
-          return response(request, env, { ...result, pending, pendingError });
+          let recover = null;
+          let recoverError = "";
+          if (hasRecover) {
+            try {
+              recover = await writePendingDriveSheet(env, {
+                sheetId: body.recoverSheetId || env.RECOVER_DRIVE_SHEET_ID || FIXED_RECOVER_DRIVE_SHEET,
+                week,
+                rows: recoverRows,
+                label: "Recuperan",
+              });
+            } catch (err) {
+              recoverError = err.message || "No se pudo pegar en Recuperan fecha.";
+            }
+          }
+          return response(request, env, { ...result, pending, pendingError, recover, recoverError });
         } catch (err) {
           return response(request, env, { message: err.message || "No se pudo pegar en Drive." }, err.status || 502);
         }

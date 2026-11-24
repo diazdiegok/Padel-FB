@@ -103,17 +103,22 @@ export function mergeDriveFixtureRows(existingRows = [], incomingRows = []) {
   return { rows: out, kept: locked.length, keptExtra };
 }
 
-/** Una fila por pareja pendiente de la fecha (sin rival). No incluye recuperos / W.O. (van a Recuperan). */
-export function pendingDriveRows(matches = [], puedeOf = () => "", phonesOf = () => ({})) {
+function driveContactRows(matches, { includeRecover = false } = {}, puedeOf = () => "", phonesOf = () => ({})) {
   return (matches || [])
-    .filter((m) => isPendingMatch(m) && !String(m?.recoverFrom || "").trim())
+    .filter((m) => {
+      if (!isPendingMatch(m)) return false;
+      const owed = String(m?.recoverFrom || "").trim();
+      return includeRecover ? !!owed : !owed;
+    })
     .map((m) => {
       const bits = [];
+      const owed = String(m?.recoverFrom || "").trim();
+      if (includeRecover && owed) bits.push(`Le falta 1 partido en ${owed}.`);
       const reason = String(m?.reason || "").trim();
       if (reason) bits.push(reason);
       const phones = phonesOf(m) || {};
       return {
-        fecha: String(m?.week || "").trim(),
+        fecha: String(m?.week || m?.recoveredIn || "").trim(),
         categoria: String(m?.cat || "").trim(),
         pareja: String(m?.home || "").trim(),
         whatsapp1: String(phones.tel1 || phones.whatsapp1 || "").trim(),
@@ -126,4 +131,14 @@ export function pendingDriveRows(matches = [], puedeOf = () => "", phonesOf = ()
       (a, b) =>
         a.categoria.localeCompare(b.categoria, "es") || a.pareja.localeCompare(b.pareja, "es")
     );
+}
+
+/** Una fila por pareja pendiente de la fecha (sin rival). No incluye recuperos / W.O. (van a Recuperan). */
+export function pendingDriveRows(matches = [], puedeOf = () => "", phonesOf = () => ({})) {
+  return driveContactRows(matches, { includeRecover: false }, puedeOf, phonesOf);
+}
+
+/** Una fila por pareja que recupera fecha (W.O. / partido faltante). */
+export function recoverDriveRows(matches = [], puedeOf = () => "", phonesOf = () => ({})) {
+  return driveContactRows(matches, { includeRecover: true }, puedeOf, phonesOf);
 }
