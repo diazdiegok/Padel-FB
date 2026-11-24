@@ -186,9 +186,11 @@ export function updateDirtyBadge(dirtySet) {
   const badge = $("admin-dirty");
   const cancel = $("admin-dirty-cancel");
   const n = dirtySet?.size || 0;
+  const show = n > 0;
   if (badge) {
-    badge.hidden = n === 0;
+    badge.hidden = !show;
     badge.textContent = n === 1 ? "1 cambio sin guardar" : `${n} cambios sin guardar`;
   }
-  if (cancel) cancel.hidden = n === 0;
+  // Solo junto al badge de cambios sin guardar (nunca solo).
+  if (cancel) cancel.hidden = !show;
 }

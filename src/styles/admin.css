@@ -898,6 +898,12 @@ body.is-admin main > .wrap {
   font-weight: 700;
 }
 
+/* .btn { display: inline-flex } pisa el [hidden] del UA; sin esto Cancelar queda siempre visible. */
+.admin-dirty[hidden],
+.admin-dirty-cancel[hidden] {
+  display: none !important;
+}
+
 .admin-content {
   width: min(var(--admin-max), calc(100% - 40px));
   margin: 0 auto;
