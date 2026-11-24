@@ -93,6 +93,8 @@ export function bootAdmin({
         return;
       }
       if (id === "parejas") {
+        // reload() no pisa si sigue dirty: hay que liberarlo antes.
+        ctx.dirty.delete("parejas");
         await parejas?.reload?.({ quiet: true });
         return;
       }
