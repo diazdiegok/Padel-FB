@@ -8825,7 +8825,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 1,
-    "pos": 9,
+    "pos": 10,
     "temp": "T5"
   },
   {
@@ -9032,7 +9032,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 8,
+    "pos": 9,
     "temp": "T5"
   },
   {
@@ -9041,7 +9041,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 14,
+    "pos": 15,
     "temp": "T5"
   },
   {
@@ -9077,7 +9077,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 18,
+    "pos": 19,
     "temp": "T5"
   },
   {
@@ -9095,16 +9095,16 @@
     "pts": 3,
     "pj": 1,
     "dif": 1,
-    "pos": 10,
+    "pos": 11,
     "temp": "T5"
   },
   {
     "name": "Diego Ramirez / Martin Rondan",
     "cat": "B Masculina",
-    "pts": 0,
-    "pj": 1,
-    "dif": -2,
-    "pos": 20,
+    "pts": 3,
+    "pj": 2,
+    "dif": 0,
+    "pos": 15,
     "temp": "T5"
   },
   {
@@ -9140,7 +9140,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 7,
+    "pos": 8,
     "temp": "T5"
   },
   {
@@ -9155,10 +9155,10 @@
   {
     "name": "Milagros Solaro / Ana Paula Croce",
     "cat": "C Femenino",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
-    "pos": 15,
+    "pts": 3,
+    "pj": 1,
+    "dif": 2,
+    "pos": 7,
     "temp": "T5"
   },
   {
@@ -9248,7 +9248,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 13,
+    "pos": 14,
     "temp": "T5"
   },
   {
@@ -9293,7 +9293,7 @@
     "pts": 1,
     "pj": 1,
     "dif": -1,
-    "pos": 12,
+    "pos": 13,
     "temp": "T5"
   },
   {
@@ -9338,7 +9338,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 19,
+    "pos": 20,
     "temp": "T5"
   },
   {
@@ -9365,7 +9365,7 @@
     "pts": 1,
     "pj": 1,
     "dif": -1,
-    "pos": 11,
+    "pos": 12,
     "temp": "T5"
   },
   {
@@ -9410,7 +9410,7 @@
     "pts": 1,
     "pj": 1,
     "dif": -1,
-    "pos": 15,
+    "pos": 16,
     "temp": "T5"
   },
   {
@@ -9437,7 +9437,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 17,
+    "pos": 18,
     "temp": "T5"
   },
   {
@@ -9554,7 +9554,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 16,
+    "pos": 17,
     "temp": "T5"
   },
   {
