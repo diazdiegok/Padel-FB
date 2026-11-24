@@ -97,7 +97,7 @@ export function createRanking(ctx, api, shell) {
           return `<button class="res-box hub-season" type="button" data-rank-open="${escAttr(temp)}">
             <span class="kicker">Temporada${live ? " · En juego" : ""}</span>
             <strong>${escAttr(seasonLabel(temp))}</strong>
-            <p>${n} pareja${n === 1 ? "" : "s"}</p>
+            <p>${n} pareja${n === 1 ? "" : "s"} activas</p>
           </button>`;
         })
         .join("");
@@ -110,14 +110,16 @@ export function createRanking(ctx, api, shell) {
     const list = visible();
     const n = countIn(filterTemp);
     const live = filterTemp === current;
-    $("rank-count").textContent = `${list.length} pareja${list.length === 1 ? "" : "s"} · ${seasonLabel(filterTemp)}`;
+    $("rank-count").textContent = term.trim()
+      ? `${list.length} de ${n} pareja${n === 1 ? "" : "s"} activas · ${seasonLabel(filterTemp)}`
+      : `${n} pareja${n === 1 ? "" : "s"} activas · ${seasonLabel(filterTemp)}`;
     root.className = "res-boxes stack";
     root.innerHTML = `<article class="season-box open" data-rank-season="${escAttr(filterTemp)}">
       <div class="season-box-head">
         <button class="season-back" type="button" data-rank-back>← Temporadas</button>
         <span class="kicker">Temporada${live ? " · En juego" : ""}</span>
         <strong>${escAttr(seasonLabel(filterTemp))}</strong>
-        <p>${n} pareja${n === 1 ? "" : "s"}</p>
+        <p>${n} pareja${n === 1 ? "" : "s"} activas</p>
       </div>
       <div class="season-box-body">
         <div class="res-inner-grid">
@@ -169,7 +171,10 @@ export function createRanking(ctx, api, shell) {
     const empty = box.querySelector(".admin-empty");
     if (tbody) tbody.innerHTML = tableHtml(list);
     if (empty) empty.hidden = list.length > 0;
-    $("rank-count").textContent = `${list.length} pareja${list.length === 1 ? "" : "s"} · ${seasonLabel(filterTemp)}`;
+    const n = countIn(filterTemp);
+    $("rank-count").textContent = term.trim()
+      ? `${list.length} de ${n} pareja${n === 1 ? "" : "s"} activas · ${seasonLabel(filterTemp)}`
+      : `${n} pareja${n === 1 ? "" : "s"} activas · ${seasonLabel(filterTemp)}`;
   }
 
   function refresh() {

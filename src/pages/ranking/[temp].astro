@@ -37,6 +37,7 @@ const players = rows.map((p) => {
 const cats = sortCats(rows.map((p) => p.cat));
 const title = seasonLabel(tempCode);
 const live = tempCode === site.currentSeason;
+const activeCount = hasInscription ? seasonPairs.length : rows.length;
 ---
 <Layout
   title={`Ranking ${title} | Padel FB`}
@@ -50,7 +51,7 @@ const live = tempCode === site.currentSeason;
       ]} />
       <p class="kicker">{live ? "En juego" : "Histórico"}</p>
       <h1>Ranking · {title}</h1>
-      <p>{rows.length} pareja{rows.length === 1 ? "" : "s"}. Filtrá por categoría o buscá un apellido.</p>
+      <p>{activeCount} pareja{activeCount === 1 ? "" : "s"} activas. Filtrá por categoría o buscá un apellido.</p>
     </header>
 
     {rows.length === 0 ? (

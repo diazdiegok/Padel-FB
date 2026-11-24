@@ -2,7 +2,9 @@
 import Layout from "../../layouts/Layout.astro";
 import BackNav from "../../components/BackNav.astro";
 import ranking from "../../data/ranking.json";
+import pairs from "../../data/parejas.json";
 import { site } from "../../data/site";
+import { isAbandonedPair } from "../../lib/disponibilidad.js";
 import { listSeasons, seasonLabel, seasonNumber, seasonSlug } from "../../lib/liga.js";
 import { page } from "../../lib/paths";
 
@@ -12,12 +14,18 @@ const temps = listSeasons(site, rows.map((p) => p.temp))
   .slice()
   .sort((a, b) => seasonNumber(b) - seasonNumber(a));
 const current = temps.includes(site.currentSeason) ? site.currentSeason : temps[0] || "";
+function seasonTotal(temp) {
+  const active = (Array.isArray(pairs) ? pairs : []).filter(
+    (p) => p.temp === temp && p.p1 && p.p2 && p.cat && !isAbandonedPair(p)
+  );
+  if (active.length || (Array.isArray(pairs) ? pairs : []).some((p) => p.temp === temp)) return active.length;
+  return rows.filter((p) => p.temp === temp).length;
+}
 const seasonBlocks = temps.map((temp) => {
-  const list = rows.filter((p) => p.temp === temp);
   return {
     temp,
     title: seasonLabel(temp),
-    total: list.length,
+    total: seasonTotal(temp),
     live: temp === current,
     href: page(`ranking/${seasonSlug(temp)}/`),
   };
