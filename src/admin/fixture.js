@@ -775,7 +775,11 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     });
     if (!pulled.added) return;
     ctx.fixture = pulled.matches;
-    shell.markDirty("fixture");
+    // Alineación automática (recuperos / bajas abandonadas): no es edición del usuario.
+    // Si marcamos dirty acá, el badge queda trabado en cada visita a Fixture.
+    if (!ctx.dirty.has("fixture")) {
+      ctx.fixturePublished = structuredClone(ctx.fixture);
+    }
   }
 
   function recoverRows() {
