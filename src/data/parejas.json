@@ -1308,7 +1308,12 @@
     "p1": "Alejandro Abrego",
     "p2": "Valentin Vukonich",
     "days": {
-      "Martes": "21:00 - 23:30"
+      "Lunes": "21:00 - 23:30",
+      "Martes": "21:00 - 23:30",
+      "Miércoles": "21:00 - 23:30",
+      "Jueves": "21:00 - 23:30",
+      "Viernes": "21:00 - 23:30",
+      "Sábado": "21:00 - 23:30"
     },
     "note": "Por favor respetar nuestro horario ( tema laboral)"
   },
