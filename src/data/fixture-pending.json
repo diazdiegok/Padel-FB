@@ -2,23 +2,22 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 18:30 - 23:00 · Miércoles 18:30 - 23:00 · Jueves 20:30 - 00:00 · Viernes 18:30 - 00:00 · Sábado 10:00 - 14:30",
+    "avail": "Lunes 20:30 - 00:00 · Martes 20:30 - 00:00 · Miércoles 20:30 - 00:00 · Jueves 20:30 - 00:00",
     "days": {
-      "Lunes": "18:30 - 23:00",
-      "Miércoles": "18:30 - 23:00",
-      "Jueves": "20:30 - 00:00",
-      "Viernes": "18:30 - 00:00",
-      "Sábado": "10:00 - 14:30"
+      "Lunes": "20:30 - 00:00",
+      "Martes": "20:30 - 00:00",
+      "Miércoles": "20:30 - 00:00",
+      "Jueves": "20:30 - 00:00"
     },
     "week": "Fecha 2",
     "day": "",
     "date": "",
     "temp": "T5",
-    "cat": "C Masculina",
+    "cat": "B Masculina",
     "time": "",
     "venue": "",
     "court": "",
-    "home": "Juan Ignacio Oldani / Lo Cascio Jose Carlos",
+    "home": "Milton Reatto / Joaquín Lucero",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
@@ -26,22 +25,23 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 21:00 - 23:00 · Jueves 21:00 - 23:00 · Viernes 21:00 - 23:00 · Sábado 09:00 - 12:00",
+    "avail": "Lunes 18:00 - 00:00 · Martes 18:00 - 00:00 · Miércoles 13:00 - 00:00 · Jueves 13:00 - 00:00 · Viernes 13:00 - 00:00",
     "days": {
-      "Lunes": "21:00 - 23:00",
-      "Jueves": "21:00 - 23:00",
-      "Viernes": "21:00 - 23:00",
-      "Sábado": "09:00 - 12:00"
+      "Lunes": "18:00 - 00:00",
+      "Martes": "18:00 - 00:00",
+      "Miércoles": "13:00 - 00:00",
+      "Jueves": "13:00 - 00:00",
+      "Viernes": "13:00 - 00:00"
     },
     "week": "Fecha 2",
     "day": "",
     "date": "",
     "temp": "T5",
-    "cat": "C Masculina",
+    "cat": "B Masculina",
     "time": "",
     "venue": "",
     "court": "",
-    "home": "Nestor Sione / Ulises Almarante",
+    "home": "Sebastian Diaz / Pablo Zarate",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
