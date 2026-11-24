@@ -1,16 +1,18 @@
 import { SECTIONS } from "./constants.js";
 import { $, confirmModal, updateDirtyBadge } from "./ui.js";
 
-export function createShell(ctx, { onEnterSection, onDiscardSection }) {
+export function createShell(ctx, { onEnterSection, onDiscardSection, onDirtyChange }) {
   function markDirty(section) {
     ctx.dirty.add(section);
     updateDirtyBadge(ctx.dirty);
+    onDirtyChange?.();
   }
 
   function clearDirty(section) {
     if (section) ctx.dirty.delete(section);
     else ctx.dirty.clear();
     updateDirtyBadge(ctx.dirty);
+    onDirtyChange?.();
   }
 
   function setSection(id, { force = false } = {}) {
@@ -54,6 +56,8 @@ export function createShell(ctx, { onEnterSection, onDiscardSection }) {
     $("admin-sidebar")?.classList.remove("open");
     $("admin-nav-backdrop")?.classList.remove("open");
     onEnterSection?.(id);
+    // Persistir la sección activa junto al borrador (para volver tras F5).
+    onDirtyChange?.();
   }
 
   async function discardDirty() {
@@ -102,11 +106,11 @@ export function createShell(ctx, { onEnterSection, onDiscardSection }) {
     });
   }
 
-  function initialSection() {
-    const nav = performance.getEntriesByType("navigation")[0];
-    if (nav?.type === "reload") return "sitio";
+  function initialSection(fallback = "") {
     const fromHash = location.hash.replace(/^#/, "");
-    return SECTIONS[fromHash] ? fromHash : "sitio";
+    if (SECTIONS[fromHash]) return fromHash;
+    if (fallback && SECTIONS[fallback]) return fallback;
+    return "sitio";
   }
 
   return { bind, setSection, markDirty, clearDirty, discardDirty, initialSection };

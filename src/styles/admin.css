@@ -882,6 +882,8 @@ body.is-admin main > .wrap {
 }
 
 .admin-dirty {
+  display: none;
+  align-items: center;
   font-size: 12px;
   color: #111;
   background: var(--lime);
@@ -891,11 +893,20 @@ body.is-admin main > .wrap {
   white-space: nowrap;
 }
 
+.admin-dirty.is-on {
+  display: inline-flex;
+}
+
 .admin-dirty-cancel {
+  display: none;
   min-height: 34px;
   padding: 6px 12px;
   font-size: 12px;
   font-weight: 700;
+}
+
+.admin-dirty-cancel.is-on {
+  display: inline-flex;
 }
 
 /* .btn { display: inline-flex } pisa el [hidden] del UA; sin esto Cancelar queda siempre visible. */

@@ -14,8 +14,9 @@ import { createResults } from "./results.js";
 import { createSeasons } from "./seasons.js";
 import { createShell } from "./shell.js";
 import { createConsumos } from "./consumos.js";
+import { createDrafts } from "./drafts.js";
 import { createVisitas } from "./visitas.js";
-import { $ } from "./ui.js";
+import { $, updateDirtyBadge } from "./ui.js";
 
 export function bootAdmin({
   rankingJson,
@@ -55,6 +56,7 @@ export function bootAdmin({
   };
 
   const api = createApi(ctx);
+  const drafts = createDrafts(ctx);
   let ranking;
   let fixture;
   let results;
@@ -68,6 +70,9 @@ export function bootAdmin({
   let consumos;
 
   const shell = createShell(ctx, {
+    onDirtyChange() {
+      drafts.save();
+    },
     onEnterSection(id) {
       if (id === "fixture") {
         fixture?.syncWeek();
@@ -184,6 +189,9 @@ export function bootAdmin({
     } catch {
       /* si GitHub no responde, se usan los datos de la última publicación */
     }
+    // Publicado desde el build / GitHub primero; después se reaplica el borrador local (F5).
+    const restored = drafts.restore();
+    updateDirtyBadge(ctx.dirty);
     ranking.refresh();
     seasons.render();
     fixture.syncWeek();
@@ -193,7 +201,10 @@ export function bootAdmin({
     ascensos.render();
     parejas.render();
     cms.refreshAll();
-    shell.setSection(shell.initialSection(), { force: true });
+    const start =
+      shell.initialSection(drafts.preferredSection()) ||
+      (restored.includes("fixture") ? "fixture" : "sitio");
+    shell.setSection(start, { force: true });
     // Punto rojo en Consumos si hay alerta (sin abrir la sección).
     consumos?.reload({ quiet: true }).catch(() => {});
   }

@@ -190,7 +190,11 @@ export function updateDirtyBadge(dirtySet) {
   if (badge) {
     badge.hidden = !show;
     badge.textContent = n === 1 ? "1 cambio sin guardar" : `${n} cambios sin guardar`;
+    badge.classList.toggle("is-on", show);
   }
   // Solo junto al badge de cambios sin guardar (nunca solo).
-  if (cancel) cancel.hidden = !show;
+  if (cancel) {
+    cancel.hidden = !show;
+    cancel.classList.toggle("is-on", show);
+  }
 }
