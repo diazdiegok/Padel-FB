@@ -1097,5 +1097,20 @@
     "away": "Nestor Sione / Ulises Almarante",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "week": "Fecha 2",
+    "day": "Martes",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "18:00 - 19:30",
+    "venue": "La manzana Padel",
+    "court": "Cancha 2",
+    "home": "Jorgelina Garbarino / Laura Ramírez Kunzi",
+    "away": "Soraya Campostrini Labour / Catalina Otamendi",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
   }
 ]

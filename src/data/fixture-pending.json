@@ -188,29 +188,6 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Miércoles 18:00 - 00:00 · Jueves 18:00 - 00:00 · Viernes 18:00 - 00:00 · Sábado 10:00 - 18:00",
-    "days": {
-      "Miércoles": "18:00 - 00:00",
-      "Jueves": "18:00 - 00:00",
-      "Viernes": "18:00 - 00:00",
-      "Sábado": "10:00 - 18:00"
-    },
-    "week": "Fecha 2",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Jorgelina Garbarino / Laura Ramírez Kunzi",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Martes 19:00 - 21:30 · Miércoles 18:30 - 21:30 · Jueves 19:00 - 21:30 · Viernes 18:00 - 20:00 · Sábado 16:00 - 18:00",
     "days": {
       "Martes": "19:00 - 21:30",
@@ -564,33 +541,6 @@
     "venue": "",
     "court": "",
     "home": "Alejandro Abrego / Valentin Vukonich",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "No se presentó (W.O.).",
-    "avail": "Lunes 18:00 - 00:00 · Martes 18:00 - 00:00 · Miércoles 18:30 - 00:00 · Jueves 18:00 - 00:00 · Viernes 18:00 - 00:00 · Sábado 18:00 - 00:00",
-    "days": {
-      "Lunes": "18:00 - 00:00",
-      "Martes": "18:00 - 00:00",
-      "Miércoles": "18:30 - 00:00",
-      "Jueves": "18:00 - 00:00",
-      "Viernes": "18:00 - 00:00",
-      "Sábado": "18:00 - 00:00"
-    },
-    "woKey": "T5|soraya campostrini labour catalina otamendi|Fecha 2|wo",
-    "woWinner": "Milagros Solaro / Ana Paula Croce",
-    "week": "Fecha 2",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Soraya Campostrini Labour / Catalina Otamendi",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
