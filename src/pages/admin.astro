@@ -343,7 +343,7 @@ import "../styles/admin.css";
         <section data-section="resultados" hidden>
           <div class="admin-callout">
             <strong>Cómo se carga</strong>
-            <span>Desde Pareja 1: <b>6/4 6/2</b> (ganador 3 pts) o <b>6/4 3/6 6/2</b> (ganador 3 pts, perdedor 1). El ganador queda marcado. También podés <b>Importar Excel</b> (.csv / .xls / .xlsx) con columnas <b>fecha, categoria, pareja1, pareja2, resultado</b>. Bajá la plantilla con los partidos ya publicados.</span>
+            <span>Desde Pareja 1: <b>6/4 6/2</b> (ganador 3 pts) o <b>6/4 3/6 6/2</b> (ganador 3 pts, perdedor 1). Si el rival <b>no se presentó</b>, usá el botón del partido: el ganador suma 3 pts y 1 PJ; el ausente no suma PJ y pasa a pendiente. También podés <b>Importar Excel</b> (.csv / .xls / .xlsx) con columnas <b>fecha, categoria, pareja1, pareja2, resultado</b>.</span>
           </div>
           <div class="admin-section-tools">
             <button class="btn btn-ghost" type="button" id="res-reload">Actualizar</button>
@@ -709,7 +709,7 @@ import "../styles/admin.css";
     <dialog class="admin-modal" id="admin-modal">
       <div class="admin-modal-inner">
         <h2 id="admin-modal-title">Confirmar</h2>
-        <p id="admin-modal-body"></p>
+        <div id="admin-modal-body" class="admin-modal-body"></div>
         <div class="admin-modal-actions">
           <button class="btn btn-ghost" type="button" id="admin-modal-cancel">Cancelar</button>
           <button class="btn btn-lime" type="button" id="admin-modal-ok">Confirmar</button>

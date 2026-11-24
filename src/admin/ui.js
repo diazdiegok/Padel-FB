@@ -82,6 +82,57 @@ export function confirmModal({ title, body, confirmLabel = "Confirmar", danger =
   });
 }
 
+/** Modal con varias opciones. Resuelve el `id` elegido o `null` si cancela. */
+export function choiceModal({ title, body, choices = [], cancelLabel = "Cancelar" }) {
+  return new Promise((resolve) => {
+    const dialog = $("admin-modal");
+    const titleEl = $("admin-modal-title");
+    const bodyEl = $("admin-modal-body");
+    const okBtn = $("admin-modal-ok");
+    const cancelBtn = $("admin-modal-cancel");
+    const list = (choices || []).filter((c) => c && c.id != null && c.label);
+    if (!dialog || !titleEl || !bodyEl || !okBtn || !cancelBtn || !list.length) {
+      resolve(null);
+      return;
+    }
+    titleEl.textContent = title || "Elegí una opción";
+    bodyEl.innerHTML = `${body ? `<span class="admin-modal-lead">${escAttr(body)}</span>` : ""}
+      <div class="admin-modal-choices">
+        ${list
+          .map(
+            (c) =>
+              `<button class="btn btn-ghost admin-modal-choice" type="button" data-choice-id="${escAttr(c.id)}">${escAttr(c.label)}</button>`
+          )
+          .join("")}
+      </div>`;
+    okBtn.hidden = true;
+    cancelBtn.hidden = false;
+    cancelBtn.disabled = false;
+    cancelBtn.textContent = cancelLabel || "Cancelar";
+    let settled = false;
+    const cleanup = (value) => {
+      if (settled) return;
+      settled = true;
+      bodyEl.onclick = null;
+      cancelBtn.onclick = null;
+      dialog.onclose = null;
+      okBtn.hidden = false;
+      bodyEl.textContent = "";
+      cancelBtn.textContent = "Cancelar";
+      if (dialog.open) dialog.close();
+      resolve(value);
+    };
+    bodyEl.onclick = (e) => {
+      const btn = e.target.closest("[data-choice-id]");
+      if (!btn) return;
+      cleanup(btn.dataset.choiceId || null);
+    };
+    cancelBtn.onclick = () => cleanup(null);
+    dialog.onclose = () => cleanup(null);
+    dialog.showModal();
+  });
+}
+
 export function noticeModal({ title, body, confirmLabel = "Listo" }) {
   return new Promise((resolve) => {
     const dialog = $("admin-modal");

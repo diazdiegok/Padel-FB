@@ -9,10 +9,11 @@ import {
   parseResultsImportText,
 } from "./csv.js";
 import { isPendingMatch, isRealPairMatch } from "../lib/fixturer.js";
+import { syncWalkoverPendings } from "../lib/pair-fixture-sync.js";
 import { applyFixtureResults, describeResult, fold, formatResult, pairsMatch, parseResult, queryMatchesText } from "../lib/scoring.js";
 import { compareCats } from "../lib/disponibilidad.js";
 import { combineResults, isOpenWeek, seasonLabel, seasonNumber, weekKey, weekNumber } from "../lib/liga.js";
-import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
+import { $, choiceModal, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
 const NO_WEEK = "Sin fecha";
 const ALL_WEEKS = "*";
@@ -189,12 +190,20 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
     return `<span data-res-side class="${win ? "is-win" : ""}">${escAttr(name || "—")}${win ? `<em class="res-won">Ganó</em>` : ""}</span>`;
   }
 
+  function resultHint(parsed) {
+    if (!parsed) return "Sin resultado";
+    if (parsed.walkover) {
+      return `W.O. · ganador 3 pts y 1 PJ · ausente 0 PJ → pendiente`;
+    }
+    return `${parsed.label} · ${parsed.homePts}-${parsed.awayPts} pts`;
+  }
+
   function matchCard(m) {
     const parsed = describeResult(m.result);
-    const hint = parsed ? `${parsed.label} · ${parsed.homePts}-${parsed.awayPts} pts` : "Sin resultado";
+    const hint = parsed ? resultHint(parsed) : "Sin resultado";
     const when = [selWeek === ALL_WEEKS ? weekOf(m) : "", m.time, m.cat].filter(Boolean).join(" · ") || "—";
     const shown = formatResult(m.result) || m.result || "";
-    return `<article class="admin-result-card${parsed ? " has-score" : ""}">
+    return `<article class="admin-result-card${parsed ? " has-score" : ""}${parsed?.walkover ? " is-wo" : ""}">
       <div class="admin-result-meta">
         <span>${escAttr(when)}</span>
         ${
@@ -205,9 +214,18 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
       </div>
       <strong class="res-vs">${sideHtml(m.home, !!parsed?.homeWin)} <span class="muted">vs</span> ${sideHtml(m.away, !!(parsed && !parsed.homeWin))}</strong>
       <p class="admin-help">${escAttr([m.venue, m.court].filter(Boolean).join(" · "))}</p>
-      <label class="admin-result-score">Resultado
-        <input data-res-source="${m._source}" data-res-i="${m._i}" value="${escAttr(shown)}" placeholder="6/4 6/2" />
-      </label>
+      <div class="admin-result-actions">
+        <label class="admin-result-score">Resultado
+          <input data-res-source="${m._source}" data-res-i="${m._i}" value="${escAttr(shown)}" placeholder="6/4 6/2" />
+        </label>
+        <button
+          class="btn btn-ghost res-wo-btn"
+          type="button"
+          data-res-wo-source="${m._source}"
+          data-res-wo-i="${m._i}"
+          title="Si el rival no se presentó: 3 pts y PJ solo al ganador; el ausente pasa a pendiente"
+        >No se presentó</button>
+      </div>
       <p class="admin-hint" data-res-hint>${escAttr(hint)}</p>
     </article>`;
   }
@@ -217,11 +235,13 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
     const hint = card?.querySelector("[data-res-hint]");
     if (hint) {
       hint.textContent = parsed
-        ? `${parsed.label} · ${parsed.homePts}-${parsed.awayPts} pts`
+        ? resultHint(parsed)
         : String(raw || "").trim()
           ? "Resultado inválido"
           : "Sin resultado";
     }
+    card?.classList.toggle("has-score", !!parsed);
+    card?.classList.toggle("is-wo", !!parsed?.walkover);
     const sides = card?.querySelectorAll("[data-res-side]") || [];
     sides.forEach((el, i) => {
       const win = parsed && (i === 0 ? parsed.homeWin : !parsed.homeWin);
@@ -230,10 +250,37 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
       if (win && !tag) {
         const em = document.createElement("em");
         em.className = "res-won";
-        em.textContent = "Ganó";
+        em.textContent = parsed?.walkover ? "W.O." : "Ganó";
         el.appendChild(em);
+      } else if (win && tag) {
+        tag.textContent = parsed?.walkover ? "W.O." : "Ganó";
       } else if (!win && tag) tag.remove();
     });
+  }
+
+  async function pickWalkover(source, index) {
+    const match = sourceMatch({ _source: source, _i: index });
+    if (!match || !isRealPairMatch(match)) return;
+    const home = String(match.home || "").trim();
+    const away = String(match.away || "").trim();
+    if (!home || !away) {
+      toast("Faltan las parejas del partido", "err");
+      return;
+    }
+    const pick = await choiceModal({
+      title: "Rival no se presentó",
+      body: "Elegí quién ganó por W.O. Esa pareja suma 3 pts y 1 PJ. La otra no suma PJ y pasa a pendiente al publicar.",
+      choices: [
+        { id: "1", label: `Ganó ${home}` },
+        { id: "2", label: `Ganó ${away}` },
+      ],
+    });
+    if (pick !== "1" && pick !== "2") return;
+    const score = pick === "1" ? "W.O. 1" : "W.O. 2";
+    match.result = score;
+    shell.markDirty("resultados");
+    render();
+    toast(pick === "1" ? `W.O. · ${home}` : `W.O. · ${away}`, "ok");
   }
 
   function pillSet(label, items, current, attr, total) {
@@ -479,6 +526,11 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
         render();
         return;
       }
+      const woBtn = e.target.closest("[data-res-wo-source]");
+      if (woBtn) {
+        pickWalkover(woBtn.dataset.resWoSource, Number(woBtn.dataset.resWoI));
+        return;
+      }
       const dayBtn = e.target.closest("[data-res-day]");
       if (dayBtn) {
         filterDay = dayBtn.dataset.resDay || "";
@@ -576,14 +628,14 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
       const pending = [...(ctx.fixture || []), ...(ctx.results || [])];
       const invalid = pending.find((m) => String(m.result || "").trim() && !describeResult(m.result));
       if (invalid) {
-        const message = `Resultado inválido (${invalid.home || "pareja"} vs ${invalid.away || "pareja"}). Usá 6/4 6/2 o 6/4 3/6 6/2.`;
+        const message = `Resultado inválido (${invalid.home || "pareja"} vs ${invalid.away || "pareja"}). Usá 6/4 6/2, 6/4 3/6 6/2 o el botón «No se presentó».`;
         setMsg($("res-msg"), message, "err");
         toast(message, "err");
         return;
       }
       const ok = await confirmModal({
         title: "Publicar resultados",
-        body: "Los scores cargados actualizan el ranking de su temporada. El sitio se actualiza en ~1 minuto.",
+        body: "Los scores cargados actualizan el ranking. Los W.O. dejan al ausente en pendientes. El sitio se actualiza en ~1 minuto.",
         confirmLabel: "Publicar resultados",
       });
       if (!ok) return;
@@ -605,7 +657,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
         const nextFixture = (Array.isArray(remoteFx) ? remoteFx : [])
           .map((m) => cleanMatch(m, {}, season))
           .filter((m) => (m.home || m.away) && !isPendingMatch(m));
-        const nextPending = (Array.isArray(remotePending) ? remotePending : [])
+        let nextPending = (Array.isArray(remotePending) ? remotePending : [])
           .map((m) => cleanMatch(m, {}, season))
           .filter((m) => (m.home || m.away) && isPendingMatch(m));
         const nextResults = (Array.isArray(remoteRes) ? remoteRes : []).map((m) => cleanMatch(m, {}, season)).filter((m) => m.home || m.away);
@@ -617,8 +669,13 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
         }
         const lost = allMatches().find((m) => String(m.result || "").trim() !== String(m.appliedResult || "").trim() && !remoteKeys.has(matchKey(m)));
         if (lost) throw new Error(`El partido ${lost.home} vs ${lost.away} cambió en el fixture publicado. Tocá Actualizar y volvé a cargarlo.`);
-        const report = applyFixtureResults(ranking, [...nextFixture, ...nextResults]);
+        const scored = [...nextFixture, ...nextResults];
+        const report = applyFixtureResults(ranking, scored);
         if (report.unmatched.length) throw new Error(report.unmatched[0]);
+        nextPending = syncWalkoverPendings(scored, nextPending, ctx.pairs || []).map((m) =>
+          cleanMatch(m, {}, season)
+        );
+        const woN = nextPending.filter((m) => m.woKey || /W\.O/i.test(m.reason || "")).length;
         await api.publishFiles(
           [
             { path: FIXTURE_PATH, content: JSON.stringify(nextFixture, null, 2) + "\n" },
@@ -627,7 +684,7 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
             { path: RANK_PATH, content: JSON.stringify(ranking, null, 2) + "\n" },
           ],
           report.applied
-            ? `Carga ${report.applied} resultado${report.applied === 1 ? "" : "s"} y actualiza el ranking.`
+            ? `Carga ${report.applied} resultado${report.applied === 1 ? "" : "s"} y actualiza el ranking${woN ? ` (${woN} pendiente${woN === 1 ? "" : "s"} por W.O.)` : ""}.`
             : "Actualiza resultados desde el admin."
         );
         ctx.rows = ranking;
@@ -640,8 +697,9 @@ export function createResults(ctx, api, shell, { onRankingChanged } = {}) {
         onRankingChanged?.();
         render();
         const extra = report.created.length ? ` Altas: ${[...new Set(report.created)].join(" · ")}.` : "";
+        const woNote = woN ? ` ${woN} pareja${woN === 1 ? "" : "s"} ausente${woN === 1 ? "" : "s"} → pendiente${woN === 1 ? "" : "s"}.` : "";
         const text = report.applied
-          ? `Resultados publicados. ${report.applied} score${report.applied === 1 ? "" : "s"} sumados al ranking.${extra}`
+          ? `Resultados publicados. ${report.applied} score${report.applied === 1 ? "" : "s"} sumados al ranking.${woNote}${extra}`
           : "Resultados publicados. No había scores nuevos.";
         setMsg($("res-msg"), text, "ok");
         toast("Resultados publicados", "ok");

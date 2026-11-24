@@ -168,4 +168,41 @@ import { addPairsToRanking, syncRankingToSeasonPairs } from "./scoring.js";
   console.log("ok: no se pisan scores al republicar ni se dobla el PJ por formato");
 }
 
+{
+  const { applyFixtureResults, describeResult, formatResult } = await import("./scoring.js");
+  const { syncWalkoverPendings } = await import("./pair-fixture-sync.js");
+  const info = describeResult("W.O. 1");
+  assert.equal(info.walkover, true);
+  assert.equal(info.homePts, 3);
+  assert.equal(info.homePj, 1);
+  assert.equal(info.awayPj, 0);
+  assert.equal(formatResult("wo 2"), "W.O. 2");
+
+  const ranking = [
+    { name: "Diego Ramirez / Martin Rondan", cat: "B Masculina", pts: 0, pj: 0, dif: 0, pos: 1, temp: "T5" },
+    { name: "Jeronimo Acuña / Lucio Acuña", cat: "B Masculina", pts: 0, pj: 0, dif: 0, pos: 2, temp: "T5" },
+  ];
+  const match = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "B Masculina",
+    home: "Diego Ramirez / Martin Rondan",
+    away: "Jeronimo Acuña / Lucio Acuña",
+    result: "W.O. 1",
+    appliedResult: "",
+  };
+  const report = applyFixtureResults(ranking, [match]);
+  assert.equal(report.applied, 1);
+  assert.equal(ranking[0].pts, 3);
+  assert.equal(ranking[0].pj, 1);
+  assert.equal(ranking[1].pts, 0);
+  assert.equal(ranking[1].pj, 0);
+
+  const pending = syncWalkoverPendings([match], [], []);
+  assert.equal(pending.length, 1);
+  assert.equal(pending[0].home, "Jeronimo Acuña / Lucio Acuña");
+  assert.equal(pending[0].recoverFrom, "Fecha 1");
+  console.log("ok: W.O. suma 3 pts y PJ solo al ganador; ausente a pendiente");
+}
+
 console.log("scoring.test.mjs passed");
