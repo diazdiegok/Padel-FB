@@ -2,6 +2,73 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 17:30 - 22:00 · Martes 17:30 - 22:00 · Viernes 17:30 - 22:00",
+    "days": {
+      "Lunes": "17:30 - 22:00",
+      "Martes": "17:30 - 22:00",
+      "Viernes": "17:30 - 22:00"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Ernesto Enz / Facundo Casals",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 14:00 - 19:30 · Martes 14:00 - 19:30 · Miércoles 14:00 - 00:00 · Viernes 14:00 - 00:00",
+    "days": {
+      "Lunes": "14:00 - 19:30",
+      "Martes": "14:00 - 19:30",
+      "Miércoles": "14:00 - 00:00",
+      "Viernes": "14:00 - 00:00"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Francisco Espinoza / Joaquin Rodriguez",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 20:00 - 22:00 · Martes 20:00 - 22:00 · Viernes 21:00 - 22:30",
+    "days": {
+      "Lunes": "20:00 - 22:00",
+      "Martes": "20:00 - 22:00",
+      "Viernes": "21:00 - 22:30"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Agustin Alfonso / Ricardo Martin Ramirez",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Lunes 13:00 - 22:00 · Martes 13:00 - 22:00 · Miércoles 13:00 - 22:00",
     "days": {
       "Lunes": "13:00 - 22:00",
@@ -474,31 +541,6 @@
     "venue": "",
     "court": "",
     "home": "Raquel Habitzreuter / Valeria Basa",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
-    "avail": "Lunes 21:00 - 23:30 · Martes 21:00 - 23:30 · Miércoles 21:00 - 23:30 · Jueves 21:00 - 23:30 · Viernes 21:00 - 23:30 · Sábado 21:00 - 23:30",
-    "days": {
-      "Lunes": "21:00 - 23:30",
-      "Martes": "21:00 - 23:30",
-      "Miércoles": "21:00 - 23:30",
-      "Jueves": "21:00 - 23:30",
-      "Viernes": "21:00 - 23:30",
-      "Sábado": "21:00 - 23:30"
-    },
-    "week": "Fecha 2",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Alejandro Abrego / Valentin Vukonich",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""

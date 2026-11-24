@@ -573,21 +573,6 @@
   },
   {
     "week": "Fecha 2",
-    "day": "Viernes",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "22:30 - 24:00",
-    "venue": "Americas Padel",
-    "court": "Cancha 3",
-    "home": "Ernesto Enz / Facundo Casals",
-    "away": "Francisco Espinoza / Joaquin Rodriguez",
-    "result": "",
-    "appliedResult": "",
-    "flexAvail": true
-  },
-  {
-    "week": "Fecha 2",
     "day": "Miércoles",
     "date": "",
     "temp": "T5",
@@ -710,10 +695,11 @@
     "time": "20:30 - 22:00",
     "venue": "Open Padel",
     "court": "Cancha 1",
-    "home": "Agustin Alfonso / Ricardo Martin Ramirez",
-    "away": "Maximiliano Satler / Daniel Grinovero",
+    "home": "Maximiliano Satler / Daniel Grinovero",
+    "away": "Alejandro Abrego / Valentin Vukonich",
     "result": "",
-    "appliedResult": ""
+    "appliedResult": "",
+    "flexAvail": true
   },
   {
     "week": "Fecha 2",
