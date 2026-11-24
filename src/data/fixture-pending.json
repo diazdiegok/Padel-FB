@@ -24,29 +24,6 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 14:00 - 19:30 · Martes 14:00 - 19:30 · Miércoles 14:00 - 00:00 · Viernes 14:00 - 00:00",
-    "days": {
-      "Lunes": "14:00 - 19:30",
-      "Martes": "14:00 - 19:30",
-      "Miércoles": "14:00 - 00:00",
-      "Viernes": "14:00 - 00:00"
-    },
-    "week": "Fecha 2",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Francisco Espinoza / Joaquin Rodriguez",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Lunes 20:00 - 22:00 · Martes 20:00 - 22:00 · Viernes 21:00 - 22:30",
     "days": {
       "Lunes": "20:00 - 22:00",
@@ -154,28 +131,6 @@
     "venue": "",
     "court": "",
     "home": "Marcos Saavedra / Luis Alberto Albornoz",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 20:30 - 23:00 · Martes 21:00 - 23:00 · Jueves 20:30 - 23:00",
-    "days": {
-      "Lunes": "20:30 - 23:00",
-      "Martes": "21:00 - 23:00",
-      "Jueves": "20:30 - 23:00"
-    },
-    "week": "Fecha 2",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Guillermo Andrini / Dario Diaz",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""

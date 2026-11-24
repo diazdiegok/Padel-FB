@@ -579,7 +579,7 @@
     "cat": "C Femenino",
     "time": "22:00 - 23:30",
     "venue": "Americas Padel",
-    "court": "Cancha 3",
+    "court": "Cancha 4",
     "home": "Araceli Ferreyra / Agostina Bonilla",
     "away": "Rocio Martinez / Candelaria Villarraza Girard",
     "result": "",
@@ -1112,5 +1112,20 @@
     "away": "Sebastian Diaz / Pablo Zarate",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "week": "Fecha 2",
+    "day": "Miércoles",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "22:00 - 23:30",
+    "venue": "Americas Padel",
+    "court": "Cancha 3",
+    "home": "Guillermo Andrini / Dario Diaz",
+    "away": "Francisco Espinoza / Joaquin Rodriguez",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
   }
 ]
