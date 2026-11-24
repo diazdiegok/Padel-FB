@@ -1112,5 +1112,19 @@
     "result": "",
     "appliedResult": "",
     "flexAvail": true
+  },
+  {
+    "week": "Fecha 2",
+    "day": "Martes",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "22:00 - 23:30",
+    "venue": "Open Padel",
+    "court": "Cancha 1",
+    "home": "Milton Reatto / Joaquín Lucero",
+    "away": "Sebastian Diaz / Pablo Zarate",
+    "result": "",
+    "appliedResult": ""
   }
 ]
