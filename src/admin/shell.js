@@ -56,11 +56,34 @@ export function createShell(ctx, { onEnterSection, onDiscardSection }) {
     onEnterSection?.(id);
   }
 
+  async function discardDirty() {
+    const sections = [...ctx.dirty];
+    if (!sections.length) return false;
+    const ok = await confirmModal({
+      title: "Cancelar cambios",
+      body:
+        sections.length === 1
+          ? "Se vuelven atrás los cambios sin publicar de esta sección."
+          : `Se vuelven atrás los cambios sin publicar (${sections.length} secciones).`,
+      confirmLabel: "Cancelar cambios",
+      danger: true,
+    });
+    if (!ok) return false;
+    for (const id of sections) {
+      await onDiscardSection?.(id);
+      clearDirty(id);
+    }
+    return true;
+  }
+
   function bind() {
     document.querySelectorAll("[data-nav]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         await setSection(btn.dataset.nav);
       });
+    });
+    $("admin-dirty-cancel")?.addEventListener("click", async () => {
+      await discardDirty();
     });
     $("admin-menu-btn")?.addEventListener("click", () => {
       $("admin-sidebar")?.classList.toggle("open");
@@ -86,5 +109,5 @@ export function createShell(ctx, { onEnterSection, onDiscardSection }) {
     return SECTIONS[fromHash] ? fromHash : "sitio";
   }
 
-  return { bind, setSection, markDirty, clearDirty, initialSection };
+  return { bind, setSection, markDirty, clearDirty, discardDirty, initialSection };
 }

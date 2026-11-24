@@ -2,7 +2,7 @@ import { createAcademiaInscripciones } from "./acadinsc.js";
 import { createApi } from "./api.js";
 import { createAscensos } from "./ascensos.js";
 import { createAuth } from "./auth.js";
-import { HIDDEN_CATS } from "./constants.js";
+import { ASCENSOS_PATH, HIDDEN_CATS, PLAYOFF_PATH, RANK_PATH, SITE_PATH } from "./constants.js";
 import { createCms } from "./cms.js";
 import { createFixture } from "./fixture.js";
 import { createParejas } from "./parejas.js";
@@ -81,21 +81,57 @@ export function bootAdmin({
       if (id === "visitas") visitas?.reload();
       if (id === "consumos") consumos?.reload();
     },
-    onDiscardSection(id) {
+    async onDiscardSection(id) {
       if (id === "fixture") {
         ctx.fixture = structuredClone(ctx.fixturePublished);
         fixture?.render();
+        return;
       }
       if (id === "resultados") {
         for (const m of [...ctx.fixture, ...ctx.results]) m.result = m.appliedResult || "";
         results?.render();
+        return;
       }
       if (id === "parejas") {
-        ctx.dirty.delete("parejas");
-        parejas?.reload();
+        await parejas?.reload?.({ quiet: true });
+        return;
       }
       if (id === "temporadas") {
         seasons?.discard();
+        return;
+      }
+      if (id === "ranking") {
+        try {
+          const remote = await api.readRemoteJson(RANK_PATH, ctx.rows);
+          ctx.rows = (Array.isArray(remote) ? remote : []).filter((p) => p && !HIDDEN_CATS.has(p.cat));
+        } catch {
+          /* se mantienen las filas locales si GitHub no responde */
+        }
+        ranking?.refresh();
+        return;
+      }
+      if (id === "playoff") {
+        await playoff?.reload?.({ force: true });
+        return;
+      }
+      if (id === "ascensos") {
+        try {
+          const remote = await api.readRemoteJson(ASCENSOS_PATH, ctx.ascensos);
+          ctx.ascensos = Array.isArray(remote) ? remote : [];
+        } catch {
+          /* keep local */
+        }
+        ascensos?.render();
+        return;
+      }
+      if (["sitio", "academia", "infantiles", "sedes", "torneos"].includes(id)) {
+        try {
+          const remote = await api.readRemoteJson(SITE_PATH, ctx.siteData);
+          if (remote && typeof remote === "object") Object.assign(ctx.siteData, remote);
+        } catch {
+          /* keep local */
+        }
+        cms?.refreshAll();
       }
     },
   });

@@ -184,8 +184,11 @@ export function setBusy(btn, busy, label) {
 
 export function updateDirtyBadge(dirtySet) {
   const badge = $("admin-dirty");
-  if (!badge) return;
+  const cancel = $("admin-dirty-cancel");
   const n = dirtySet?.size || 0;
-  badge.hidden = n === 0;
-  badge.textContent = n === 1 ? "1 cambio sin guardar" : `${n} cambios sin guardar`;
+  if (badge) {
+    badge.hidden = n === 0;
+    badge.textContent = n === 1 ? "1 cambio sin guardar" : `${n} cambios sin guardar`;
+  }
+  if (cancel) cancel.hidden = n === 0;
 }

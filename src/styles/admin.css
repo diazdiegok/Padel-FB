@@ -891,6 +891,13 @@ body.is-admin main > .wrap {
   white-space: nowrap;
 }
 
+.admin-dirty-cancel {
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .admin-content {
   width: min(var(--admin-max), calc(100% - 40px));
   margin: 0 auto;
