@@ -80,6 +80,7 @@ import {
   summarizeCourtSlots,
 } from "../lib/slots.js";
 import { $, confirmModal, escAttr, noticeModal, setBusy, setMsg, toast } from "./ui.js";
+import { waIconsHtml } from "./whatsapp.js";
 
 const isPending = (m) => isPendingMatch(m);
 
@@ -674,6 +675,34 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       .filter(({ m }) => pred(m) && seasonOf(m) === filterTemp && (m.week || "") === filterWeek);
   }
 
+  function phonesOfPairLabel(label, cat = "") {
+    const season = String(filterTemp || "").toUpperCase();
+    const found = (ctx.pairs || []).find((p) => {
+      if (String(p.temp || "").toUpperCase() !== season) return false;
+      if (cat && p.cat && p.cat !== cat) return false;
+      return pairsMatch(pairLabel(p), label);
+    });
+    if (!found?.id) return { tel1: "", tel2: "", p1: "", p2: "" };
+    const c = ctx.contacts?.[found.id] || {};
+    return { tel1: c.tel1 || "", tel2: c.tel2 || "", p1: found.p1 || "", p2: found.p2 || "" };
+  }
+
+  function phonesOfPending(m) {
+    return phonesOfPairLabel(m?.home, m?.cat);
+  }
+
+  async function ensureContactsLoaded() {
+    if (ctx.contacts && Object.keys(ctx.contacts).length) return false;
+    try {
+      const remote = await api.worker("/pairs/contacts");
+      ctx.contacts = remote && typeof remote === "object" ? remote : {};
+      return Object.keys(ctx.contacts).length > 0;
+    } catch {
+      ctx.contacts = ctx.contacts || {};
+      return false;
+    }
+  }
+
   function pendingCards(rows, { makeup = false } = {}) {
     const cats = [...new Set(rows.map(({ m }) => m.cat || "Sin categoría"))];
     const pools = matchPools();
@@ -694,11 +723,13 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
               const pendingDays = daysOfPair(m.home, m.cat) || m.homeDays || m.days;
               const daysTxt = availHint(pendingDays);
               const from = m.recoverFrom || m.week || "";
+              const phones = phonesOfPending(m);
+              const wa = waIconsHtml(phones, { p1: phones.p1, p2: phones.p2 });
               const quit = makeup
                 ? `<button class="btn btn-ghost" type="button" data-fx-recover-del="${i}">Quitar</button>`
                 : `<button class="btn btn-ghost" type="button" data-fx-del="${i}">Quitar</button>`;
               return `<article class="fx-pending-card" data-i="${i}">
-                <strong>${escAttr(m.home)}</strong>
+                <strong class="fx-wa-head"><span>${escAttr(m.home)}</span>${wa}</strong>
                 ${makeup && from ? `<p class="admin-help" style="margin:4px 0 0">Le falta 1 partido en ${escAttr(from)}. Ese partido cuenta en ${escAttr(from)}, no suma otro en esta fecha.</p>` : ""}
                 ${daysTxt ? `<p class="admin-help" style="margin:4px 0 0">Puede: ${escAttr(daysTxt)}</p>` : ""}
                 <div class="fx-pending-actions">
@@ -849,8 +880,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
                   const slot = [m.day, m.time].filter(Boolean).join(" ");
                   const place = [m.venue, m.court].filter(Boolean).join(" · ");
                   const when = slot || place ? `${slot}${place ? ` · ${place}` : ""}` : "Sin cancha · prearmado";
+                  const homePh = phonesOfPairLabel(m.home, m.cat);
+                  const awayPh = phonesOfPairLabel(m.away, m.cat);
+                  const homeWa = waIconsHtml(homePh, { p1: homePh.p1, p2: homePh.p2 });
+                  const awayWa = waIconsHtml(awayPh, { p1: awayPh.p1, p2: awayPh.p2 });
                   return `<article class="fx-pending-card" data-i="${i}">
-                    <strong>${escAttr(m.home)} vs ${escAttr(m.away)}</strong>
+                    <strong class="fx-wa-head"><span>${escAttr(m.home)}</span>${homeWa}<span class="fx-wa-vs">vs</span><span>${escAttr(m.away)}</span>${awayWa}</strong>
                     <p class="admin-help" style="margin:4px 0 0">${weeks.length ? `Ya jugaron en ${escAttr(weeks.join(", "))}. ` : ""}${escAttr(when)}</p>
                     <div class="fx-pending-actions">
                       ${coverSlotSelect(i, m, m.away)}
@@ -1412,6 +1447,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     renderPending();
     renderRecover();
     renderDuplicates();
+    ensureContactsLoaded().then((fresh) => {
+      if (!fresh) return;
+      renderPending();
+      renderRecover();
+      renderDuplicates();
+    });
     const games = ctx.fixture
       .map((m, i) => ({ m, i }))
       .filter(({ m }) => !isPending(m) && !m.dupHold && seasonOf(m) === filterTemp && (m.week || "") === filterWeek)
@@ -2379,28 +2420,6 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
       // Si el nombre de pestaña no existe, Drive devuelve otra fecha. Esa no se mezcla.
       if (tagged.length && !tagged.some((row) => fold(row.fecha) === want)) return [];
       return parsed.filter((row) => !fold(row.fecha) || fold(row.fecha) === want);
-    }
-
-    function phonesOfPending(m) {
-      const season = String(filterTemp || m?.temp || "").toUpperCase();
-      const found = (ctx.pairs || []).find((p) => {
-        if (String(p.temp || "").toUpperCase() !== season) return false;
-        if (m?.cat && p.cat && p.cat !== m.cat) return false;
-        return pairsMatch(pairLabel(p), m.home);
-      });
-      if (!found?.id) return { tel1: "", tel2: "" };
-      const c = ctx.contacts?.[found.id] || {};
-      return { tel1: c.tel1 || "", tel2: c.tel2 || "" };
-    }
-
-    async function ensureContactsLoaded() {
-      if (ctx.contacts && Object.keys(ctx.contacts).length) return;
-      try {
-        const remote = await api.worker("/pairs/contacts");
-        ctx.contacts = remote && typeof remote === "object" ? remote : {};
-      } catch {
-        ctx.contacts = ctx.contacts || {};
-      }
     }
 
     async function pendingRowsForWeek() {

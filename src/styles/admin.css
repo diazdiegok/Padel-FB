@@ -2419,9 +2419,69 @@ body.is-admin .chk input[type="checkbox"] {
 
 .pairs-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 128px minmax(0, 1fr) 128px 150px 84px 36px;
+  grid-template-columns: minmax(0, 1fr) 148px minmax(0, 1fr) 148px 150px 84px 36px;
   gap: 8px;
   align-items: center;
+}
+
+.pairs-wa-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pairs-wa-cell input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+
+.wa-icos {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.wa-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: #25d366;
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.wa-ico:hover,
+.wa-ico:focus-visible {
+  color: #128c7e;
+  outline: none;
+  background: color-mix(in srgb, #25d366 16%, transparent);
+}
+
+.wa-ico svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.fx-wa-head {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+.fx-wa-vs {
+  opacity: 0.55;
+  font-weight: 600;
+  margin: 0 2px;
 }
 
 .pairs-mail-row {
@@ -2576,7 +2636,7 @@ body.is-admin .chk input[type="checkbox"] {
 
 @media (max-width: 1100px) {
   .pairs-row {
-    grid-template-columns: minmax(0, 1fr) 128px minmax(0, 1fr) 128px 36px;
+    grid-template-columns: minmax(0, 1fr) 148px minmax(0, 1fr) 148px 36px;
   }
   .pairs-row select,
   .pairs-row .pairs-origin {
@@ -2594,6 +2654,7 @@ body.is-admin .chk input[type="checkbox"] {
     grid-template-columns: 1fr 36px;
   }
   .pairs-row input,
+  .pairs-row .pairs-wa-cell,
   .pairs-row select,
   .pairs-row .pairs-origin {
     grid-column: 1;

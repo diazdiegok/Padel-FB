@@ -29,6 +29,7 @@ import {
 import { seasonLabel } from "../lib/liga.js";
 import { downloadCsv } from "./csv.js";
 import { $, confirmModal, escAttr as esc, setBusy, setMsg, toast } from "./ui.js";
+import { waIconHtml } from "./whatsapp.js";
 import { closeStatus, deadlinePassed, validDeadline } from "../lib/cierre.js";
 
 const personKey = (name) => fold(name).split(" ").filter(Boolean).sort().join(" ");
@@ -491,9 +492,15 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
               ${whenLabel ? `<span class="pairs-when" title="Fecha de inscripción">${esc(whenLabel)}</span>` : ""}
               <div class="pairs-row">
                 <input data-k="p1" value="${esc(p.p1)}" placeholder="Integrante 1" aria-label="Integrante 1" />
-                <input data-k="tel1" value="${esc(c.tel1 || "")}" inputmode="tel" placeholder="WhatsApp" aria-label="WhatsApp integrante 1" />
+                <span class="pairs-wa-cell">
+                  <input data-k="tel1" value="${esc(c.tel1 || "")}" inputmode="tel" placeholder="WhatsApp" aria-label="WhatsApp integrante 1" />
+                  ${waIconHtml(c.tel1, p.p1)}
+                </span>
                 <input data-k="p2" value="${esc(p.p2)}" placeholder="Integrante 2" aria-label="Integrante 2" />
-                <input data-k="tel2" value="${esc(c.tel2 || "")}" inputmode="tel" placeholder="WhatsApp" aria-label="WhatsApp integrante 2" />
+                <span class="pairs-wa-cell">
+                  <input data-k="tel2" value="${esc(c.tel2 || "")}" inputmode="tel" placeholder="WhatsApp" aria-label="WhatsApp integrante 2" />
+                  ${waIconHtml(c.tel2, p.p2)}
+                </span>
                 <select data-k="cat" aria-label="Categoría">
                   ${CATS.map((opt) => `<option${opt === p.cat ? " selected" : ""}>${esc(opt)}</option>`).join("")}
                 </select>
@@ -830,6 +837,13 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
         ctx.contacts[pair.id] = { ...contact(pair.id), [k]: cleanPhone(e.target.value) };
         e.target.value = ctx.contacts[pair.id][k];
         contactsDirty.add(pair.id);
+        const cell = e.target.closest(".pairs-wa-cell");
+        if (cell) {
+          const who = k === "tel1" ? pair.p1 : pair.p2;
+          cell.querySelector(".wa-ico")?.remove();
+          const ico = waIconHtml(ctx.contacts[pair.id][k], who);
+          if (ico) cell.insertAdjacentHTML("beforeend", ico);
+        }
       } else if (k === "mail1local" || k === "mail1domain" || k === "mail2local" || k === "mail2domain") {
         touchContactMail(card, pair);
       } else if (k === "note") {
