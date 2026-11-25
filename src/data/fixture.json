@@ -1100,5 +1100,20 @@
     "away": "Ramiro Romero / Angelica Alcaraz",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "week": "Fecha 2",
+    "day": "Sábado",
+    "date": "",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "time": "18:00 - 19:30",
+    "venue": "Open Padel",
+    "court": "Cancha 1",
+    "home": "Matias Minigutti / Omar Izza",
+    "away": "Imanol Agnoli / Hernan Masine",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
   }
 ]
