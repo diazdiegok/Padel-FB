@@ -18,6 +18,7 @@ import { createDrafts } from "./drafts.js";
 import { createVisitas } from "./visitas.js";
 import { WALKOVER_PENDING_REASON } from "../lib/pair-fixture-sync.js";
 import { $, updateDirtyBadge } from "./ui.js";
+import { bindWhatsAppLinks } from "./whatsapp.js";
 
 export function bootAdmin({
   rankingJson,
@@ -233,6 +234,7 @@ export function bootAdmin({
   acadinsc.bind();
   visitas.bind();
   consumos.bind();
+  bindWhatsAppLinks(document);
 
   if (auth.isLoggedIn()) showApp();
 }

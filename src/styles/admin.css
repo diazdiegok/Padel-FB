@@ -2450,12 +2450,18 @@ body.is-admin .chk input[type="checkbox"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin: 0;
   flex-shrink: 0;
   color: #25d366;
+  border: 0;
   border-radius: 999px;
+  background: transparent;
   text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .wa-ico:hover,
@@ -2463,6 +2469,10 @@ body.is-admin .chk input[type="checkbox"] {
   color: #128c7e;
   outline: none;
   background: color-mix(in srgb, #25d366 16%, transparent);
+}
+
+.wa-ico:active {
+  transform: scale(0.94);
 }
 
 .wa-ico svg {
