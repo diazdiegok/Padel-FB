@@ -127,6 +127,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
   let newDraft = null;
   /** Ventanas abiertas. Recuperan fecha y Duplicados arrancan plegados. */
   const foldOpen = new Set(["pending"]);
+  const FX_NAV_KEY = "padel-fb-fx-nav";
 
   function fallbackWeek() {
     return filterWeek || $("fx-week")?.value.trim() || latestWeek(ctx.fixture) || "Fecha 1";
@@ -139,6 +140,46 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     gridTerm = "";
   }
 
+  /** Guarda temporada/fecha/paneles para volver igual tras WSP / F5. */
+  function saveNav() {
+    try {
+      sessionStorage.setItem(
+        FX_NAV_KEY,
+        JSON.stringify({
+          temp: filterTemp || "",
+          week: filterWeek || "",
+          fold: [...foldOpen],
+          gridDay,
+          gridCat,
+          gridVenue,
+          gridTerm,
+        })
+      );
+    } catch {
+      /* modo privado / sin storage */
+    }
+  }
+
+  function loadNav() {
+    try {
+      const raw = JSON.parse(sessionStorage.getItem(FX_NAV_KEY) || "null");
+      if (!raw || typeof raw !== "object") return;
+      if (typeof raw.temp === "string") filterTemp = raw.temp;
+      if (typeof raw.week === "string") filterWeek = raw.week;
+      if (Array.isArray(raw.fold) && raw.fold.length) {
+        foldOpen.clear();
+        for (const k of raw.fold) if (k) foldOpen.add(String(k));
+      }
+      if (typeof raw.gridDay === "string") gridDay = raw.gridDay;
+      if (typeof raw.gridCat === "string") gridCat = raw.gridCat;
+      if (typeof raw.gridVenue === "string") gridVenue = raw.gridVenue;
+      if (typeof raw.gridTerm === "string") gridTerm = raw.gridTerm;
+      if (filterWeek && $("fx-week")) $("fx-week").value = filterWeek;
+    } catch {
+      /* ignore */
+    }
+  }
+
   /** Vista raíz del nav Fixture: cajas de temporadas (después fechas). */
   function showSeasonsHome() {
     filterTemp = "";
@@ -146,10 +187,12 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     editing = -1;
     clearGridFilters();
     if ($("fx-week")) $("fx-week").value = "";
+    saveNav();
   }
 
   function syncWeek() {
-    showSeasonsHome();
+    // Antes siempre volvía al home de temporadas (al volver de WSP perdías la fecha).
+    loadNav();
     return fallbackWeek();
   }
 
@@ -1608,6 +1651,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     purgeBlankRows();
     updateSummary();
     renderVenues();
+    saveNav();
     const root = $("fx-boxes");
     const detail = $("fx-detail");
     if (!root) return;
