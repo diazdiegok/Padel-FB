@@ -1399,5 +1399,22 @@
     },
     "note": "",
     "source": "admin"
+  },
+  {
+    "id": "pmwwt9e3v748a",
+    "createdAt": "2026-11-26T00:25:09.547Z",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "p1": "Alem hernan",
+    "p2": "Rios Alejandro",
+    "days": {
+      "Lunes": "18:00 - 00:00",
+      "Martes": "18:00 - 00:00",
+      "Miércoles": "18:00 - 00:00",
+      "Jueves": "18:00 - 00:00",
+      "Viernes": "18:00 - 00:00",
+      "Sábado": "18:00 - 00:00"
+    },
+    "note": ""
   }
 ]
