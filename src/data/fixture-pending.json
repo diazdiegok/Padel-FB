@@ -755,7 +755,7 @@
     "time": "",
     "venue": "",
     "court": "",
-    "home": "Alem hernan / Rios Alejandro",
+    "home": "Hernan Alem / Alejandro Rios",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
@@ -784,6 +784,13 @@
   },
   {
     "pending": true,
+    "reason": "Tiene 0 partidos en Fecha 1. Recupera esa fecha.",
+    "avail": "Lunes 18:30 - 22:00 · Viernes 18:30 - 22:00 · Sábado 18:00 - 21:30",
+    "days": {
+      "Lunes": "18:30 - 22:00",
+      "Viernes": "18:30 - 22:00",
+      "Sábado": "18:00 - 21:30"
+    },
     "recoverFrom": "Fecha 1",
     "recoveredIn": "Fecha 2",
     "week": "Fecha 1",
@@ -797,16 +804,20 @@
     "home": "German Duarte / Emanuel Arteta Magnìn",
     "away": "Pendiente / Pendiente",
     "result": "",
-    "appliedResult": "",
-    "reason": "Tiene 0 partidos en Fecha 1. Recupera esa fecha.",
-    "days": {
-      "Lunes": "18:30 - 22:00",
-      "Viernes": "18:30 - 22:00",
-      "Sábado": "18:00 - 21:30"
-    }
+    "appliedResult": ""
   },
   {
     "pending": true,
+    "reason": "Tiene 0 partidos en Fecha 1. Recupera esa fecha.",
+    "avail": "Lunes 18:00 - 00:00 · Martes 18:00 - 00:00 · Miércoles 18:00 - 00:00 · Jueves 18:00 - 00:00 · Viernes 18:00 - 00:00 · Sábado 18:00 - 00:00",
+    "days": {
+      "Lunes": "18:00 - 00:00",
+      "Martes": "18:00 - 00:00",
+      "Miércoles": "18:00 - 00:00",
+      "Jueves": "18:00 - 00:00",
+      "Viernes": "18:00 - 00:00",
+      "Sábado": "18:00 - 00:00"
+    },
     "recoverFrom": "Fecha 1",
     "recoveredIn": "Fecha 2",
     "week": "Fecha 1",
@@ -820,8 +831,12 @@
     "home": "Milagros Luna / Gisela Corona",
     "away": "Pendiente / Pendiente",
     "result": "",
-    "appliedResult": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
     "reason": "Tiene 0 partidos en Fecha 1. Recupera esa fecha.",
+    "avail": "Lunes 18:00 - 00:00 · Martes 18:00 - 00:00 · Miércoles 18:00 - 00:00 · Jueves 18:00 - 00:00 · Viernes 18:00 - 00:00 · Sábado 18:00 - 00:00",
     "days": {
       "Lunes": "18:00 - 00:00",
       "Martes": "18:00 - 00:00",
@@ -829,10 +844,7 @@
       "Jueves": "18:00 - 00:00",
       "Viernes": "18:00 - 00:00",
       "Sábado": "18:00 - 00:00"
-    }
-  },
-  {
-    "pending": true,
+    },
     "recoverFrom": "Fecha 1",
     "recoveredIn": "Fecha 2",
     "week": "Fecha 1",
@@ -843,18 +855,9 @@
     "time": "",
     "venue": "",
     "court": "",
-    "home": "Alem hernan / Rios Alejandro",
+    "home": "Hernan Alem / Alejandro Rios",
     "away": "Pendiente / Pendiente",
     "result": "",
-    "appliedResult": "",
-    "reason": "Tiene 0 partidos en Fecha 1. Recupera esa fecha.",
-    "days": {
-      "Lunes": "18:00 - 00:00",
-      "Martes": "18:00 - 00:00",
-      "Miércoles": "18:00 - 00:00",
-      "Jueves": "18:00 - 00:00",
-      "Viernes": "18:00 - 00:00",
-      "Sábado": "18:00 - 00:00"
-    }
+    "appliedResult": ""
   }
 ]
