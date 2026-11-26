@@ -343,6 +343,45 @@ export function syncFixtureWithPairs({ matches = [], pairs = [], temp = "", live
 }
 
 /**
+ * Misma inscripción (mismo id): si cambió el nombre o un integrante, reescribe
+ * home/away en fixture/pendientes. No desarma partidos: solo actualiza la etiqueta.
+ * @returns {{ matches: object[], renamed: { from: string, to: string, id: string }[] }}
+ */
+export function relabelPairsInMatches(matches = [], fromPairs = [], toPairs = []) {
+  const prev = new Map((fromPairs || []).filter((p) => p?.id).map((p) => [p.id, p]));
+  const renames = [];
+  for (const p of toPairs || []) {
+    if (!p?.id) continue;
+    const old = prev.get(p.id);
+    if (!old?.p1 || !old?.p2 || !p.p1 || !p.p2) continue;
+    const from = pairLabel(old);
+    const to = pairLabel(p);
+    if (!from || !to || pairsMatch(from, to)) continue;
+    renames.push({ from, to, id: p.id });
+  }
+  if (!renames.length) return { matches: matches || [], renamed: [] };
+
+  const next = (matches || []).map((m) => {
+    if (!m || typeof m !== "object") return m;
+    let home = m.home;
+    let away = m.away;
+    let hit = false;
+    for (const { from, to } of renames) {
+      if (home && pairsMatch(home, from)) {
+        home = to;
+        hit = true;
+      }
+      if (away && pairsMatch(away, from)) {
+        away = to;
+        hit = true;
+      }
+    }
+    return hit ? { ...m, home, away } : m;
+  });
+  return { matches: next, renamed: renames };
+}
+
+/**
  * Parte un partido real en dos filas pendientes (home y away).
  * Usado por “Marcar como pendiente” en el admin de fixture.
  */

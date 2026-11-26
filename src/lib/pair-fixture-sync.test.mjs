@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { PENDING_AWAY, isPendingMatch } from "./fixturer.js";
-import { rivalOptionsFromPairs, splitMatchToPending, syncFixtureWithPairs } from "./pair-fixture-sync.js";
+import {
+  relabelPairsInMatches,
+  rivalOptionsFromPairs,
+  splitMatchToPending,
+  syncFixtureWithPairs,
+} from "./pair-fixture-sync.js";
 import { pairsMatch } from "./scoring.js";
 
 const temp = "T5";
@@ -301,6 +306,60 @@ const pairs = [
   assert.equal(rivalPending.length, 1, "el rival del partido armado pasa a pendiente");
   assert.equal(rival.p1, "Marien Robledo");
   console.log("ok: sin partidos sale de fixture y pendientes, y el rival queda pendiente");
+}
+
+{
+  const fromPairs = [
+    { id: "p1", temp, cat: "B Femenino", p1: "Milagros Luna", p2: "Lula Thomi" },
+    { id: "p2", temp, cat: "B Femenino", p1: "Abril Diamela Migueles", p2: "Yamila Bertotti" },
+  ];
+  const toPairs = [
+    { id: "p1", temp, cat: "B Femenino", p1: "Milagros Luna", p2: "Gisela Corona" },
+    { id: "p2", temp, cat: "B Femenino", p1: "Abril Diamela Migueles", p2: "Yamila Bertotti" },
+  ];
+  const matches = [
+    {
+      week: "Fecha 2",
+      temp,
+      cat: "B Femenino",
+      day: "Lunes",
+      time: "20:00 - 21:30",
+      venue: "Open",
+      court: "1",
+      home: "Milagros Luna / Lula Thomi",
+      away: "Abril Diamela Migueles / Yamila Bertotti",
+    },
+    {
+      week: "Fecha 2",
+      temp,
+      cat: "B Femenino",
+      home: "Milagros Luna / Lula Thomi",
+      away: PENDING_AWAY,
+      pending: true,
+    },
+  ];
+  const { matches: labeled, renamed } = relabelPairsInMatches(matches, fromPairs, toPairs);
+  assert.equal(renamed.length, 1);
+  assert.equal(renamed[0].to, "Milagros Luna / Gisela Corona");
+  assert.ok(pairsMatch(labeled[0].home, "Milagros Luna / Gisela Corona"));
+  assert.ok(pairsMatch(labeled[0].away, "Abril Diamela Migueles / Yamila Bertotti"));
+  assert.equal(labeled[0].venue, "Open", "el partido armado sigue con cancha/horario");
+  const synced = syncFixtureWithPairs({
+    matches: labeled,
+    pairs: toPairs,
+    temp,
+    liveWeek: "Fecha 2",
+    historyWeek: "Fecha 2",
+  });
+  const still = synced.matches.find(
+    (m) =>
+      !isPendingMatch(m) &&
+      pairsMatch(m.home, "Milagros Luna / Gisela Corona") &&
+      pairsMatch(m.away, "Abril Diamela Migueles / Yamila Bertotti")
+  );
+  assert.ok(still, "renombrar un integrante no desarma el partido");
+  assert.equal(still.time, "20:00 - 21:30");
+  console.log("ok: rename por id solo reetiqueta y no desarma");
 }
 
 console.log("pair-fixture-sync ok");

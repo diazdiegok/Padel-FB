@@ -19,6 +19,7 @@ import {
   validateDays,
 } from "../lib/disponibilidad.js";
 import { isPendingMatch } from "../lib/fixturer.js";
+import { relabelPairsInMatches } from "../lib/pair-fixture-sync.js";
 import {
   addPairsToRanking,
   findPairIndex,
@@ -996,10 +997,16 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
         ctx.fixturePublished = structuredClone(ctx.fixture);
         if (hadLocalFixtureDraft) shell.clearDirty("fixture");
 
+        // Mismo id, otro nombre/integrante: solo reetiqueta el fixture. No desarma partidos.
+        const remotePairs = Array.isArray(remote) ? remote : [];
+        const relabeled = relabelPairsInMatches(ctx.fixture, remotePairs, next);
+        ctx.fixture = relabeled.matches;
+        const renamedPairs = relabeled.renamed || [];
+
         ctx.pairs = next;
         const fxSync = onPairsChanged?.({ reason: "publish", toastResult: false }) || null;
-        // Solo republicar fixture si el sync por parejas cambió algo (alta/baja/cat).
-        const fixtureNeedsPublish = Boolean(fxSync?.changed);
+        // Republicar fixture si hubo alta/baja/cat O si solo se actualizaron nombres.
+        const fixtureNeedsPublish = Boolean(fxSync?.changed) || renamedPairs.length > 0;
         if (fixtureNeedsPublish) {
           const adminFixture = (ctx.fixture || []).map((m) => ({ ...m }));
           const draftLive = adminFixture.filter((m) => !isPendingMatch(m));
@@ -1053,7 +1060,11 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
           ? ` Se actualiz${renamed.length === 1 ? "ó 1 nombre" : `aron ${renamed.length} nombres`} en el ranking.`
           : "";
         const liveNote = goLive ? " La temporada pasó a En juego." : "";
-        const fxNote = fixtureNeedsPublish ? " Fixture/pendientes alineados." : "";
+        const fxNote = renamedPairs.length && !fxSync?.changed
+          ? ` Se actualiz${renamedPairs.length === 1 ? "ó 1 nombre" : `aron ${renamedPairs.length} nombres`} en el fixture.`
+          : fixtureNeedsPublish
+            ? " Fixture/pendientes alineados."
+            : "";
         const draftNote = hadLocalFixtureDraft
           ? " Había un borrador de fixture en este navegador: no se publicó (así no se pisan cambios hechos desde el celu u otro dispositivo). Si lo necesitás, publicá desde Fixture."
           : "";
