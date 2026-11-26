@@ -1060,6 +1060,20 @@
   },
   {
     "week": "Fecha 2",
+    "day": "Jueves",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "21:30 - 23:00",
+    "venue": "Open Padel",
+    "court": "Cancha 2",
+    "home": "Sebastian Bregant / Luis Valla",
+    "away": "Marcos Saavedra / Luis Alberto Albornoz",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "week": "Fecha 2",
     "day": "Miércoles",
     "date": "",
     "temp": "T5",
@@ -1103,16 +1117,17 @@
   },
   {
     "week": "Fecha 2",
-    "day": "Jueves",
+    "day": "Viernes",
     "date": "",
     "temp": "T5",
-    "cat": "B Masculina",
-    "time": "21:30 - 23:00",
-    "venue": "Open Padel",
-    "court": "Cancha 2",
-    "home": "Marcos Saavedra / Luis Alberto Albornoz",
-    "away": "Sebastian Bregant / Luis Valla",
+    "cat": "C Masculina",
+    "time": "22:00 - 23:30",
+    "venue": "Americas Padel",
+    "court": "Cancha 4",
+    "home": "Nelson Fernando Montorfano / Jonatan Gaston Jerez",
+    "away": "Joaquin Alberto Ijalba / Felipe Ijalba",
     "result": "",
-    "appliedResult": ""
+    "appliedResult": "",
+    "flexAvail": true
   }
 ]
