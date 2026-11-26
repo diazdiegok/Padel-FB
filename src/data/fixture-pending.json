@@ -2,6 +2,50 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 17:00 - 19:00 · Miércoles 17:00 - 19:00 · Viernes 17:00 - 00:00",
+    "days": {
+      "Lunes": "17:00 - 19:00",
+      "Miércoles": "17:00 - 19:00",
+      "Viernes": "17:00 - 00:00"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Ariel Enrique / Marcelo Enrique",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Jueves 16:30 - 19:30 · Viernes 16:30 - 19:30 · Sábado 16:30 - 19:30",
+    "days": {
+      "Jueves": "16:30 - 19:30",
+      "Viernes": "16:30 - 19:30",
+      "Sábado": "16:30 - 19:30"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Diego Diaz / Emiliano Fontanetto",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Martes 19:30 - 22:00 · Jueves 18:00 - 22:00 · Viernes 18:30 - 23:00 · Sábado 09:30 - 20:00",
     "days": {
       "Martes": "19:30 - 22:00",
