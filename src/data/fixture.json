@@ -1100,5 +1100,19 @@
     "result": "",
     "appliedResult": "",
     "flexAvail": true
+  },
+  {
+    "week": "Fecha 2",
+    "day": "Viernes",
+    "date": "",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "time": "17:00 - 18:30",
+    "venue": "Americas Padel",
+    "court": "Cancha 1",
+    "home": "Ariel Enrique / Marcelo Enrique",
+    "away": "Diego Diaz / Emiliano Fontanetto",
+    "result": "",
+    "appliedResult": ""
   }
 ]
