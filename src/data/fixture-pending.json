@@ -2,28 +2,6 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 17:30 - 22:00 · Martes 17:30 - 22:00 · Viernes 17:30 - 22:00",
-    "days": {
-      "Lunes": "17:30 - 22:00",
-      "Martes": "17:30 - 22:00",
-      "Viernes": "17:30 - 22:00"
-    },
-    "week": "Fecha 2",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Ernesto Enz / Facundo Casals",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Martes 14:00 - 00:00",
     "days": {
       "Martes": "14:00 - 00:00"
@@ -37,6 +15,52 @@
     "venue": "",
     "court": "",
     "home": "Martin Mendez / Diego Godoy",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 20:00 - 00:00 · Martes 20:00 - 00:00 · Viernes 20:00 - 00:00",
+    "days": {
+      "Lunes": "20:00 - 00:00",
+      "Martes": "20:00 - 00:00",
+      "Viernes": "20:00 - 00:00"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Imanol Agnoli / Hernan Masine",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Martes 18:00 - 21:00 · Miércoles 20:30 - 22:00 · Jueves 17:30 - 21:30 · Viernes 17:00 - 22:00 · Sábado 15:00 - 20:00",
+    "days": {
+      "Martes": "18:00 - 21:00",
+      "Miércoles": "20:30 - 22:00",
+      "Jueves": "17:30 - 21:30",
+      "Viernes": "17:00 - 22:00",
+      "Sábado": "15:00 - 20:00"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "A Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Matias Minigutti / Omar Izza",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
@@ -88,6 +112,30 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 19:30 - 00:00 · Martes 19:30 - 00:00 · Miércoles 19:30 - 00:00 · Jueves 19:30 - 00:00 · Viernes 19:30 - 00:00",
+    "days": {
+      "Lunes": "19:30 - 00:00",
+      "Martes": "19:30 - 00:00",
+      "Miércoles": "19:30 - 00:00",
+      "Jueves": "19:30 - 00:00",
+      "Viernes": "19:30 - 00:00"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Sebastian Rodriguez / Gonzalo Barbero",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Lunes 21:00 - 23:00 · Martes 21:00 - 23:00 · Jueves 21:00 - 23:30 · Sábado 13:00 - 18:00",
     "days": {
       "Lunes": "21:00 - 23:00",
@@ -132,6 +180,31 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 21:00 - 22:30 · Martes 18:00 - 22:30 · Miércoles 21:00 - 23:00 · Jueves 19:00 - 22:00 · Viernes 20:30 - 22:30 · Sábado 14:00 - 19:00",
+    "days": {
+      "Lunes": "21:00 - 22:30",
+      "Martes": "18:00 - 22:30",
+      "Miércoles": "21:00 - 23:00",
+      "Jueves": "19:00 - 22:00",
+      "Viernes": "20:30 - 22:30",
+      "Sábado": "14:00 - 19:00"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Nelson Fernando Montorfano / Jonatan Gaston Jerez",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Lunes 20:30 - 22:30 · Viernes 20:00 - 22:30",
     "days": {
       "Lunes": "20:30 - 22:30",
@@ -168,6 +241,76 @@
     "venue": "",
     "court": "",
     "home": "Agustin Alfonso / Ricardo Martin Ramirez",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 18:00 - 20:30 · Martes 18:00 - 21:00 · Jueves 18:30 - 20:00 · Viernes 18:00 - 22:00",
+    "days": {
+      "Lunes": "18:00 - 20:30",
+      "Martes": "18:00 - 21:00",
+      "Jueves": "18:30 - 20:00",
+      "Viernes": "18:00 - 22:00"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Joaquin Alberto Ijalba / Felipe Ijalba",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 19:30 - 22:30 · Martes 19:30 - 22:30 · Miércoles 19:30 - 22:30 · Jueves 19:30 - 22:30 · Viernes 19:30 - 22:30",
+    "days": {
+      "Lunes": "19:30 - 22:30",
+      "Martes": "19:30 - 22:30",
+      "Miércoles": "19:30 - 22:30",
+      "Jueves": "19:30 - 22:30",
+      "Viernes": "19:30 - 22:30"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Ramiro Romero / Angelica Alcaraz",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 18:30 - 00:00 · Martes 18:30 - 00:00 · Miércoles 18:30 - 21:00 · Jueves 18:30 - 00:00",
+    "days": {
+      "Lunes": "18:30 - 00:00",
+      "Martes": "18:30 - 00:00",
+      "Miércoles": "18:30 - 21:00",
+      "Jueves": "18:30 - 00:00"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Marcos Saavedra / Luis Alberto Albornoz",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
@@ -520,58 +663,6 @@
   },
   {
     "pending": true,
-    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
-    "avail": "Lunes 18:00 - 00:00 · Martes 18:00 - 00:00 · Miércoles 18:00 - 00:00 · Jueves 18:00 - 00:00 · Viernes 18:00 - 00:00 · Sábado 18:00 - 00:00",
-    "days": {
-      "Lunes": "18:00 - 00:00",
-      "Martes": "18:00 - 00:00",
-      "Miércoles": "18:00 - 00:00",
-      "Jueves": "18:00 - 00:00",
-      "Viernes": "18:00 - 00:00",
-      "Sábado": "18:00 - 00:00"
-    },
-    "week": "Fecha 2",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Femenino",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Milagros Luna / Lula Thomi",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Tiene 0 partidos en Fecha 1. Recupera esa fecha.",
-    "avail": "Lunes 18:00 - 00:00 · Martes 18:00 - 00:00 · Miércoles 18:00 - 00:00 · Jueves 18:00 - 00:00 · Viernes 18:00 - 00:00 · Sábado 18:00 - 00:00",
-    "days": {
-      "Lunes": "18:00 - 00:00",
-      "Martes": "18:00 - 00:00",
-      "Miércoles": "18:00 - 00:00",
-      "Jueves": "18:00 - 00:00",
-      "Viernes": "18:00 - 00:00",
-      "Sábado": "18:00 - 00:00"
-    },
-    "recoverFrom": "Fecha 1",
-    "recoveredIn": "Fecha 2",
-    "week": "Fecha 1",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Femenino",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Milagros Luna / Lula Thomi",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
     "reason": "No se presentó (W.O.).",
     "avail": "Lunes 18:00 - 00:00 · Martes 18:00 - 00:00 · Miércoles 18:30 - 00:00 · Jueves 18:00 - 00:00 · Viernes 18:00 - 00:00 · Sábado 18:00 - 00:00",
     "days": {
@@ -582,8 +673,6 @@
       "Viernes": "18:00 - 00:00",
       "Sábado": "18:00 - 00:00"
     },
-    "woKey": "T5|soraya campostrini labour catalina otamendi|Fecha 2|wo",
-    "woWinner": "Milagros Solaro / Ana Paula Croce",
     "recoverFrom": "Fecha 2",
     "week": "Fecha 2",
     "day": "",
@@ -607,8 +696,6 @@
       "Viernes": "16:00 - 21:00",
       "Sábado": "15:00 - 20:00"
     },
-    "woKey": "T5|jeronimo acuna lucio acuna|Fecha 2|wo",
-    "woWinner": "Diego Ramirez / Martin Rondan",
     "recoverFrom": "Fecha 2",
     "week": "Fecha 2",
     "day": "",
@@ -625,7 +712,8 @@
   },
   {
     "pending": true,
-    "reason": "Tiene 0 partidos en Fecha 1. Recupera esa fecha.",
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Lunes 18:00 - 00:00 · Martes 18:00 - 00:00 · Miércoles 18:00 - 00:00 · Jueves 18:00 - 00:00 · Viernes 18:00 - 00:00 · Sábado 18:00 - 00:00",
     "days": {
       "Lunes": "18:00 - 00:00",
       "Martes": "18:00 - 00:00",
@@ -634,6 +722,117 @@
       "Viernes": "18:00 - 00:00",
       "Sábado": "18:00 - 00:00"
     },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Milagros Luna / Gisela Corona",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Lunes 18:00 - 00:00 · Martes 18:00 - 00:00 · Miércoles 18:00 - 00:00 · Jueves 18:00 - 00:00 · Viernes 18:00 - 00:00 · Sábado 18:00 - 00:00",
+    "days": {
+      "Lunes": "18:00 - 00:00",
+      "Martes": "18:00 - 00:00",
+      "Miércoles": "18:00 - 00:00",
+      "Jueves": "18:00 - 00:00",
+      "Viernes": "18:00 - 00:00",
+      "Sábado": "18:00 - 00:00"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Alem hernan / Rios Alejandro",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
+    "avail": "Lunes 18:30 - 22:00 · Viernes 18:30 - 22:00 · Sábado 18:00 - 21:30",
+    "days": {
+      "Lunes": "18:30 - 22:00",
+      "Viernes": "18:30 - 22:00",
+      "Sábado": "18:00 - 21:30"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "German Duarte / Emanuel Arteta Magnìn",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "recoverFrom": "Fecha 1",
+    "recoveredIn": "Fecha 2",
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "German Duarte / Emanuel Arteta Magnìn",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": "",
+    "reason": "Tiene 0 partidos en Fecha 1. Recupera esa fecha.",
+    "days": {
+      "Lunes": "18:30 - 22:00",
+      "Viernes": "18:30 - 22:00",
+      "Sábado": "18:00 - 21:30"
+    }
+  },
+  {
+    "pending": true,
+    "recoverFrom": "Fecha 1",
+    "recoveredIn": "Fecha 2",
+    "week": "Fecha 1",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Milagros Luna / Gisela Corona",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": "",
+    "reason": "Tiene 0 partidos en Fecha 1. Recupera esa fecha.",
+    "days": {
+      "Lunes": "18:00 - 00:00",
+      "Martes": "18:00 - 00:00",
+      "Miércoles": "18:00 - 00:00",
+      "Jueves": "18:00 - 00:00",
+      "Viernes": "18:00 - 00:00",
+      "Sábado": "18:00 - 00:00"
+    }
+  },
+  {
+    "pending": true,
     "recoverFrom": "Fecha 1",
     "recoveredIn": "Fecha 2",
     "week": "Fecha 1",
@@ -647,6 +846,15 @@
     "home": "Alem hernan / Rios Alejandro",
     "away": "Pendiente / Pendiente",
     "result": "",
-    "appliedResult": ""
+    "appliedResult": "",
+    "reason": "Tiene 0 partidos en Fecha 1. Recupera esa fecha.",
+    "days": {
+      "Lunes": "18:00 - 00:00",
+      "Martes": "18:00 - 00:00",
+      "Miércoles": "18:00 - 00:00",
+      "Jueves": "18:00 - 00:00",
+      "Viernes": "18:00 - 00:00",
+      "Sábado": "18:00 - 00:00"
+    }
   }
 ]
