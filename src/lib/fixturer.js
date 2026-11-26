@@ -1,5 +1,6 @@
-import { DAYS, pairLabel } from "./disponibilidad.js";
-import { findPairIndex, fold, pairsMatch } from "./scoring.js";
+import { DAYS, isAbandonedPair, pairLabel } from "./disponibilidad.js";
+import { weekKey, weekNumber } from "./liga.js";
+import { findPairIndex, fold, pairsMatch, parseWalkover } from "./scoring.js";
 
 export const MATCH_MINUTES = 90;
 export const PENDING_AWAY = "Pendiente / Pendiente";
@@ -24,6 +25,50 @@ export function isRealPairMatch(m) {
   return Boolean(m && String(m.home || "").trim() && !isPlaceholderPair(m.home) && !isPlaceholderPair(m.away));
 }
 
+/**
+ * Fechas de esta temporada donde el mismo cruce ya se jugó (otro week).
+ * Sirve para mandar a Duplicados al cubrir pendientes / recuperan.
+ */
+export function rematchWeeks(match, history = []) {
+  if (!isRealPairMatch(match) || isPendingMatch(match)) return [];
+  const season = String(match.temp || "").toUpperCase();
+  const week = match.week || "";
+  const cat = match.cat || "";
+  const weeks = (history || [])
+    .filter((p) => {
+      if (p === match) return false;
+      if (!isRealPairMatch(p) || p.dupHold) return false;
+      if (String(p.temp || "").toUpperCase() !== season) return false;
+      if ((p.cat || "") !== cat) return false;
+      if ((p.week || "") === week) return false;
+      return (
+        (pairsMatch(p.home, match.home) && pairsMatch(p.away, match.away)) ||
+        (pairsMatch(p.home, match.away) && pairsMatch(p.away, match.home))
+      );
+    })
+    .map((p) => p.week)
+    .filter(Boolean);
+  return [...new Set(weeks)].sort((a, b) => weekNumber(a) - weekNumber(b));
+}
+
+/** Pendiente que no juega esa fecha: se recupera en una fecha siguiente. */
+export function isRecoverLater(m) {
+  return !!(m && isPendingMatch(m) && m.recoverLater);
+}
+
+/** Pendiente traído a otra fecha para cubrir el partido que debe. */
+export function isMakeupPending(m) {
+  return !!(m && isPendingMatch(m) && m.recoverFrom && !m.recoverLater);
+}
+
+function pendingKind(m) {
+  return m && m.recoverFrom && !m.recoverLater ? "makeup" : "normal";
+}
+
+function samePendingKind(a, b) {
+  return pendingKind(a) === pendingKind(b);
+}
+
 /** Partidos contables (ambas puntas reales) de una pareja en la temporada. */
 export function countPairMatches(name, cat, temp, pools = []) {
   if (!String(name || "").trim() || isPlaceholderPair(name)) return 0;
@@ -35,8 +80,15 @@ export function countPairMatches(name, cat, temp, pools = []) {
       if (!isRealPairMatch(m)) continue;
       if (String(m.temp || "").toUpperCase() !== season) continue;
       if (cat && m.cat && m.cat !== cat) continue;
-      const plays = pairsMatch(m.home, name) || pairsMatch(m.away, name);
-      if (!plays) continue;
+      const isHome = pairsMatch(m.home, name);
+      const isAway = pairsMatch(m.away, name);
+      if (!isHome && !isAway) continue;
+      // W.O.: solo suma PJ al ganador (el ausente queda en 0, como en el ranking).
+      const wo = parseWalkover(m.appliedResult || m.result);
+      if (wo) {
+        const won = wo.homeWin ? isHome : isAway;
+        if (!won) continue;
+      }
       const key = `${m.week || ""}|${m.day || ""}|${m.time || ""}|${fold(m.home)}|${fold(m.away)}`;
       if (seen.has(key)) continue;
       seen.add(key);
@@ -44,6 +96,288 @@ export function countPairMatches(name, cat, temp, pools = []) {
     }
   }
   return n;
+}
+
+/**
+ * El borrador de una fecha reemplaza lo ya publicado de esa misma fecha.
+ * Así, pasar un partido a pendiente baja el PJ en el admin antes de publicar.
+ * Si el borrador no se guarda, la fecha publicada sigue contando.
+ *
+ * Importante: el borrador debe conservar las otras fechas (partidos reales).
+ * Si al armar Fecha 2 se tiran los de Fecha 1, el PJ de «Cubrir con» queda en 0.
+ */
+export function draftAwarePools(results = [], published = [], draft = [], season = "") {
+  const key = (m) => `${String(m?.temp || season || "").toUpperCase()}|${m?.week || ""}`;
+  const weeks = new Set((draft || []).map(key));
+  const rest = (published || []).filter((m) => !weeks.has(key(m)));
+  return [results || [], rest, draft || []];
+}
+
+/**
+ * Al cubrir un pendiente con otra pareja que también estaba pendiente,
+ * saca de la lista el pendiente de quien cubrió (y cualquier duplicado del local).
+ * `covered` es el partido ya convertido a cruce real.
+ */
+export function absorbCoveredPending(matches = [], covered, coverLabel = "") {
+  if (!covered || !Array.isArray(matches)) return matches.slice();
+  const week = covered.week || "";
+  const temp = String(covered.temp || "").toUpperCase();
+  const cover = String(coverLabel || covered.away || "").trim();
+  const home = String(covered.home || "").trim();
+  return matches.filter((m) => {
+    if (m === covered) return true;
+    if (!isPendingMatch(m)) return true;
+    if ((m.week || "") !== week) return true;
+    if (String(m.temp || "").toUpperCase() !== temp) return true;
+    if (home && pairsMatch(m.home, home)) return !samePendingKind(m, covered);
+    if (cover && !isPlaceholderPair(cover) && pairsMatch(m.home, cover)) return !samePendingKind(m, covered);
+    return true;
+  });
+}
+
+function sameSeason(m, season) {
+  return String(m?.temp || "").toUpperCase() === season;
+}
+
+function involvesPair(m, name) {
+  if (!m || !name) return false;
+  if (pairsMatch(m.home, name)) return true;
+  return !isPendingMatch(m) && pairsMatch(m.away, name);
+}
+
+/** Partido de la fecha, no el que se está recuperando. */
+function isWeekMatch(m) {
+  return isRealPairMatch(m) && !m.recoverFrom;
+}
+
+function recoverySettled(pool, name, from, season) {
+  return pool.some(
+    (m) =>
+      sameSeason(m, season) &&
+      String(m.recoverFrom || "") === from &&
+      involvesPair(m, name) &&
+      (isRealPairMatch(m) || isMakeupPending(m))
+  );
+}
+
+function sameTeams(a, b) {
+  if (!a || !b) return false;
+  return (
+    (pairsMatch(a.home, b.home) && pairsMatch(a.away, b.away)) ||
+    (pairsMatch(a.home, b.away) && pairsMatch(a.away, b.home))
+  );
+}
+
+/**
+ * El recupero pertenece a la fecha que falta (`recoverFrom`), no a la fecha
+ * en la que se está armando. Si no, esa pareja queda con dos partidos en una fecha.
+ * `recoveredIn` marca la fecha desde la que se lo agenda.
+ */
+export function normalizeRecoveryWeeks(matches = []) {
+  const list = Array.isArray(matches) ? matches.slice() : [];
+  let changed = 0;
+  for (const m of list) {
+    const owed = String(m?.recoverFrom || "").trim();
+    if (!owed || m.recoverLater) continue;
+    if ((m.week || "") === owed) continue;
+    if (!m.recoveredIn) m.recoveredIn = m.week || "";
+    m.week = owed;
+    changed += 1;
+  }
+  const makeups = list.filter(isMakeupPending);
+  const next = list.filter((m) => {
+    if (!isPendingMatch(m) || m.recoverFrom || m.recoverLater) return true;
+    const dup = makeups.some(
+      (k) =>
+        (k.week || "") === (m.week || "") &&
+        String(k.temp || "").toUpperCase() === String(m.temp || "").toUpperCase() &&
+        (k.cat || "") === (m.cat || "") &&
+        pairsMatch(k.home, m.home)
+    );
+    if (dup) changed += 1;
+    return !dup;
+  });
+  return { matches: next, changed };
+}
+
+/**
+ * Un partido ya cubierto que recupera una fecha anterior se publica en esa fecha.
+ * Si la fecha sigue en el fixture, se suma ahí. Si ya pasó a resultados, se suma al historial.
+ * No reemplaza el resto de los partidos de esa fecha.
+ */
+export function fileOwedRecoveries({ published = [], results = [], owed = [] } = {}) {
+  const live = published.slice();
+  const archive = results.slice();
+  const liveWeeks = new Set(live.map((m) => weekKey(m)));
+  for (const rec of owed) {
+    if (!rec?.recoverFrom) continue;
+    const key = weekKey(rec);
+    const same = (m) => weekKey(m) === key && sameTeams(m, rec);
+    if (liveWeeks.has(key)) {
+      const idx = live.findIndex(same);
+      if (idx >= 0) live[idx] = rec;
+      else live.push(rec);
+    } else {
+      const idx = archive.findIndex(same);
+      if (idx >= 0) {
+        archive[idx] = { ...archive[idx], ...rec, result: rec.result || archive[idx].result || "" };
+      } else archive.push(rec);
+    }
+  }
+  return { published: live, results: archive };
+}
+
+/**
+ * Marca en la fecha que se arma a quien tiene menos partidos que el resto de su categoría.
+ * En Fecha 2, quien tiene 0 partidos jugados recupera Fecha 1.
+ * El partido queda en la fecha que falta: no se copia como un segundo partido de esta fecha.
+ */
+export function importRecoveryDebts(matches = [], { temp = "", week = "", history = null, pairs = [] } = {}) {
+  const season = String(temp || "").toUpperCase();
+  const here = weekNumber(week);
+  const normalized = normalizeRecoveryWeeks(matches);
+  let list = normalized.matches;
+  const pool = Array.isArray(history) ? history : list;
+  if (!season || !week || !here) return { matches: list, added: normalized.changed, waiting: 0 };
+
+  const abandonedLabels = (pairs || [])
+    .filter((p) => isAbandonedPair(p) && String(p?.temp || "").toUpperCase() === season && p.p1 && p.p2)
+    .map((p) => pairLabel(p));
+  const isAbandonedName = (label) => abandonedLabels.some((name) => pairsMatch(name, label));
+
+  // Sacá pendientes de recupero/normal de parejas que abandonaron.
+  const beforePrune = list.length;
+  list = list.filter((m) => {
+    if (!sameSeason(m, season) || !isPendingMatch(m)) return true;
+    return !isAbandonedName(m.home);
+  });
+  let added = normalized.changed + (beforePrune - list.length);
+
+  const seasonRows = pool.filter((m) => sameSeason(m, season));
+  const cats = [
+    ...new Set(
+      [
+        ...seasonRows.map((m) => m.cat || ""),
+        ...(pairs || [])
+          .filter((p) => String(p?.temp || "").toUpperCase() === season && !isAbandonedPair(p))
+          .map((p) => p.cat || ""),
+      ].filter(Boolean)
+    ),
+  ];
+  let waiting = 0;
+
+  for (const cat of cats) {
+    const catRows = seasonRows.filter((m) => (m.cat || "") === cat);
+    const playedWeeks = [
+      ...new Set(
+        catRows
+          .filter((m) => isWeekMatch(m) && weekNumber(m.week) > 0 && weekNumber(m.week) < here)
+          .map((m) => m.week)
+      ),
+    ].sort((a, b) => weekNumber(a) - weekNumber(b));
+    if (!playedWeeks.length) continue;
+
+    const people = [];
+    const pushPerson = (label, extra = {}) => {
+      const name = String(label || "").trim();
+      if (!name || isPlaceholderPair(name) || isAbandonedName(name)) return;
+      if (people.some((p) => pairsMatch(p.name, name))) return;
+      people.push({ name, days: extra.days, avail: extra.avail || "", note: extra.note || "" });
+    };
+    for (const p of pairs || []) {
+      if (isAbandonedPair(p)) continue;
+      if (String(p?.temp || "").toUpperCase() !== season || (p.cat || "") !== cat || !p.p1 || !p.p2) continue;
+      pushPerson(pairLabel(p), { days: p.days });
+    }
+    for (const m of catRows) {
+      pushPerson(m.home, { days: m.days, avail: m.avail, note: m.note });
+      if (!isPendingMatch(m)) pushPerson(m.away);
+    }
+
+    for (const person of people) {
+      const missed = playedWeeks.filter((from) => {
+        const inWeek = catRows.filter((m) => (m.week || "") === from);
+        return !inWeek.some((m) => isWeekMatch(m) && involvesPair(m, person.name));
+      });
+      if (!missed.length) continue;
+      for (const from of missed) {
+        waiting += 1;
+        if (recoverySettled(list, person.name, from, season) || recoverySettled(pool, person.name, from, season)) continue;
+        const parked = list.some(
+          (m) =>
+            sameSeason(m, season) &&
+            (m.week || "") === from &&
+            (m.cat || "") === cat &&
+            isRecoverLater(m) &&
+            pairsMatch(m.home, person.name)
+        );
+        if (parked) continue;
+        const src = list.find(
+          (m) =>
+            sameSeason(m, season) &&
+            (m.week || "") === from &&
+            (m.cat || "") === cat &&
+            isPendingMatch(m) &&
+            !m.recoverFrom &&
+            !m.recoverLater &&
+            pairsMatch(m.home, person.name)
+        );
+        const remembered = catRows.find((m) => (m.week || "") === from && isPendingMatch(m) && pairsMatch(m.home, person.name));
+        const days =
+          (src?.days && typeof src.days === "object" && src.days) ||
+          (remembered?.days && typeof remembered.days === "object" && remembered.days) ||
+          (person.days && typeof person.days === "object" && person.days) ||
+          null;
+        if (src) {
+          src.recoverFrom = from;
+          src.recoveredIn = week;
+          src.pending = true;
+          src.reason = src.reason || `Tiene 0 partidos en ${from}. Recupera esa fecha.`;
+          added += 1;
+          continue;
+        }
+        list.push({
+          pending: true,
+          recoverFrom: from,
+          recoveredIn: week,
+          week: from,
+          day: "",
+          date: "",
+          temp: season,
+          cat,
+          time: "",
+          venue: "",
+          court: "",
+          home: src?.home || person.name,
+          away: PENDING_AWAY,
+          result: "",
+          appliedResult: "",
+          reason: `Tiene 0 partidos en ${from}. Recupera esa fecha.`,
+          ...(days ? { days } : {}),
+          ...(src?.avail || person.avail ? { avail: String(src?.avail || person.avail) } : {}),
+          ...(src?.note || person.note ? { note: String(src?.note || person.note) } : {}),
+        });
+        added += 1;
+      }
+    }
+  }
+  return { matches: list, added, waiting };
+}
+
+/** Si se quita el pendiente de recupero, la deuda vuelve a estar libre para otra fecha. */
+export function releaseRecoveryDebt(matches = [], makeup) {
+  if (!makeup || !isMakeupPending(makeup)) return;
+  const from = String(makeup.recoverFrom || "").trim();
+  const week = makeup.week || "";
+  const temp = String(makeup.temp || "").toUpperCase();
+  for (const m of matches) {
+    if (!isRecoverLater(m)) continue;
+    if (String(m.temp || "").toUpperCase() !== temp) continue;
+    if ((m.recoveredIn || "") !== week) continue;
+    if (from && String(m.recoverFrom || m.week || "") !== from) continue;
+    if (!pairsMatch(m.home, makeup.home)) continue;
+    delete m.recoveredIn;
+  }
 }
 
 /** Candidatas de la misma categoría para cubrir un pendiente (doble jornada ok; tope 12 PJ). */
@@ -54,7 +388,7 @@ export function coverCandidates({ match, pairs = [], pools = [], temp = "" } = {
   const out = [];
   const seen = new Set();
   for (const p of pairs) {
-    if (!p?.p1 || !p?.p2 || !p?.cat) continue;
+    if (!p?.p1 || !p?.p2 || !p?.cat || isAbandonedPair(p)) continue;
     if (cat && p.cat !== cat) continue;
     if (String(p.temp || "").toUpperCase() !== season) continue;
     const label = pairLabel(p);
@@ -178,8 +512,19 @@ function solveCategory(pairs, edges, seed) {
  * Arma los partidos de una fecha a partir de las inscripciones.
  * Una pareja juega un partido (dos si pidió recuperar) contra otra de su categoría con la que
  * comparta al menos 1:30 en el mismo día. Se prioriza no repetir rival y cruzar posiciones cercanas.
+ *
+ * `filterSharedSlots(slots, entryA, entryB)` (opcional): deja solo huecos que existan en el Drive.
+ * Así no se arman cruces “en papel” que después caen a pendientes por falta de cancha.
  */
-export function buildFixture({ entries = [], ranking = [], history = [], week = "", temp = "", seed = 1 } = {}) {
+export function buildFixture({
+  entries = [],
+  ranking = [],
+  history = [],
+  week = "",
+  temp = "",
+  seed = 1,
+  filterSharedSlots = null,
+} = {}) {
   const matches = [];
   const pending = [];
   const active = entries.filter((e) => !e.bye && e.p1 && e.p2 && e.cat);
@@ -208,7 +553,10 @@ export function buildFixture({ entries = [], ranking = [], history = [], week = 
       for (let j = i + 1; j < pairs.length; j++) {
         const a = pairs[i];
         const b = pairs[j];
-        const slots = sharedSlots(a.entry, b.entry);
+        let slots = sharedSlots(a.entry, b.entry);
+        if (typeof filterSharedSlots === "function") {
+          slots = filterSharedSlots(slots, a.entry, b.entry) || [];
+        }
         if (!slots.length) continue;
         const pa = a.pos || maxPos + 1;
         const pb = b.pos || maxPos + 1;
@@ -235,6 +583,9 @@ export function buildFixture({ entries = [], ranking = [], history = [], week = 
         away: away.name,
         result: "",
         rematch: edge.cost >= REMATCH_COST,
+        // Para assignCourtSlots: no mover a un turno fuera de la inscripción.
+        homeDays: home.entry?.days && typeof home.entry.days === "object" ? home.entry.days : undefined,
+        awayDays: away.entry?.days && typeof away.entry.days === "object" ? away.entry.days : undefined,
       });
     }
     for (const p of pairs) {
@@ -243,8 +594,10 @@ export function buildFixture({ entries = [], ranking = [], history = [], week = 
         pairs.length === 1
           ? "Es la única pareja anotada en su categoría."
           : p.options === 0
-            ? "No coincide en día y horario con ninguna pareja de su categoría."
-            : "Las parejas con las que coincide ya tienen partido.";
+            ? filterSharedSlots
+              ? "Sin turno exacto en el Drive con otra pareja de su categoría (cercanos/estimables se cubren a mano)."
+              : "No coincide en día y horario con ninguna pareja de su categoría."
+            : "Las parejas con las que coincide en exacto ya tienen partido.";
       const slot = {
         week,
         temp,

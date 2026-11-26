@@ -3,6 +3,8 @@ export const HIDDEN_CATS = new Set(["S Masculina"]);
 export const RANK_PATH = "src/data/ranking.json";
 export const SITE_PATH = "src/data/site.json";
 export const FIXTURE_PATH = "src/data/fixture.json";
+/** Pendientes solo admin: no van al fixture público hasta que tengan rival. */
+export const FIXTURE_PENDING_PATH = "src/data/fixture-pending.json";
 export const RESULTS_PATH = "src/data/results.json";
 export const PLAYOFF_PATH = "src/data/playoff.json";
 export const ASCENSOS_PATH = "src/data/ascensos.json";
@@ -10,12 +12,13 @@ export const PAIRS_CONFIG_PATH = "src/data/inscripcion-parejas.json";
 export const PAIRS_PATH = "src/data/parejas.json";
 export const RANK_COLS = ["name", "cat", "pts", "pj", "dif", "pos", "temp"];
 export const FX_COLS = ["categoria", "partido", "complejo", "cancha", "dia", "horario"];
+/** Mismo orden que src/lib/disponibilidad.js (líderes, ranking, admin). */
 export const CATS = [
   "A Masculina",
-  "B Masculina",
-  "C Masculina",
   "A Femenino",
+  "B Masculina",
   "B Femenino",
+  "C Masculina",
   "C Femenino",
 ];
 export const CAT_MAP = {
@@ -61,7 +64,7 @@ export const SECTIONS = {
     help: "Solo la temporada del sistema tiene Próximamente / En juego. Las anteriores quedan Finalizadas. Al cerrar inscripción pasa a En juego.",
   },
   ranking: { group: "Liga", title: "Ranking", help: "Entrá a la temporada, corregí a mano si hace falta y publicá. La tabla se arma con las parejas inscriptas y los resultados." },
-  fixture: { group: "Liga", title: "Fixture", help: "Entrá a la fecha, leé el Google Sheet (pestaña Fecha N), configurá partidos/días por complejo y armá. Las fechas anteriores quedan en Resultados." },
+  fixture: { group: "Liga", title: "Fixture", help: "Entrá a la fecha, leé el Google Sheet (pestaña Fecha N), configurá partidos/días por complejo y armá. Si no hay cancha, puede rearmar el rival. Las fechas anteriores quedan en Resultados." },
   resultados: { group: "Liga", title: "Resultados", help: "Cargá el score de cada partido. Al publicar se actualiza el ranking." },
   playoff: { group: "Liga", title: "Playoff", help: "Armá el cuadro de cada categoría. Las temporadas anteriores quedan en el historial de /playoff/. Con Editar cambiás una pareja a mano." },
   ascensos: {
@@ -83,5 +86,10 @@ export const SECTIONS = {
     group: "Torneos",
     title: "Visitas",
     help: "Tráfico de la web: totales de 14 días y últimas visitas con IP (solo visibles en el admin).",
+  },
+  consumos: {
+    group: "Sistema",
+    title: "Consumos",
+    help: "Cuotas separadas: Cloudflare (KV/API), Vercel (deploys) y GitHub (publish). Alertas antes de que se corte inscripción o el sitio.",
   },
 };

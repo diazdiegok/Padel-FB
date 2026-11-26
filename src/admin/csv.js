@@ -1,4 +1,4 @@
-import { PENDING_AWAY, isPlaceholderPair } from "../lib/fixturer.js";
+import { PENDING_AWAY, isPendingMatch, isPlaceholderPair } from "../lib/fixturer.js";
 import { parseCourtSlotRows } from "../lib/slots.js";
 import { CAT_MAP, CATS, FX_COLS, RANK_COLS, VENUE_MAP } from "./constants.js";
 import { num } from "./ui.js";
@@ -37,17 +37,22 @@ function dayIdxDl(d) {
   return i < 0 ? 99 : i;
 }
 
-/** Ordena partidos para export: fecha (día+hora) | complejo | pareja. */
+/** Ordena partidos para export: fecha (día+hora) | complejo | pareja. Pendientes siempre arriba. */
 export function sortMatchesForExport(matches = [], mode = "fecha") {
   const list = (matches || []).slice();
   const byFecha = (a, b) =>
     dayIdxDl(a.day) - dayIdxDl(b.day) ||
     String(a.time || "").localeCompare(String(b.time || ""), "es") ||
     String(a.venue || "").localeCompare(String(b.venue || ""), "es");
+  /** Pendientes primero (sin importar si el admin tenía cancha reservada). */
+  const pendingFirst = (a, b) => Number(isPendingMatch(b)) - Number(isPendingMatch(a));
   if (mode === "complejo") {
     return list.sort(
       (a, b) =>
+        pendingFirst(a, b) ||
         String(a.venue || "").localeCompare(String(b.venue || ""), "es") ||
+        // Dentro del mismo complejo, pendientes otra vez arriba por si rank empató.
+        Number(isPendingMatch(b)) - Number(isPendingMatch(a)) ||
         byFecha(a, b) ||
         String(a.home || "").localeCompare(String(b.home || ""), "es")
     );
@@ -55,28 +60,41 @@ export function sortMatchesForExport(matches = [], mode = "fecha") {
   if (mode === "pareja") {
     return list.sort(
       (a, b) =>
+        pendingFirst(a, b) ||
         String(a.home || "").localeCompare(String(b.home || ""), "es") ||
         String(a.away || "").localeCompare(String(b.away || ""), "es") ||
         byFecha(a, b)
     );
   }
   return list.sort(
-    (a, b) => byFecha(a, b) || String(a.cat || "").localeCompare(String(b.cat || ""), "es")
+    (a, b) => pendingFirst(a, b) || byFecha(a, b) || String(a.cat || "").localeCompare(String(b.cat || ""), "es")
   );
 }
 
 export function fixtureExportRows(matches = []) {
-  return matches.map((m) => ({
-    fecha: m.week || "",
-    dia: m.day || "",
-    horario: m.time || "",
-    categoria: m.cat || "",
-    complejo: m.venue || "",
-    cancha: m.court || "",
-    pareja1: m.home || "",
-    pareja2: m.away || "",
-    resultado: m.result || "",
-  }));
+  return matches.map((m) => {
+    const pending = isPendingMatch(m);
+    return {
+      fecha: m.week || "",
+      // Pendiente sin rival: no lleva día/horario/sede (aunque el admin haya reservado cancha).
+      dia: pending ? "" : m.day || "",
+      horario: pending ? "" : m.time || "",
+      categoria: m.cat || "",
+      complejo: pending ? "" : m.venue || "",
+      cancha: pending ? "" : m.court || "",
+      pareja1: m.home || "",
+      pareja2: pending ? PENDING_AWAY : m.away || "",
+      resultado: pending ? "" : m.result || "",
+    };
+  });
+}
+
+/** Etiqueta del Excel según orden: "Fecha 1- Complejos", "Fecha 1- Fecha", … */
+export function fixtureExportLabel(week = "", mode = "complejo") {
+  const fecha = String(week || "Fixture").trim() || "Fixture";
+  const suffix =
+    mode === "complejo" ? "Complejos" : mode === "pareja" ? "Parejas" : mode === "fecha" ? "Fecha" : mode || "Fixture";
+  return `${fecha}- ${suffix}`;
 }
 
 export const FX_EXPORT_COLS = [
@@ -157,7 +175,17 @@ export function cleanMatch(m, defaults = {}, currentSeason = "T4") {
     if (m.reason) extra.reason = String(m.reason).trim();
     if (m.avail) extra.avail = String(m.avail).trim();
     if (m.note) extra.note = String(m.note).trim();
+    // Conservar disponibilidad para poder cubrir con turnos del Drive.
+    if (m.days && typeof m.days === "object") extra.days = m.days;
+    if (m.homeDays && typeof m.homeDays === "object") extra.homeDays = m.homeDays;
+    if (m.recoverLater) extra.recoverLater = true;
+    if (m.woKey) extra.woKey = String(m.woKey).trim();
+    if (m.woWinner) extra.woWinner = String(m.woWinner).trim();
   }
+  if (m.recoverFrom) extra.recoverFrom = String(m.recoverFrom).trim();
+  // recoveredIn también en cruces ya cubiertos (Duplicados / publicar recupero).
+  if (m.recoveredIn) extra.recoveredIn = String(m.recoveredIn).trim();
+  if (m.dupHold) extra.dupHold = true;
   return {
     ...extra,
     week: String(m.week || defaults.week || "").trim(),
@@ -172,6 +200,8 @@ export function cleanMatch(m, defaults = {}, currentSeason = "T4") {
     away: pendingAway ? PENDING_AWAY : away,
     result: String(m.result || m.resultado || "").trim(),
     appliedResult: String(m.appliedResult || "").trim(),
+    // Cubrir con “horario cercano” (admin confirmó aflojar inscripción).
+    ...(m.flexAvail ? { flexAvail: true } : {}),
   };
 }
 

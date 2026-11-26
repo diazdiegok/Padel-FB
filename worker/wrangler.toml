@@ -10,6 +10,8 @@ GITHUB_OWNER = "diazdiegok"
 GITHUB_REPO = "Padel-FB"
 SITE_ORIGIN = "https://diazdiegok.github.io,https://padel-fb.vercel.app"
 COURTS_SHEET_ID = "1OHnpx9ganzFR805yv8f5mmyYH_-o-2bNsOn9agmJcvg"
+VERCEL_PROJECT_ID = "prj_MYtqAmmAs6hRyGVUbQTL7JBc1zgP"
+VERCEL_TEAM_ID = "team_ZlKmAsskJLTZIY6tF1pCChpk"
 
 [[kv_namespaces]]
 binding = "AUTH_KV"

@@ -12,6 +12,19 @@ export function seasonSlug(temp) {
   return String(temp || "").trim().toLowerCase();
 }
 
+/** Ancla estable para abrir el resultado de un partido desde el fixture. */
+export function matchAnchor(m) {
+  const raw = [m?.cat, m?.day, m?.time, m?.home, m?.away].filter(Boolean).join(" ");
+  const slug = String(raw)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 96);
+  return slug ? `partido-${slug}` : "partido";
+}
+
 export function weekSlug(week) {
   const raw = String(week || "Sin fecha")
     .trim()
@@ -60,6 +73,24 @@ export function liveFixture(matches) {
   const week = latestWeek(list);
   if (!week) return [];
   return list.filter((m) => (m.week || "Sin fecha") === week);
+}
+
+/**
+ * Última fecha que sigue en el fixture vivo de una temporada.
+ * Solo esa debe mostrarse como «En juego»; al crear Fecha N+1, la anterior deja de serlo.
+ */
+export function openWeek(matches = [], temp = "") {
+  const season = String(temp || "").trim().toUpperCase();
+  const list = (matches || []).filter((m) => {
+    if (!season) return true;
+    return String(m?.temp || "").trim().toUpperCase() === season;
+  });
+  return latestWeek(list);
+}
+
+export function isOpenWeek(week, matches = [], temp = "") {
+  const open = openWeek(matches, temp);
+  return !!open && String(week || "") === open;
 }
 
 export function mergeArchivedMatches(archive, incoming) {

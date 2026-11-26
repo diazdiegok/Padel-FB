@@ -63,14 +63,18 @@ import "../styles/admin.css";
     <div class="admin-nav-backdrop" id="admin-nav-backdrop"></div>
     <aside class="admin-sidebar" id="admin-sidebar">
       <div class="admin-brand">
-        <div class="admin-brand-mark">FB</div>
-        <div class="admin-brand-text">
+        <div class="admin-brand-top">
+          <div class="admin-brand-mark">FB</div>
           <strong>PADEL FB</strong>
-          <div class="admin-brand-row">
-            <span>Admin</span>
-            <button class="admin-brand-btn admin-brand-btn-visitas" type="button" data-nav="visitas">Visitas</button>
-            <button class="admin-brand-btn admin-brand-btn-salir" type="button" id="admin-logout">Salir</button>
-          </div>
+        </div>
+        <div class="admin-brand-col" aria-label="Accesos rápidos">
+          <span class="admin-brand-label">Admin</span>
+          <button class="admin-brand-btn admin-brand-btn-visitas" type="button" data-nav="visitas">Visitas</button>
+          <button class="admin-brand-btn admin-brand-btn-consumos" type="button" data-nav="consumos" id="admin-consumos-btn">
+            Consumos
+            <span class="admin-brand-alert-dot" id="consumos-alert-dot" hidden aria-hidden="true"></span>
+          </button>
+          <button class="admin-brand-btn admin-brand-btn-salir" type="button" id="admin-logout">Salir</button>
         </div>
       </div>
 
@@ -106,18 +110,21 @@ import "../styles/admin.css";
         <div class="admin-topbar-left">
           <button class="admin-menu-btn" type="button" id="admin-menu-btn" aria-label="Menú">☰</button>
           <div>
-            <h1 id="admin-page-title">Inicio</h1>
-            <p class="admin-page-help" id="admin-page-help">Contacto, ciudad, texto de inicio y si se muestra el botón Ver playoff.</p>
+            <h1 id="admin-page-title"></h1>
+            <p class="admin-page-help" id="admin-page-help"></p>
           </div>
         </div>
         <div class="admin-topbar-right">
           <span class="admin-dirty" id="admin-dirty" hidden>Cambios sin guardar</span>
+          <button class="btn btn-ghost admin-dirty-cancel" type="button" id="admin-dirty-cancel" hidden>
+            Cancelar
+          </button>
         </div>
       </header>
 
       <div class="admin-content">
-        <!-- Inicio -->
-        <section data-section="sitio">
+        <!-- Inicio: hidden hasta que el JS elija sección (evita flash en F5). -->
+        <section data-section="sitio" hidden>
           <form class="form" id="site-form">
             <div class="admin-site-grid">
               <div class="admin-site-block">
@@ -218,7 +225,7 @@ import "../styles/admin.css";
         <section data-section="fixture" hidden>
           <div class="admin-callout">
             <strong>Cómo se arma</strong>
-            <span>1) Leer Drive toma la pestaña del Google Sheet con el mismo nombre que la fecha (Fecha 1, Fecha 2…). Un horario solo = 1:30; un rango (16:30-21:00) = ventana para partidos de 1:30. 2) Fixtureo complejos avanzado: cupos y días. 3) Armar fixture y publicar.</span>
+            <span>1) Leer Drive toma la pestaña del Google Sheet con el mismo nombre que la fecha. 2) Armar fixture matchea solo cruces con turno exacto en el Drive. 3) Complejos avanzados (opcional): cupos y días por complejo. 4) Pendientes: sin exacto; al cubrir usá cercanos, estimables o cancha vacía. Si el cruce ya se jugó, va a Duplicados. 5) Publicar.</span>
           </div>
           <div class="admin-section-tools">
             <span class="tag" id="fx-summary">Sin partidos</span>
@@ -232,10 +239,35 @@ import "../styles/admin.css";
               <div class="admin-toolbar fx-toolbar">
                 <div class="fx-toolbar-main">
                   <button class="btn btn-lime" type="button" id="fx-drive">Leer Drive</button>
-                  <button class="btn btn-ghost" type="button" id="fx-slots">Subir archivo</button>
-                  <input id="fx-slots-file" type="file" accept=".xlsx,.xls,.csv,.txt" hidden />
+                  <button
+                    class="btn btn-ghost"
+                    type="button"
+                    id="fx-sync-pairs"
+                    title="Suma parejas nuevas a Pendientes y alinea bajas/cambios de categoría con Inscripciones"
+                  >
+                    Sincronizar pendientes
+                  </button>
                   <button class="btn btn-lime" type="button" id="fx-build" hidden>Armar fixture</button>
+                  <button
+                    class="btn btn-ghost"
+                    type="button"
+                    id="fx-advanced-toggle"
+                    hidden
+                    aria-expanded="false"
+                    aria-controls="fx-advanced"
+                    title="Activá cupos y días por complejo. Si está apagado, Armar usa todos los horarios del Drive"
+                  >
+                    Complejos avanzados
+                  </button>
                   <button class="btn btn-ghost" type="button" id="fx-add" hidden>+ Partido</button>
+                  <button
+                    class="btn btn-ghost"
+                    type="button"
+                    id="fx-dupes"
+                    title="Revisa si dos partidos de esta fecha usan la misma cancha en un horario que se pisa"
+                  >
+                    Revisar canchas duplicadas
+                  </button>
                 </div>
                 <div class="fx-download" id="fx-download-wrap" hidden>
                   <label class="fx-download-label" for="fx-dl-sort">Descargar Excel</label>
@@ -245,30 +277,52 @@ import "../styles/admin.css";
                     <option value="pareja">Por pareja</option>
                   </select>
                   <button class="btn btn-ghost" type="button" id="fx-dl">Bajar</button>
+                  <button class="btn btn-lime" type="button" id="fx-drive-paste" title="Pega resultados, Pendientes (sin rival) y Recuperan fecha (incl. W.O.) en sus sheets de Drive">Pegar en Drive</button>
+                </div>
+              </div>
+              <div class="fx-build-progress" id="fx-build-progress" hidden>
+                <div class="fx-build-progress-top">
+                  <span id="fx-build-progress-label">Armando fixture…</span>
+                  <strong id="fx-build-progress-pct">0%</strong>
+                </div>
+                <div
+                  class="fx-build-progress-bar"
+                  role="progressbar"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow="0"
+                  aria-label="Progreso al armar fixture"
+                >
+                  <i id="fx-build-progress-fill"></i>
                 </div>
               </div>
               <p class="admin-help" id="fx-slots-status" hidden></p>
               <div class="fx-advanced" id="fx-advanced" hidden>
                 <div class="fx-advanced-head">
-                  <strong>Complejos y días</strong>
-                  <span class="admin-help">El cupo total es el de la fecha: parejas jugables ÷ 2 (no entran las que ya llegaron a 12 PJ). La suma de «Partidos a usar» no puede pasarlo. El número al lado del día (ej. Jueves · 4 disp.) es cuántos de 1:30 <b>caben ese día en el Sheet</b>. Marcá los días y Armar fixture.</span>
+                  <strong>Complejos avanzados</strong>
+                  <span class="admin-help">Opcional. Acá limitás «Partidos a usar» y días por complejo. El cupo total de la fecha es parejas jugables ÷ 2 (no entran las que ya llegaron a 12 PJ); la suma no puede pasarlo. Si apagás Complejos avanzados, Armar toma todos los horarios del Drive. El número al lado del día (ej. Jueves · 4 disp.) es cuántos de 1:30 <b>quedan libres ese día en el Sheet</b>.</span>
                   <p class="fx-plan-summary" id="fx-plan-summary" hidden></p>
                 </div>
                 <div class="fx-advanced-list" id="fx-advanced-list"></div>
               </div>
             </div>
             <div class="admin-empty" id="fx-empty" hidden>
-              <p>Todavía no hay partidos. Cargá el Excel, configurá complejos y armá el fixture.</p>
+              <p>Todavía no hay partidos. Leé el Drive y armá el fixture. Complejos avanzados es opcional.</p>
             </div>
             <div class="fx-warnings" id="fx-warnings" role="status" hidden></div>
-            <div class="fx-pending" id="fx-pending" hidden></div>
+            <div id="fx-new" hidden></div>
+            <div id="fx-pending" hidden></div>
+            <div id="fx-recover-box" hidden></div>
+            <div id="fx-dup-box" hidden></div>
+            <div class="res-filters" id="fx-filters" hidden></div>
+            <p class="fx-grid-count" id="fx-grid-count" hidden></p>
             <div class="admin-scroll">
               <table class="admin-table">
                 <thead>
                   <tr>
+                    <th>Cat</th>
                     <th>Día</th>
                     <th>Horario</th>
-                    <th>Cat</th>
                     <th>Complejo</th>
                     <th>Cancha</th>
                     <th>Pareja 1</th>
@@ -280,7 +334,7 @@ import "../styles/admin.css";
               </table>
             </div>
             <div class="admin-sticky-bar">
-              <p class="admin-sticky-note">Publicá el fixture de la fecha. Los resultados se cargan en la sección Resultados.</p>
+              <p class="admin-sticky-note">Publicá los partidos con rival. Los pendientes quedan en el admin hasta cubrirlos. Los resultados se cargan en Resultados.</p>
               <div class="admin-sticky-actions">
                 <button class="btn btn-lime" type="button" id="fx-publish">Publicar fixture</button>
               </div>
@@ -292,7 +346,7 @@ import "../styles/admin.css";
         <section data-section="resultados" hidden>
           <div class="admin-callout">
             <strong>Cómo se carga</strong>
-            <span>Desde Pareja 1: <b>6-4 6-2</b> (ganador 3 pts) o <b>6-4 3-6 6-2</b> (ganador 3 pts, perdedor 1). También podés <b>Importar Excel</b> (.csv / .xls / .xlsx) con columnas <b>fecha, categoria, pareja1, pareja2, resultado</b>. Bajá la plantilla con los partidos ya publicados.</span>
+            <span>Desde Pareja 1: <b>6/4 6/2</b> (ganador 3 pts) o <b>6/4 3/6 6/2</b> (ganador 3 pts, perdedor 1). Si el rival <b>no se presentó</b>, usá el botón del partido: el ganador suma 3 pts y 1 PJ; el ausente no suma PJ y queda en Recuperan fecha. También podés <b>Importar Excel</b> (.csv / .xls / .xlsx) con columnas <b>fecha, categoria, pareja1, pareja2, resultado</b>.</span>
           </div>
           <div class="admin-section-tools">
             <button class="btn btn-ghost" type="button" id="res-reload">Actualizar</button>
@@ -318,7 +372,7 @@ import "../styles/admin.css";
         <section data-section="playoff" hidden>
           <div class="admin-callout">
             <strong>Cómo se carga</strong>
-            <span>Elegí la temporada y la categoría, revisá el cuadro (se arma con el ranking: 1 vs 8, 4 vs 5, 2 vs 7, 3 vs 6) y cargá día, horario y resultado: <b>6-4 6-2</b> o <b>6-4 3-6 10-8</b>. Para cambiar una pareja tocá <b>Editar</b>. Cada temporada publicada queda en el historial de la web; la T4 y las que vengan se siguen viendo. El playoff no suma puntos al ranking.</span>
+            <span>Elegí la temporada y la categoría, revisá el cuadro (se arma con el ranking: 1 vs 8, 4 vs 5, 2 vs 7, 3 vs 6) y cargá día, horario y resultado: <b>6/4 6/2</b> o <b>6/4 3/6 10/8</b>. Para cambiar una pareja tocá <b>Editar</b>. Cada temporada publicada queda en el historial de la web; la T4 y las que vengan se siguen viendo. El playoff no suma puntos al ranking.</span>
           </div>
           <div class="admin-panel">
             <div class="admin-toolbar">
@@ -436,6 +490,14 @@ import "../styles/admin.css";
             <button class="btn btn-ghost" type="button" id="pairs-add">+ Pareja</button>
             <button class="btn btn-ghost" type="button" id="pairs-export">Exportar con WhatsApp</button>
             <button class="btn btn-ghost" type="button" id="pairs-align-rank" hidden>Alinear ranking</button>
+            <button
+              class="btn btn-ghost"
+              type="button"
+              id="pairs-sync-fx"
+              title="Alinea Fixture → Pendientes con las inscripciones (altas, bajas, categoría). Después Publicar parejas o Publicar fixture."
+            >
+              Sincronizar pendientes
+            </button>
             <span class="tag" id="pairs-count"></span>
             <span class="tag" id="pairs-rank-tag" hidden></span>
           </div>
@@ -446,7 +508,7 @@ import "../styles/admin.css";
             <div class="pills" id="pairs-pays"></div>
           </div>
           <input class="admin-search" id="pairs-search" type="search" placeholder="Buscar jugador…" autocomplete="off" />
-          <p class="admin-help">Filtrá por categoría, origen o pago verificado / no verificado, o buscá por nombre. Corregí nombres, mails, categoría o disponibilidad si se equivocaron. En Repetida quitá el duplicado. WhatsApp y mails no se publican en la web: solo los ves acá.</p>
+          <p class="admin-help">Filtrá por categoría, origen (Web, Admin, Del ranking, Repetida o Abandonaron), pago, o buscá por nombre. Abandonaron guarda las que se quitaron de la inscripción, hayan jugado o no (0 PJ también). En Repetida quitá el duplicado. WhatsApp y mails no se publican en la web: solo los ves acá.</p>
           <p class="admin-msg" id="pairs-msg"></p>
           <div id="pairs-list"></div>
           <div class="admin-sticky-bar">
@@ -622,6 +684,27 @@ import "../styles/admin.css";
           <div id="visitas-board"></div>
         </section>
 
+        <!-- Consumos / cuotas por proveedor -->
+        <section data-section="consumos" hidden>
+          <div class="admin-section-tools">
+            <button class="btn btn-ghost" type="button" id="consumos-reload">Actualizar</button>
+            <button
+              class="btn btn-ghost"
+              type="button"
+              id="consumos-storage-edit"
+              title="Vercel no publica el GB por API en Hobby: cargá el número del dashboard Usage"
+            >
+              Actualizar storage GB
+            </button>
+            <span class="tag" id="consumos-status-tag"></span>
+          </div>
+          <p class="admin-help">
+            Cuotas separadas: <b>Cloudflare</b> (API/KV), <b>Vercel</b> (deploys del sitio) y <b>GitHub</b> (publish al repo). Cada uno con barra, restante y renovación.
+          </p>
+          <p class="admin-msg" id="consumos-msg"></p>
+          <div id="consumos-board"></div>
+        </section>
+
       </div>
     </div>
 
@@ -629,7 +712,7 @@ import "../styles/admin.css";
     <dialog class="admin-modal" id="admin-modal">
       <div class="admin-modal-inner">
         <h2 id="admin-modal-title">Confirmar</h2>
-        <p id="admin-modal-body"></p>
+        <div id="admin-modal-body" class="admin-modal-body"></div>
         <div class="admin-modal-actions">
           <button class="btn btn-ghost" type="button" id="admin-modal-cancel">Cancelar</button>
           <button class="btn btn-lime" type="button" id="admin-modal-ok">Confirmar</button>
@@ -644,9 +727,50 @@ import "../styles/admin.css";
     </dialog>
   </div>
 
+  <!-- Antes del bundle: deja visible la sección del hash / última visita (F5 / Ctrl+F5). -->
+  <script is:inline>
+    (() => {
+      const known = {
+        sitio: "Inicio",
+        temporadas: "Temporadas",
+        ranking: "Ranking",
+        fixture: "Fixture",
+        resultados: "Resultados",
+        playoff: "Playoff",
+        ascensos: "Ascensos",
+        parejas: "Inscripciones de parejas",
+        acadinsc: "Inscripciones",
+        academia: "Adultos",
+        infantiles: "Infantiles",
+        sedes: "Sedes",
+        torneos: "Torneos",
+        visitas: "Visitas",
+        consumos: "Consumos",
+      };
+      let id = (location.hash || "").replace(/^#/, "");
+      if (!known[id]) {
+        try {
+          id = sessionStorage.getItem("padel-fb-admin-section") || "";
+        } catch (_) {
+          id = "";
+        }
+      }
+      if (!known[id]) return;
+      document.querySelectorAll("section[data-section]").forEach((sec) => {
+        sec.hidden = sec.dataset.section !== id;
+      });
+      document.querySelectorAll("[data-nav]").forEach((btn) => {
+        btn.classList.toggle("on", btn.dataset.nav === id);
+      });
+      const title = document.getElementById("admin-page-title");
+      if (title) title.textContent = known[id];
+      document.body.dataset.adminSection = id;
+    })();
+  </script>
   <script>
     import rankingJson from "../data/ranking.json";
     import fixtureJson from "../data/fixture.json";
+    import fixturePendingJson from "../data/fixture-pending.json";
     import siteJson from "../data/site.json";
     import dispJson from "../data/disponibilidad.json";
     import resultsJson from "../data/results.json";
@@ -656,6 +780,17 @@ import "../styles/admin.css";
     import ascensosJson from "../data/ascensos.json";
     import { bootAdmin } from "../admin/main.js";
 
-    bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, resultsJson, playoffJson, pairsJson, pairsConfigJson, ascensosJson });
+    bootAdmin({
+      rankingJson,
+      fixtureJson,
+      fixturePendingJson,
+      siteJson,
+      dispJson,
+      resultsJson,
+      playoffJson,
+      pairsJson,
+      pairsConfigJson,
+      ascensosJson,
+    });
   </script>
 </Layout>

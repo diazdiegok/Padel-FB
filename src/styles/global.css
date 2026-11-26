@@ -41,7 +41,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
   font-weight: 800;
   transform: translateY(-150%);
 }
-.skip-link:focus { transform: translateY(0); }
+/* Solo con teclado (Tab): con clic o foco devuelto por el navegador no aparece. */
+.skip-link:focus-visible { transform: translateY(0); }
+.is-admin .skip-link { display: none; }
 
 .wrap { width: min(var(--max), calc(100% - 40px)); margin-inline: auto; }
 
@@ -479,6 +481,27 @@ h3 { font-size: 22px; }
 .pos { font-family: var(--display); font-size: 22px; color: var(--lime); }
 .cat { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
 .pts { font-family: var(--display); font-size: 28px; }
+.scoreboard .home-rank-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 14px 12px 2px;
+  border-top: 1px solid var(--line);
+  color: var(--lime);
+  font-family: var(--display);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  text-align: center;
+  transition: color 0.15s ease, letter-spacing 0.15s ease;
+}
+.scoreboard .home-rank-cta:hover {
+  color: var(--cream);
+  letter-spacing: 0.09em;
+}
 
 .home-stats {
   margin: 28px 0 8px;
@@ -730,31 +753,6 @@ footer a:hover { color: var(--lime); }
   min-width: min(100%, 280px);
   flex: 1 1 280px;
 }
-.fixture-dl {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin-left: auto;
-  padding: 10px 12px;
-  border: 1px solid rgba(214, 255, 47, 0.22);
-  border-radius: 14px;
-  background: rgba(214, 255, 47, 0.05);
-}
-.fixture-dl label {
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.fixture-dl select {
-  min-width: 150px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--bg-2);
-  color: var(--cream);
-}
 .fixture-filters {
   flex-direction: column;
   align-items: stretch;
@@ -804,6 +802,18 @@ footer a:hover { color: var(--lime); }
 .board .pos { font-size: 20px; }
 .board .name { font-weight: 700; }
 .board .rank-name { display: block; }
+.board .rank-abandoned {
+  display: inline-block;
+  margin-left: 0.5em;
+  color: var(--danger);
+  font-family: var(--display);
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 0.08em;
+  white-space: nowrap;
+}
 .board .rank-meta {
   display: none;
   margin-top: 4px;
@@ -1992,6 +2002,37 @@ footer strong { color: var(--cream); }
   text-transform: uppercase;
 }
 .pair.winner strong { color: var(--lime); }
+.pair.loser strong { color: var(--muted); }
+.fixture-row,
+.fixture-week .kicker {
+  scroll-margin-top: calc(var(--nav) + 28px);
+}
+.fixture-row.is-target {
+  border-color: rgba(214, 255, 47, 0.55);
+}
+.tag-played {
+  color: var(--lime);
+  border-color: rgba(214, 255, 47, 0.45);
+}
+.fixture-result-link {
+  color: var(--lime);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.fixture-result-link:hover { text-decoration: underline; }
+.pair-won {
+  color: var(--lime);
+  background: none;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+.pair-b .pair-won { justify-self: end; }
 .pair-pts {
   color: var(--muted);
   font-size: 12px;

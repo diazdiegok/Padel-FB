@@ -4,11 +4,13 @@ import BackNav from "../../components/BackNav.astro";
 import fixture from "../../data/fixture.json";
 import results from "../../data/results.json";
 import { site } from "../../data/site";
-import { combineResults, seasonLabel, seasonSlug, weekNumber, weekSlug } from "../../lib/liga.js";
+import { isRealPairMatch } from "../../lib/fixturer.js";
+import { combineResults, isOpenWeek, seasonLabel, seasonSlug, weekNumber, weekSlug } from "../../lib/liga.js";
 import { page } from "../../lib/paths";
 
 export function getStaticPaths() {
-  const pool = combineResults(results, fixture.filter((m: any) => m.home && m.away));
+  const realMatches = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m));
+  const pool = combineResults(results, realMatches);
   const seasons = [...new Set(pool.map((m) => m.temp || site.currentSeason || "T4"))];
   return seasons.map((temp) => ({
     params: { temp: seasonSlug(temp) },
@@ -17,26 +19,28 @@ export function getStaticPaths() {
 }
 
 const { tempCode } = Astro.props;
-const list = combineResults(results, fixture.filter((m: any) => m.home && m.away)).filter(
-  (m) => (m.temp || site.currentSeason || "T4") === tempCode
-);
+const real = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m));
+const all = combineResults(results, real);
+const list = all.filter((m) => (m.temp || site.currentSeason || "T4") === tempCode);
 const weeks = [...new Set(list.map((m) => m.week || "Sin fecha"))].sort(
   (a, b) => weekNumber(b) - weekNumber(a) || String(a).localeCompare(String(b), "es")
 );
 const cards = weeks.map((week) => {
   const weekList = list.filter((m) => (m.week || "Sin fecha") === week);
-  const played = weekList.filter((m) => String(m.result || "").trim()).length;
+  // Solo la última fecha del fixture vivo es «En juego».
+  const live = isOpenWeek(week, real, tempCode);
   return {
     week,
     total: weekList.length,
-    played,
+    live,
     href: page(`resultados/${seasonSlug(tempCode)}/${weekSlug(week)}/`),
   };
 });
+const allHref = page(`resultados/${seasonSlug(tempCode)}/todas/`);
 const title = seasonLabel(tempCode);
 const live = tempCode === site.currentSeason;
 ---
-<Layout title={`Resultados ${title} | Padel FB`} description={`Resultados de ${title} de Padel FB en Paraná.`}>
+<Layout title={`Resultados ${title} | Padel FB`} description={`Resultados de ${title} de Padel FB.`}>
   <div class="wrap">
     <header class="page-hero">
       <BackNav crumbs={[
@@ -45,22 +49,26 @@ const live = tempCode === site.currentSeason;
       ]} />
       <p class="kicker">{live ? "En juego" : "Histórico"}</p>
       <h1>Resultados · {title}</h1>
-      <p>Elegí la fecha para ver los partidos.</p>
+      <p>Elegí la fecha para ver los resultados.</p>
     </header>
 
     {cards.length === 0 ? (
       <p class="empty" style="display:block;padding:48px 0">Todavía no hay resultados en esta temporada.</p>
     ) : (
       <div class="hub-grid hub-fill">
+        <a class="hub-card" href={allHref}>
+          <p class="kicker" style="margin:0">Temporada</p>
+          <h2>Todas las fechas</h2>
+          <p>{list.length} partido{list.length === 1 ? "" : "s"} · {weeks.length} fecha{weeks.length === 1 ? "" : "s"}</p>
+        </a>
         {cards.map((c) => (
           <a class="hub-card" href={c.href}>
-            <p class="kicker" style="margin:0">Fecha</p>
+            <p class="kicker" style="margin:0">Fecha{c.live ? " · En juego" : ""}</p>
             <h2>{c.week}</h2>
-            <p>{c.played} / {c.total} resultados</p>
+            <p>{c.total} partido{c.total === 1 ? "" : "s"}</p>
           </a>
         ))}
       </div>
     )}
-
   </div>
 </Layout>

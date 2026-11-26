@@ -3,6 +3,26 @@ export const DEFAULT_COURTS_SHEET_ID = "1OHnpx9ganzFR805yv8f5mmyYH_-o-2bNsOn9agm
 export const DEFAULT_COURTS_SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1OHnpx9ganzFR805yv8f5mmyYH_-o-2bNsOn9agmJcvg/edit";
 
+/** Sheet donde el admin pega el fixture armado (sin pendientes). */
+export const DEFAULT_FIXTURE_DRIVE_SHEET_ID = "1OI6ogfmdOAQ5mz3JqP482cDPT_xp-PjWdE07k54AAiQ";
+export const DEFAULT_FIXTURE_DRIVE_SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/1OI6ogfmdOAQ5mz3JqP482cDPT_xp-PjWdE07k54AAiQ/edit";
+
+/** Sheet donde se pegan solo las parejas pendientes, con el horario en que pueden. */
+export const DEFAULT_PENDING_DRIVE_SHEET_ID = "1-iy8HSNkDDUJg4do08aydAK1MMtfhqrWmO4PGebkxe4";
+export const DEFAULT_PENDING_DRIVE_SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/1-iy8HSNkDDUJg4do08aydAK1MMtfhqrWmO4PGebkxe4/edit";
+
+/** Sheet donde se pegan las parejas que recuperan fecha (partido de otra fecha). */
+export const DEFAULT_RECOVER_DRIVE_SHEET_ID = "1M4OMDttW86SdOixs-uCbXyZLoPSbf-YLylZO7qwkYrQ";
+export const DEFAULT_RECOVER_DRIVE_SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/1M4OMDttW86SdOixs-uCbXyZLoPSbf-YLylZO7qwkYrQ/edit";
+
+/** Sheet de complejos/canchas libres (turnos del Drive no usados por el fixture). */
+export const DEFAULT_FREE_COURTS_DRIVE_SHEET_ID = "1yLTWLdIfrZXuho8dwXdYVuJKcDMLEHxymHXMdIv1hAs";
+export const DEFAULT_FREE_COURTS_DRIVE_SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/1yLTWLdIfrZXuho8dwXdYVuJKcDMLEHxymHXMdIv1hAs/edit";
+
 /** Extrae el ID de un Google Sheet desde URL o ID suelto. */
 export function parseGoogleSheetId(value) {
   const raw = String(value || "").trim();

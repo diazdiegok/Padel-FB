@@ -1,13 +1,7 @@
 import { downloadCsv } from "./csv.js";
 import { fold } from "../lib/disponibilidad.js";
 import { $, confirmModal, escAttr as esc, setBusy, setMsg, toast } from "./ui.js";
-
-const waNumber = (tel) => {
-  let n = String(tel || "").replace(/\D/g, "");
-  if (n.startsWith("0")) n = n.slice(1);
-  if (n && !n.startsWith("54")) n = `549${n}`;
-  return n;
-};
+import { waNumber } from "./whatsapp.js";
 
 const sentAt = (iso) => {
   const d = new Date(iso);

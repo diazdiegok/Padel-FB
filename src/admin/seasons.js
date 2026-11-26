@@ -1,5 +1,5 @@
 import { SITE_PATH } from "./constants.js";
-import { DISP_PATH } from "../lib/disponibilidad.js";
+import { DISP_PATH, isAbandonedPair } from "../lib/disponibilidad.js";
 import { listSeasons, nextSeason, normalizeSeason, seasonLabel } from "../lib/liga.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
@@ -116,7 +116,13 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
     const focused = document.activeElement?.dataset?.seasonVenues || "";
     $("season-list").innerHTML = list
       .map((temp) => {
-        const count = ctx.rows.filter((row) => row.temp === temp).length;
+        const season = String(temp || "").toUpperCase();
+        const hasInscriptions = (ctx.pairs || []).some((p) => String(p.temp || "").toUpperCase() === season);
+        const count = hasInscriptions
+          ? (ctx.pairs || []).filter(
+              (p) => String(p.temp || "").toUpperCase() === season && !isAbandonedPair(p) && p.p1 && p.p2
+            ).length
+          : ctx.rows.filter((row) => row.temp === temp).length;
         const active = temp === current;
         const badge = active
           ? `<div class="admin-season-actions">
@@ -138,7 +144,7 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
             ${badge}
           </div>
           <div class="admin-season-row">
-            <p>${count} pareja${count === 1 ? "" : "s"} en el ranking.</p>
+            <p>${count} pareja${count === 1 ? "" : "s"}${hasInscriptions ? " activas" : " en el ranking"}.</p>
             <div class="admin-season-venues">
               <div class="admin-season-field">
                 <span>Sedes de la liga:</span>

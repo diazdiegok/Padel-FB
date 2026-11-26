@@ -5,10 +5,10 @@ import fixture from "../../../data/fixture.json";
 import results from "../../../data/results.json";
 import { site } from "../../../data/site";
 import { isPendingMatch, isRealPairMatch } from "../../../lib/fixturer.js";
-import { combineResults, seasonLabel, seasonSlug, weekSlug } from "../../../lib/liga.js";
+import { combineResults, matchAnchor, seasonLabel, seasonSlug, weekSlug } from "../../../lib/liga.js";
 import { page } from "../../../lib/paths";
 
-const fxVisible = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) || isPendingMatch(m));
+const fxVisible = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) && !isPendingMatch(m));
 
 export function getStaticPaths() {
   const DAY_ORDER = ["lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado", "domingo"];
@@ -16,7 +16,7 @@ export function getStaticPaths() {
     const i = DAY_ORDER.indexOf(String(d || "").trim().toLowerCase());
     return i < 0 ? 99 : i;
   };
-  const live = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) || isPendingMatch(m));
+  const live = ((fixture as any[]) || []).filter((m) => isRealPairMatch(m) && !isPendingMatch(m));
   const matches = combineResults(results, live).sort((a, b) => {
     const da = dayIdx(a.day);
     const db = dayIdx(b.day);
@@ -51,7 +51,14 @@ const list = combineResults(results, fxVisible)
     const db = dayIdx(b.day);
     if (da !== db) return da - db;
     return String(a.time || "").localeCompare(String(b.time || ""), "es");
-  });
+  })
+  .map((m) => ({
+    ...m,
+    played: !!String(m.result || "").trim(),
+    resultHref: page(
+      `resultados/${seasonSlug(tempCode)}/${weekSlug(weekLabel)}/#${matchAnchor(m)}`
+    ),
+  }));
 const title = seasonLabel(tempCode);
 const seasonHref = page(`fixture/${seasonSlug(tempCode)}/`);
 const days = [...new Set(list.map((m) => m.day).filter(Boolean))].sort((a, b) => dayIdx(a) - dayIdx(b));
@@ -70,19 +77,8 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
         <div>
           <p class="kicker">Fixture · {title}</p>
           <h1>{weekLabel}</h1>
-          <p>Partidos de la jornada. Si ves <strong>Por cubrir</strong>, una pareja de la misma categoría puede anotarse desde acá.</p>
+          <p>Partidos de la jornada.</p>
         </div>
-        {list.length > 0 && (
-          <div class="fixture-dl">
-            <label for="fx-public-dl-sort">Descargar Excel</label>
-            <select id="fx-public-dl-sort" aria-label="Orden del Excel">
-              <option value="complejo">Por complejo</option>
-              <option value="fecha">Por fecha</option>
-              <option value="pareja">Por pareja</option>
-            </select>
-            <button class="btn btn-ghost" type="button" id="fx-public-dl">Bajar</button>
-          </div>
-        )}
       </div>
     </header>
 
@@ -128,10 +124,6 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
 
   </div>
 
-  <script>
-    import { describeResult } from "../../../lib/scoring.js";
-    window.__ligaScoring = { describeResult };
-  </script>
   <script define:vars={{
     matches: list,
     apiUrl: String(site.apiUrl || "").replace(/\/$/, ""),
@@ -156,12 +148,17 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
         ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
       );
     }
-    const describeResult = (raw) => window.__ligaScoring?.describeResult?.(raw) || null;
     function fold(s) {
       return String(s || "")
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
+    }
+    function queryMatches(text, query) {
+      const words = fold(query).split(/[^a-z0-9]+/).filter((w) => w.length > 1);
+      if (!words.length) return true;
+      const tokens = fold(text).split(/[^a-z0-9]+/).filter(Boolean);
+      return words.every((w) => tokens.some((t) => t.startsWith(w)));
     }
     function isOpen(m) {
       return !!(m.pending || m.away === "Pendiente / Pendiente");
@@ -196,14 +193,13 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
         const okDay = day === "Todas" || m.day === day || (isOpen(m) && !m.day);
         const okCat = cat === "Todas" || m.cat === cat;
         const okCourt = court === "Todas" || m.venue === court || (isOpen(m) && !m.venue);
-        const blob = fold([m.home, m.away].filter(Boolean).join(" "));
-        return okDay && okCat && okCourt && (!term || blob.includes(term));
+        const blob = fold([m.home, m.away, m.venue, m.week, m.cat, m.day, m.court].filter(Boolean).join(" "));
+        return okDay && okCat && okCourt && queryMatches(blob, term);
       });
       root.innerHTML = `<section class="fixture-week" style="padding-top:0">
         <div class="fixture-list">
           ${rows
             .map((m) => {
-              const info = describeResult(m.result);
               const open = isOpen(m);
               return `<article class="fixture-row${open ? " is-cover" : ""}">
                 <div class="fixture-meta">
@@ -212,26 +208,22 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
                   <span>${esc(m.cat)}</span>
                 </div>
                 <div class="fixture-vs">
-                  <div class="pair pair-a${info?.homeWin ? " winner" : ""}">
+                  <div class="pair pair-a">
                     <span class="pair-label">Pareja 1</span>
                     <strong>${esc(m.home)}</strong>
-                    ${info ? `<span class="pair-pts">${info.homePts} pts</span>` : ""}
                   </div>
                   <span class="vs">vs</span>
-                  <div class="pair pair-b${info && !info.homeWin ? " winner" : ""}">
+                  <div class="pair pair-b">
                     <span class="pair-label">Pareja 2</span>
                     <strong>${esc(m.away)}</strong>
-                    ${info ? `<span class="pair-pts">${info.awayPts} pts</span>` : ""}
                   </div>
                 </div>
                 <div class="fixture-score">${
-                  info
-                    ? `<b>${esc(info.score)}</b><span>${info.label}</span>`
-                    : open
-                      ? `<span class="tag">Por cubrir</span>`
-                      : m.result
-                        ? `<b>${esc(m.result)}</b>`
-                        : `<span class="tag">Por jugar</span>`
+                  open
+                    ? `<span class="tag">Por cubrir</span>`
+                    : m.played
+                      ? `<span class="tag tag-played">¡Ya jugado!</span><a class="fixture-result-link" href="${esc(m.resultHref)}">Ver resultado</a>`
+                      : `<span class="tag">Por jugar</span>`
                 }</div>
                 <div class="fixture-place">
                   <span>${esc(m.venue || (open ? "Sin sede aún" : ""))}${m.court ? ` · ${esc(m.court)}` : ""}</span>
@@ -351,53 +343,6 @@ const courts = [...new Set(list.map((m) => m.venue).filter(Boolean))].sort((a, b
     bind("[data-day]", "day", (v) => { day = v; });
     bind("[data-cat]", "cat", (v) => { cat = v; });
     bind("[data-court]", "court", (v) => { court = v; });
-
-    const DAY_ORD = ["lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado", "domingo"];
-    const dayI = (d) => {
-      const i = DAY_ORD.indexOf(String(d || "").trim().toLowerCase());
-      return i < 0 ? 99 : i;
-    };
-    document.querySelector("#fx-public-dl")?.addEventListener("click", async () => {
-      const mode = document.querySelector("#fx-public-dl-sort")?.value || "complejo";
-      const rows = matches.slice().sort((a, b) => {
-        const byFecha =
-          dayI(a.day) - dayI(b.day) ||
-          String(a.time || "").localeCompare(String(b.time || ""), "es") ||
-          String(a.venue || "").localeCompare(String(b.venue || ""), "es");
-        if (mode === "complejo") {
-          return (
-            String(a.venue || "").localeCompare(String(b.venue || ""), "es") ||
-            byFecha ||
-            String(a.home || "").localeCompare(String(b.home || ""), "es")
-          );
-        }
-        if (mode === "pareja") {
-          return (
-            String(a.home || "").localeCompare(String(b.home || ""), "es") ||
-            String(a.away || "").localeCompare(String(b.away || ""), "es") ||
-            byFecha
-          );
-        }
-        return byFecha || String(a.cat || "").localeCompare(String(b.cat || ""), "es");
-      });
-      const data = rows.map((m) => ({
-        fecha: m.week || weekLabel,
-        dia: m.day || "",
-        horario: m.time || "",
-        categoria: m.cat || "",
-        complejo: m.venue || "",
-        cancha: m.court || "",
-        pareja1: m.home || "",
-        pareja2: m.away || "",
-        resultado: m.result || "",
-      }));
-      const XLSX = await import("xlsx");
-      const ws = XLSX.utils.json_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, String(weekLabel || "Fixture").slice(0, 31));
-      const file = `${String(weekLabel || "fixture").replace(/\s+/g, "-").toLowerCase()}-${mode}.xlsx`;
-      XLSX.writeFile(wb, file);
-    });
 
     render();
     loadCandidates();

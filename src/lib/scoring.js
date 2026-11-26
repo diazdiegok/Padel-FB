@@ -1,5 +1,7 @@
 /** Ganador siempre 3 pts. 2-0 = 3-0. 2-1 = 3-1. */
 
+import { isAbandonedPair } from "./disponibilidad.js";
+
 export function fold(s) {
   return String(s || "")
     .toLowerCase()
@@ -12,6 +14,14 @@ export function fold(s) {
 
 export function playerTokens(name) {
   return fold(name).split(" ").filter((w) => w.length > 1);
+}
+
+/** Cada palabra del buscador alcanza con el comienzo de un nombre o apellido, en cualquier orden. */
+export function queryMatchesText(text, query) {
+  const words = fold(query).split(" ").filter((w) => w.length > 1);
+  if (!words.length) return true;
+  const tokens = fold(text).split(" ").filter(Boolean);
+  return words.every((w) => tokens.some((t) => t.startsWith(w)));
 }
 
 export function splitPair(name) {
@@ -27,11 +37,18 @@ export function playersMatch(a, b) {
   if (!ta.length || !tb.length) return false;
   const setA = new Set(ta);
   const setB = new Set(tb);
+  // Nombre más corto contenido en el más largo (typos / segundo nombre de más).
+  const [short, longSet] = ta.length <= tb.length ? [ta, setB] : [tb, setA];
+  if (short.every((t) => longSet.has(t))) return true;
   const overlap = ta.filter((t) => setB.has(t));
   const strong = overlap.filter((t) => t.length >= 4);
-  if (strong.length >= 1) return true;
-  const [short, long] = ta.length <= tb.length ? [ta, setB] : [tb, setA];
-  return short.length >= 2 && short.every((t) => long.has(t));
+  // Un solo nombre de pila compartido ("Martin", "Diego") NO alcanza: hace falta
+  // otro token fuerte o que coincida el apellido (último token).
+  if (strong.length >= 2) return true;
+  const lastA = ta[ta.length - 1];
+  const lastB = tb[tb.length - 1];
+  if (lastA.length >= 4 && lastA === lastB && overlap.length >= 1) return true;
+  return false;
 }
 
 export function pairsMatch(a, b) {
@@ -55,7 +72,7 @@ export function parseResult(raw) {
     .replace(/\s+/g, " ");
   if (!s) return null;
 
-  const sets = [...s.matchAll(/(\d+)\s*-\s*(\d+)/g)].map((m) => [Number(m[1]), Number(m[2])]);
+  const sets = [...s.matchAll(/(\d+)\s*[-\/]\s*(\d+)/g)].map((m) => [Number(m[1]), Number(m[2])]);
   if (!sets.length) return null;
 
   if (sets.length === 1) {
@@ -85,18 +102,64 @@ export function pointsFor(homeSets, awaySets) {
   return null;
 }
 
+/**
+ * Walkover / no se presentó.
+ * Canónico: "W.O. 1" (gana pareja 1 / home) o "W.O. 2" (gana pareja 2 / away).
+ */
+export function parseWalkover(raw) {
+  const s = String(raw || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .replace(/WO\b/g, "W.O.");
+  if (s === "W.O. 1" || s === "W.O.1") return { homeWin: true };
+  if (s === "W.O. 2" || s === "W.O.2") return { homeWin: false };
+  return null;
+}
+
+/** Score canónico: 6/4 6/2 o W.O. 1 / W.O. 2. Acepta también el guión viejo. */
+export function formatResult(raw) {
+  const wo = parseWalkover(raw);
+  if (wo) return wo.homeWin ? "W.O. 1" : "W.O. 2";
+  const parsed = parseResult(raw);
+  if (!parsed?.sets?.length) return "";
+  return parsed.sets.map(([a, b]) => `${a}/${b}`).join(" ");
+}
+
 export function describeResult(raw) {
+  const wo = parseWalkover(raw);
+  if (wo) {
+    return {
+      homeSets: wo.homeWin ? 2 : 0,
+      awaySets: wo.homeWin ? 0 : 2,
+      sets: [],
+      homePts: wo.homeWin ? 3 : 0,
+      awayPts: wo.homeWin ? 0 : 3,
+      // Dif solo al que jugó; el ausente no suma ni resta sets.
+      homeDif: wo.homeWin ? 2 : 0,
+      awayDif: wo.homeWin ? 0 : 2,
+      homePj: wo.homeWin ? 1 : 0,
+      awayPj: wo.homeWin ? 0 : 1,
+      homeWin: wo.homeWin,
+      label: "W.O.",
+      score: wo.homeWin ? "W.O. 1" : "W.O. 2",
+      walkover: true,
+    };
+  }
   const parsed = parseResult(raw);
   if (!parsed) return null;
   const pts = pointsFor(parsed.homeSets, parsed.awaySets);
   if (!pts) return null;
-  const score = parsed.sets.length > 1 ? parsed.sets.map((s) => s.join("-")).join(" ") : `${parsed.homeSets}-${parsed.awaySets}`;
+  const score = formatResult(raw);
   return {
     ...parsed,
     ...pts,
+    homePj: 1,
+    awayPj: 1,
     homeWin: parsed.homeSets > parsed.awaySets,
-    label: `${parsed.homeSets}-${parsed.awaySets}`,
+    label: `(${parsed.homeSets}-${parsed.awaySets})`,
     score,
+    walkover: false,
   };
 }
 
@@ -120,6 +183,7 @@ export function findPairIndex(rows, name, cat, temp) {
 export function addPairsToRanking(rows, pairs) {
   const added = [];
   for (const pair of pairs) {
+    if (isAbandonedPair(pair)) continue;
     const temp = String(pair.temp || "").toUpperCase();
     if (!pair.p1 || !pair.p2 || !pair.cat || !temp) continue;
     const name = `${pair.p1} / ${pair.p2}`;
@@ -149,32 +213,88 @@ export function removePairsFromRanking(rows, pairs) {
   return removed;
 }
 
+/** Mejor inscripción vigente que matchee una fila del ranking (misma cat). */
+function bestSeasonPairForRow(row, seasonPairs) {
+  let best = null;
+  let bestScore = 0;
+  for (const p of seasonPairs) {
+    if (p.cat !== row.cat) continue;
+    const name = `${p.p1} / ${p.p2}`;
+    if (!pairsMatch(row.name, name)) continue;
+    const tokens = new Set(splitPair(name).flatMap(playerTokens));
+    const score = splitPair(row.name).flatMap(playerTokens).filter((t) => tokens.has(t)).length;
+    if (score > bestScore) {
+      bestScore = score;
+      best = p;
+    }
+  }
+  return best;
+}
+
 /**
- * Deja en `temp` solo filas que coincidan con inscripciones vigentes.
+ * Deja en `temp` las filas que siguen inscriptas, más las que ya jugaron.
+ * Una baja con partidos jugados se queda en el ranking. Sin partidos, sale.
+ * Si matchean, el nombre del ranking pasa a ser el de la inscripción (p1 / p2).
  * Otras temporadas no se tocan.
+ * @returns {{ removed: object[], renamed: { from: string, to: string, cat: string }[] }}
  */
-export function syncRankingToSeasonPairs(rows, pairs, temp) {
+function rowHasHistory(row, matches, season) {
+  if (Number(row?.pj) > 0 || Number(row?.pts) > 0) return true;
+  const name = row?.name || "";
+  return (matches || []).some(
+    (m) =>
+      String(m?.temp || "").toUpperCase() === season &&
+      String(m?.result || "").trim() &&
+      (!row?.cat || !m.cat || m.cat === row.cat) &&
+      (pairsMatch(m.home, name) || pairsMatch(m.away, name))
+  );
+}
+
+export function syncRankingToSeasonPairs(rows, pairs, temp, matches = []) {
+  const empty = { removed: [], renamed: [] };
   const season = String(temp || "").toUpperCase();
-  if (!season || !Array.isArray(rows)) return [];
+  if (!season || !Array.isArray(rows)) return empty;
   const seasonPairs = (pairs || []).filter(
-    (p) => String(p.temp || "").toUpperCase() === season && p.p1 && p.p2 && p.cat
+    (p) => String(p.temp || "").toUpperCase() === season && p.p1 && p.p2 && p.cat && !isAbandonedPair(p)
   );
   const removed = [];
+  const renamed = [];
   const keep = [];
+  const claimed = new Set();
   for (const row of rows) {
     if (String(row.temp || "").toUpperCase() !== season) {
       keep.push(row);
       continue;
     }
-    const matched = seasonPairs.some((p) => p.cat === row.cat && pairsMatch(row.name, `${p.p1} / ${p.p2}`));
-    if (matched) keep.push(row);
-    else removed.push(row);
+    const matched = bestSeasonPairForRow(row, seasonPairs);
+    if (!matched) {
+      if (rowHasHistory(row, matches, season)) {
+        keep.push(row);
+        continue;
+      }
+      removed.push(row);
+      continue;
+    }
+    const key = `${matched.cat}|${fold(matched.p1)}|${fold(matched.p2)}`;
+    // Una inscripción no puede sostener dos filas: la segunda sobra.
+    if (claimed.has(key)) {
+      removed.push(row);
+      continue;
+    }
+    claimed.add(key);
+    const nextName = `${matched.p1} / ${matched.p2}`;
+    if (String(row.name || "").trim() !== nextName) {
+      renamed.push({ from: row.name, to: nextName, cat: row.cat });
+      row.name = nextName;
+    }
+    keep.push(row);
   }
-  if (!removed.length) return removed;
-  rows.length = 0;
-  rows.push(...keep);
-  recomputePositions(rows);
-  return removed;
+  if (removed.length) {
+    rows.length = 0;
+    rows.push(...keep);
+  }
+  if (removed.length || renamed.length) recomputePositions(rows);
+  return { removed, renamed };
 }
 
 function ensurePair(rows, name, cat, temp) {
@@ -192,9 +312,9 @@ function ensurePair(rows, name, cat, temp) {
   return rows.length - 1;
 }
 
-function applySide(row, pts, dif, sign) {
+function applySide(row, pts, dif, sign, pj = 1) {
   row.pts = Number(row.pts || 0) + sign * pts;
-  row.pj = Number(row.pj || 0) + sign;
+  row.pj = Number(row.pj || 0) + sign * (Number(pj) || 0);
   row.dif = Number(row.dif || 0) + sign * dif;
 }
 
@@ -220,6 +340,39 @@ export function recomputePositions(rows) {
   return rows;
 }
 
+function sameMatchup(a, b) {
+  if (!a || !b) return false;
+  if (String(a.week || "") !== String(b.week || "")) return false;
+  if (String(a.temp || "").toUpperCase() !== String(b.temp || "").toUpperCase()) return false;
+  if (String(a.cat || "") && String(b.cat || "") && String(a.cat) !== String(b.cat)) return false;
+  const direct = pairsMatch(a.home, b.home) && pairsMatch(a.away, b.away);
+  const swap = pairsMatch(a.home, b.away) && pairsMatch(a.away, b.home);
+  return direct || swap;
+}
+
+/**
+ * Al republicar el fixture, no pisar scores ya cargados en remoto
+ * si el borrador local todavía los tiene vacíos.
+ */
+export function preserveRemoteMatchScores(localMatches = [], remoteMatches = []) {
+  const remote = Array.isArray(remoteMatches) ? remoteMatches : [];
+  return (localMatches || []).map((local) => {
+    const localResult = String(local?.result || "").trim();
+    const localApplied = String(local?.appliedResult || "").trim();
+    if (localResult || localApplied) return local;
+    const hit = remote.find((r) => sameMatchup(local, r));
+    if (!hit) return local;
+    const result = String(hit.result || "").trim();
+    const appliedResult = String(hit.appliedResult || "").trim();
+    if (!result && !appliedResult) return local;
+    return {
+      ...local,
+      result: result || appliedResult,
+      appliedResult: appliedResult || result,
+    };
+  });
+}
+
 export function applyFixtureResults(ranking, matches) {
   const unmatched = [];
   const created = [];
@@ -227,9 +380,15 @@ export function applyFixtureResults(ranking, matches) {
   let reverted = 0;
 
   for (const match of matches) {
-    const next = String(match.result || "").trim();
-    const prev = String(match.appliedResult || "").trim();
-    if (next === prev) continue;
+    const nextRaw = String(match.result || "").trim();
+    const prevRaw = String(match.appliedResult || "").trim();
+    const next = nextRaw ? formatResult(nextRaw) || nextRaw : "";
+    const prev = prevRaw ? formatResult(prevRaw) || prevRaw : "";
+    if (next === prev) {
+      // Misma marca con otro formato (6-3 vs 6/3): no volver a sumar PJ.
+      if (nextRaw && nextRaw !== prevRaw) match.appliedResult = next;
+      continue;
+    }
     const homeName = String(match.home || "").trim();
     const awayName = String(match.away || "").trim();
     const placeholder = (name) => !name || fold(name) === fold("Pendiente / Pendiente");
@@ -242,7 +401,9 @@ export function applyFixtureResults(ranking, matches) {
     const prevScore = prev ? describeResult(prev) : null;
 
     if (next && !nextScore) {
-      unmatched.push(`Resultado inválido (${match.home} vs ${match.away}): "${next}". Usá 6-4 6-2 o 2-1.`);
+      unmatched.push(
+        `Resultado inválido (${match.home} vs ${match.away}): "${nextRaw}". Usá 6/4 6/2, 2/1 o W.O. 1 / W.O. 2.`
+      );
       continue;
     }
 
@@ -256,16 +417,17 @@ export function applyFixtureResults(ranking, matches) {
     if (awayBefore < 0) created.push(match.away);
 
     if (prevScore) {
-      applySide(ranking[homeIdx], prevScore.homePts, prevScore.homeDif, -1);
-      applySide(ranking[awayIdx], prevScore.awayPts, prevScore.awayDif, -1);
+      applySide(ranking[homeIdx], prevScore.homePts, prevScore.homeDif, -1, prevScore.homePj ?? 1);
+      applySide(ranking[awayIdx], prevScore.awayPts, prevScore.awayDif, -1, prevScore.awayPj ?? 1);
       reverted += 1;
     }
     if (nextScore) {
-      applySide(ranking[homeIdx], nextScore.homePts, nextScore.homeDif, 1);
-      applySide(ranking[awayIdx], nextScore.awayPts, nextScore.awayDif, 1);
+      applySide(ranking[homeIdx], nextScore.homePts, nextScore.homeDif, 1, nextScore.homePj ?? 1);
+      applySide(ranking[awayIdx], nextScore.awayPts, nextScore.awayDif, 1, nextScore.awayPj ?? 1);
       applied += 1;
     }
     match.appliedResult = next;
+    if (next && nextRaw !== next) match.result = next;
   }
 
   recomputePositions(ranking);

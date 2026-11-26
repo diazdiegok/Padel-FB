@@ -1,11 +1,17 @@
 import assert from "node:assert/strict";
+import { cleanMatch } from "../admin/csv.js";
 import {
   PENDING_AWAY,
   MAX_PAIR_MATCHES,
+  absorbCoveredPending,
+  rematchWeeks,
   buildFixture,
   parseWindow,
   countPairMatches,
   coverCandidates,
+  draftAwarePools,
+  fileOwedRecoveries,
+  importRecoveryDebts,
   isPendingMatch,
   isRealPairMatch,
 } from "./fixturer.js";
@@ -91,6 +97,117 @@ assert.equal(
   "pendientes no suman PJ"
 );
 
+{
+  const woMatch = {
+    temp: "T5",
+    cat: "C Femenino",
+    week: "Fecha 2",
+    home: "Soraya Campostrini Labour / Catalina Otamendi",
+    away: "Milagros Solaro / Ana Paula Croce",
+    result: "W.O. 2",
+    appliedResult: "W.O. 2",
+  };
+  assert.equal(
+    countPairMatches("Soraya Campostrini Labour / Catalina Otamendi", "C Femenino", "T5", [[woMatch]]),
+    0,
+    "W.O. ausente no suma PJ en Cubrir con"
+  );
+  assert.equal(
+    countPairMatches("Milagros Solaro / Ana Paula Croce", "C Femenino", "T5", [[woMatch]]),
+    1,
+    "W.O. ganador sí suma 1 PJ"
+  );
+}
+
+{
+  const published = [
+    {
+      temp: "T5",
+      cat: "A Masculina",
+      week: "Fecha 1",
+      day: "Lunes",
+      time: "17:00 - 18:30",
+      home: "Diego Diaz / Emiliano Fontanetto",
+      away: "Otra Pareja / Rival",
+    },
+  ];
+  const draft = [
+    {
+      temp: "T5",
+      cat: "A Masculina",
+      week: "Fecha 1",
+      home: "Diego Diaz / Emiliano Fontanetto",
+      away: PENDING_AWAY,
+      pending: true,
+    },
+    {
+      temp: "T5",
+      cat: "A Masculina",
+      week: "Fecha 1",
+      home: "Otra Pareja / Rival",
+      away: PENDING_AWAY,
+      pending: true,
+    },
+  ];
+  const pools = draftAwarePools([], published, draft);
+  assert.equal(
+    countPairMatches("Diego Diaz / Emiliano Fontanetto", "A Masculina", "T5", pools),
+    0,
+    "sacar el partido a pendientes baja el PJ del borrador"
+  );
+  assert.equal(
+    countPairMatches("Diego Diaz / Emiliano Fontanetto", "A Masculina", "T5", draftAwarePools([], published, [])),
+    1,
+    "sin guardar el borrador sigue el PJ publicado"
+  );
+}
+
+// Al armar Fecha 2 hay que conservar Fecha 1 en el borrador para que el PJ de «Cubrir con» no baje a 0.
+{
+  const fecha1 = {
+    temp: "T5",
+    cat: "B Masculina",
+    week: "Fecha 1",
+    home: "Valentin Beltzer / Ariel Jaureguiberry",
+    away: "Valentino Sánchez / Thiago Rivera",
+    result: "7/6 6/1",
+  };
+  const draftAfterBuild = [
+    fecha1,
+    {
+      temp: "T5",
+      cat: "B Masculina",
+      week: "Fecha 2",
+      home: "Milton Reatto / Joaquín Lucero",
+      away: PENDING_AWAY,
+      pending: true,
+    },
+  ];
+  const pools = draftAwarePools([], [fecha1], draftAfterBuild, "T5");
+  assert.equal(
+    countPairMatches("Valentino Sánchez / Thiago Rivera", "B Masculina", "T5", pools),
+    1,
+    "Fecha 1 sigue contando PJ al armar Fecha 2"
+  );
+  // Bug viejo: al armar Fecha 2 solo quedaban pendientes de Fecha 1 → se tapaba la publicada.
+  const brokenDraft = [
+    {
+      temp: "T5",
+      cat: "B Masculina",
+      week: "Fecha 1",
+      home: "Otra / Pendiente",
+      away: PENDING_AWAY,
+      pending: true,
+    },
+    draftAfterBuild[1],
+  ];
+  assert.equal(
+    countPairMatches("Valentino Sánchez / Thiago Rivera", "B Masculina", "T5", draftAwarePools([], [fecha1], brokenDraft, "T5")),
+    0,
+    "si el borrador tapa Fecha 1 sin traer el partido jugado, el PJ se pierde"
+  );
+}
+
 const pendingSlot = {
   temp: "T5",
   cat: "A Masculina",
@@ -113,5 +230,280 @@ assert.ok(!covers.some((c) => c.label.includes("Enrique")), "excluye a la pareja
 assert.ok(!covers.some((c) => c.label.includes("Otro")), "no mezcla B Masculina en A Masculina");
 assert.ok(covers.some((c) => c.label.includes("Fusse")), "incluye rivales con PJ < 12");
 console.log("--- cover", covers.map((c) => `${c.label} (${c.pj})`).join(" · "));
+
+// Cubrir pendiente con otra pendiente → ambas salen; queda el partido.
+{
+  const laura = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "C Femenino",
+    home: "Laura Martínez / Dalila Sosa",
+    away: PENDING_AWAY,
+    pending: true,
+  };
+  const stefania = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "C Femenino",
+    home: "Stefania Benedetich / Florencia Benedetich",
+    away: PENDING_AWAY,
+    pending: true,
+  };
+  const other = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "C Femenino",
+    home: "Marien Robledo / Valeria Joubert",
+    away: PENDING_AWAY,
+    pending: true,
+  };
+  const covered = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "C Femenino",
+    home: laura.home,
+    away: stefania.home,
+    day: "Viernes",
+    time: "19:00 - 20:30",
+    venue: "Open Padel",
+    court: "Cancha 1",
+  };
+  const list = [laura, stefania, other, covered];
+  const out = absorbCoveredPending(list, covered, stefania.home);
+  assert.equal(out.length, 2, "quedan el partido y el otro pendiente");
+  assert.ok(out.includes(covered), "queda el partido cubierto");
+  assert.ok(out.includes(other), "el pendiente ajeno sigue");
+  assert.ok(!out.some((m) => isPendingMatch(m) && m.home === laura.home), "laura ya no está pendiente");
+  assert.ok(!out.some((m) => isPendingMatch(m) && m.home === stefania.home), "stefania ya no está pendiente");
+}
+
+// Cubrir el partido normal no borra el que recupera, ni al revés.
+{
+  const normal = {
+    week: "Fecha 2",
+    temp: "T5",
+    cat: "B Masculina",
+    home: "Diego Ramirez / Martin Rondan",
+    away: PENDING_AWAY,
+    pending: true,
+  };
+  const makeup = {
+    week: "Fecha 2",
+    temp: "T5",
+    cat: "B Masculina",
+    home: "Diego Ramirez / Martin Rondan",
+    away: PENDING_AWAY,
+    pending: true,
+    recoverFrom: "Fecha 1",
+  };
+  const covered = {
+    week: "Fecha 2",
+    temp: "T5",
+    cat: "B Masculina",
+    home: normal.home,
+    away: "Otra Pareja / Rival",
+  };
+  const out = absorbCoveredPending([normal, makeup, covered], covered, covered.away);
+  assert.ok(out.includes(covered));
+  assert.ok(!out.includes(normal), "sale el pendiente normal");
+  assert.ok(out.includes(makeup), "el recupero sigue");
+  const coveredMakeup = { ...covered, recoverFrom: "Fecha 1" };
+  const out2 = absorbCoveredPending([normal, makeup, coveredMakeup], coveredMakeup, coveredMakeup.away);
+  assert.ok(out2.includes(normal), "cubrir el recupero no saca el partido normal");
+  assert.ok(!out2.includes(makeup));
+}
+
+// Cubrir pendiente / recupero con un rival ya enfrentado → rematchWeeks (Duplicados).
+{
+  const played = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "A Masculina",
+    home: "Julián Gea / Joaquín Gea",
+    away: "Martin Mendez / Diego Godoy",
+    result: "6/3 7/5",
+  };
+  const covered = {
+    week: "Fecha 2",
+    temp: "T5",
+    cat: "A Masculina",
+    home: "Julián Gea / Joaquín Gea",
+    away: "Martin Mendez / Diego Godoy",
+    day: "Martes",
+    time: "16:30 - 18:00",
+  };
+  assert.deepEqual(rematchWeeks(covered, [played]), ["Fecha 1"]);
+  const makeup = { ...covered, week: "Fecha 1", recoverFrom: "Fecha 1", recoveredIn: "Fecha 2" };
+  assert.deepEqual(
+    rematchWeeks(makeup, [{ ...played, week: "Fecha 2" }]),
+    ["Fecha 2"],
+    "recupero de Fecha 1 vs rival ya jugado en Fecha 2"
+  );
+  assert.deepEqual(rematchWeeks({ ...covered, away: PENDING_AWAY, pending: true }, [played]), []);
+  assert.deepEqual(rematchWeeks(covered, [{ ...played, week: "Fecha 2" }]), [], "misma fecha no cuenta");
+
+  // Al cubrir un recupero, cleanMatch debe conservar recoveredIn para que Duplicados
+  // lo liste en la fecha desde la que se cubrió (no solo en la adeudada).
+  const cleaned = cleanMatch(
+    {
+      ...makeup,
+      pending: false,
+      dupHold: true,
+      venue: "Open Padel",
+      court: "Cancha 1",
+    },
+    {},
+    "T5"
+  );
+  assert.equal(cleaned.recoverFrom, "Fecha 1");
+  assert.equal(cleaned.recoveredIn, "Fecha 2", "recoveredIn sobrevive al dejar de ser pendiente");
+  assert.equal(cleaned.dupHold, true);
+  assert.ok(!cleaned.pending);
+}
+
+{
+  const debt = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "B Masculina",
+    home: "Diego Ramirez / Martin Rondan",
+    away: PENDING_AWAY,
+    pending: true,
+    days: { Lunes: "16:00 - 00:00" },
+  };
+  const played = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "B Masculina",
+    home: "Otra Pareja / Rival A",
+    away: "Otra Pareja / Rival B",
+    day: "Lunes",
+    time: "19:00 - 20:30",
+  };
+  const history = [debt, played];
+  const first = importRecoveryDebts(history, { temp: "T5", week: "Fecha 2", history });
+  assert.equal(first.added, 1, "el que no jugó tiene un partido menos");
+  assert.equal(debt.pending, true, "sigue siendo el partido de la fecha que no jugó");
+  assert.equal(debt.week, "Fecha 1", "el recupero queda en la fecha que falta");
+  assert.equal(debt.recoverFrom, "Fecha 1");
+  assert.equal(debt.recoveredIn, "Fecha 2", "se agenda desde la fecha que se está armando");
+  assert.equal(debt.recoverLater, undefined);
+  assert.equal(first.matches.filter((m) => m.home === debt.home).length, 1, "no hay un segundo partido");
+  assert.ok(!first.matches.some((m) => m.week === "Fecha 2" && m.home === debt.home), "no suma otro partido en Fecha 2");
+  const again = importRecoveryDebts(first.matches, { temp: "T5", week: "Fecha 2", history: first.matches });
+  assert.equal(again.added, 0, "no duplica");
+  const sameWeek = importRecoveryDebts(history, { temp: "T5", week: "Fecha 1", history });
+  assert.equal(sameWeek.added, 0, "en la misma fecha no arma recupero");
+  const even = importRecoveryDebts(
+    [
+      played,
+      {
+        week: "Fecha 1",
+        temp: "T5",
+        cat: "B Masculina",
+        home: debt.home,
+        away: "Otra Pareja / Rival C",
+      },
+    ],
+    { temp: "T5", week: "Fecha 2" }
+  );
+  assert.equal(even.added, 0, "si ya jugó, no recupera");
+  const zero = { temp: "T5", cat: "B Masculina", p1: "Sin", p2: "Partidos", days: { Lunes: "18:00 - 21:00" } };
+  const fromZero = importRecoveryDebts([played], {
+    temp: "T5",
+    week: "Fecha 2",
+    history: [played],
+    pairs: [zero],
+  });
+  assert.equal(fromZero.added, 1, "en Fecha 2, 0 partidos jugados recupera");
+  const zeroRow = fromZero.matches.find((m) => m.home === "Sin / Partidos");
+  assert.equal(zeroRow.week, "Fecha 1", "el partido nuevo también queda en la fecha que falta");
+  assert.equal(zeroRow.recoverFrom, "Fecha 1");
+  assert.equal(zeroRow.recoveredIn, "Fecha 2");
+  assert.ok(!fromZero.matches.some((m) => m.week === "Fecha 2" && m.home === "Sin / Partidos"));
+}
+
+{
+  const fecha1 = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "B Masculina",
+    home: "Otra Pareja / Rival A",
+    away: "Otra Pareja / Rival B",
+  };
+  const recovery = {
+    week: "Fecha 1",
+    temp: "T5",
+    cat: "B Masculina",
+    home: "Diego Ramirez / Martin Rondan",
+    away: "Cubierta / Pareja",
+    recoverFrom: "Fecha 1",
+    recoveredIn: "Fecha 2",
+  };
+  const fecha2 = {
+    week: "Fecha 2",
+    temp: "T5",
+    cat: "B Masculina",
+    home: "Diego Ramirez / Martin Rondan",
+    away: "Rival De Fecha / Dos",
+  };
+  const kept = fileOwedRecoveries({
+    published: [fecha1, fecha2],
+    results: [],
+    owed: [recovery],
+  });
+  assert.equal(kept.published.filter((m) => m.week === "Fecha 1").length, 2, "suma el recupero sin borrar la fecha");
+  assert.ok(kept.published.includes(fecha2), "Fecha 2 sigue con su único partido");
+  const archived = fileOwedRecoveries({
+    published: [fecha2],
+    results: [fecha1],
+    owed: [recovery],
+  });
+  assert.equal(archived.published.length, 1, "no reabre la fecha archivada en el fixture");
+  assert.ok(archived.results.some((m) => m.home === recovery.home && m.week === "Fecha 1"));
+  assert.ok(archived.results.includes(fecha1), "el historial de Fecha 1 se conserva");
+}
+
+{
+  const matches = [
+    {
+      week: "Fecha 1",
+      temp: "T5",
+      cat: "B Masculina",
+      home: "Diego Ramirez / Martin Rondan",
+      away: "Jeronimo Acuña / Lucio Acuña",
+      result: "6/4 6/2",
+      appliedResult: "6/4 6/2",
+    },
+    {
+      week: "Fecha 1",
+      temp: "T5",
+      cat: "B Masculina",
+      home: "Lucas Gobatto / Matias Roldan",
+      away: "Pendiente / Pendiente",
+      pending: true,
+      recoverFrom: "Fecha 1",
+      recoveredIn: "Fecha 2",
+    },
+  ];
+  const pairs = [
+    { temp: "T5", cat: "B Masculina", p1: "Diego Ramirez", p2: "Martin Rondan", days: { Lunes: "18:00 - 21:00" } },
+    {
+      temp: "T5",
+      cat: "B Masculina",
+      p1: "Lucas Gobatto",
+      p2: "Matias Roldan",
+      days: { Lunes: "18:00 - 21:00" },
+      abandoned: true,
+      abandonedAt: "2026-11-23T00:00:00.000Z",
+    },
+  ];
+  const out = importRecoveryDebts(matches, { temp: "T5", week: "Fecha 2", history: matches, pairs });
+  assert.equal(
+    out.matches.filter((m) => /gobatto|roldan/i.test(m.home || "")).length,
+    0,
+    "abandonadas no recuperan ni quedan en pendientes"
+  );
+}
 
 console.log("ok");

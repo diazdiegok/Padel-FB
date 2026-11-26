@@ -1,3 +1,4 @@
+import { mergeDriveFixtureRows, parseDriveSheetValues } from "../../src/lib/drive-sheet.js";
 import { addPairsToRanking, findPairIndex, pairsMatch } from "../../src/lib/scoring.js";
 import { closeStatus, deadlinePassed, validDeadline } from "../../src/lib/cierre.js";
 import { buildMail, cleanDays, pairLabel, validateDays, validateMail } from "../../src/lib/disponibilidad.js";
@@ -111,6 +112,7 @@ async function createSession(env) {
   const signature = encodeBase64Url(await hmac(env.SESSION_SECRET, payload));
   if (env.AUTH_KV) {
     await env.AUTH_KV.put(`sess:${jti}`, "1", { expirationTtl: SESSION_SECONDS });
+    await meterBump(env, { writes: 1 });
   }
   return { token: `${payload}.${signature}`, exp: (now + SESSION_SECONDS) * 1000 };
 }
@@ -259,10 +261,43 @@ async function formDayOk(env, request, scope) {
   const max = FORM_DAY_MAX[scope] ?? FORM_DAY_MAX.form;
   const day = new Date().toISOString().slice(0, 10);
   const key = `formday:${scope}:${clientIp(request)}:${day}`;
-  const n = Number((await env.AUTH_KV.get(key)) || 0);
-  if (n >= max) return false;
-  await env.AUTH_KV.put(key, String(n + 1), { expirationTtl: 90_000 });
-  return true;
+  // Preferir Cache API para no gastar puts KV en el contador anti-spam.
+  const cacheUrl = `https://padel-fb-api.cache/${key}`;
+  try {
+    const cache = caches.default;
+    const hit = await cache.match(cacheUrl);
+    const n = hit ? Number(await hit.text()) || 0 : Number((await env.AUTH_KV.get(key)) || 0);
+    if (n >= max) return false;
+    await cache.put(
+      cacheUrl,
+      new Response(String(n + 1), {
+        headers: { "Cache-Control": "max-age=90000", "Content-Type": "text/plain" },
+      })
+    );
+    // Espejo en KV como mucho 1 de cada 5 (auditoría), sin tumbar si la cuota está llena.
+    if ((n + 1) % 5 === 0) {
+      try {
+        await env.AUTH_KV.put(key, String(n + 1), { expirationTtl: 90_000 });
+      } catch {
+        /* cuota KV: el cache alcanza para el día */
+      }
+    }
+    return true;
+  } catch {
+    try {
+      const n = Number((await env.AUTH_KV.get(key)) || 0);
+      if (n >= max) return false;
+      await env.AUTH_KV.put(key, String(n + 1), { expirationTtl: 90_000 });
+      return true;
+    } catch (err) {
+      const msg = String(err?.message || err || "");
+      if (/limit exceeded/i.test(msg)) {
+        const e = new Error("KV put() limit exceeded for the day.");
+        throw e;
+      }
+      throw err;
+    }
+  }
 }
 
 function receiptLooksValid(mime, b64) {
@@ -662,6 +697,7 @@ async function registerPair(env, raw) {
       await caches.default.delete(PAIRS_CACHE);
       await env.AUTH_KV.put(`contact:${pair.id}`, "", { metadata: contact });
       await savePayment(env, pair.id, { receiptMime, receiptData });
+      await meterBump(env, { writes: 2 });
       return { ok: true, pair: { id: pair.id, p1: pair.p1, p2: pair.p2, cat: pair.cat } };
     }
     await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
@@ -980,6 +1016,116 @@ async function hitRateOk(env, request) {
   return true;
 }
 
+/** Cuota free de KV: ~1000 puts/día. Visitas NO pueden escribir en cada hit. */
+const HIT_FLUSH_SECONDS = 300; // como mucho 1 flush KV / 5 min / colo
+/** Límites orientativos Workers Free (Cloudflare). */
+const KV_WRITE_LIMIT_DAY = 1000;
+const KV_READ_LIMIT_DAY = 100_000;
+const KV_KEYS_SOFT_LIMIT = 10_000;
+const VISITS_SOFT_LIMIT_DAY = 2_000;
+const METER_FLUSH_SECONDS = 120;
+
+async function meterLoad(env, day = utcDay(0)) {
+  const empty = { writes: 0, reads: 0, lists: 0 };
+  if (!env.AUTH_KV) return empty;
+  const cacheUrl = `https://padel-fb-api.cache/meter/${day}`;
+  try {
+    const hit = await caches.default.match(cacheUrl);
+    if (hit) {
+      const j = await hit.json();
+      return {
+        writes: Number(j.writes || 0),
+        reads: Number(j.reads || 0),
+        lists: Number(j.lists || 0),
+      };
+    }
+  } catch {
+    /* seguir con KV */
+  }
+  try {
+    const fromKv = (await env.AUTH_KV.get(`usage:meter:${day}`, "json")) || null;
+    if (fromKv) {
+      return {
+        writes: Number(fromKv.writes || 0),
+        reads: Number(fromKv.reads || 0) + 1,
+        lists: Number(fromKv.lists || 0),
+      };
+    }
+  } catch {
+    /* vacío */
+  }
+  return empty;
+}
+
+async function meterSaveCache(day, meter) {
+  try {
+    await caches.default.put(
+      `https://padel-fb-api.cache/meter/${day}`,
+      new Response(JSON.stringify(meter), {
+        headers: { "Cache-Control": "max-age=86400", "Content-Type": "application/json" },
+      })
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Cuenta escrituras/lecturas propias para el panel Consumos (aproximado). */
+async function meterBump(env, { writes = 0, reads = 0, lists = 0 } = {}) {
+  if (!env.AUTH_KV) return;
+  const day = utcDay(0);
+  const cur = await meterLoad(env, day);
+  cur.writes += Number(writes) || 0;
+  cur.reads += Number(reads) || 0;
+  cur.lists += Number(lists) || 0;
+  await meterSaveCache(day, cur);
+  const gateUrl = `https://padel-fb-api.cache/meterflush/${day}`;
+  try {
+    if (await caches.default.match(gateUrl)) return;
+    await caches.default.put(
+      gateUrl,
+      new Response("1", { headers: { "Cache-Control": `max-age=${METER_FLUSH_SECONDS}`, "Content-Type": "text/plain" } })
+    );
+  } catch {
+    return;
+  }
+  try {
+    await env.AUTH_KV.put(`usage:meter:${day}`, JSON.stringify(cur), { expirationTtl: 90_000 });
+    cur.writes += 1; // el propio flush
+    await meterSaveCache(day, cur);
+  } catch {
+    /* si la cuota está llena no persistimos el medidor */
+  }
+}
+
+function pctUsed(used, limit) {
+  const u = Math.max(0, Number(used) || 0);
+  const lim = Math.max(1, Number(limit) || 1);
+  return Math.min(100, Math.round((u / lim) * 1000) / 10);
+}
+
+function meterRow({ id, label, used, limit, unit = "", blocked = false }) {
+  const safeUsed = blocked ? limit : Math.max(0, Number(used) || 0);
+  const usedPct = blocked ? 100 : pctUsed(safeUsed, limit);
+  const left = Math.max(0, limit - safeUsed);
+  const leftPct = Math.max(0, Math.round((100 - usedPct) * 10) / 10);
+  let tone = "ok";
+  if (blocked || usedPct >= 95) tone = "critical";
+  else if (usedPct >= 70) tone = "warn";
+  return {
+    id,
+    label,
+    used: safeUsed,
+    limit,
+    left,
+    usedPct,
+    leftPct,
+    unit,
+    tone,
+    blocked: !!blocked,
+  };
+}
+
 async function recordHit(env, request, raw) {
   if (!env.AUTH_KV) return { ok: true };
   const country = String(request.cf?.country || "XX")
@@ -992,35 +1138,98 @@ async function recordHit(env, request, raw) {
   const path = cleanHitPath(raw?.path || "/");
   const ref = referrerHost(raw?.ref || request.headers.get("Referer"), env);
   const ip = String(clientIp(request) || "anon").slice(0, 45);
-  const cur = (await env.AUTH_KV.get(key, "json")) || {
+  const cache = caches.default;
+  const bufUrl = `https://padel-fb-api.cache/hitbuf/${day}`;
+  const flushUrl = `https://padel-fb-api.cache/hitflush/${day}`;
+
+  // Acumular en Cache API (no gasta cuota KV).
+  let cur = {
     total: 0,
     countries: {},
     devices: {},
     paths: {},
     refs: {},
+    recent: [],
   };
+  try {
+    const prev = await cache.match(bufUrl);
+    if (prev) cur = { ...cur, ...(await prev.json()) };
+  } catch {
+    /* buffer vacío */
+  }
+  // Semilla desde KV solo si el buffer está frío (1 get, barato).
+  if (!cur.total) {
+    try {
+      const fromKv = (await env.AUTH_KV.get(key, "json")) || null;
+      if (fromKv && typeof fromKv === "object") {
+        cur.total = Number(fromKv.total || 0);
+        cur.countries = fromKv.countries || {};
+        cur.devices = fromKv.devices || {};
+        cur.paths = fromKv.paths || {};
+        cur.refs = fromKv.refs || {};
+      }
+    } catch {
+      /* si KV está bloqueado, seguimos solo con buffer */
+    }
+  }
   cur.total = Number(cur.total || 0) + 1;
   bump(cur.countries, country);
   bump(cur.devices, device);
   bump(cur.paths, path);
   bump(cur.refs, ref);
-  // 1 escritura fija por visita (totales del día).
-  const writes = [env.AUTH_KV.put(key, JSON.stringify(cur), { expirationTtl: STATS_TTL })];
-  // La lista con IP solo se actualiza ~1 de cada 4 visitas (ahorra cuota free).
-  if (cur.total % 4 === 1) {
-    const recentRaw = await env.AUTH_KV.get("stats:recent", "json");
-    const recentList = Array.isArray(recentRaw) ? recentRaw : [];
-    recentList.unshift({
-      at: new Date().toISOString(),
-      ip,
-      path,
-      country: COUNTRY_NAMES[country] || country,
-      device,
-      ref,
-    });
-    writes.push(env.AUTH_KV.put("stats:recent", JSON.stringify(recentList.slice(0, 50)), { expirationTtl: STATS_TTL }));
+  cur.recent = Array.isArray(cur.recent) ? cur.recent : [];
+  cur.recent.unshift({
+    at: new Date().toISOString(),
+    ip,
+    path,
+    country: COUNTRY_NAMES[country] || country,
+    device,
+    ref,
+  });
+  cur.recent = cur.recent.slice(0, 50);
+  try {
+    await cache.put(
+      bufUrl,
+      new Response(JSON.stringify(cur), {
+        headers: { "Cache-Control": "max-age=86400", "Content-Type": "application/json" },
+      })
+    );
+  } catch {
+    /* sin buffer no contamos */
   }
-  await Promise.all(writes);
+
+  // Flush a KV como mucho cada HIT_FLUSH_SECONDS (protege la cuota free).
+  try {
+    if (await cache.match(flushUrl)) return { ok: true };
+    await cache.put(
+      flushUrl,
+      new Response("1", { headers: { "Cache-Control": `max-age=${HIT_FLUSH_SECONDS}`, "Content-Type": "text/plain" } })
+    );
+  } catch {
+    return { ok: true };
+  }
+
+  try {
+    const payload = {
+      total: cur.total,
+      countries: cur.countries,
+      devices: cur.devices,
+      paths: cur.paths,
+      refs: cur.refs,
+    };
+    await env.AUTH_KV.put(key, JSON.stringify(payload), { expirationTtl: STATS_TTL });
+    let writeN = 1;
+    if (cur.recent.length) {
+      await env.AUTH_KV.put("stats:recent", JSON.stringify(cur.recent.slice(0, 50)), { expirationTtl: STATS_TTL });
+      writeN = 2;
+    }
+    await meterBump(env, { writes: writeN, reads: 1 });
+  } catch (err) {
+    // Si se acabó la cuota del día, no tumbar el sitio: las visitas son best-effort.
+    const msg = String(err?.message || err || "");
+    if (/limit exceeded|429|put\(\) limit/i.test(msg)) return { ok: true };
+    throw err;
+  }
   return { ok: true };
 }
 
@@ -1036,6 +1245,899 @@ function isNoiseRef(ref) {
 
 function mergeMaps(into, from) {
   for (const [k, v] of Object.entries(from || {})) into[k] = (into[k] || 0) + Number(v || 0);
+}
+
+async function countKvPrefix(env, prefix) {
+  if (!env.AUTH_KV) return 0;
+  let n = 0;
+  let cursor;
+  for (let i = 0; i < 20; i++) {
+    const page = await env.AUTH_KV.list({ prefix, cursor, limit: 1000 });
+    n += (page.keys || []).length;
+    if (page.list_complete) break;
+    cursor = page.cursor;
+    if (!cursor) break;
+  }
+  return n;
+}
+
+const VERCEL_DEPLOY_LIMIT_DAY = 100; // Hobby · ventana rodante 24 h
+const VERCEL_STORAGE_LIMIT_GB = 10; // Hobby Deployment Storage
+const GITHUB_CORE_SOFT_LIMIT = 5000; // authenticated REST
+
+function formatArClock(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("es-AR", {
+    timeZone: "America/Buenos_Aires",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(d);
+  const part = (type) => parts.find((p) => p.type === type)?.value || "";
+  return `${part("day")}/${part("month")} ${part("hour")}:${part("minute")} AR`;
+}
+
+/** Cuenta regresiva legible para la UI (min / h / d). */
+function formatRemaining(ms, nowMs = Date.now()) {
+  const n = Number(ms);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  const diff = Math.max(0, n - nowMs);
+  if (diff <= 0) return "ahora";
+  const min = Math.round(diff / 60000);
+  if (min < 60) return `en ${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h < 48) return m ? `en ${h} h ${m} min` : `en ${h} h`;
+  const d = Math.floor(h / 24);
+  const rh = h % 24;
+  return rh ? `en ${d} d ${rh} h` : `en ${d} d`;
+}
+
+function renewLabel(absolute, ms, nowMs = Date.now()) {
+  const abs = String(absolute || "").trim();
+  const rel = formatRemaining(ms, nowMs);
+  if (abs && rel) return `${abs} · ${rel}`;
+  return abs || rel || "";
+}
+
+/** Prefija medidores para la UI vieja (lista plana) y la nueva (providers). */
+function tagMeters(providerName, list, fallbackRenew = "", fallbackMs) {
+  const nowMs = Date.now();
+  return (Array.isArray(list) ? list : []).map((m) => {
+    const ownAbs = String(m.renewsAt || "").trim();
+    const ownMs = m.renewsAtMs;
+    // Si el medidor trae texto propio sin timestamp (ej. retention de storage),
+    // no le pegues el countdown del cupo de deploys de Vercel.
+    const abs = ownAbs || fallbackRenew || "";
+    const ms = ownMs != null ? ownMs : ownAbs ? undefined : fallbackMs;
+    return {
+      ...m,
+      label: m.label?.startsWith(`${providerName} ·`) ? m.label : `${providerName} · ${m.label || ""}`,
+      renewsAt: renewLabel(abs, ms, nowMs) || abs,
+      renewsAtMs: ms,
+    };
+  });
+}
+
+/** Timestamp de un deploy Vercel (ms). */
+function vercelCreatedMs(d, fallback = Date.now()) {
+  const raw = d?.created ?? d?.createdAt ?? d?.creating;
+  const n = Number(raw);
+  if (Number.isFinite(n) && n > 0) {
+    // API a veces manda segundos.
+    return n < 1e12 ? n * 1000 : n;
+  }
+  const parsed = Date.parse(String(raw || ""));
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+/**
+ * Lista TODOS los deploys de la cuenta/equipo en la ventana (paginado).
+ * Importante: el tope Hobby es de la cuenta, no de un solo projectId.
+ */
+async function listVercelDeploymentsWindow(env, { sinceMs, untilMs }) {
+  const token = String(env.VERCEL_TOKEN || "").trim();
+  const teamId = String(env.VERCEL_TEAM_ID || "").trim();
+  if (!token) return { ok: false, deployments: [], error: "Sin VERCEL_TOKEN" };
+
+  const out = [];
+  let until = untilMs || Date.now();
+  // Hasta 5 páginas × 100 = 500 (de sobra para el tope 100).
+  for (let page = 0; page < 5; page++) {
+    const url =
+      `https://api.vercel.com/v6/deployments?limit=100&since=${sinceMs}&until=${until}` +
+      (teamId ? `&teamId=${encodeURIComponent(teamId)}` : "");
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        ok: false,
+        deployments: out,
+        error: json?.error?.message || `HTTP ${res.status}`,
+        status: res.status,
+      };
+    }
+    const batch = Array.isArray(json.deployments) ? json.deployments : [];
+    if (!batch.length) break;
+    out.push(...batch);
+    const oldestInBatch = Math.min(...batch.map((d) => vercelCreatedMs(d, until)));
+    // Sin más viejos en la ventana → listo.
+    if (batch.length < 100 || oldestInBatch <= sinceMs) break;
+    // Siguiente página: todo lo anterior al más viejo de esta tanda.
+    until = oldestInBatch - 1;
+  }
+
+  const seen = new Set();
+  const deployments = [];
+  for (const d of out) {
+    const id = String(d.uid || d.id || `${d.url}|${d.created}`);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const createdMs = vercelCreatedMs(d);
+    if (createdMs < sinceMs) continue;
+    deployments.push({
+      ...d,
+      _createdMs: createdMs,
+      _project: d.project?.name || d.name || d.url || "",
+    });
+  }
+  deployments.sort((a, b) => a._createdMs - b._createdMs);
+
+  return { ok: true, deployments };
+}
+
+/** Vercel Hobby: deploys en las últimas 24 h (API o estimación vía GitHub statuses). */
+async function readVercelUsage(env) {
+  const now = Date.now();
+  const sinceMs = now - 86_400_000;
+  const token = String(env.VERCEL_TOKEN || "").trim();
+  const projectId = String(env.VERCEL_PROJECT_ID || "").trim();
+  const teamId = String(env.VERCEL_TEAM_ID || "").trim();
+  const alerts = [];
+  const tips = [
+    "Plan Hobby: 100 deploys / 24 h (ventana rodante de toda la cuenta, no solo este proyecto).",
+    "Cuentan pushes, previews de PR y publishes del admin en cualquier proyecto del plan.",
+    "Si llega a 100%, el sitio público no se actualiza; el admin, KV y Pegar en Drive siguen.",
+    "Deployment Storage (10 GB Hobby): los deploys viejos se borran solos por retention (~30 días; se guardan los últimos 3 de producción y 3 recientes). Si pasás 10 GB, Vercel borra antes los no protegidos.",
+  ];
+  const kpis = [];
+
+  async function countRetainedDeployments() {
+    if (!token) return null;
+    let retained = 0;
+    let until = Date.now();
+    try {
+      for (let i = 0; i < 8; i++) {
+        const url =
+          `https://api.vercel.com/v6/deployments?limit=100&until=${until}` +
+          (teamId ? `&teamId=${encodeURIComponent(teamId)}` : "");
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) return retained || null;
+        const batch = Array.isArray(json.deployments) ? json.deployments : [];
+        if (!batch.length) break;
+        retained += batch.length;
+        const oldest = Math.min(...batch.map((d) => vercelCreatedMs(d, until)));
+        if (batch.length < 100) break;
+        until = oldest - 1;
+      }
+    } catch {
+      return retained || null;
+    }
+    return retained;
+  }
+
+  async function readStorageSnapshot() {
+    try {
+      const raw = await env.AUTH_KV?.get("usage:vercel-storage", "json");
+      if (raw && Number.isFinite(Number(raw.usedGb))) {
+        return {
+          usedGb: Number(raw.usedGb),
+          limitGb: Number(raw.limitGb) || VERCEL_STORAGE_LIMIT_GB,
+          updatedAt: raw.updatedAt || "",
+          source: raw.source || "kv",
+        };
+      }
+    } catch {
+      /* ignore */
+    }
+    return null;
+  }
+
+  async function fromGithubStatuses() {
+    const owner = String(env.GITHUB_OWNER || "").trim();
+    const repo = String(env.GITHUB_REPO || "").trim();
+    const ghToken = String(env.GITHUB_TOKEN || "").trim();
+    if (!owner || !repo || !ghToken) {
+      return { used: null, blocked: false, renewsAt: "", note: "Sin GITHUB_TOKEN para estimar." };
+    }
+    const sinceIso = new Date(sinceMs).toISOString();
+    const listRes = await fetch(
+      `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/commits?since=${encodeURIComponent(sinceIso)}&per_page=100`,
+      {
+        headers: {
+          Authorization: `Bearer ${ghToken}`,
+          Accept: "application/vnd.github+json",
+          "User-Agent": "padel-fb-api",
+        },
+      }
+    );
+    if (!listRes.ok) {
+      return { used: null, blocked: false, renewsAt: "", note: `GitHub commits ${listRes.status}` };
+    }
+    const commits = await listRes.json().catch(() => []);
+    let used = 0;
+    let blocked = false;
+    let blockedAt = 0;
+    for (const c of Array.isArray(commits) ? commits.slice(0, 20) : []) {
+      const sha = c?.sha;
+      if (!sha) continue;
+      const stRes = await fetch(
+        `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/commits/${encodeURIComponent(sha)}/status`,
+        {
+          headers: {
+            Authorization: `Bearer ${ghToken}`,
+            Accept: "application/vnd.github+json",
+            "User-Agent": "padel-fb-api",
+          },
+        }
+      );
+      if (!stRes.ok) continue;
+      const st = await stRes.json().catch(() => ({}));
+      const vercel = (st.statuses || []).filter((s) => String(s.context || "") === "Vercel");
+      if (!vercel.length) continue;
+      used += 1;
+      for (const s of vercel) {
+        if (/rate limited/i.test(String(s.description || ""))) {
+          blocked = true;
+          const t = Date.parse(s.created_at || s.updated_at || "");
+          if (Number.isFinite(t) && t > blockedAt) blockedAt = t;
+        }
+      }
+    }
+    const renewMs = blocked && blockedAt ? blockedAt + 86_400_000 : now + 86_400_000;
+    return {
+      used,
+      blocked,
+      renewsAtMs: renewMs,
+      renewsAt: formatArClock(renewMs),
+      note: "Estimación solo de este repo (vía GitHub). El tope Hobby es de toda la cuenta Vercel.",
+      source: "github-estimate",
+    };
+  }
+
+  let used = 0;
+  let blocked = false;
+  let renewsAtMs = now + 86_400_000;
+  let renewsAt = formatArClock(renewsAtMs);
+  let oldestAtMs = 0;
+  let oldestAt = "";
+  let nextFrees = [];
+  let source = "none";
+  let note = "";
+  let latestState = "";
+  let latestDesc = "";
+  let projectInWindow = 0;
+
+  if (token) {
+    try {
+      const listed = await listVercelDeploymentsWindow(env, { sinceMs, untilMs: now });
+      if (!listed.ok) {
+        alerts.push({
+          level: "warn",
+          title: "No pude leer deploys de Vercel",
+          body: listed.error || "Revisá VERCEL_TOKEN / team.",
+        });
+        const fb = await fromGithubStatuses();
+        used = fb.used ?? 0;
+        blocked = fb.blocked;
+        if (fb.renewsAtMs) renewsAtMs = fb.renewsAtMs;
+        renewsAt = fb.renewsAt || formatArClock(renewsAtMs);
+        note = fb.note || "";
+        source = fb.source || "github-estimate";
+      } else {
+        const deps = listed.deployments;
+        used = deps.length;
+        source = "vercel-api";
+        note =
+          "Cuenta/equipo completa (Hobby). Cuentan todos los proyectos + previews de las últimas 24 h.";
+        if (projectId) {
+          projectInWindow = deps.filter((d) => String(d.projectId || d.project?.id || "") === projectId).length;
+        }
+        if (deps.length) {
+          oldestAtMs = deps[0]._createdMs;
+          oldestAt = formatArClock(oldestAtMs);
+          // Para volver a tener 1 cupo libre hace falta bajar a 99 en la ventana.
+          const needAgeOut = Math.max(0, used - (VERCEL_DEPLOY_LIMIT_DAY - 1));
+          const pivot = deps[Math.min(deps.length, Math.max(1, needAgeOut)) - 1];
+          renewsAtMs = (pivot?._createdMs || oldestAtMs) + 86_400_000;
+          renewsAt = formatArClock(renewsAtMs);
+          // Próximos cupos (cada deploy viejo que sale de la ventana libera 1).
+          const from = Math.max(0, needAgeOut - 1);
+          nextFrees = deps.slice(from, from + 5).map((d, i) => ({
+            n: i + 1,
+            freesAtMs: d._createdMs + 86_400_000,
+            freesAt: formatArClock(d._createdMs + 86_400_000),
+            createdAt: formatArClock(d._createdMs),
+            project: d._project,
+          }));
+          const last = deps[deps.length - 1];
+          latestState = String(last?.readyState || last?.state || "");
+          latestDesc = String(last?.name || last?.url || "");
+        }
+        if (used >= VERCEL_DEPLOY_LIMIT_DAY) {
+          blocked = true;
+          alerts.push({
+            level: "critical",
+            title: "Cuota de deploys Vercel agotada",
+            body: `Hobby: ${used}/${VERCEL_DEPLOY_LIMIT_DAY}+ en 24 h (cuenta). Primer cupo libre: ${renewsAt}. Más viejo de la ventana: ${oldestAt}. Admin y Pegar en Drive siguen.`,
+          });
+        } else if (used >= Math.floor(VERCEL_DEPLOY_LIMIT_DAY * 0.85)) {
+          alerts.push({
+            level: "warn",
+            title: `Deploys Vercel al ${pctUsed(used, VERCEL_DEPLOY_LIMIT_DAY)}%`,
+            body: `Usados ${used} de ${VERCEL_DEPLOY_LIMIT_DAY}. Primer reset de cupo ~${renewsAt}.`,
+          });
+        }
+      }
+    } catch (err) {
+      alerts.push({
+        level: "warn",
+        title: "Error al consultar Vercel",
+        body: String(err?.message || err),
+      });
+      const fb = await fromGithubStatuses().catch(() => null);
+      if (fb) {
+        used = fb.used ?? 0;
+        blocked = fb.blocked;
+        if (fb.renewsAtMs) renewsAtMs = fb.renewsAtMs;
+        renewsAt = fb.renewsAt || formatArClock(renewsAtMs);
+        note = fb.note || "";
+        source = fb.source || "github-estimate";
+      }
+    }
+  } else {
+    const fb = await fromGithubStatuses();
+    used = fb.used ?? 0;
+    blocked = fb.blocked;
+    if (fb.renewsAtMs) renewsAtMs = fb.renewsAtMs;
+    renewsAt = fb.renewsAt || formatArClock(renewsAtMs);
+    note = fb.note || "Cargá el secret VERCEL_TOKEN para el conteo exacto de la cuenta.";
+    source = fb.source || "github-estimate";
+    alerts.push({
+      level: "warn",
+      title: "Vercel sin token de API",
+      body: "Estoy estimando con los checks de GitHub de este repo. Para el número real de la cuenta, cargá VERCEL_TOKEN en el Worker.",
+    });
+    if (blocked) {
+      alerts.push({
+        level: "critical",
+        title: "Vercel rate-limited (visto en GitHub)",
+        body: `El último deploy falló por cuota. Reintentá ~${renewsAt}. Mientras, fixtureá en admin / Pegar en Drive.`,
+      });
+    }
+  }
+
+  const usedCount = Number(used) || 0;
+  const deployMeter = {
+    ...meterRow({
+      id: "vercel-deploys",
+      label: "Deploys (últimas 24 h)",
+      used: Math.min(usedCount, VERCEL_DEPLOY_LIMIT_DAY),
+      limit: VERCEL_DEPLOY_LIMIT_DAY,
+      unit: "deploys",
+      blocked,
+    }),
+    // Conteo real de la ventana (puede ser > limit si la API lista más).
+    usedCount,
+    renewsAt: renewsAt || "ventana 24 h",
+    renewsAtMs,
+  };
+
+  const [storageSnap, retainedCount] = await Promise.all([readStorageSnapshot(), countRetainedDeployments()]);
+  const meters = [deployMeter];
+
+  if (storageSnap) {
+    const usedGb = storageSnap.usedGb;
+    const limitGb = storageSnap.limitGb || VERCEL_STORAGE_LIMIT_GB;
+    const usedPct = Math.min(100, Math.round((usedGb / limitGb) * 1000) / 10);
+    const leftGb = Math.max(0, Math.round((limitGb - usedGb) * 100) / 100);
+    let tone = "ok";
+    if (usedPct >= 90) tone = "critical";
+    else if (usedPct >= 70) tone = "warn";
+    meters.push({
+      id: "vercel-storage",
+      label: "Deployment Storage (Hobby)",
+      used: usedGb,
+      limit: limitGb,
+      left: leftGb,
+      usedPct,
+      leftPct: Math.max(0, Math.round((100 - usedPct) * 10) / 10),
+      unit: "GB",
+      tone,
+      blocked: usedPct >= 100,
+      // No es un reset por reloj: Hobby libera GB cuando borra deploys viejos.
+      renewsAt: "no es diario · retention ~30 d (guarda últimos 3 prod)",
+    });
+    if (usedPct >= 85) {
+      alerts.push({
+        level: usedPct >= 95 ? "critical" : "warn",
+        title: `Storage Vercel al ${usedPct}%`,
+        body: `${usedGb} / ${limitGb} GB. Hobby borra deploys viejos solo; si llega a 10 GB puede frenar deploys hasta liberar espacio.`,
+      });
+    }
+  }
+
+  kpis.push(
+    {
+      label: "Quedan",
+      value: String(Math.max(0, VERCEL_DEPLOY_LIMIT_DAY - usedCount)),
+      sub: usedCount > VERCEL_DEPLOY_LIMIT_DAY ? `${usedCount} en ventana` : "deploys libres",
+    },
+    {
+      label: "Storage",
+      value: storageSnap ? `${storageSnap.usedGb} GB` : "—",
+      sub: storageSnap ? `de ${storageSnap.limitGb || VERCEL_STORAGE_LIMIT_GB} GB Hobby` : "sin dato aún",
+    },
+    { label: "Estado", value: blocked ? "BLOQUEADA" : "OK", sub: blocked ? "sin deploys nuevos" : "puede publicar sitio" },
+    {
+      label: "Primer cupo libre",
+      value: renewsAt || "—",
+      sub: oldestAt ? `más viejo ${oldestAt}` : "ventana 24 h",
+    },
+    {
+      label: "Retenidos",
+      value: retainedCount != null ? String(retainedCount) : "—",
+      sub: "builds guardados",
+    }
+  );
+
+  if (!alerts.some((a) => a.level === "critical") && !blocked && source === "vercel-api") {
+    alerts.unshift({
+      level: "ok",
+      title: `Deploys OK · libre ${deployMeter.leftPct}%`,
+      body: `Usado ${deployMeter.usedPct}% (${deployMeter.used}/${deployMeter.limit}) en 24 h (cuenta).`,
+    });
+  }
+
+  return {
+    id: "vercel",
+    name: "Vercel",
+    explain:
+      "Publica el sitio estático (padel-fb.vercel.app). El tope Hobby es de toda la cuenta (todos los proyectos + previews). Si se agota, dejan de salir deploys; admin y Pegar en Drive siguen.",
+    meters,
+    kpis,
+    alerts,
+    tips,
+    note,
+    source,
+    renewsAt,
+    renewsAtMs,
+    oldestAt,
+    oldestAtMs,
+    nextFrees,
+    projectInWindow,
+    usedCount,
+    storage: storageSnap,
+    retainedCount,
+  };
+}
+
+/** GitHub REST: cuota del token que usa el Worker para publish. */
+async function readGithubUsage(env) {
+  const token = String(env.GITHUB_TOKEN || "").trim();
+  const alerts = [];
+  const tips = [
+    "El Worker usa GITHUB_TOKEN para leer/publicar JSON (fixture, ranking, parejas).",
+    "Tope típico autenticado: 5000 requests/hora (se renueva cada hora).",
+  ];
+  if (!token) {
+    return {
+      id: "github",
+      name: "GitHub",
+      explain: "API que usa el admin para publicar archivos al repo.",
+      meters: [],
+      kpis: [{ label: "Token", value: "Falta GITHUB_TOKEN", sub: "publish no anda" }],
+      alerts: [{ level: "critical", title: "Sin GITHUB_TOKEN", body: "No se puede publicar desde el admin." }],
+      tips,
+    };
+  }
+  try {
+    const res = await fetch("https://api.github.com/rate_limit", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+        "User-Agent": "padel-fb-api",
+      },
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        id: "github",
+        name: "GitHub",
+        explain: "API que usa el admin para publicar archivos al repo.",
+        meters: [],
+        kpis: [],
+        alerts: [{ level: "warn", title: "No pude leer rate_limit", body: json?.message || `HTTP ${res.status}` }],
+        tips,
+      };
+    }
+    const core = json.resources?.core || {};
+    const used = Math.max(0, Number(core.limit || GITHUB_CORE_SOFT_LIMIT) - Number(core.remaining || 0));
+    const limit = Number(core.limit || GITHUB_CORE_SOFT_LIMIT);
+    const resetMs = Number(core.reset || 0) * 1000;
+    const renewsAt = resetMs ? formatArClock(resetMs) : "cada hora";
+    const meter = {
+      ...meterRow({
+        id: "github-core",
+        label: "API REST (esta hora)",
+        used,
+        limit,
+        unit: "reqs",
+        blocked: Number(core.remaining || 0) <= 0,
+      }),
+      renewsAt,
+      renewsAtMs: resetMs || undefined,
+    };
+    if (meter.usedPct >= 90) {
+      alerts.push({
+        level: "warn",
+        title: `GitHub API al ${meter.usedPct}%`,
+        body: `Quedan ${core.remaining} requests hasta ~${renewsAt}.`,
+      });
+    } else {
+      alerts.push({
+        level: "ok",
+        title: `GitHub OK · libre ${meter.leftPct}%`,
+        body: `Quedan ${core.remaining} de ${limit} requests esta hora.`,
+      });
+    }
+    return {
+      id: "github",
+      name: "GitHub",
+      explain: "Cuota del token con el que el Worker publica commits al repo (fixture, ranking, etc.).",
+      meters: [meter],
+      kpis: [
+        { label: "Restantes", value: String(core.remaining ?? "—"), sub: "esta hora" },
+        { label: "Repo", value: `${env.GITHUB_OWNER}/${env.GITHUB_REPO}`, sub: "publish" },
+      ],
+      alerts,
+      tips,
+      renewsAt,
+      renewsAtMs: resetMs || undefined,
+    };
+  } catch (err) {
+    return {
+      id: "github",
+      name: "GitHub",
+      explain: "API que usa el admin para publicar archivos al repo.",
+      meters: [],
+      kpis: [],
+      alerts: [{ level: "warn", title: "Error GitHub rate_limit", body: String(err?.message || err) }],
+      tips,
+    };
+  }
+}
+
+/** Panel admin: cuotas / alertas para no volver a tumbar inscripción-publish. */
+async function readUsage(env) {
+  const day = utcDay(0);
+  const alerts = [];
+  const tips = [
+    "Los % de Cloudflare son del plan Workers Free (orientativos): 1000 escrituras KV/día.",
+    "Cloudflare se reinicia a las 00:00 UTC (~21:00 Argentina).",
+    "Escrituras KV: login, inscripción, comprobantes y visitas (flush cada ~5 min).",
+    "Si Escrituras KV llega a ~100%, se cortan inscripción y publish hasta el reset.",
+  ];
+
+  let visitsToday = 0;
+  try {
+    const cur = (await env.AUTH_KV?.get(`stats:day:${day}`, "json")) || null;
+    await meterBump(env, { reads: 1 });
+    visitsToday = Math.max(0, Number(cur?.total || 0) - Number(cur?.countries?.US || 0));
+  } catch (err) {
+    alerts.push({
+      level: "warn",
+      title: "No pude leer visitas de hoy",
+      body: String(err?.message || err),
+    });
+  }
+
+  let contacts = 0;
+  let payments = 0;
+  let acad = 0;
+  try {
+    contacts = await countKvPrefix(env, "contact:");
+    payments = await countKvPrefix(env, "pay:");
+    acad = await countKvPrefix(env, "acad:");
+    await meterBump(env, { lists: 3, reads: 3 });
+  } catch (err) {
+    alerts.push({
+      level: "warn",
+      title: "No pude contar claves de almacenamiento",
+      body: String(err?.message || err),
+    });
+  }
+
+  let kvWriteStatus = "OK";
+  let writeOk = true;
+  // No probar put en cada refresh: 1 probe / 5 min (Cache API) para no gastar la cuota.
+  const probeGate = `https://padel-fb-api.cache/usageprobe/${day}`;
+  let skipProbe = false;
+  try {
+    skipProbe = Boolean(await caches.default.match(probeGate));
+  } catch {
+    skipProbe = false;
+  }
+  if (skipProbe) {
+    kvWriteStatus = "OK";
+    writeOk = true;
+  } else {
+    try {
+      const probeKey = `usage:probe:${day}`;
+      await env.AUTH_KV.put(probeKey, String(Date.now()), { expirationTtl: 300 });
+      await meterBump(env, { writes: 1 });
+      try {
+        await caches.default.put(
+          probeGate,
+          new Response("1", { headers: { "Cache-Control": "max-age=300", "Content-Type": "text/plain" } })
+        );
+      } catch {
+        /* sin gate igual seguimos */
+      }
+    } catch (err) {
+      writeOk = false;
+      const msg = String(err?.message || err || "");
+      if (/put\(\) limit exceeded|limit exceeded for the day/i.test(msg)) {
+        kvWriteStatus = "BLOQUEADA";
+        alerts.push({
+          level: "critical",
+          title: "Cuota diaria de escrituras KV agotada (100%)",
+          body: "Inscripción, login y comprobantes fallan hasta las 00:00 UTC (~21:00 Argentina). Los datos ya publicados no se borran.",
+        });
+      } else {
+        kvWriteStatus = "ERROR";
+        alerts.push({
+          level: "critical",
+          title: "No se pudo escribir en KV",
+          body: msg || "Error desconocido al probar escritura.",
+        });
+      }
+    }
+  }
+
+  const meter = await meterLoad(env, day);
+  const writesUsed = writeOk ? meter.writes : KV_WRITE_LIMIT_DAY;
+  const readsUsed = meter.reads;
+  const keysUsed = contacts + payments + acad;
+  // Reset KV free: 00:00 UTC = 21:00 America/Buenos_Aires (sin DST).
+  const now = new Date();
+  const nextUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
+  const resetsAtUtc = nextUtc.toISOString();
+  const resetsAtLocal = formatArClock(nextUtc);
+
+  const cfRenewMs = nextUtc.getTime();
+  const meters = [
+    {
+      ...meterRow({
+        id: "writes",
+        label: "Escrituras KV (hoy)",
+        used: writesUsed,
+        limit: KV_WRITE_LIMIT_DAY,
+        unit: "puts",
+        blocked: !writeOk,
+      }),
+      renewsAt: resetsAtLocal,
+      renewsAtMs: cfRenewMs,
+    },
+    {
+      ...meterRow({
+        id: "reads",
+        label: "Lecturas KV (hoy, estimadas)",
+        used: readsUsed,
+        limit: KV_READ_LIMIT_DAY,
+        unit: "gets",
+      }),
+      renewsAt: resetsAtLocal,
+      renewsAtMs: cfRenewMs,
+    },
+    {
+      ...meterRow({
+        id: "visits",
+        label: "Visitas web (hoy)",
+        used: visitsToday,
+        limit: VISITS_SOFT_LIMIT_DAY,
+        unit: "hits",
+      }),
+      renewsAt: resetsAtLocal,
+      renewsAtMs: cfRenewMs,
+    },
+    {
+      ...meterRow({
+        id: "keys",
+        label: "Almacenamiento (claves)",
+        used: keysUsed,
+        limit: KV_KEYS_SOFT_LIMIT,
+        unit: "keys",
+      }),
+      renewsAt: "no renueva (acumulado)",
+    },
+  ];
+
+  const writeMeter = meters.find((m) => m.id === "writes");
+  if (writeOk && writeMeter.usedPct >= 70 && writeMeter.usedPct < 95) {
+    alerts.push({
+      level: "warn",
+      title: `Escrituras al ${writeMeter.usedPct}%`,
+      body: `Usadas ${writeMeter.used} de ${writeMeter.limit}. Queda ${writeMeter.leftPct}% (~${writeMeter.left} puts). Evitá pruebas masivas de inscripción.`,
+    });
+  } else if (writeOk && writeMeter.usedPct >= 95) {
+    alerts.push({
+      level: "critical",
+      title: `Escrituras al ${writeMeter.usedPct}%`,
+      body: `Queda muy poco (~${writeMeter.left} puts). Riesgo alto de corte antes del reset.`,
+    });
+  }
+
+  if (writeOk && visitsToday >= 400) {
+    alerts.push({
+      level: "warn",
+      title: "Muchas visitas hoy",
+      body: `Hay ${visitsToday} visitas contadas (${pctUsed(visitsToday, VISITS_SOFT_LIMIT_DAY)}% del tope suave).`,
+    });
+  }
+
+  if (writeOk && !alerts.some((a) => a.level === "critical")) {
+    alerts.unshift({
+      level: "ok",
+      title: `Escrituras OK · libre ${writeMeter.leftPct}%`,
+      body: `Usado ${writeMeter.usedPct}% (${writeMeter.used}/${writeMeter.limit}). Inscripción y publish deberían andar.`,
+    });
+  }
+
+  const cfMeters = tagMeters("Cloudflare", meters, resetsAtLocal, cfRenewMs);
+  const cloudflare = {
+    id: "cloudflare",
+    name: "Cloudflare",
+    explain:
+      "Worker + KV: login, inscripción, comprobantes y visitas. Si se agotan las escrituras KV, se corta la API hasta las 21:00 AR.",
+    meters: cfMeters,
+    kpis: [
+      { label: "Quedan escrituras", value: String(writeMeter.left), sub: `${writeMeter.leftPct}% libre` },
+      { label: "Estado escritura", value: kvWriteStatus, sub: writeOk ? "API operativa" : "corte de escritura" },
+      { label: "Visitas hoy", value: String(visitsToday), sub: "tráfico web" },
+      { label: "Contactos", value: String(contacts), sub: "tel/mail en KV" },
+      { label: "Comprobantes", value: String(payments), sub: "pagos subidos en KV" },
+    ],
+    kpiNote:
+      "Contactos y comprobantes no tienen por qué coincidir: una pareja puede tener WhatsApp/mail y todavía no haber subido el pago (o al revés).",
+    alerts,
+    tips,
+    renewsAt: renewLabel(resetsAtLocal, cfRenewMs),
+    renewsAtMs: cfRenewMs,
+  };
+
+  // Cache corto de Vercel/GitHub para no martillar APIs en cada “Actualizar”.
+  // v2: invalidar cache viejo al cambiar forma de meters.
+  async function cachedProvider(key, loader, ttlSec = 90) {
+    const url = `https://padel-fb-api.cache/usageprov/v4/${key}`;
+    try {
+      const hit = await caches.default.match(url);
+      if (hit) {
+        const j = await hit.json().catch(() => null);
+        if (j && j.id) return j;
+      }
+    } catch {
+      /* sin cache */
+    }
+    const fresh = await loader();
+    try {
+      await caches.default.put(
+        url,
+        new Response(JSON.stringify(fresh), {
+          headers: { "Cache-Control": `max-age=${ttlSec}`, "Content-Type": "application/json" },
+        })
+      );
+    } catch {
+      /* ignore */
+    }
+    return fresh;
+  }
+
+  const [vercelRaw, githubRaw] = await Promise.all([
+    cachedProvider("vercel", () => readVercelUsage(env), 120),
+    cachedProvider("github", () => readGithubUsage(env), 60),
+  ]);
+
+  // Cartel temporal: recordar publicar la UI en Vercel (se apaga con POST /usage/hacer-deploy).
+  const hideDeployBanner = (await env.AUTH_KV?.get("usage:hacer-deploy-banner").catch(() => null)) === "off";
+  const hacerDeployBanner = !hideDeployBanner;
+  const hacerDeployAlert = {
+    id: "hacer-deploy",
+    level: "warn",
+    title: "HACER DEPLOY",
+    body:
+      "Solo esto: falta el deploy de Vercel para la UI (Consumos en 3 bloques, alerta ámbar, contraste en Resultados). No toca Fixture. Cuando esté publicado, tocá «Ocultar cartel».",
+  };
+
+  const vercel = {
+    ...vercelRaw,
+    meters: tagMeters("Vercel", vercelRaw.meters, vercelRaw.renewsAt, vercelRaw.renewsAtMs),
+    renewsAt: renewLabel(vercelRaw.renewsAt, vercelRaw.renewsAtMs) || vercelRaw.renewsAt,
+    hacerDeployBanner,
+    alerts: hacerDeployBanner
+      ? [hacerDeployAlert, ...((vercelRaw.alerts || []).filter((a) => a?.id !== "hacer-deploy"))]
+      : (vercelRaw.alerts || []).filter((a) => a?.id !== "hacer-deploy"),
+  };
+  const github = {
+    ...githubRaw,
+    meters: tagMeters("GitHub", githubRaw.meters, githubRaw.renewsAt, githubRaw.renewsAtMs),
+    renewsAt: renewLabel(githubRaw.renewsAt, githubRaw.renewsAtMs) || githubRaw.renewsAt,
+  };
+  const providers = [cloudflare, vercel, github];
+  const allAlerts = providers.flatMap((p) =>
+    (p.alerts || []).map((a) => ({ ...a, provider: p.name, providerId: p.id }))
+  );
+  // UI en Vercel todavía vieja (rate limit): lista plana con TODAS las barras.
+  const flatMeters = [...cfMeters, ...(vercel.meters || []), ...(github.meters || [])];
+
+  return {
+    ok: writeOk,
+    generatedAt: now.toISOString(),
+    providers,
+    // Compat con UI vieja / alertas globales
+    kv: {
+      writeOk,
+      freeWriteBudgetHint: KV_WRITE_LIMIT_DAY,
+      hitFlushSeconds: HIT_FLUSH_SECONDS,
+      resetsAtUtc,
+      resetsAtLocal,
+    },
+    storage: { contacts, payments, academia: acad },
+    kpis: {
+      visitsToday,
+      kvWriteStatus,
+      contacts,
+      payments,
+      writesUsed,
+      writesLeft: Math.max(0, KV_WRITE_LIMIT_DAY - writesUsed),
+      writesUsedPct: writeMeter.usedPct,
+      writesLeftPct: writeMeter.leftPct,
+      vercelUsed: vercel.meters?.[0]?.used,
+      vercelLeft: vercel.meters?.[0]?.left,
+      vercelRenewsAt: vercel.renewsAt,
+      githubUsed: github.meters?.[0]?.used,
+      githubLeft: github.meters?.[0]?.left,
+      githubRenewsAt: github.renewsAt,
+    },
+    meters: flatMeters,
+    hacerDeployBanner,
+    limits: {
+      kvWritesPerDay: KV_WRITE_LIMIT_DAY,
+      kvReadsPerDay: KV_READ_LIMIT_DAY,
+      visitsSoftPerDay: VISITS_SOFT_LIMIT_DAY,
+      keysSoft: KV_KEYS_SOFT_LIMIT,
+      vercelDeploysPerDay: VERCEL_DEPLOY_LIMIT_DAY,
+      note: "Cloudflare = Workers Free (KV). Vercel = Hobby deploys/24h. GitHub = rate_limit del token.",
+    },
+    alerts: allAlerts,
+    tips: [
+      ...(hacerDeployBanner
+        ? ["HACER DEPLOY en Vercel: UI de Consumos (3 bloques) + contraste Resultados. Fixture no se toca."]
+        : []),
+      "Cada barra indica el proveedor: Cloudflare · … / Vercel · … / GitHub · …",
+      ...tips.slice(0, 2),
+      ...(vercel.tips || []).slice(0, 1),
+      ...(github.tips || []).slice(0, 1),
+    ],
+  };
 }
 
 async function readStats(env, days = 14) {
@@ -1330,13 +2432,13 @@ async function googleServiceAccount(env) {
   }
 }
 
-async function googleAccessToken(sa) {
+async function googleAccessToken(sa, scope = "https://www.googleapis.com/auth/spreadsheets.readonly") {
   const now = Math.floor(Date.now() / 1000);
   const header = encodeBase64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const claim = encodeBase64Url(
     JSON.stringify({
       iss: sa.client_email,
-      scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
+      scope,
       aud: "https://oauth2.googleapis.com/token",
       iat: now,
       exp: now + 3600,
@@ -1518,6 +2620,583 @@ async function readCourtsSheetCsv(env, sheetId, week) {
   return sheetValuesToCsv(data.values || []);
 }
 
+const FIXTURE_DRIVE_HEADERS = [
+  "Fecha",
+  "Dia",
+  "Horario",
+  "Categoria",
+  "Complejo",
+  "Cancha",
+  "Pareja 1",
+  "Pareja 2",
+  "Resultado",
+];
+
+const FIXED_FIXTURE_DRIVE_SHEET = "1OI6ogfmdOAQ5mz3JqP482cDPT_xp-PjWdE07k54AAiQ";
+
+const FIXTURE_DRIVE_HEADER_KEY = {
+  Fecha: "fecha",
+  Dia: "dia",
+  Horario: "horario",
+  Categoria: "categoria",
+  Complejo: "complejo",
+  Cancha: "cancha",
+  "Pareja 1": "pareja1",
+  "Pareja 2": "pareja2",
+  Resultado: "resultado",
+};
+
+function sheetsAuthError(msg, sa, status) {
+  const err = new Error(
+    /permission|forbidden|403/i.test(String(msg || ""))
+      ? `Sin permiso de edición. Compartí el Sheet con ${sa.client_email} como Editor.`
+      : msg || "Error de Google Sheets."
+  );
+  err.status = status === 403 ? 403 : status && status >= 400 ? status : 502;
+  return err;
+}
+
+async function sheetsFetch(accessToken, url, { method = "GET", body } = {}) {
+  const res = await fetch(url, {
+    method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/json",
+      ...(body != null ? { "Content-Type": "application/json" } : {}),
+    },
+    ...(body != null ? { body: typeof body === "string" ? body : JSON.stringify(body) } : {}),
+  });
+  const json = await res.json().catch(() => ({}));
+  return { res, json };
+}
+
+/** Nombre de pestaña seguro (máx 100 chars; sin : \\ / ? * [ ]). */
+function fixtureSheetTitle(week) {
+  const raw = String(week || "Fixture")
+    .trim()
+    .replace(/[:\\/?*[\]]+/g, " ")
+    .replace(/\s+/g, " ")
+    .slice(0, 100);
+  return raw || "Fixture";
+}
+
+function isDefaultSheetTitle(title) {
+  const t = String(title || "").trim().toLowerCase();
+  return !t || t === "hoja 1" || t === "sheet1" || t === "sheet 1";
+}
+
+/** Encabezado + datos centrados, filtro, y columnas autoajustadas (con anchos mínimos). */
+function driveSheetFormatRequests({ tabId, cols, endRow, minWidths = [] }) {
+  const dataEnd = Math.max(endRow, 2);
+  const requests = [
+    {
+      repeatCell: {
+        range: { sheetId: tabId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: cols },
+        cell: {
+          userEnteredFormat: {
+            textFormat: { bold: true, fontSize: 11 },
+            backgroundColor: { red: 0.93, green: 0.95, blue: 0.9 },
+            horizontalAlignment: "CENTER",
+            verticalAlignment: "MIDDLE",
+          },
+        },
+        fields: "userEnteredFormat(textFormat,backgroundColor,horizontalAlignment,verticalAlignment)",
+      },
+    },
+    {
+      updateSheetProperties: {
+        properties: { sheetId: tabId, gridProperties: { frozenRowCount: 1 } },
+        fields: "gridProperties.frozenRowCount",
+      },
+    },
+    {
+      setBasicFilter: {
+        filter: {
+          range: {
+            sheetId: tabId,
+            startRowIndex: 0,
+            endRowIndex: dataEnd,
+            startColumnIndex: 0,
+            endColumnIndex: cols,
+          },
+        },
+      },
+    },
+    {
+      repeatCell: {
+        range: {
+          sheetId: tabId,
+          startRowIndex: 1,
+          endRowIndex: dataEnd,
+          startColumnIndex: 0,
+          endColumnIndex: cols,
+        },
+        cell: {
+          userEnteredFormat: {
+            textFormat: { bold: false, fontSize: 10 },
+            horizontalAlignment: "CENTER",
+            verticalAlignment: "MIDDLE",
+            wrapStrategy: "WRAP",
+          },
+        },
+        fields: "userEnteredFormat(textFormat,horizontalAlignment,verticalAlignment,wrapStrategy)",
+      },
+    },
+    {
+      autoResizeDimensions: {
+        dimensions: { sheetId: tabId, dimension: "COLUMNS", startIndex: 0, endIndex: cols },
+      },
+    },
+  ];
+  for (let i = 0; i < cols; i++) {
+    const px = Number(minWidths[i]) || 120;
+    requests.push({
+      updateDimensionProperties: {
+        range: { sheetId: tabId, dimension: "COLUMNS", startIndex: i, endIndex: i + 1 },
+        properties: { pixelSize: px },
+        fields: "pixelSize",
+      },
+    });
+  }
+  return requests;
+}
+
+/**
+ * Escribe el fixture (sin pendientes) en una pestaña = nombre de la fecha.
+ * Crea la hoja si no existe y la deja primera (izq); las fechas viejas quedan a la derecha.
+ * Encabezado en negrita, fila congelada, columnas autoajustadas.
+ * Las filas que ya tienen resultado no se modifican ni se borran.
+ */
+async function writeFixtureDriveSheet(env, { sheetId, week = "", rows = [] } = {}) {
+  if (!Array.isArray(rows) || !rows.length) {
+    const err = new Error("No hay partidos con rival para pegar. La hoja de resultados no se tocó.");
+    err.status = 400;
+    throw err;
+  }
+  const id = String(sheetId || env.FIXTURE_DRIVE_SHEET_ID || FIXED_FIXTURE_DRIVE_SHEET)
+    .trim()
+    .replace(/^.*\/spreadsheets\/d\//i, "")
+    .replace(/\/.*$/, "");
+  if (!/^[a-zA-Z0-9-_]{20,}$/.test(id)) {
+    const err = new Error("ID de Google Sheet inválido.");
+    err.status = 400;
+    throw err;
+  }
+  const sa = await googleServiceAccount(env);
+  if (!sa?.client_email || !sa?.private_key) {
+    const err = new Error(
+      "Falta el secret GOOGLE_SERVICE_ACCOUNT en el Worker para escribir el Sheet."
+    );
+    err.status = 500;
+    throw err;
+  }
+  const accessToken = await googleAccessToken(sa, "https://www.googleapis.com/auth/spreadsheets");
+  const title = fixtureSheetTitle(week);
+  const quoted = `'${title.replace(/'/g, "''")}'`;
+  const cols = FIXTURE_DRIVE_HEADERS.length;
+  const lastCol = String.fromCharCode("A".charCodeAt(0) + cols - 1); // I
+
+  const meta = await sheetsFetch(
+    accessToken,
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}?fields=sheets.properties(sheetId,title,index)`
+  );
+  if (!meta.res.ok) {
+    throw sheetsAuthError(meta.json.error?.message || `Google Sheets ${meta.res.status}`, sa, meta.res.status);
+  }
+
+  let tabId = null;
+  let tabIndex = null;
+  const want = title.toLowerCase();
+  for (const s of meta.json.sheets || []) {
+    const t = String(s?.properties?.title || "");
+    if (t.toLowerCase() === want) {
+      tabId = s.properties.sheetId;
+      tabIndex = s.properties.index;
+      break;
+    }
+  }
+
+  if (tabId == null) {
+    // index: 0 → la fecha nueva queda primera; las anteriores se corren a la derecha.
+    const created = await sheetsFetch(
+      accessToken,
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
+      {
+        method: "POST",
+        body: {
+          requests: [
+            {
+              addSheet: {
+                properties: {
+                  title,
+                  index: 0,
+                  gridProperties: { frozenRowCount: 1, columnCount: cols, rowCount: Math.max(50, (rows?.length || 0) + 20) },
+                },
+              },
+            },
+          ],
+        },
+      }
+    );
+    if (!created.res.ok) {
+      throw sheetsAuthError(created.json.error?.message || `No se pudo crear la hoja «${title}».`, sa, created.res.status);
+    }
+    tabId = created.json.replies?.[0]?.addSheet?.properties?.sheetId;
+    tabIndex = 0;
+    if (tabId == null) {
+      const err = new Error(`No se pudo crear la hoja «${title}».`);
+      err.status = 502;
+      throw err;
+    }
+  } else if (tabIndex !== 0) {
+    // Re-pegar una fecha ya existente: también la trae al frente.
+    const moved = await sheetsFetch(
+      accessToken,
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
+      {
+        method: "POST",
+        body: {
+          requests: [
+            {
+              updateSheetProperties: {
+                properties: { sheetId: tabId, index: 0 },
+                fields: "index",
+              },
+            },
+          ],
+        },
+      }
+    );
+    if (!moved.res.ok) {
+      console.warn("fixture drive tab order", moved.json.error?.message || moved.res.status);
+    } else {
+      tabIndex = 0;
+    }
+  }
+
+  let existingValues = [];
+  if (tabId != null) {
+    const read = await sheetsFetch(
+      accessToken,
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/${encodeURIComponent(`${quoted}!A:${lastCol}`)}` +
+        `?majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`
+    );
+    if (!read.res.ok) {
+      throw sheetsAuthError(
+        read.json.error?.message || `No se pudo leer «${title}» antes de pegar.`,
+        sa,
+        read.res.status
+      );
+    }
+    existingValues = read.json.values || [];
+  }
+
+  const incoming = (rows || []).map((r) => {
+    const obj = {};
+    for (const h of FIXTURE_DRIVE_HEADERS) {
+      const key = FIXTURE_DRIVE_HEADER_KEY[h];
+      obj[key] = String(r?.[key] ?? r?.[h] ?? "");
+    }
+    return obj;
+  });
+  const merged = mergeDriveFixtureRows(parseDriveSheetValues(existingValues), incoming);
+  const values = [
+    FIXTURE_DRIVE_HEADERS,
+    ...merged.rows.map((r) => FIXTURE_DRIVE_HEADERS.map((h) => String(r?.[FIXTURE_DRIVE_HEADER_KEY[h]] ?? ""))),
+  ];
+  const previousDataRows = existingValues.length > 0 ? Math.max(0, existingValues.length - 1) : 0;
+  const pad = Math.max(0, previousDataRows - merged.rows.length);
+  const writeValues = values.concat(Array.from({ length: pad }, () => Array(cols).fill("")));
+  const endRow = values.length;
+
+  const update = await sheetsFetch(
+    accessToken,
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/${encodeURIComponent(`${quoted}!A1`)}` +
+      `?valueInputOption=RAW`,
+    { method: "PUT", body: { values: writeValues } }
+  );
+  if (!update.res.ok) {
+    throw sheetsAuthError(update.json.error?.message || `No se pudo escribir «${title}».`, sa, update.res.status);
+  }
+
+  // Formato: todo centrado, columnas expandidas.
+  const format = await sheetsFetch(
+    accessToken,
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
+    {
+      method: "POST",
+      body: {
+        requests: driveSheetFormatRequests({
+          tabId,
+          cols,
+          endRow,
+          // Fecha, Día, Horario, Cat, Complejo, Cancha, Pareja1, Pareja2, Resultado
+          minWidths: [110, 110, 130, 130, 160, 100, 280, 280, 120],
+        }),
+      },
+    }
+  );
+  if (!format.res.ok) {
+    // Datos ya escritos: no fallamos el pegado por un tema cosmético.
+    console.warn("fixture drive format", format.json.error?.message || format.res.status);
+  }
+
+  return {
+    ok: true,
+    sheetId: id,
+    sheet: title,
+    gid: tabId,
+    rows: Math.max(0, values.length - 1),
+    kept: merged.kept,
+    url: `https://docs.google.com/spreadsheets/d/${id}/edit#gid=${tabId}`,
+  };
+}
+
+const PENDING_DRIVE_HEADERS = ["Fecha", "Categoria", "Pareja", "WhatsApp 1", "WhatsApp 2", "Puede", "Nota"];
+const PENDING_DRIVE_HEADER_KEY = {
+  Fecha: "fecha",
+  Categoria: "categoria",
+  Pareja: "pareja",
+  "WhatsApp 1": "whatsapp1",
+  "WhatsApp 2": "whatsapp2",
+  Puede: "puede",
+  Nota: "nota",
+};
+const PENDING_DRIVE_MIN_WIDTHS = [110, 140, 280, 140, 140, 260, 320];
+const FREE_COURTS_DRIVE_HEADERS = ["Fecha", "Dia", "Horario", "Complejo", "Cancha"];
+const FREE_COURTS_DRIVE_HEADER_KEY = {
+  Fecha: "fecha",
+  Dia: "dia",
+  Horario: "horario",
+  Complejo: "complejo",
+  Cancha: "cancha",
+};
+const FREE_COURTS_DRIVE_MIN_WIDTHS = [110, 110, 140, 180, 120];
+const FIXED_PENDING_DRIVE_SHEET = "1-iy8HSNkDDUJg4do08aydAK1MMtfhqrWmO4PGebkxe4";
+const FIXED_RECOVER_DRIVE_SHEET = "1M4OMDttW86SdOixs-uCbXyZLoPSbf-YLylZO7qwkYrQ";
+const FIXED_FREE_COURTS_DRIVE_SHEET = "1yLTWLdIfrZXuho8dwXdYVuJKcDMLEHxymHXMdIv1hAs";
+
+/**
+ * Pega filas en un sheet auxiliar (pendientes, recuperan, complejos libres), una pestaña por fecha.
+ * Reemplaza esa pestaña: lo que ya no figura deja de aparecer.
+ * No escribe el sheet de resultados.
+ */
+async function writeTabDriveSheet(
+  env,
+  {
+    sheetId,
+    week = "",
+    rows = [],
+    label = "Sheet",
+    fallbackId = "",
+    headers = PENDING_DRIVE_HEADERS,
+    headerKey = PENDING_DRIVE_HEADER_KEY,
+    minWidths = PENDING_DRIVE_MIN_WIDTHS,
+  } = {}
+) {
+  const id = String(sheetId || fallbackId || "")
+    .trim()
+    .replace(/^.*\/spreadsheets\/d\//i, "")
+    .replace(/\/.*$/, "");
+  if (!/^[a-zA-Z0-9-_]{20,}$/.test(id)) {
+    const err = new Error(`ID del Sheet ${label} inválido.`);
+    err.status = 400;
+    throw err;
+  }
+  const colsHeaders = Array.isArray(headers) && headers.length ? headers : PENDING_DRIVE_HEADERS;
+  const keyMap = headerKey && typeof headerKey === "object" ? headerKey : PENDING_DRIVE_HEADER_KEY;
+  const sa = await googleServiceAccount(env);
+  if (!sa?.client_email || !sa?.private_key) {
+    const err = new Error("Falta el secret GOOGLE_SERVICE_ACCOUNT en el Worker para escribir el Sheet.");
+    err.status = 500;
+    throw err;
+  }
+  const accessToken = await googleAccessToken(sa, "https://www.googleapis.com/auth/spreadsheets");
+  const title = fixtureSheetTitle(week);
+  const quoted = `'${title.replace(/'/g, "''")}'`;
+  const cols = colsHeaders.length;
+  const lastCol = String.fromCharCode("A".charCodeAt(0) + cols - 1);
+
+  const meta = await sheetsFetch(
+    accessToken,
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}?fields=sheets.properties(sheetId,title,index)`
+  );
+  if (!meta.res.ok) {
+    throw sheetsAuthError(meta.json.error?.message || `Google Sheets ${meta.res.status}`, sa, meta.res.status);
+  }
+
+  let tabId = null;
+  let tabIndex = null;
+  let defaultTab = null;
+  const want = title.toLowerCase();
+  for (const s of meta.json.sheets || []) {
+    const t = String(s?.properties?.title || "");
+    if (t.toLowerCase() === want) {
+      tabId = s.properties.sheetId;
+      tabIndex = s.properties.index;
+      break;
+    }
+    if (!defaultTab && isDefaultSheetTitle(t)) {
+      defaultTab = { id: s.properties.sheetId, index: s.properties.index, title: t };
+    }
+  }
+
+  if (tabId == null && defaultTab && (meta.json.sheets || []).length === 1) {
+    // Sheet nuevo: renombrar «Hoja 1» a la fecha (evita pegar en una pestaña y mirar otra vacía).
+    const renamed = await sheetsFetch(
+      accessToken,
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
+      {
+        method: "POST",
+        body: {
+          requests: [
+            {
+              updateSheetProperties: {
+                properties: {
+                  sheetId: defaultTab.id,
+                  title,
+                  index: 0,
+                  gridProperties: { frozenRowCount: 1, columnCount: cols, rowCount: Math.max(50, (rows?.length || 0) + 20) },
+                },
+                fields: "title,index,gridProperties.frozenRowCount,gridProperties.columnCount,gridProperties.rowCount",
+              },
+            },
+          ],
+        },
+      }
+    );
+    if (!renamed.res.ok) {
+      throw sheetsAuthError(renamed.json.error?.message || `No se pudo preparar la hoja «${title}».`, sa, renamed.res.status);
+    }
+    tabId = defaultTab.id;
+    tabIndex = 0;
+  } else if (tabId == null) {
+    const created = await sheetsFetch(
+      accessToken,
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
+      {
+        method: "POST",
+        body: {
+          requests: [
+            {
+              addSheet: {
+                properties: {
+                  title,
+                  index: 0,
+                  gridProperties: { frozenRowCount: 1, columnCount: cols, rowCount: Math.max(50, (rows?.length || 0) + 20) },
+                },
+              },
+            },
+          ],
+        },
+      }
+    );
+    if (!created.res.ok) {
+      throw sheetsAuthError(created.json.error?.message || `No se pudo crear la hoja «${title}».`, sa, created.res.status);
+    }
+    tabId = created.json.replies?.[0]?.addSheet?.properties?.sheetId;
+    tabIndex = 0;
+    if (tabId == null) {
+      const err = new Error(`No se pudo crear la hoja «${title}» en ${label}.`);
+      err.status = 502;
+      throw err;
+    }
+  } else if (tabIndex !== 0) {
+    const moved = await sheetsFetch(
+      accessToken,
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
+      {
+        method: "POST",
+        body: {
+          requests: [
+            {
+              updateSheetProperties: {
+                properties: { sheetId: tabId, index: 0 },
+                fields: "index",
+              },
+            },
+          ],
+        },
+      }
+    );
+    if (!moved.res.ok) console.warn(`${label} drive tab order`, moved.json.error?.message || moved.res.status);
+  }
+
+  let previousDataRows = 0;
+  const read = await sheetsFetch(
+    accessToken,
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/${encodeURIComponent(`${quoted}!A:${lastCol}`)}` +
+      `?majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`
+  );
+  if (read.res.ok) previousDataRows = Math.max(0, (read.json.values || []).length - 1);
+
+  const values = [
+    colsHeaders,
+    ...(rows || []).map((r) => colsHeaders.map((h) => String(r?.[keyMap[h]] ?? ""))),
+  ];
+  const pad = Math.max(0, previousDataRows - Math.max(0, values.length - 1));
+  const writeValues = values.concat(Array.from({ length: pad }, () => Array(cols).fill("")));
+  const endRow = values.length;
+
+  const update = await sheetsFetch(
+    accessToken,
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/${encodeURIComponent(`${quoted}!A1`)}` +
+      `?valueInputOption=RAW`,
+    { method: "PUT", body: { values: writeValues } }
+  );
+  if (!update.res.ok) {
+    throw sheetsAuthError(update.json.error?.message || `No se pudo escribir «${title}» en ${label}.`, sa, update.res.status);
+  }
+
+  const format = await sheetsFetch(
+    accessToken,
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}:batchUpdate`,
+    {
+      method: "POST",
+      body: {
+        requests: driveSheetFormatRequests({
+          tabId,
+          cols,
+          endRow,
+          minWidths: Array.isArray(minWidths) && minWidths.length ? minWidths : PENDING_DRIVE_MIN_WIDTHS,
+        }),
+      },
+    }
+  );
+  if (!format.res.ok) console.warn(`${label} drive format`, format.json.error?.message || format.res.status);
+
+  return {
+    ok: true,
+    sheetId: id,
+    sheet: title,
+    gid: tabId,
+    rows: Math.max(0, values.length - 1),
+    url: `https://docs.google.com/spreadsheets/d/${id}/edit#gid=${tabId}`,
+  };
+}
+
+async function writePendingDriveSheet(env, opts = {}) {
+  return writeTabDriveSheet(env, {
+    ...opts,
+    label: opts.label || "Pendientes",
+    fallbackId: env.PENDING_DRIVE_SHEET_ID || FIXED_PENDING_DRIVE_SHEET,
+    headers: PENDING_DRIVE_HEADERS,
+    headerKey: PENDING_DRIVE_HEADER_KEY,
+    minWidths: PENDING_DRIVE_MIN_WIDTHS,
+  });
+}
+
+async function writeFreeCourtsDriveSheet(env, opts = {}) {
+  return writeTabDriveSheet(env, {
+    ...opts,
+    label: opts.label || "Complejos libres",
+    fallbackId: env.FREE_COURTS_DRIVE_SHEET_ID || FIXED_FREE_COURTS_DRIVE_SHEET,
+    headers: FREE_COURTS_DRIVE_HEADERS,
+    headerKey: FREE_COURTS_DRIVE_HEADER_KEY,
+    minWidths: FREE_COURTS_DRIVE_MIN_WIDTHS,
+  });
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(request, env) });
@@ -1621,6 +3300,89 @@ export default {
           return response(request, env, { ok: true, week, sheetId, csv });
         } catch (err) {
           return response(request, env, { message: err.message || "No se pudo leer el Sheet." }, err.status || 502);
+        }
+      }
+
+      // Pega resultados + Pendientes + Recuperan + Complejos libres. Un score ya cargado no se pisa.
+      if (url.pathname === "/fixture/drive" && request.method === "POST") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        const body = await request.json().catch(() => ({}));
+        const rows = Array.isArray(body?.rows) ? body.rows : [];
+        const hasPending = Array.isArray(body?.pendingRows);
+        const pendingRows = hasPending ? body.pendingRows : [];
+        const hasRecover = Array.isArray(body?.recoverRows);
+        const recoverRows = hasRecover ? body.recoverRows : [];
+        const hasFreeCourts = Array.isArray(body?.freeCourtsRows);
+        const freeCourtsRows = hasFreeCourts ? body.freeCourtsRows : [];
+        if (!rows.length && !hasPending && !hasRecover && !hasFreeCourts) {
+          return response(request, env, { message: "No hay partidos para pegar (solo se envían los que tienen rival)." }, 400);
+        }
+        try {
+          const week = String(body.week || "").trim();
+          if (!week) {
+            return response(request, env, { message: "Falta la fecha (ej. Fecha 1) para elegir la hoja." }, 400);
+          }
+          let result = { ok: true, rows: 0, kept: 0 };
+          if (rows.length) {
+            result = await writeFixtureDriveSheet(env, {
+              sheetId: body.sheetId || env.FIXTURE_DRIVE_SHEET_ID || FIXED_FIXTURE_DRIVE_SHEET,
+              week,
+              rows,
+            });
+          }
+          let pending = null;
+          let pendingError = "";
+          if (hasPending) {
+            try {
+              pending = await writePendingDriveSheet(env, {
+                sheetId: body.pendingSheetId || env.PENDING_DRIVE_SHEET_ID || FIXED_PENDING_DRIVE_SHEET,
+                week,
+                rows: pendingRows,
+                label: "Pendientes",
+              });
+            } catch (err) {
+              pendingError = err.message || "No se pudo pegar en Pendientes.";
+            }
+          }
+          let recover = null;
+          let recoverError = "";
+          if (hasRecover) {
+            try {
+              recover = await writePendingDriveSheet(env, {
+                sheetId: body.recoverSheetId || env.RECOVER_DRIVE_SHEET_ID || FIXED_RECOVER_DRIVE_SHEET,
+                week,
+                rows: recoverRows,
+                label: "Recuperan",
+              });
+            } catch (err) {
+              recoverError = err.message || "No se pudo pegar en Recuperan fecha.";
+            }
+          }
+          let freeCourts = null;
+          let freeCourtsError = "";
+          if (hasFreeCourts) {
+            try {
+              freeCourts = await writeFreeCourtsDriveSheet(env, {
+                sheetId: body.freeCourtsSheetId || env.FREE_COURTS_DRIVE_SHEET_ID || FIXED_FREE_COURTS_DRIVE_SHEET,
+                week,
+                rows: freeCourtsRows,
+                label: "Complejos libres",
+              });
+            } catch (err) {
+              freeCourtsError = err.message || "No se pudo pegar en Complejos libres.";
+            }
+          }
+          return response(request, env, {
+            ...result,
+            pending,
+            pendingError,
+            recover,
+            recoverError,
+            freeCourts,
+            freeCourtsError,
+          });
+        } catch (err) {
+          return response(request, env, { message: err.message || "No se pudo pegar en Drive." }, err.status || 502);
         }
       }
 
@@ -1734,9 +3496,95 @@ export default {
         return response(request, env, await readStats(env, days));
       }
 
+      
+      
+      
+      
+      
+      
+      if (url.pathname === "/usage" && request.method === "GET") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        return response(request, env, await readUsage(env));
+      }
+
+      // Snapshot exacto de la ventana Hobby (cuenta). Solo sesión admin.
+      if (url.pathname === "/usage/vercel-window" && request.method === "GET") {
+        if (!(await validSession(request, env))) {
+          return response(request, env, { message: "Sesión vencida." }, 401);
+        }
+        const v = await readVercelUsage(env);
+        const usedCount = Number(v.usedCount ?? v.meters?.[0]?.usedCount ?? v.meters?.[0]?.used) || 0;
+        const snap = {
+          ok: true,
+          generatedAt: new Date().toISOString(),
+          used: usedCount,
+          limit: VERCEL_DEPLOY_LIMIT_DAY,
+          blocked: usedCount >= VERCEL_DEPLOY_LIMIT_DAY,
+          renewsAt: v.renewsAt,
+          renewsAtMs: v.renewsAtMs,
+          oldestAt: v.oldestAt,
+          oldestAtMs: v.oldestAtMs,
+          nextFrees: v.nextFrees || [],
+          projectInWindow: v.projectInWindow,
+          source: v.source,
+          note: v.note,
+        };
+        try {
+          await env.AUTH_KV?.put("usage:vercel-window", JSON.stringify(snap), { expirationTtl: 3600 });
+        } catch {
+          /* ignore */
+        }
+        return response(request, env, snap);
+      }
+
+      // Apaga el cartel temporal «HACER DEPLOY» (solo Vercel UI pendiente).
+      if (url.pathname === "/usage/hacer-deploy" && request.method === "POST") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        const body = await request.json().catch(() => ({}));
+        const hide = body?.hide !== false;
+        if (hide) {
+          await env.AUTH_KV?.put("usage:hacer-deploy-banner", "off");
+        } else {
+          await env.AUTH_KV?.delete("usage:hacer-deploy-banner");
+        }
+        return response(request, env, { ok: true, hacerDeployBanner: !hide });
+      }
+
+      // Actualiza el GB de Deployment Storage (Hobby no lo expone por API estable).
+      if (url.pathname === "/usage/vercel-storage" && request.method === "POST") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        const body = await request.json().catch(() => ({}));
+        const usedGb = Number(body?.usedGb);
+        const limitGb = Number(body?.limitGb) || VERCEL_STORAGE_LIMIT_GB;
+        if (!Number.isFinite(usedGb) || usedGb < 0) {
+          return response(request, env, { message: "usedGb inválido." }, 400);
+        }
+        const snap = {
+          usedGb: Math.round(usedGb * 100) / 100,
+          limitGb,
+          updatedAt: new Date().toISOString(),
+          source: body?.source || "admin",
+        };
+        await env.AUTH_KV?.put("usage:vercel-storage", JSON.stringify(snap));
+        return response(request, env, { ok: true, storage: snap });
+      }
+
       return response(request, env, { message: "No encontrado." }, 404);
     } catch (error) {
-      return response(request, env, { message: error?.message || "Error inesperado." }, 400);
+      const raw = String(error?.message || error || "");
+      // Cuota free de Cloudflare KV (~1000 writes/día). Sin esto, login/inscripción/publish mueren con un mensaje críptico.
+      if (/KV put\(\) limit exceeded|put\(\) limit exceeded for the day/i.test(raw)) {
+        return response(
+          request,
+          env,
+          {
+            message:
+              "Se agotó la cuota diaria de Cloudflare KV (escrituras). Inscripción, login y comprobantes vuelven solas a las 00:00 UTC (~21:00 Argentina). No es Vercel ni falta de espacio en Google.",
+          },
+          503
+        );
+      }
+      return response(request, env, { message: raw || "Error inesperado." }, 400);
     }
   },
 };

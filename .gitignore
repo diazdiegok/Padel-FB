@@ -10,3 +10,6 @@ Thumbs.db
 _private/
 .vercel
 .env*
+# Wrangler local cache / miniflare state (never commit)
+.wrangler/
+worker/.wrangler/

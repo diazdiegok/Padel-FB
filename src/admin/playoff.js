@@ -1,5 +1,5 @@
 import { CATS, PLAYOFF_PATH } from "./constants.js";
-import { describeResult } from "../lib/scoring.js";
+import { describeResult, formatResult } from "../lib/scoring.js";
 import { listSeasons, seasonLabel } from "../lib/liga.js";
 import {
   BYE,
@@ -151,7 +151,7 @@ export function createPlayoff(ctx, api, shell) {
         <input data-po-field="court" value="${escAttr(m.court)}" placeholder="Cancha" />
       </div>
       <div class="po-score">
-        <input data-po-field="result" value="${escAttr(m.result)}" placeholder="6-4 6-2" ${ready ? "" : "disabled"} aria-label="Resultado" />
+        <input data-po-field="result" value="${escAttr(formatResult(m.result) || m.result)}" placeholder="6/4 6/2" ${ready ? "" : "disabled"} aria-label="Resultado" />
         <select data-po-field="wo" ${ready ? "" : "disabled"} aria-label="W.O.">
           <option value="">Sin W.O.</option>
           <option value="home" ${m.wo === "home" ? "selected" : ""}>W.O. gana Pareja 1</option>
@@ -403,10 +403,20 @@ export function createPlayoff(ctx, api, shell) {
         if (hint) hint.textContent = parsed ? parsed.score : el.value.trim() ? "Resultado inválido" : "Sin resultado";
       }
     });
+    $("po-bracket")?.addEventListener("focusout", (e) => {
+      const el = e.target.closest("[data-po-field='result']");
+      if (!el) return;
+      const nice = formatResult(el.value);
+      if (nice && nice !== el.value) el.value = nice;
+    });
     $("po-bracket")?.addEventListener("change", (e) => {
       const el = e.target.closest("[data-po-field]");
       const card = e.target.closest("[data-po-id]");
       if (!el || !card) return;
+      if (el.dataset.poField === "result") {
+        const nice = formatResult(el.value);
+        if (nice) el.value = nice;
+      }
       updateMatch(card.dataset.poId, el.dataset.poField, el.value);
       if (["home", "away", "result", "wo"].includes(el.dataset.poField)) rerenderKeepingFocus();
     });
@@ -436,7 +446,7 @@ export function createPlayoff(ctx, api, shell) {
         editing = badTemp;
         activeCat = cat;
         render();
-        const message = `Resultado inválido en ${cat} (${match.home || "pareja"} vs ${match.away || "pareja"}). Usá 6-4 6-2 o 6-4 3-6 10-8.`;
+        const message = `Resultado inválido en ${cat} (${match.home || "pareja"} vs ${match.away || "pareja"}). Usá 6/4 6/2 o 6/4 3/6 10/8.`;
         setMsg($("po-msg"), message, "err");
         toast(message, "err");
         return;
