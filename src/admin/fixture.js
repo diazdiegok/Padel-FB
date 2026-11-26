@@ -68,7 +68,7 @@ import {
   coverSlotTier,
   nearCoverCourtOptions,
   normalizeDay,
-  optionMark,
+  courtSplitMark,
   pairsSharePlayableWindow,
   assignCourtSlots,
   filterSharedSlotsToDrive,
@@ -480,7 +480,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
           const base = [includeDay ? o.day : "", o.time, o.venue, courtTxt].filter(Boolean).join(" · ");
           const bits = [base];
           if (near && o.nearLabel) bits.push(o.nearLabel);
-          const text = bits.join(" · ") + optionMark(i, list.length);
+          const text = bits.join(" · ") + courtSplitMark(o, list);
           return `<option value="${escAttr(o.key)}"${selected && o.key === selected ? " selected" : ""}>${escAttr(text)}</option>`;
         })
         .join("");
@@ -578,7 +578,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     }
     return `<select data-fx-slot="${i}" aria-label="${label}" title="Turnos del Drive donde puedan jugar ambas, aunque el complejo ya llegó a la cantidad de partidos.">
       <option value="">Elegir día, complejo y cancha…</option>
-      ${opts.map((o, i) => `<option value="${escAttr(o.key)}">${escAttr(courtOptionText(o) + optionMark(i, opts.length))}</option>`).join("")}
+      ${opts.map((o) => `<option value="${escAttr(o.key)}">${escAttr(courtOptionText(o) + courtSplitMark(o, opts))}</option>`).join("")}
     </select>`;
   }
 

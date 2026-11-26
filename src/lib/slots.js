@@ -121,6 +121,29 @@ export function optionMark(index, total) {
   return total > 1 ? ` (opción ${index + 1})` : "";
 }
 
+/**
+ * «(opción N)» solo entre inicios de la misma cancha y el mismo día.
+ * Un rango partido (17:00-18:30 y 17:30-19:00) se numera.
+ * Otras canchas del mismo día no.
+ */
+export function courtSplitMark(option, list = []) {
+  if (!option) return "";
+  const siblings = (list || []).filter(
+    (other) =>
+      normalizeDay(other?.day) === normalizeDay(option.day) &&
+      fold(other?.venue) === fold(option.venue) &&
+      courtKey(other?.court) === courtKey(option.court)
+  );
+  if (siblings.length < 2) return "";
+  const ordered = [...siblings].sort(
+    (a, b) =>
+      (parseCourtWindow(a.time)?.from ?? 0) - (parseCourtWindow(b.time)?.from ?? 0) ||
+      String(a.time || "").localeCompare(String(b.time || ""), "es")
+  );
+  const index = ordered.findIndex((other) => other === option || (option.key && other.key === option.key));
+  return optionMark(index < 0 ? 0 : index, ordered.length);
+}
+
 function clockRange(from, to) {
   const h = (m) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
   return `${h(from)} - ${h(to)}`;

@@ -11,6 +11,7 @@ import {
   matchViolatesAvailability,
   coverSlotTier,
   nearCoverCourtOptions,
+  courtSplitMark,
   optionMark,
   packNonOverlappingTurns,
   pairsSharePlayableWindow,
@@ -101,6 +102,18 @@ assert.deepEqual(
 assert.equal(optionMark(0, 1), "");
 assert.equal(optionMark(0, 2), " (opción 1)");
 assert.equal(optionMark(1, 3), " (opción 2)");
+const fridaySplit = [
+  { day: "Viernes", time: "17:00 - 18:30", venue: "Americas Padel", court: "Cancha 1", key: "a" },
+  { day: "Viernes", time: "17:30 - 19:00", venue: "Americas Padel", court: "1", key: "b" },
+];
+const mondayOthers = [
+  { day: "Lunes", time: "17:00 - 18:30", venue: "Americas Padel", court: "Cancha 1", key: "c" },
+  { day: "Lunes", time: "16:30 - 18:00", venue: "La manzana Padel", court: "Cancha 2", key: "d" },
+];
+assert.equal(courtSplitMark(fridaySplit[0], fridaySplit), " (opción 1)");
+assert.equal(courtSplitMark(fridaySplit[1], fridaySplit), " (opción 2)");
+assert.equal(courtSplitMark(mondayOthers[0], mondayOthers), "");
+assert.equal(courtSplitMark(mondayOthers[1], mondayOthers), "");
 
 assert.equal(parseCourtSlot({ Complejo: "Open", Cancha: "2", Horario: "20:00 - 21:30" }), null, "exige Dia");
 assert.equal(parseCourtSlot({ Complejo: "Open", Dia: "Martes", Horario: "20:00 - 21:30" }), null, "exige Cancha");
