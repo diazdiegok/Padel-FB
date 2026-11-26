@@ -74,13 +74,21 @@ assert.equal(windowCapacity(range.from, range.to), 3);
 const starts = matchStartsInWindow(range.from, range.to);
 assert.deepEqual(
   starts.map((s) => s.time),
-  ["16:30 - 18:00", "18:00 - 19:30", "19:30 - 21:00"]
+  [
+    "16:30 - 18:00",
+    "17:00 - 18:30",
+    "17:30 - 19:00",
+    "18:00 - 19:30",
+    "18:30 - 20:00",
+    "19:00 - 20:30",
+    "19:30 - 21:00",
+  ]
 );
 
 const twoHours = matchStartsInWindow(17 * 60, 19 * 60);
 assert.deepEqual(
   twoHours.map((s) => s.time),
-  ["17:00 - 18:30"]
+  ["17:00 - 18:30", "17:30 - 19:00"]
 );
 const explicit = [
   parseCourtSlot({ Complejo: "Americas", Cancha: "1", Dia: "Viernes", Horario: "17:00 - 18:30" }),
@@ -1201,13 +1209,13 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   assert.equal(free.length, 2);
 }
 
-// Misma cancha libre 16:00-22:00: turnos de 1:30 que no se pisan, no un inicio cada 30'.
+// Misma cancha libre 16:00-22:00: se listan todos los inicios de 1:30; al asignar varios, no se pisan.
 {
   const sheet = [parseCourtSlot({ Complejo: "La manzana", Cancha: "2", Dia: "Lunes", Horario: "16:00 - 22:00" })];
   const home = { Lunes: "16:00 - 22:00" };
   const away = { Lunes: "16:00 - 22:00" };
   const exact = driveCourtOptions({ homeDays: home, awayDays: away, pending: false }, sheet, [], { softAway: false });
-  assert.equal(exact.length, 4, "16:00-22:00 son cuatro turnos de 1:30, sin un inicio cada 30'");
+  assert.ok(exact.length > 4, "el rango ofrece cada inicio de 1:30 que cierra adentro");
   const packed = packNonOverlappingTurns(exact);
   assert.deepEqual(
     packed.map((o) => o.time).sort(),
@@ -1246,7 +1254,7 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
 }
 
 // Canchas libres: respetan el horario exacto del Drive (nunca inventan turnos fuera del rango).
-// Un rango se parte en turnos de 1:30 uno detrás del otro; si ya hay un partido, solo queda el siguiente.
+// Un rango de 18:00 a 22:00 ofrece cada turno de 1:30 que cierra adentro; si ya hay un partido, solo quedan los que no se pisan.
 {
   const sheet = [
     parseCourtSlot({ Complejo: "Americas", Cancha: "Cancha 4", Dia: "Jueves", Horario: "18:00 - 22:00" }),
@@ -1267,16 +1275,16 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
   const americasFree = freeOpts.filter((o) => o.venue === "Americas Padel").map((o) => o.time);
   assert.deepEqual(
     americasFree,
-    ["18:00 - 19:30", "19:30 - 21:00"],
-    "18:00 a 22:00 son dos turnos de 1:30 seguidos, sin un inicio cada 30' ni 21:00-22:30"
+    ["18:00 - 19:30", "18:30 - 20:00", "19:00 - 20:30", "19:30 - 21:00", "20:00 - 21:30", "20:30 - 22:00"],
+    "18:00 a 22:00 lista cada turno de 1:30 que cierra adentro, y ninguno de las 21:00-22:30"
   );
   assert.ok(freeOpts.every((o) => !o.outsideSheet), "nunca ofrece un horario que no exista en el Drive");
 
   const terrazasFree = freeOpts.filter((o) => o.venue === "Terrazas Padel").map((o) => o.time);
   assert.deepEqual(
     terrazasFree,
-    ["18:00 - 19:30"],
-    "18:00 a 20:00 es un solo turno de 1:30: no inventa 18:30-20:00 ni nada fuera del rango"
+    ["18:00 - 19:30", "18:30 - 20:00"],
+    "18:00 a 20:00 ofrece los dos turnos de 1:30 que cierran a las 20:00, y nada después"
   );
 
   const partial = [{ day: "Jueves", time: "18:00 - 19:30", venue: "Americas Padel", court: "Cancha 4" }];
@@ -1290,8 +1298,8 @@ assert.ok(filled.matches.every((m) => m.time !== "15:00 - 16:30"));
     .map((o) => o.time);
   assert.deepEqual(
     remaining,
-    ["19:30 - 21:00"],
-    "si ya hay un partido a las 18:00, queda el turno siguiente de 1:30 dentro de 18:00-22:00"
+    ["19:30 - 21:00", "20:00 - 21:30", "20:30 - 22:00"],
+    "si ya hay un partido a las 18:00, solo ofrece los horarios que no se pisan y siguen dentro de 18:00-22:00"
   );
 
   const fixedOnly = [parseCourtSlot({ Complejo: "Americas", Cancha: "Cancha 2", Dia: "Jueves", Horario: "19:00" })];

@@ -32,6 +32,8 @@ const DAY_ALIASES = {
 };
 
 const DAY_END = 24 * 60;
+/** Dentro de un rango, cada inicio posible de un turno de 90' se corre 30'. */
+const START_STEP = 30;
 /** Margen máximo (en minutos) que puede aflojar la disponibilidad de la pareja para entrar en «cercanos». */
 export const FREE_COURT_MARGIN = 90;
 
@@ -81,8 +83,8 @@ export function weekFromName(name) {
 /**
  * Ventana de cancha:
  * - Un solo horario ("14:30") = un turno fijo de 1:30.
- * - Un rango ("17:00 - 18:30") = ese turno. Si sobra tiempo, se parten turnos seguidos de 1:30, sin pisarse.
- *   17:00-19:00 es un solo turno (17:00-18:30). Para ofrecer también 17:30-19:00, va en otra fila.
+ * - Un rango ("17:00 - 19:00") guarda la ventana. Cada turno que se ofrece dura 1:30
+ *   y tiene que cerrar dentro del rango: 17:00-18:30 y 17:30-19:00.
  */
 export function parseCourtWindow(text) {
   const raw = String(text || "")
@@ -125,8 +127,9 @@ function clockRange(from, to) {
 }
 
 /**
- * Turnos de 90' que entran en la ventana, uno detrás del otro.
- * No se corre el inicio cada 30': 17:00-19:00 no inventa también 17:30-19:00.
+ * Turnos de 90' que entran enteros en la ventana.
+ * Son alternativas para un partido: 17:00-19:00 ofrece 17:00-18:30 y 17:30-19:00.
+ * Un horario suelto, o un rango de exactamente 1:30, es un solo turno.
  */
 export function matchStartsInWindow(from, to, { single = false } = {}) {
   const out = [];
@@ -135,7 +138,7 @@ export function matchStartsInWindow(from, to, { single = false } = {}) {
     if (from + MATCH_MINUTES <= to) out.push({ from, to: from + MATCH_MINUTES, time: slotLabel(from) });
     return out;
   }
-  for (let start = from; start + MATCH_MINUTES <= to; start += MATCH_MINUTES) {
+  for (let start = from; start + MATCH_MINUTES <= to; start += START_STEP) {
     out.push({ from: start, to: start + MATCH_MINUTES, time: slotLabel(start) });
   }
   return out;
