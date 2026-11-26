@@ -2,6 +2,28 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
+    "avail": "Lunes 17:30 - 22:00 · Martes 17:30 - 22:00 · Viernes 17:30 - 22:00",
+    "days": {
+      "Lunes": "17:30 - 22:00",
+      "Martes": "17:30 - 22:00",
+      "Viernes": "17:30 - 22:00"
+    },
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Ernesto Enz / Facundo Casals",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Martes 14:00 - 00:00",
     "days": {
       "Martes": "14:00 - 00:00"
@@ -194,29 +216,6 @@
     "venue": "",
     "court": "",
     "home": "Joaquin Alberto Ijalba / Felipe Ijalba",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 18:30 - 00:00 · Martes 18:30 - 00:00 · Miércoles 18:30 - 21:00 · Jueves 18:30 - 00:00",
-    "days": {
-      "Lunes": "18:30 - 00:00",
-      "Martes": "18:30 - 00:00",
-      "Miércoles": "18:30 - 21:00",
-      "Jueves": "18:30 - 00:00"
-    },
-    "week": "Fecha 2",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Marcos Saavedra / Luis Alberto Albornoz",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""

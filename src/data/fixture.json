@@ -1060,21 +1060,6 @@
   },
   {
     "week": "Fecha 2",
-    "day": "Viernes",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "21:00 - 22:30",
-    "venue": "La manzana Padel",
-    "court": "Cancha 1",
-    "home": "Ernesto Enz / Facundo Casals",
-    "away": "Sebastian Bregant / Luis Valla",
-    "result": "",
-    "appliedResult": "",
-    "flexAvail": true
-  },
-  {
-    "week": "Fecha 2",
     "day": "Miércoles",
     "date": "",
     "temp": "T5",
@@ -1115,5 +1100,19 @@
     "result": "",
     "appliedResult": "",
     "flexAvail": true
+  },
+  {
+    "week": "Fecha 2",
+    "day": "Jueves",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "21:30 - 23:00",
+    "venue": "Open Padel",
+    "court": "Cancha 2",
+    "home": "Marcos Saavedra / Luis Alberto Albornoz",
+    "away": "Sebastian Bregant / Luis Valla",
+    "result": "",
+    "appliedResult": ""
   }
 ]
