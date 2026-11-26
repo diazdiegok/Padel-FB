@@ -2,51 +2,6 @@
   {
     "pending": true,
     "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Martes 19:30 - 22:00 · Jueves 18:00 - 22:00 · Viernes 18:30 - 23:00 · Sábado 09:30 - 20:00",
-    "days": {
-      "Martes": "19:30 - 22:00",
-      "Jueves": "18:00 - 22:00",
-      "Viernes": "18:30 - 23:00",
-      "Sábado": "09:30 - 20:00"
-    },
-    "week": "Fecha 2",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Florencia Gabriela Esquivel / Natalia Ivana Frickel",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Jueves 18:00 - 20:00 · Viernes 20:00 - 22:30 · Sábado 09:00 - 13:00",
-    "days": {
-      "Jueves": "18:00 - 20:00",
-      "Viernes": "20:00 - 22:30",
-      "Sábado": "09:00 - 13:00"
-    },
-    "week": "Fecha 2",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "C Femenino",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Lucia Rausch / Luciana Marconi",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
     "avail": "Martes 14:00 - 00:00",
     "days": {
       "Martes": "14:00 - 00:00"

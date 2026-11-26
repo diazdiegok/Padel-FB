@@ -663,14 +663,13 @@
     "date": "",
     "temp": "T5",
     "cat": "B Masculina",
-    "time": "22:00 - 23:30",
-    "venue": "Americas Padel",
-    "court": "Cancha 4",
+    "time": "20:00 - 21:30",
+    "venue": "Open Padel",
+    "court": "Cancha 2",
     "home": "Sebastian Rodriguez / Gonzalo Barbero",
     "away": "Ramiro Romero / Angelica Alcaraz",
     "result": "",
-    "appliedResult": "",
-    "flexAvail": true
+    "appliedResult": ""
   },
   {
     "week": "Fecha 2",
@@ -1127,6 +1126,21 @@
     "court": "Cancha 1",
     "home": "German Duarte / Emanuel Arteta Magnìn",
     "away": "Ernesto Enz / Facundo Casals",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
+  },
+  {
+    "week": "Fecha 2",
+    "day": "Jueves",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "19:00 - 20:30",
+    "venue": "Open Padel",
+    "court": "Cancha 1",
+    "home": "Lucia Rausch / Luciana Marconi",
+    "away": "Florencia Gabriela Esquivel / Natalia Ivana Frickel",
     "result": "",
     "appliedResult": "",
     "flexAvail": true
