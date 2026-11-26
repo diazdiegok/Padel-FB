@@ -593,28 +593,6 @@
   },
   {
     "pending": true,
-    "reason": "Pareja inscripta: todavía no tiene rival en esta fecha.",
-    "avail": "Lunes 18:30 - 22:00 · Viernes 18:30 - 22:00 · Sábado 18:00 - 21:30",
-    "days": {
-      "Lunes": "18:30 - 22:00",
-      "Viernes": "18:30 - 22:00",
-      "Sábado": "18:00 - 21:30"
-    },
-    "week": "Fecha 2",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "German Duarte / Emanuel Arteta Magnìn",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
     "reason": "Tiene 0 partidos en Fecha 1. Recupera esa fecha.",
     "avail": "Lunes 18:30 - 22:00 · Viernes 18:30 - 22:00 · Sábado 18:00 - 21:30",
     "days": {
@@ -687,28 +665,6 @@
     "venue": "",
     "court": "",
     "home": "Hernan Alem / Alejandro Rios",
-    "away": "Pendiente / Pendiente",
-    "result": "",
-    "appliedResult": ""
-  },
-  {
-    "pending": true,
-    "reason": "Partido marcado como pendiente desde el fixture.",
-    "avail": "Lunes 17:30 - 22:00 · Martes 17:30 - 22:00 · Viernes 17:30 - 22:00",
-    "days": {
-      "Lunes": "17:30 - 22:00",
-      "Martes": "17:30 - 22:00",
-      "Viernes": "17:30 - 22:00"
-    },
-    "week": "Fecha 2",
-    "day": "",
-    "date": "",
-    "temp": "T5",
-    "cat": "B Masculina",
-    "time": "",
-    "venue": "",
-    "court": "",
-    "home": "Ernesto Enz / Facundo Casals",
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""

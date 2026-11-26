@@ -1114,5 +1114,20 @@
     "away": "Diego Diaz / Emiliano Fontanetto",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "week": "Fecha 2",
+    "day": "Viernes",
+    "date": "",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "time": "21:00 - 22:30",
+    "venue": "La manzana Padel",
+    "court": "Cancha 1",
+    "home": "German Duarte / Emanuel Arteta Magnìn",
+    "away": "Ernesto Enz / Facundo Casals",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
   }
 ]
