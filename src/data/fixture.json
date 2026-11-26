@@ -1114,5 +1114,20 @@
     "away": "Nestor Sione / Ulises Almarante",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "week": "Fecha 2",
+    "day": "Viernes",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Masculina",
+    "time": "22:00 - 23:30",
+    "venue": "Americas Padel",
+    "court": "Cancha 4",
+    "home": "Nelson Fernando Montorfano / Jonatan Gaston Jerez",
+    "away": "Joaquin Alberto Ijalba / Felipe Ijalba",
+    "result": "",
+    "appliedResult": "",
+    "flexAvail": true
   }
 ]
