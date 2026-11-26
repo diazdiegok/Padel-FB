@@ -50,6 +50,8 @@ export function createAcademiaInscripciones(ctx, api) {
         }</p></div>`;
   }
 
+  let lastSerial = "";
+
   async function reload({ quiet = true } = {}) {
     if (!ctx.token) {
       render();
@@ -57,11 +59,15 @@ export function createAcademiaInscripciones(ctx, api) {
     }
     try {
       const list = await api.worker("/academia");
-      rows = Array.isArray(list) ? list : [];
-      render();
+      const next = Array.isArray(list) ? list : [];
+      const serial = JSON.stringify(next);
+      const changed = serial !== lastSerial;
+      lastSerial = serial;
+      rows = next;
+      if (changed || !quiet) render();
       if (!quiet) toast("Inscripciones actualizadas", "ok");
     } catch (err) {
-      setMsg($("acad-msg"), err.message, "err");
+      if (!quiet || !lastSerial) setMsg($("acad-msg"), err.message, "err");
       if (!quiet) toast(err.message, "err");
     }
   }

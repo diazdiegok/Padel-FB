@@ -822,5 +822,39 @@ export function createParejas(ctx, api, shell, { onRankingChanged } = {}) {
     });
   }
 
-  return { bind, render: () => (fillConfig(), render()), reload };
+  function adoptRemote(pairs, config) {
+    if (ctx.dirty.has("parejas")) return false;
+    const nextPairs = Array.isArray(pairs) ? pairs : [];
+    const nextConfig = { open: true, deadline: "", ...(config || {}) };
+    if (JSON.stringify(ctx.pairs) === JSON.stringify(nextPairs) && JSON.stringify(ctx.pairsConfig) === JSON.stringify(nextConfig)) {
+      return false;
+    }
+    ctx.pairs = structuredClone(nextPairs);
+    ctx.pairsConfig = structuredClone(nextConfig);
+    knownIds = new Set(ctx.pairs.map((p) => p.id));
+    deleted.clear();
+    contactsDirty.clear();
+    loaded = true;
+    return true;
+  }
+
+  async function pullExtras() {
+    if (ctx.dirty.has("parejas")) return false;
+    const [remoteContacts, remotePayments] = await Promise.all([
+      api.worker("/pairs/contacts"),
+      api.worker("/pairs/payments"),
+    ]);
+    if (ctx.dirty.has("parejas")) return false;
+    const nextContacts = remoteContacts && typeof remoteContacts === "object" ? remoteContacts : {};
+    const nextPayments = remotePayments && typeof remotePayments === "object" ? remotePayments : {};
+    if (JSON.stringify(ctx.contacts) === JSON.stringify(nextContacts) && JSON.stringify(ctx.payments) === JSON.stringify(nextPayments)) {
+      return false;
+    }
+    const local = Object.fromEntries([...contactsDirty].map((id) => [id, ctx.contacts[id]]));
+    ctx.contacts = { ...nextContacts, ...local };
+    ctx.payments = nextPayments;
+    return true;
+  }
+
+  return { bind, render: () => (fillConfig(), render()), reload, adoptRemote, pullExtras };
 }

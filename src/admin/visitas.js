@@ -260,17 +260,25 @@ export function createVisitas(ctx, api) {
       </article>`;
   }
 
-  async function reload() {
+  let lastSerial = "";
+
+  async function reload({ quiet = false } = {}) {
     if (loading) return;
     loading = true;
-    setMsg($("visitas-msg"), "Cargando visitas…");
+    if (!quiet) setMsg($("visitas-msg"), "Cargando visitas…");
     try {
       const data = await api.worker("/stats?days=14");
-      render(data);
-      setMsg($("visitas-msg"), "");
+      const serial = JSON.stringify(data);
+      if (serial !== lastSerial) {
+        lastSerial = serial;
+        render(data);
+      }
+      if (!quiet) setMsg($("visitas-msg"), "");
     } catch (err) {
-      render(null);
-      setMsg($("visitas-msg"), err?.message || "No se pudieron leer las visitas.", "err");
+      if (!quiet || !lastSerial) {
+        render(null);
+        setMsg($("visitas-msg"), err?.message || "No se pudieron leer las visitas.", "err");
+      }
     } finally {
       loading = false;
     }

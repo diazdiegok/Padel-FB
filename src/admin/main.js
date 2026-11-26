@@ -1,5 +1,6 @@
 import { createAcademiaInscripciones } from "./acadinsc.js";
 import { createApi } from "./api.js";
+import { createLive } from "./live.js";
 import { createAscensos } from "./ascensos.js";
 import { createAuth } from "./auth.js";
 import { HIDDEN_CATS } from "./constants.js";
@@ -34,6 +35,7 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
     BASE: import.meta.env.BASE_URL || "/",
     token: "",
     dirty: new Set(),
+    liveEpoch: 0,
     currentSection: "",
   };
 
@@ -108,17 +110,34 @@ export function bootAdmin({ rankingJson, fixtureJson, siteJson, dispJson, result
     },
   });
 
+  const live = createLive(ctx, api, {
+    ranking,
+    fixture,
+    results,
+    seasons,
+    cms,
+    playoff,
+    ascensos,
+    parejas,
+    acadinsc,
+    visitas,
+  });
+
   async function showApp() {
     $("gate").hidden = true;
     $("app").hidden = false;
     document.body.classList.add("admin-ready");
     sessionStorage.removeItem("padel-fb-gh-token");
     ctx.token = api.getPublishToken();
-    try {
-      await seasons.load();
-    } catch {
-      /* si GitHub no responde, se usan los datos de la última publicación */
+    const synced = await live.pull();
+    if (!synced) {
+      try {
+        await seasons.load();
+      } catch {
+        /* si GitHub no responde, se usan los datos de la última publicación */
+      }
     }
+    live.arm();
     ranking.refresh();
     seasons.render();
     fixture.syncWeek();

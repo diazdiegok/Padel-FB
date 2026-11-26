@@ -31,8 +31,6 @@ const DAY_ALIASES = {
 };
 
 const DAY_END = 24 * 60;
-/** Dentro de un rango (ej. 16:30-21:00) los partidos de 90' pueden empezar cada 30'. */
-const START_STEP = 30;
 
 function fold(s) {
   return String(s || "")
@@ -80,7 +78,8 @@ export function weekFromName(name) {
 /**
  * Ventana de cancha:
  * - Un solo horario ("14:30") = un turno fijo de 1:30.
- * - Un rango ("16:30 - 21:00") = disponibilidad: adentro podés fixturear partidos de 1:30.
+ * - Un rango ("17:00 - 18:30") = ese turno. Si sobra tiempo, se parten turnos seguidos de 1:30, sin pisarse.
+ *   17:00-19:00 es un solo turno (17:00-18:30). Para ofrecer también 17:30-19:00, va en otra fila.
  */
 export function parseCourtWindow(text) {
   const raw = String(text || "")
@@ -112,15 +111,19 @@ export function windowCapacity(from, to) {
   return Math.floor(span / MATCH_MINUTES);
 }
 
+/** Solo cuando hay más de una alternativa. Con una sola, el texto queda limpio. */
+export function optionMark(index, total) {
+  return total > 1 ? ` (opción ${index + 1})` : "";
+}
+
 function clockRange(from, to) {
   const h = (m) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
   return `${h(from)} - ${h(to)}`;
 }
 
 /**
- * Posibles inicios de partido de 90' dentro de la ventana.
- * Rango largo → cada 30' (ej. 16:30, 17:00, …) mientras entre el partido.
- * Horario suelto → un solo inicio.
+ * Turnos de 90' que entran en la ventana, uno detrás del otro.
+ * No se corre el inicio cada 30': 17:00-19:00 no inventa también 17:30-19:00.
  */
 export function matchStartsInWindow(from, to, { single = false } = {}) {
   const out = [];
@@ -129,7 +132,7 @@ export function matchStartsInWindow(from, to, { single = false } = {}) {
     if (from + MATCH_MINUTES <= to) out.push({ from, to: from + MATCH_MINUTES, time: slotLabel(from) });
     return out;
   }
-  for (let start = from; start + MATCH_MINUTES <= to; start += START_STEP) {
+  for (let start = from; start + MATCH_MINUTES <= to; start += MATCH_MINUTES) {
     out.push({ from: start, to: start + MATCH_MINUTES, time: slotLabel(start) });
   }
   return out;

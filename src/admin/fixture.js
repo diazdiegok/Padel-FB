@@ -22,7 +22,7 @@ import {
 import { latestWeek, listSeasons, mergeArchivedMatches, seasonLabel, weekKey, weekNumber } from "../lib/liga.js";
 import { pairsMatch } from "../lib/scoring.js";
 import { courtsSheetIdForSeason } from "../lib/sheets.js";
-import { applyVenuePlan, assignCourtSlots, missingCourtHorarios, summarizeCourtSlots, weekFromName } from "../lib/slots.js";
+import { applyVenuePlan, assignCourtSlots, expandCourtCandidates, missingCourtHorarios, optionMark, summarizeCourtSlots, weekFromName } from "../lib/slots.js";
 import { $, confirmModal, escAttr, setBusy, setMsg, toast } from "./ui.js";
 
 const isPending = (m) => isPendingMatch(m);
@@ -153,6 +153,54 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     return new Set(list.map((x) => x.i));
   }
 
+  function courtLabel(court) {
+    const raw = String(court || "").trim();
+    if (!raw) return "";
+    return /^cancha\b/i.test(raw) ? raw : `Cancha ${raw}`;
+  }
+
+  function turnKey(slot) {
+    return [slot.day, slot.from, slot.venue, slot.court].join("|");
+  }
+
+  function turnOptionGroups(slots, selected = "") {
+    const byDay = new Map();
+    for (const slot of slots) {
+      const day = slot.day || "Sin día";
+      if (!byDay.has(day)) byDay.set(day, []);
+      byDay.get(day).push(slot);
+    }
+    const days = [...byDay.keys()].sort((a, b) => {
+      const ia = DAYS.indexOf(a);
+      const ib = DAYS.indexOf(b);
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b, "es");
+    });
+    return days
+      .map((day) => {
+        const rows = byDay
+          .get(day)
+          .slice()
+          .sort(
+            (a, b) =>
+              a.from - b.from ||
+              String(a.venue).localeCompare(String(b.venue), "es") ||
+              String(a.court).localeCompare(String(b.court), "es", { numeric: true })
+          );
+        if (rows.length < 2) return "";
+        const options = rows
+          .map((slot, i) => {
+            const text =
+              [slot.day, slot.time, slot.venue, courtLabel(slot.court)].filter(Boolean).join(" · ") +
+              optionMark(i, rows.length);
+            const key = turnKey(slot);
+            return `<option value="${escAttr(key)}"${key === selected ? " selected" : ""}>${escAttr(text)}</option>`;
+          })
+          .join("");
+        return `<optgroup label="${escAttr(`${day} · ${rows.length} turno${rows.length === 1 ? "" : "s"}`)}">${options}</optgroup>`;
+      })
+      .join("");
+  }
+
   function renderPending() {
     const box = $("fx-pending");
     if (!box) return;
@@ -181,6 +229,17 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
                   pools,
                   temp: filterTemp,
                 });
+                const turns = expandCourtCandidates(loadedSlots);
+                const current = turns.find(
+                  (s) => s.day === m.day && s.time === m.time && s.venue === m.venue && String(s.court) === String(m.court || "")
+                );
+                const groups = turnOptionGroups(turns, current ? turnKey(current) : "");
+                const turnMenu = groups
+                  ? `<select data-fx-turn="${i}" aria-label="Elegir turno">
+                      <option value="">Elegir turno…</option>
+                      ${groups}
+                    </select>`
+                  : "";
                 return `<article class="fx-pending-card" data-i="${i}">
                   <strong>${escAttr(m.home)}</strong>
                   <span class="admin-help">vs ${escAttr(PENDING_AWAY)}${
@@ -189,6 +248,7 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
                       : " · sin cancha asignada"
                   }${m.reason ? ` · ${escAttr(m.reason)}` : ""}${m.avail ? ` · disp. ${escAttr(m.avail)}` : ""}${m.note ? ` · ${escAttr(m.note)}` : ""}</span>
                   <div class="fx-pending-actions">
+                    ${turnMenu}
                     <select data-fx-cover="${i}" aria-label="Cubrir con">
                       <option value="">Cubrir con…</option>
                       ${
@@ -1011,6 +1071,20 @@ export function createFixture(ctx, api, shell, { onRankingChanged }) {
     });
 
     $("fx-pending")?.addEventListener("change", (e) => {
+      const turnSel = e.target.closest("[data-fx-turn]");
+      if (turnSel) {
+        const i = Number(turnSel.dataset.fxTurn);
+        const slot = ctx.fixture[i];
+        const picked = expandCourtCandidates(loadedSlots).find((s) => turnKey(s) === turnSel.value);
+        if (!slot || !picked) return;
+        slot.day = picked.day;
+        slot.time = picked.time;
+        slot.venue = picked.venue;
+        slot.court = picked.court || "";
+        shell.markDirty("fixture");
+        render();
+        return;
+      }
       const sel = e.target.closest("[data-fx-cover]");
       if (!sel || sel.value === "") return;
       const i = Number(sel.dataset.fxCover);

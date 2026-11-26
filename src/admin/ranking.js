@@ -1,4 +1,4 @@
-import { CATS, RANK_COLS, RANK_PATH } from "./constants.js";
+import { CATS, HIDDEN_CATS, RANK_COLS, RANK_PATH } from "./constants.js";
 import { cleanRow, downloadCsv } from "./csv.js";
 import { listSeasons, seasonLabel } from "../lib/liga.js";
 import { fold } from "../lib/scoring.js";
@@ -160,6 +160,15 @@ export function createRanking(ctx, api, shell) {
     render();
   }
 
+  function adoptRemote(rows) {
+    const next = (Array.isArray(rows) ? rows : []).filter((row) => row && !HIDDEN_CATS.has(row.cat));
+    if (JSON.stringify(ctx.rows) === JSON.stringify(next)) return false;
+    ctx.rows = next;
+    known = new Set(next.map(rowKey));
+    removed.clear();
+    return true;
+  }
+
   function bind() {
     $("rank-boxes")?.addEventListener("click", async (e) => {
       const del = e.target.closest("[data-del]");
@@ -271,5 +280,5 @@ export function createRanking(ctx, api, shell) {
     });
   }
 
-  return { bind, refresh, render, fillFilters: render };
+  return { bind, refresh, render, adoptRemote, fillFilters: render };
 }

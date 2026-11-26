@@ -3,6 +3,7 @@ import {
   applyVenuePlan,
   assignCourtSlots,
   matchStartsInWindow,
+  optionMark,
   parseCourtSlot,
   parseCourtSlotRows,
   parseCourtWindow,
@@ -45,10 +46,27 @@ assert.equal(range.time, "16:30 - 21:00");
 assert.equal(windowCapacity(range.from, range.to), 3);
 
 const starts = matchStartsInWindow(range.from, range.to);
-assert.ok(starts.length > 3); // cada 30' dentro del rango
-assert.equal(starts[0].time, "16:30 - 18:00");
-assert.ok(starts.some((s) => s.time === "17:00 - 18:30"));
-assert.ok(starts.some((s) => s.time === "19:30 - 21:00"));
+assert.deepEqual(
+  starts.map((s) => s.time),
+  ["16:30 - 18:00", "18:00 - 19:30", "19:30 - 21:00"]
+);
+
+const twoHours = matchStartsInWindow(17 * 60, 19 * 60);
+assert.deepEqual(
+  twoHours.map((s) => s.time),
+  ["17:00 - 18:30"]
+);
+const explicit = [
+  parseCourtSlot({ Complejo: "Americas", Cancha: "1", Dia: "Viernes", Horario: "17:00 - 18:30" }),
+  parseCourtSlot({ Complejo: "Americas", Cancha: "1", Dia: "Viernes", Horario: "17:30 - 19:00" }),
+];
+assert.deepEqual(
+  explicit.map((s) => s.time),
+  ["17:00 - 18:30", "17:30 - 19:00"]
+);
+assert.equal(optionMark(0, 1), "");
+assert.equal(optionMark(0, 2), " (opción 1)");
+assert.equal(optionMark(1, 3), " (opción 2)");
 
 assert.equal(parseCourtSlot({ Complejo: "Open", Cancha: "2", Horario: "20:00 - 21:30" }), null, "exige Dia");
 assert.equal(parseCourtSlot({ Complejo: "Open", Dia: "Martes", Horario: "20:00 - 21:30" }), null, "exige Cancha");

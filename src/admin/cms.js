@@ -1013,9 +1013,19 @@ export function createCms(ctx, api, shell) {
     fillTorneosForm();
   }
 
+  function refreshSections(ids) {
+    const set = new Set(ids || []);
+    if (set.has("sitio")) fillSiteForm();
+    if (set.has("academia")) fillAcademiaForm();
+    if (set.has("infantiles")) fillKidsForm();
+    if (set.has("sedes")) fillVenueForm();
+    if (set.has("torneos")) fillTorneosForm();
+  }
+
   return {
     bind,
     refreshAll,
+    refreshSections,
     fillSiteForm,
     fillAcademiaForm,
     fillKidsForm,

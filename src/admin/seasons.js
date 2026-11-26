@@ -283,5 +283,5 @@ export function createSeasons(ctx, api, shell, { onSeasonChanged } = {}) {
     });
   }
 
-  return { bind, render, load, reload, discard };
+  return { bind, render, load, reload, discard, noteRemote: snapshot };
 }

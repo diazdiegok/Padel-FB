@@ -61,6 +61,7 @@ export function createApi(ctx) {
 
   async function worker(path, body) {
     if (!ctx.API_URL) throw new Error("Falta configurar la API segura del sitio.");
+    if (body) bumpLive();
     ctx.token = getPublishToken();
     const res = await fetch(`${ctx.API_URL}${path}`, {
       method: body ? "POST" : "GET",
@@ -94,7 +95,12 @@ export function createApi(ctx) {
     }
   }
 
+  function bumpLive() {
+    ctx.liveEpoch = (ctx.liveEpoch || 0) + 1;
+  }
+
   async function publishFile(filePath, content, message, alreadyB64 = false) {
+    bumpLive();
     const payload = alreadyB64 ? content : toB64(content);
     let lastErr;
     for (let i = 0; i < 2; i++) {
@@ -116,6 +122,7 @@ export function createApi(ctx) {
   }
 
   async function publishFiles(files, message) {
+    bumpLive();
     const ref = await api(`/repos/${ctx.owner}/${ctx.repo}/git/refs/heads/main`);
     const baseSha = ref.object.sha;
     const baseCommit = await api(`/repos/${ctx.owner}/${ctx.repo}/git/commits/${baseSha}`);

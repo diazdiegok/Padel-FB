@@ -24,6 +24,18 @@ const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const CATS = ["A Masculina", "B Masculina", "C Masculina", "A Femenino", "B Femenino", "C Femenino"];
 const PAIRS_CACHE = "https://padel-fb-api.cache/pairs";
 const FIXTURE_CACHE = "https://padel-fb-api.cache/fixture";
+const LIVE_SHA_CACHE = "https://padel-fb-api.cache/admin-live-sha";
+const LIVE_FILES = [
+  ["ranking", RANK_PATH],
+  ["fixture", FIXTURE_PATH],
+  ["site", "src/data/site.json"],
+  ["disp", DISP_PATH],
+  ["results", RESULTS_PATH],
+  ["playoff", "src/data/playoff.json"],
+  ["pairs", PAIRS_PATH],
+  ["pairsConfig", PAIRS_CONFIG_PATH],
+  ["ascensos", "src/data/ascensos.json"],
+];
 
 const DATA_FILE = /^src\/data\/[a-z0-9_-]+\.json$/;
 const IMAGE_FILE = /^public\/images\/[a-z0-9_-]+\.(png|jpg|webp|gif)$/;
@@ -280,6 +292,7 @@ async function github(env, path, options = {}) {
   }
   return fetch(`https://api.github.com${path}`, {
     method,
+    cache: options.cache,
     headers: {
       Accept: "application/vnd.github+json",
       Authorization: `Bearer ${env.GITHUB_TOKEN}`,
@@ -393,7 +406,10 @@ async function writeData(env, file, json, sha, message) {
   if (sha) body.sha = sha;
   const path = `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${file}`;
   const saved = await github(env, path, { method: "PUT", body: JSON.stringify(body) });
-  if (saved.ok) return true;
+  if (saved.ok) {
+    await forgetLiveSha();
+    return true;
+  }
   if (saved.status === 409 || saved.status === 422) return false;
   const data = await saved.json().catch(() => ({}));
   throw new Error(data.message || "No se pudo guardar.");
@@ -438,10 +454,82 @@ async function writeFiles(env, files, message) {
     method: "PATCH",
     body: JSON.stringify({ sha: newCommit.sha, force: false }),
   });
-  if (patchRes.ok) return true;
+  if (patchRes.ok) {
+    await forgetLiveSha();
+    return true;
+  }
   if (patchRes.status === 409 || patchRes.status === 422) return false;
   const patch = await patchRes.json().catch(() => ({}));
   throw new Error(patch.message || "No se pudo actualizar main.");
+}
+
+async function forgetLiveSha() {
+  try {
+    await caches.default.delete(LIVE_SHA_CACHE);
+  } catch {
+    /* el próximo pedido vuelve a leer main */
+  }
+}
+
+async function readMainSha(env) {
+  const hit = await caches.default.match(LIVE_SHA_CACHE);
+  if (hit) return hit.text();
+  const prefix = `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}`;
+  const res = await github(env, `${prefix}/git/refs/heads/main`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "No se pudo leer main.");
+  const sha = String(data.object?.sha || "");
+  if (!/^[0-9a-f]{40}$/.test(sha)) throw new Error("No se encontró el commit actual.");
+  await caches.default.put(
+    LIVE_SHA_CACHE,
+    new Response(sha, { headers: { "Cache-Control": "max-age=2" } })
+  );
+  return sha;
+}
+
+async function liveSnapshot(env, sha) {
+  const cacheUrl = `https://padel-fb-api.cache/admin-live/${sha}`;
+  const hit = await caches.default.match(cacheUrl);
+  if (hit) return hit.json();
+  const prefix = `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}`;
+  const commitRes = await github(env, `${prefix}/git/commits/${sha}`);
+  const commit = await commitRes.json();
+  if (!commitRes.ok) throw new Error(commit.message || "No se pudo leer el commit.");
+  const treeRes = await github(env, `${prefix}/git/trees/${commit.tree.sha}?recursive=1`);
+  const tree = await treeRes.json();
+  if (!treeRes.ok) throw new Error(tree.message || "No se pudieron leer los archivos.");
+  const files = {};
+  if (tree.truncated) {
+    await Promise.all(
+      LIVE_FILES.map(async ([key, path]) => {
+        const file = await readData(env, path, null);
+        files[key] = file.json;
+      })
+    );
+  } else {
+    const byPath = new Map((tree.tree || []).map((node) => [node.path, node.sha]));
+    await Promise.all(
+      LIVE_FILES.map(async ([key, path]) => {
+        const blobSha = byPath.get(path);
+        if (!blobSha) {
+          files[key] = null;
+          return;
+        }
+        const blobRes = await github(env, `${prefix}/git/blobs/${blobSha}`);
+        const blob = await blobRes.json();
+        if (!blobRes.ok) throw new Error(blob.message || "No se pudo leer un archivo.");
+        files[key] = JSON.parse(decodeBase64(blob.content));
+      })
+    );
+  }
+  const payload = { sha, files };
+  await caches.default.put(
+    cacheUrl,
+    new Response(JSON.stringify(payload), {
+      headers: { "Content-Type": "application/json", "Cache-Control": "max-age=86400" },
+    })
+  );
+  return payload;
 }
 
 async function readAvailability(env) {
@@ -1472,6 +1560,20 @@ export default {
         return response(request, env, { ok: true });
       }
 
+      if (url.pathname === "/admin/live" && request.method === "GET") {
+        if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
+        try {
+          const sha = await readMainSha(env);
+          const since = String(url.searchParams.get("sha") || "");
+          const payload = since === sha ? { sha, changed: false } : { ...(await liveSnapshot(env, sha)), changed: true };
+          const res = response(request, env, payload);
+          res.headers.set("Cache-Control", "no-store");
+          return res;
+        } catch (err) {
+          return response(request, env, { message: err.message || "No se pudo leer el sitio." }, 502);
+        }
+      }
+
       if (url.pathname === "/github" && request.method === "POST") {
         if (!(await validSession(request, env))) return response(request, env, { message: "Sesión vencida." }, 401);
         const body = await request.json();
@@ -1479,6 +1581,7 @@ export default {
         const call = adminRequest(env, String(body.path || ""), method, body.body);
         if (!call) return response(request, env, { message: "Operación no permitida desde el admin." }, 403);
         const upstream = await github(env, call.path, { method: call.method, body: call.body });
+        if (call.method !== "GET" && upstream.ok) await forgetLiveSha();
         return new Response(await upstream.text(), {
           status: upstream.status,
           headers: { "Content-Type": "application/json; charset=utf-8", ...cors(request, env) },
