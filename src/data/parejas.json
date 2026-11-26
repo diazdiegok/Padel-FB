@@ -1416,5 +1416,19 @@
       "Sábado": "18:00 - 00:00"
     },
     "note": ""
+  },
+  {
+    "id": "pmwwz0jc1cee4",
+    "createdAt": "2026-11-26T03:06:14.113Z",
+    "temp": "T5",
+    "cat": "B Masculina",
+    "p1": "German Duarte",
+    "p2": "Emanuel Arteta Magnìn",
+    "days": {
+      "Lunes": "18:30 - 22:00",
+      "Viernes": "18:30 - 22:00",
+      "Sábado": "18:00 - 21:30"
+    },
+    "note": ""
   }
 ]
