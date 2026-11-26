@@ -976,14 +976,30 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
           Object.assign(ctx.siteData, nextSite);
         }
         // Sync fixture con altas/bajas/categoría antes de publicar (pendientes + rivales).
-        // Importante: el sync al borrar/cambiar cat puede haber dejado el fixture dirty
-        // en memoria; un segundo sync acá no “cambia” otra vez, pero igual hay que publicar.
+        // Siempre partimos del fixture YA PUBLICADO en GitHub. Si usáramos el borrador
+        // local de este navegador, un "Publicar parejas" desde la PC pisaría el fixture
+        // que se armó desde el celu (u otro dispositivo) y lo dejaría sin guardar.
+        const hadLocalFixtureDraft = ctx.dirty.has("fixture");
+        const [remoteFixture, remotePendingRaw] = await Promise.all([
+          api.readRemoteJson(FIXTURE_PATH, []),
+          api.readRemoteJson(FIXTURE_PENDING_PATH, []),
+        ]);
+        const remoteClean = (Array.isArray(remoteFixture) ? remoteFixture : []).filter(
+          (m) => m && (m.home || m.away)
+        );
+        const remoteLive = remoteClean.filter((m) => !isPendingMatch(m));
+        const remotePending = [
+          ...(Array.isArray(remotePendingRaw) ? remotePendingRaw : []),
+          ...remoteClean.filter(isPendingMatch),
+        ].filter((m) => m && (m.home || m.away));
+        ctx.fixture = [...remoteLive, ...remotePending];
+        ctx.fixturePublished = structuredClone(ctx.fixture);
+        if (hadLocalFixtureDraft) shell.clearDirty("fixture");
+
         ctx.pairs = next;
         const fxSync = onPairsChanged?.({ reason: "publish", toastResult: false }) || null;
-        const fixtureNeedsPublish =
-          Boolean(fxSync?.changed) ||
-          ctx.dirty.has("fixture") ||
-          JSON.stringify(ctx.fixture || []) !== JSON.stringify(ctx.fixturePublished || []);
+        // Solo republicar fixture si el sync por parejas cambió algo (alta/baja/cat).
+        const fixtureNeedsPublish = Boolean(fxSync?.changed);
         if (fixtureNeedsPublish) {
           const adminFixture = (ctx.fixture || []).map((m) => ({ ...m }));
           const draftLive = adminFixture.filter((m) => !isPendingMatch(m));
@@ -1038,7 +1054,14 @@ export function createParejas(ctx, api, shell, { onRankingChanged, onPairsChange
           : "";
         const liveNote = goLive ? " La temporada pasó a En juego." : "";
         const fxNote = fixtureNeedsPublish ? " Fixture/pendientes alineados." : "";
-        setMsg($("pairs-msg"), "Parejas publicadas." + extra + ranked + unranked + renamedNote + liveNote + fxNote, "ok");
+        const draftNote = hadLocalFixtureDraft
+          ? " Había un borrador de fixture en este navegador: no se publicó (así no se pisan cambios hechos desde el celu u otro dispositivo). Si lo necesitás, publicá desde Fixture."
+          : "";
+        setMsg(
+          $("pairs-msg"),
+          "Parejas publicadas." + extra + ranked + unranked + renamedNote + liveNote + fxNote + draftNote,
+          "ok"
+        );
         toast(goLive ? "Inscripción cerrada · En juego" : "Parejas publicadas", "ok");
       } catch (err) {
         const m = api.publishError(err);
