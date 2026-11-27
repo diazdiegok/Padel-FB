@@ -8894,10 +8894,10 @@
   {
     "name": "Florencia Cavallaro / Luisina Yancovich",
     "cat": "B Femenino",
-    "pts": 3,
+    "pts": 0,
     "pj": 1,
-    "dif": 2,
-    "pos": 1,
+    "dif": -2,
+    "pos": 5,
     "temp": "T5"
   },
   {
@@ -9083,10 +9083,10 @@
   {
     "name": "Valentina Gabirondo / Delfina Balla",
     "cat": "B Femenino",
-    "pts": 1,
+    "pts": 4,
     "pj": 2,
-    "dif": -3,
-    "pos": 3,
+    "dif": 1,
+    "pos": 1,
     "temp": "T5"
   },
   {
@@ -9167,7 +9167,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 5,
+    "pos": 4,
     "temp": "T5"
   },
   {
@@ -9617,7 +9617,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 4,
+    "pos": 3,
     "temp": "T5"
   }
 ]
