@@ -676,5 +676,31 @@
     "away": "Pendiente / Pendiente",
     "result": "",
     "appliedResult": ""
+  },
+  {
+    "pending": true,
+    "reason": "No se presentó (W.O.).",
+    "avail": "Martes 19:30 - 22:00 · Jueves 18:00 - 22:00 · Viernes 18:30 - 23:00 · Sábado 09:30 - 20:00",
+    "days": {
+      "Martes": "19:30 - 22:00",
+      "Jueves": "18:00 - 22:00",
+      "Viernes": "18:30 - 23:00",
+      "Sábado": "09:30 - 20:00"
+    },
+    "woKey": "T5|florencia gabriela esquivel natalia ivana frickel|Fecha 2|wo",
+    "woWinner": "Lucia Rausch / Luciana Marconi",
+    "recoverFrom": "Fecha 2",
+    "week": "Fecha 2",
+    "day": "",
+    "date": "",
+    "temp": "T5",
+    "cat": "C Femenino",
+    "time": "",
+    "venue": "",
+    "court": "",
+    "home": "Florencia Gabriela Esquivel / Natalia Ivana Frickel",
+    "away": "Pendiente / Pendiente",
+    "result": "",
+    "appliedResult": ""
   }
 ]

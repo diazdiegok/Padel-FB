@@ -567,8 +567,8 @@
     "court": "Cancha 2",
     "home": "Denis Márquez / Omar Ramira",
     "away": "Julián Gea Sánchez / Joaquín Gea Sánchez",
-    "result": "",
-    "appliedResult": "",
+    "result": "6/7 0/6",
+    "appliedResult": "6/7 0/6",
     "flexAvail": true
   },
   {
@@ -654,8 +654,8 @@
     "court": "Cancha 1",
     "home": "José Luis López / Martín Leguizamón",
     "away": "María Laura Borsotti / Celia Senger",
-    "result": "",
-    "appliedResult": ""
+    "result": "6/0 6/0",
+    "appliedResult": "6/0 6/0"
   },
   {
     "week": "Fecha 2",
@@ -668,8 +668,8 @@
     "court": "Cancha 4",
     "home": "Sebastian Rodriguez / Gonzalo Barbero",
     "away": "Ramiro Romero / Angelica Alcaraz",
-    "result": "",
-    "appliedResult": "",
+    "result": "6/1 6/3",
+    "appliedResult": "6/1 6/3",
     "flexAvail": true
   },
   {
@@ -683,8 +683,8 @@
     "court": "Cancha 2",
     "home": "Sebastian Bregant / Luis Valla",
     "away": "Marcos Saavedra / Luis Alberto Albornoz",
-    "result": "",
-    "appliedResult": ""
+    "result": "3/6 6/4 7/6",
+    "appliedResult": "3/6 6/4 7/6"
   },
   {
     "week": "Fecha 2",
@@ -826,8 +826,8 @@
     "court": "Cancha 1",
     "home": "Melina Drabble / Cecilia García Formenti",
     "away": "Melina Soledad / Karen Hillairet",
-    "result": "",
-    "appliedResult": ""
+    "result": "6/4 4/6 6/3",
+    "appliedResult": "6/4 4/6 6/3"
   },
   {
     "week": "Fecha 2",
@@ -1142,8 +1142,8 @@
     "court": "Cancha 1",
     "home": "Lucia Rausch / Luciana Marconi",
     "away": "Florencia Gabriela Esquivel / Natalia Ivana Frickel",
-    "result": "",
-    "appliedResult": "",
+    "result": "W.O. 1",
+    "appliedResult": "W.O. 1",
     "flexAvail": true
   }
 ]

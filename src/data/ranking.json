@@ -8804,10 +8804,10 @@
   {
     "name": "Julián Gea Sánchez / Joaquín Gea Sánchez",
     "cat": "A Masculina",
-    "pts": 3,
-    "pj": 1,
-    "dif": 2,
-    "pos": 3,
+    "pts": 6,
+    "pj": 2,
+    "dif": 4,
+    "pos": 1,
     "temp": "T5"
   },
   {
@@ -8843,7 +8843,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 22,
+    "pos": 24,
     "temp": "T5"
   },
   {
@@ -8915,7 +8915,7 @@
     "pts": 3,
     "pj": 2,
     "dif": 0,
-    "pos": 11,
+    "pos": 12,
     "temp": "T5"
   },
   {
@@ -8933,7 +8933,7 @@
     "pts": 3,
     "pj": 2,
     "dif": 0,
-    "pos": 12,
+    "pos": 11,
     "temp": "T5"
   },
   {
@@ -8960,7 +8960,7 @@
     "pts": 4,
     "pj": 2,
     "dif": 1,
-    "pos": 1,
+    "pos": 2,
     "temp": "T5"
   },
   {
@@ -8996,7 +8996,7 @@
     "pts": 1,
     "pj": 2,
     "dif": -3,
-    "pos": 20,
+    "pos": 19,
     "temp": "T5"
   },
   {
@@ -9005,7 +9005,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 25,
+    "pos": 26,
     "temp": "T5"
   },
   {
@@ -9014,7 +9014,7 @@
     "pts": 3,
     "pj": 2,
     "dif": 0,
-    "pos": 14,
+    "pos": 13,
     "temp": "T5"
   },
   {
@@ -9023,7 +9023,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 4,
+    "pos": 3,
     "temp": "T5"
   },
   {
@@ -9038,9 +9038,9 @@
   {
     "name": "Melina Soledad / Karen Hillairet",
     "cat": "C Femenino",
-    "pts": 0,
-    "pj": 0,
-    "dif": 0,
+    "pts": 1,
+    "pj": 1,
+    "dif": -1,
     "pos": 16,
     "temp": "T5"
   },
@@ -9065,10 +9065,10 @@
   {
     "name": "Sebastian Bregant / Luis Valla",
     "cat": "B Masculina",
-    "pts": 3,
-    "pj": 1,
-    "dif": 1,
-    "pos": 11,
+    "pts": 6,
+    "pj": 2,
+    "dif": 2,
+    "pos": 6,
     "temp": "T5"
   },
   {
@@ -9095,7 +9095,7 @@
     "pts": 3,
     "pj": 2,
     "dif": -1,
-    "pos": 12,
+    "pos": 14,
     "temp": "T5"
   },
   {
@@ -9104,7 +9104,7 @@
     "pts": 3,
     "pj": 2,
     "dif": 0,
-    "pos": 13,
+    "pos": 12,
     "temp": "T5"
   },
   {
@@ -9120,18 +9120,18 @@
     "name": "María Laura Borsotti / Celia Senger",
     "cat": "B Masculina",
     "pts": 3,
-    "pj": 1,
-    "dif": 2,
-    "pos": 7,
+    "pj": 2,
+    "dif": 0,
+    "pos": 15,
     "temp": "T5"
   },
   {
     "name": "Denis Márquez / Omar Ramira",
     "cat": "A Masculina",
     "pts": 3,
-    "pj": 1,
-    "dif": 2,
-    "pos": 2,
+    "pj": 2,
+    "dif": 0,
+    "pos": 7,
     "temp": "T5"
   },
   {
@@ -9203,7 +9203,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 24,
+    "pos": 25,
     "temp": "T5"
   },
   {
@@ -9221,7 +9221,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 1,
-    "pos": 5,
+    "pos": 4,
     "temp": "T5"
   },
   {
@@ -9239,7 +9239,7 @@
     "pts": 6,
     "pj": 2,
     "dif": 4,
-    "pos": 3,
+    "pos": 4,
     "temp": "T5"
   },
   {
@@ -9248,7 +9248,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 15,
+    "pos": 18,
     "temp": "T5"
   },
   {
@@ -9257,7 +9257,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 4,
+    "pos": 7,
     "temp": "T5"
   },
   {
@@ -9275,7 +9275,7 @@
     "pts": 3,
     "pj": 2,
     "dif": 0,
-    "pos": 15,
+    "pos": 14,
     "temp": "T5"
   },
   {
@@ -9293,7 +9293,7 @@
     "pts": 1,
     "pj": 2,
     "dif": -3,
-    "pos": 14,
+    "pos": 17,
     "temp": "T5"
   },
   {
@@ -9302,7 +9302,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 21,
+    "pos": 23,
     "temp": "T5"
   },
   {
@@ -9326,10 +9326,10 @@
   {
     "name": "Sebastian Rodriguez / Gonzalo Barbero",
     "cat": "B Masculina",
-    "pts": 3,
-    "pj": 1,
-    "dif": 2,
-    "pos": 9,
+    "pts": 6,
+    "pj": 2,
+    "dif": 4,
+    "pos": 5,
     "temp": "T5"
   },
   {
@@ -9338,7 +9338,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 24,
+    "pos": 25,
     "temp": "T5"
   },
   {
@@ -9353,10 +9353,10 @@
   {
     "name": "José Luis López / Martín Leguizamón",
     "cat": "B Masculina",
-    "pts": 3,
-    "pj": 1,
-    "dif": 2,
-    "pos": 6,
+    "pts": 6,
+    "pj": 2,
+    "dif": 4,
+    "pos": 3,
     "temp": "T5"
   },
   {
@@ -9365,7 +9365,7 @@
     "pts": 1,
     "pj": 1,
     "dif": -1,
-    "pos": 13,
+    "pos": 15,
     "temp": "T5"
   },
   {
@@ -9380,10 +9380,10 @@
   {
     "name": "Lucia Rausch / Luciana Marconi",
     "cat": "C Femenino",
-    "pts": 0,
-    "pj": 1,
-    "dif": -2,
-    "pos": 23,
+    "pts": 3,
+    "pj": 2,
+    "dif": 0,
+    "pos": 11,
     "temp": "T5"
   },
   {
@@ -9392,7 +9392,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 8,
+    "pos": 9,
     "temp": "T5"
   },
   {
@@ -9401,16 +9401,16 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 18,
+    "pos": 20,
     "temp": "T5"
   },
   {
     "name": "Ramiro Romero / Angelica Alcaraz",
     "cat": "B Masculina",
     "pts": 1,
-    "pj": 1,
-    "dif": -1,
-    "pos": 19,
+    "pj": 2,
+    "dif": -3,
+    "pos": 21,
     "temp": "T5"
   },
   {
@@ -9419,7 +9419,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 20,
+    "pos": 22,
     "temp": "T5"
   },
   {
@@ -9428,7 +9428,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 1,
-    "pos": 6,
+    "pos": 5,
     "temp": "T5"
   },
   {
@@ -9437,7 +9437,7 @@
     "pts": 0,
     "pj": 1,
     "dif": -2,
-    "pos": 23,
+    "pos": 24,
     "temp": "T5"
   },
   {
@@ -9506,10 +9506,10 @@
   {
     "name": "Marcos Saavedra / Luis Alberto Albornoz",
     "cat": "B Masculina",
-    "pts": 0,
-    "pj": 1,
-    "dif": -2,
-    "pos": 26,
+    "pts": 1,
+    "pj": 2,
+    "dif": -3,
+    "pos": 20,
     "temp": "T5"
   },
   {
@@ -9518,7 +9518,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 1,
-    "pos": 7,
+    "pos": 6,
     "temp": "T5"
   },
   {
@@ -9545,7 +9545,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 5,
+    "pos": 8,
     "temp": "T5"
   },
   {
@@ -9554,16 +9554,16 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 21,
+    "pos": 22,
     "temp": "T5"
   },
   {
     "name": "Melina Drabble / Cecilia García Formenti",
     "cat": "C Femenino",
-    "pts": 0,
-    "pj": 1,
-    "dif": -2,
-    "pos": 25,
+    "pts": 3,
+    "pj": 2,
+    "dif": -1,
+    "pos": 13,
     "temp": "T5"
   },
   {
@@ -9572,7 +9572,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 19,
+    "pos": 21,
     "temp": "T5"
   },
   {
@@ -9581,7 +9581,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 17,
+    "pos": 19,
     "temp": "T5"
   },
   {
@@ -9608,7 +9608,7 @@
     "pts": 0,
     "pj": 0,
     "dif": 0,
-    "pos": 22,
+    "pos": 23,
     "temp": "T5"
   },
   {
