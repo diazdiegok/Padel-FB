@@ -989,10 +989,9 @@
     "p1": "Pablo Cerdan",
     "p2": "Mario Oviedo",
     "days": {
-      "Lunes": "20:00 - 23:00",
-      "Miércoles": "19:30 - 23:00",
-      "Jueves": "19:00 - 23:00",
-      "Viernes": "18:00 - 19:30"
+      "Lunes": "18:30 - 23:00",
+      "Martes": "19:00 - 23:00",
+      "Viernes": "17:30 - 19:30"
     },
     "note": ""
   },
