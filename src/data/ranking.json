@@ -8933,7 +8933,7 @@
     "pts": 3,
     "pj": 2,
     "dif": 0,
-    "pos": 11,
+    "pos": 12,
     "temp": "T5"
   },
   {
@@ -9014,7 +9014,7 @@
     "pts": 3,
     "pj": 2,
     "dif": 0,
-    "pos": 13,
+    "pos": 14,
     "temp": "T5"
   },
   {
@@ -9104,7 +9104,7 @@
     "pts": 3,
     "pj": 2,
     "dif": 0,
-    "pos": 12,
+    "pos": 13,
     "temp": "T5"
   },
   {
@@ -9120,9 +9120,9 @@
     "name": "María Laura Borsotti / Celia Senger",
     "cat": "B Masculina",
     "pts": 3,
-    "pj": 2,
-    "dif": 0,
-    "pos": 15,
+    "pj": 1,
+    "dif": 2,
+    "pos": 9,
     "temp": "T5"
   },
   {
@@ -9185,7 +9185,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 10,
+    "pos": 11,
     "temp": "T5"
   },
   {
@@ -9275,7 +9275,7 @@
     "pts": 3,
     "pj": 2,
     "dif": 0,
-    "pos": 14,
+    "pos": 15,
     "temp": "T5"
   },
   {
@@ -9392,7 +9392,7 @@
     "pts": 3,
     "pj": 1,
     "dif": 2,
-    "pos": 9,
+    "pos": 10,
     "temp": "T5"
   },
   {
